@@ -124,3 +124,16 @@ _modules/*
 
 /results/
 /phpunit*.xml
+
+#-------------------------
+# Security & Credentials
+#-------------------------
+# Google Cloud Service Account files
+*.json
+app/ThirdParty/google/*.json
+app/ThirdParty/google/
+# Other credential files
+*.p12
+*.pem
+*.key
+*.crt

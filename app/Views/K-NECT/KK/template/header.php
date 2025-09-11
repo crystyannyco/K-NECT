@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="csrf-token" content="<?= csrf_hash() ?>">
+	<title>Knect - Youth Governance Dashboard</title>
+	<script src="https://cdn.tailwindcss.com"></script>
+	<script>
+		tailwind.config = {
+			// Suppress CDN warning
+		}
+	</script>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+	<!-- DataTables CSS -->
+	<link rel="stylesheet" href="https://cdn.datatables.net/2.2.2/css/dataTables.dataTables.css">
+	<link rel="stylesheet" href="https://cdn.datatables.net/fixedcolumns/5.0.4/css/fixedColumns.dataTables.css">
+    
+	<!-- jQuery -->
+	<script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    
+	<!-- DataTables JS -->
+	<script src="https://cdn.datatables.net/2.2.2/js/dataTables.js"></script>
+	<script src="https://cdn.datatables.net/fixedcolumns/5.0.4/js/dataTables.fixedColumns.js"></script>
+	<script src="https://cdn.datatables.net/fixedcolumns/5.0.4/js/fixedColumns.dataTables.js"></script>
+    
+	<!-- Export Libraries -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+	
+	<!-- K-NECT Image Fallback System -->
+	<link href="<?= base_url('assets/css/image-fallback.css') ?>" rel="stylesheet" type="text/css" />
+</head>
+<body class="bg-gray-50 min-h-screen font-['Inter']">
+    <!-- ===== HEADER SECTION ===== -->
+    <!-- Fixed header aligned with main content (not overlapping sidebar) -->
+    <header class="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 lg:left-64 right-0 z-40">
+        <div class="px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Page Title Section -->
+                <div class="flex items-center">
+                    <button id="sidebarToggle" class="lg:hidden p-2 text-gray-400 hover:text-gray-600 mr-2 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded" aria-label="Toggle sidebar">
+                        <svg class="w-6 h-6 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path id="hamburgerPath" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                    <div class="flex-shrink-0">
+                        <?php
+                        // Dynamic page title based on current URL
+                        $uri = uri_string();
+                        $pageTitle = 'Dashboard';
+                        $pageDescription = 'K-Nect: Kabataan Connect';
+                        
+                        // Map URLs to titles and descriptions
+						$pageMap = [
+                            'kk/dashboard' => [
+                                'title' => 'Dashboard', 
+                                'description' => 'Overview and quick stats'
+                            ],
+                            'kk/profile' => [
+                                'title' => 'My Profile', 
+                                'description' => 'View and manage personal information'
+                            ],
+                            'kk/settings' => [
+                                'title' => 'Settings', 
+                                'description' => 'Account preferences and configuration'
+                            ],
+                            'kk/attendance' => [
+                                'title' => 'Attendance', 
+                                'description' => 'Track event participation and presence'
+                            ],
+                            'events' => [
+                                'title' => 'Events', 
+                                'description' => 'Upcoming activities and programs'
+                            ],
+							'events/create' => [
+								'title' => 'Create Event',
+								'description' => 'Plan and publish a new event'
+							],
+							'events/edit' => [
+								'title' => 'Edit Event',
+								'description' => 'Update event details'
+							],
+							'events/calendar' => [
+								'title' => 'Event Calendar',
+								'description' => 'Calendar view of events'
+							],
+                            'documents' => [
+                                'title' => 'Documents', 
+                                'description' => 'Files and official papers'
+							],
+							'bulletin' => [
+								'title' => 'Bulletin Board',
+								'description' => 'Announcements and updates'
+							],
+							'bulletin/create' => [
+								'title' => 'Create Post',
+								'description' => 'Publish a new announcement'
+							],
+							'bulletin/edit' => [
+								'title' => 'Edit Post',
+								'description' => 'Update announcement content'
+							],
+							'bulletin/view' => [
+								'title' => 'View Post',
+								'description' => 'Announcement details'
+							]
+                        ];
+                        
+						// Choose the best title/description based on current URI
+						if (isset($pageMap[$uri])) {
+							$pageTitle = $pageMap[$uri]['title'];
+							$pageDescription = $pageMap[$uri]['description'];
+						} else {
+							// Pick the longest matching route prefix
+							$bestRoute = null;
+							foreach ($pageMap as $route => $info) {
+								if (strpos($uri, $route) === 0) {
+									if ($bestRoute === null || strlen($route) > strlen($bestRoute)) {
+										$bestRoute = $route;
+									}
+								}
+							}
+							if ($bestRoute !== null) {
+								$pageTitle = $pageMap[$bestRoute]['title'];
+								$pageDescription = $pageMap[$bestRoute]['description'];
+							}
+						}
+                        ?>
+                        <h2 class="text-lg font-semibold text-gray-900"><?= $pageTitle ?></h2>
+                        <p class="text-sm text-gray-500"><?= $pageDescription ?></p>
+                    </div>
+                </div>
+                    
+				<!-- User Profile Section -->
+				<div class="flex items-center space-x-4">
+					<!-- User Profile Dropdown -->
+					<div class="relative">
+						<button id="userDropdownBtn" class="flex items-center space-x-3 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg p-2">
+							<div class="flex items-center space-x-3">
+								<?php if ($currentUser && !empty($currentUser['profile_picture'])): ?>
+									<img class="h-8 w-8 rounded-full object-cover" src="<?= esc($currentUser['profile_picture']) ?>" alt="Profile">
+								<?php else: ?>
+									<div class="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
+										<span class="text-white text-sm font-medium">
+											<?= $currentUser ? strtoupper(substr($currentUser['first_name'], 0, 1) . substr($currentUser['last_name'], 0, 1)) : 'U' ?>
+										</span>
+									</div>
+								<?php endif; ?>
+								<div class="text-left hidden sm:block">
+									<p class="text-sm font-medium text-gray-900">
+										<?= $currentUser ? esc($currentUser['full_name']) : 'User' ?>
+									</p>
+									<p class="text-xs text-gray-500">
+										<?php if ($currentUser): ?>
+											<?= esc($currentUser['user_type_text']) ?>
+											<?php if (!empty($currentUser['position_text'])): ?>
+												- <?= esc($currentUser['position_text']) ?>
+											<?php endif; ?>
+										<?php endif; ?>
+									</p>
+								</div>
+								<svg id="dropdownArrow" class="w-4 h-4 text-gray-400 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path id="arrowPath" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+								</svg>
+							</div>
+						</button>
+                        
+						<!-- Dropdown Menu -->
+						<div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+							<!-- User Info Section -->
+							<div class="p-4 border-b border-gray-200">
+								<div class="flex items-center space-x-3">
+									<?php if ($currentUser && !empty($currentUser['profile_picture'])): ?>
+										<img class="h-12 w-12 rounded-full object-cover" src="<?= esc($currentUser['profile_picture']) ?>" alt="Profile">
+									<?php else: ?>
+										<div class="h-12 w-12 rounded-full bg-blue-600 flex items-center justify-center">
+											<span class="text-white text-lg font-medium">
+												<?= $currentUser ? strtoupper(substr($currentUser['first_name'], 0, 1) . substr($currentUser['last_name'], 0, 1)) : 'U' ?>
+											</span>
+										</div>
+									<?php endif; ?>
+									<div class="flex-1">
+										<h4 class="text-sm font-medium text-gray-900">
+											<?= $currentUser ? esc($currentUser['full_name']) : 'User' ?>
+										</h4>
+										<p class="text-xs text-gray-500">
+											<?php if ($currentUser): ?>
+												<?= esc($currentUser['user_type_text']) ?>
+												<?php if (!empty($currentUser['position_text'])): ?>
+													- <?= esc($currentUser['position_text']) ?>
+												<?php endif; ?>
+											<?php endif; ?>
+										</p>
+										<?php if ($currentUser && !empty($currentUser['barangay_name'])): ?>
+											<p class="text-xs text-gray-500">
+												<?= esc($currentUser['barangay_name']) ?>
+											</p>
+										<?php endif; ?>
+									</div>
+								</div>
+							</div>
+                            
+							<!-- Action Buttons -->
+							<div class="p-2">
+								<a href="<?= base_url('kk/profile') ?>" class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center">
+									<svg class="w-4 h-4 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+									</svg>
+									Profile
+								</a>
+								<form action="<?= base_url('logout') ?>" method="post" class="w-full">
+									<button type="submit" class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md flex items-center">
+										<svg class="w-4 h-4 mr-3 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+										</svg>
+										Logout
+									</button>
+								</form>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</header>
+	<!-- ===== END HEADER SECTION ===== -->
+
+	<script>
+		// User dropdown functionality
+		document.addEventListener('DOMContentLoaded', function() {
+			const dropdownBtn = document.getElementById('userDropdownBtn');
+			const dropdownMenu = document.getElementById('userDropdownMenu');
+			const arrowPath = document.getElementById('arrowPath');
+            
+			// Arrow paths
+			const downArrow = "M19 9l-7 7-7-7"; // Chevron down
+			const upArrow = "M5 15l7-7 7 7";   // Chevron up
+            
+			if (dropdownBtn && dropdownMenu && arrowPath) {
+				dropdownBtn.addEventListener('click', function(e) {
+					e.stopPropagation();
+					const isHidden = dropdownMenu.classList.contains('hidden');
+                    
+					// Toggle dropdown visibility
+					dropdownMenu.classList.toggle('hidden');
+                    
+					// Change arrow direction
+					if (isHidden) {
+						// Dropdown is opening - change to up arrow
+						arrowPath.setAttribute('d', upArrow);
+					} else {
+						// Dropdown is closing - change to down arrow
+						arrowPath.setAttribute('d', downArrow);
+					}
+				});
+                
+				// Close dropdown when clicking outside
+				document.addEventListener('click', function(e) {
+					if (!dropdownBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
+						dropdownMenu.classList.add('hidden');
+						// Reset arrow to down
+						arrowPath.setAttribute('d', downArrow);
+					}
+				});
+			}
+
+			// Sidebar toggle functionality
+			const sidebarToggle = document.getElementById('sidebarToggle');
+			const sidebarClose = document.getElementById('sidebarClose');
+			const sidebar = document.getElementById('sidebar');
+			const sidebarOverlay = document.getElementById('sidebarOverlay');
+			const hamburgerPath = document.getElementById('hamburgerPath');
+            
+			// Hamburger and X icon paths
+			const hamburgerIcon = "M4 6h16M4 12h16M4 18h16";
+			const xIcon = "M6 18L18 6M6 6l12 12";
+            
+            // Function to close sidebar
+            function closeSidebar() {
+                sidebar.classList.remove('sidebar-open');
+                sidebarOverlay.classList.add('hidden');
+                hamburgerPath.setAttribute('d', hamburgerIcon);
+                document.body.classList.remove('sidebar-open');
+            }
+            
+            if (sidebarToggle && sidebar && sidebarOverlay && hamburgerPath) {
+                // Toggle sidebar on burger button click
+                sidebarToggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const isOpen = sidebar.classList.contains('sidebar-open');
+                    
+					sidebar.classList.toggle('sidebar-open');
+					sidebarOverlay.classList.toggle('hidden');
+                    
+                    // Handle body scroll
+                    if (!isOpen) {
+                        // Opening sidebar - prevent body scroll on mobile
+                        document.body.classList.add('sidebar-open');
+                        hamburgerPath.setAttribute('d', xIcon);
+                    } else {
+                        // Closing sidebar - restore body scroll
+                        document.body.classList.remove('sidebar-open');
+                        hamburgerPath.setAttribute('d', hamburgerIcon);
+                    }
+                });
+                
+                // Close sidebar when clicking close button
+                if (sidebarClose) {
+                    sidebarClose.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        closeSidebar();
+                    });
+                }
+                
+                // Close sidebar when clicking on overlay
+                sidebarOverlay.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closeSidebar();
+                });
+                
+				// Close sidebar on window resize if screen becomes large
+				window.addEventListener('resize', function() {
+					if (window.innerWidth >= 1024) {
+						closeSidebar();
+					}
+				});
+                
+				// Close sidebar with Escape key
+				document.addEventListener('keydown', function(e) {
+					if (e.key === 'Escape' && sidebar.classList.contains('sidebar-open')) {
+						closeSidebar();
+					}
+				});
+			}
+		});
+	</script>
+
+<style>
+		.sidebar-transition {
+			transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		}
+		.sidebar-glass {
+			background: rgba(255, 255, 255, 0.98);
+			backdrop-filter: blur(25px);
+			border-right: 1px solid rgba(0, 0, 0, 0.08);
+		}
+        
+        /* Responsive Sidebar Styles */
+        .sidebar-open {
+            transform: translateX(0) !important;
+        }
+        
+        /* Main content responsive adjustments */
+        @media (min-width: 1024px) {
+            .lg\\:ml-64 {
+                margin-left: 16rem;
+            }
+        }
+        
+        @media (max-width: 1023px) {
+            #sidebar {
+                z-index: 50;
+            }
+            
+            /* Ensure main content takes full width on mobile */
+            .lg\\:ml-64 {
+                margin-left: 0 !important;
+            }
+        }
+        
+        .nav-item {
+            transition: all 0.2s ease;
+        }
+        .nav-item:hover {
+            background-color: #f5f5f5;
+        }
+        .nav-item.active {
+            background-color: #eef2ff;
+            color: #111827;
+            border-left: 4px solid #3b82f6;
+            box-shadow: none;
+        }
+        .shadow-strong {
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.15), 0 2px 10px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* Prevent body scroll when sidebar is open on mobile */
+        body.sidebar-open {
+            overflow: hidden;
+        }
+        
+        /* Smooth scrolling for better UX */
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        /* Focus styles for better accessibility */
+        *:focus {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+        }
+        
+        button:focus,
+        a:focus {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+        }
+    </style>

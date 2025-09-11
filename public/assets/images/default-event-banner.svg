@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="200" viewBox="0 0 400 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="400" height="200" fill="#F3F4F6"/>
+  
+  <!-- Grid pattern for texture -->
+  <defs>
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#E5E7EB" stroke-width="0.5"/>
+    </pattern>
+  </defs>
+  <rect width="400" height="200" fill="url(#grid)"/>
+  
+  <!-- Main circle background -->
+  <circle cx="200" cy="100" r="45" fill="#E5E7EB"/>
+  
+  <!-- Image icon -->
+  <g transform="translate(200, 100)">
+    <!-- Mountain peaks -->
+    <path d="M-25 15 L-15 -5 L-5 5 L5 -15 L15 -5 L25 15 Z" fill="#9CA3AF"/>
+    
+    <!-- Sun/circle -->
+    <circle cx="-10" cy="-8" r="6" fill="#D1D5DB"/>
+    
+    <!-- Photo frame -->
+    <rect x="-30" y="-20" width="60" height="40" fill="none" stroke="#6B7280" stroke-width="2" rx="4"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="200" y="165" font-family="Inter, sans-serif" font-size="14" font-weight="500" fill="#6B7280" text-anchor="middle">No Event Banner</text>
+</svg>

@@ -147,7 +147,8 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     // ============== Module: Member Management ============== //
     $routes->post('getUserInfo', 'MemberController::getUserInfo');
     $routes->post('updateUserType', 'MemberController::updateUserType');
-    $routes->post('bulkUpdateUserType', 'MemberController::bulkUpdateUserType');
+    $routes->post('bulkUpdateUserType', 'PederasyonController::bulkUpdateUserType');
+    $routes->post('checkSKChairmanByBarangay', 'PederasyonController::checkSKChairmanByBarangay');
     $routes->post('updateUserPosition', 'MemberController::updateUserPosition');
     $routes->post('bulkUpdateUserPosition', 'MemberController::bulkUpdateUserPosition');
 

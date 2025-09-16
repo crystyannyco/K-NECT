@@ -1056,7 +1056,7 @@
                                 <label class="block text-xs sm:text-sm font-medium text-slate-700">
                                     Email Address <span class="text-red-500">*</span>
                                 </label>
-                                <input type="email" name="email" placeholder="juan.delacruz@example.com" data-required="true"
+                                <input type="email" name="email" id="email" placeholder="juan.delacruz@example.com"
                                     value="<?= old('email') !== null ? old('email') : (isset($profile_data['email']) ? esc($profile_data['email']) : '') ?>"
                                     class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= session('validation_user') && session('validation_user')->hasError('email') ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base">
                                 <?php if (session('validation_user') && session('validation_user')->hasError('email')): ?>
@@ -2304,6 +2304,7 @@
             // Initialize all functionality
             initializeFormPersistence();
             initializeInstantValidation();
+            initializePhoneValidation(); // Enhanced email and phone validation
             initializeBackButtonHandling();
             initializeFileUploads();
             initializeAgeGroupCalculation();
@@ -2613,6 +2614,22 @@
             function initializeInstantValidation() {
                 const requiredFields = document.querySelectorAll('input[data-required="true"], select[data-required="true"]');
                 
+                // Add specific handling for email field (not using data-required)
+                const emailField = document.getElementById('email');
+                if (emailField) {
+                    emailField.addEventListener('blur', function() {
+                        if (window.validateEmailField) {
+                            window.validateEmailField();
+                        }
+                    });
+                    emailField.addEventListener('input', function() {
+                        // Clear error on input if field has value
+                        if (this.value.trim() !== '' && window.validateEmailField) {
+                            window.validateEmailField();
+                        }
+                    });
+                }
+                
                 requiredFields.forEach(field => {
                     if (field.type === 'radio') {
                         // For radio buttons, add change event to all buttons in the group
@@ -2660,9 +2677,9 @@
                         );
                         
                         // Only validate if it's not a back button
-                        if (!isBackButton && !validateForm(form)) {
+                        if (!isBackButton && !validateStepForm(form)) {
                             e.preventDefault();
-                            const firstInvalidField = form.querySelector('.field-error');
+                            const firstInvalidField = form.querySelector('.field-error') || form.querySelector('.validation-error');
                             if (firstInvalidField) {
                                 firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
                                 firstInvalidField.focus();
@@ -2672,9 +2689,113 @@
                 });
             }
 
+            // Step-aware validation runner that builds on validateForm()
+            function validateStepForm(form) {
+                let isValid = validateForm(form);
+
+                // Helper to show custom message without breaking instant required
+                function ensureValid(field, predicate, message) {
+                    if (!field) return true;
+                    if (!predicate(field.value)) {
+                        showFieldError(field, message);
+                        return false;
+                    }
+                    return true;
+                }
+
+                // Compute current form/step by id
+                const formId = form.getAttribute('id') || '';
+
+                // Step 1 specific validations (Personal Information)
+                if (formId === 'step1Form') {
+                    // Names: allow letters, spaces, hyphens, apostrophes; min 2 letters
+                    const nameRegex = /^[A-Za-zÀ-ÖØ-öø-ÿ'\-\s]{2,}$/;
+                    const lastName = form.querySelector('input[name="last_name"]');
+                    const firstName = form.querySelector('input[name="first_name"]');
+                    if (lastName && lastName.value.trim() !== '') {
+                        isValid = ensureValid(lastName, v => nameRegex.test(v.trim()), 'Please enter a valid last name.') && isValid;
+                    }
+                    if (firstName && firstName.value.trim() !== '') {
+                        isValid = ensureValid(firstName, v => nameRegex.test(v.trim()), 'Please enter a valid first name.') && isValid;
+                    }
+
+                    // Zone/Purok: positive integer
+                    const zone = form.querySelector('input[name="zone_purok"]');
+                    if (zone && zone.value.trim() !== '') {
+                        isValid = ensureValid(zone, v => { const n = Number(v); return Number.isInteger(n) && n > 0; }, 'Please enter a valid zone/purok number.') && isValid;
+                    }
+
+                    // Birthdate: require complete date and age 15-30 inclusive
+                    const monthSel = form.querySelector('select[name="birth_month"]');
+                    const daySel = form.querySelector('select[name="birth_day"]');
+                    const yearSel = form.querySelector('select[name="birth_year"]');
+                    if (monthSel && daySel && yearSel) {
+                        const m = monthSel.value, d = daySel.value, y = yearSel.value;
+                        if (m && d && y) {
+                            const birthdate = new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10));
+                            const today = new Date();
+                            let age = today.getFullYear() - birthdate.getFullYear();
+                            const mdiff = today.getMonth() - birthdate.getMonth();
+                            if (mdiff < 0 || (mdiff === 0 && today.getDate() < birthdate.getDate())) age--;
+                            if (!(age >= 15 && age <= 30)) {
+                                // Anchor error to year select for proper placement
+                                showFieldError(yearSel, 'You must be between 15 and 30 years old.');
+                                isValid = false;
+                            }
+                        }
+                    }
+                }
+
+                // Step 3 specific validations (Account Information)
+                if (formId === 'step3Form') {
+                    // Username: 4-30 chars, letters, numbers, underscores, dots
+                    const username = form.querySelector('input[name="username"]');
+                    if (username && username.value.trim() !== '') {
+                        const unameOk = /^[A-Za-z0-9_\.]{4,30}$/.test(username.value.trim());
+                        if (!unameOk) {
+                            showFieldError(username, 'Username must be 4-30 characters (letters, numbers, _ or .)');
+                            isValid = false;
+                        }
+                    }
+
+                    // Password: min 8 and complexity; Confirm matches
+                    const password = form.querySelector('input[name="password"]');
+                    const confirm = form.querySelector('input[name="confirm_password"]');
+                    if (password && password.value.trim() !== '') {
+                        const pass = password.value;
+                        const complex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(pass);
+                        if (!complex) {
+                            showFieldError(password, 'Password must be 8+ chars with upper, lower, number, and special character.');
+                            isValid = false;
+                        }
+                    }
+                    if (password && confirm && confirm.value.trim() !== '') {
+                        if (password.value !== confirm.value) {
+                            showFieldError(confirm, 'Passwords do not match.');
+                            isValid = false;
+                        }
+                    }
+                }
+
+                return isValid;
+            }
+
             function validateSingleField(field, showMessage = false) {
                 const value = field.value.trim();
                 const isRequired = field.getAttribute('data-required') === 'true';
+                
+                // Use enhanced validation for email and phone fields
+                if (field.type === 'email' || field.name === 'email' || field.id === 'email') {
+                    if (window.validateEmailField) {
+                        return window.validateEmailField();
+                    }
+                }
+                
+                if (field.name === 'phone_number' || field.id === 'phone_number' || field.name === 'phone') {
+                    if (window.validatePhoneField) {
+                        return window.validatePhoneField();
+                    }
+                }
                 
                 if (isRequired) {
                     // Handle radio buttons differently
@@ -2714,7 +2835,29 @@
                 let isValid = true;
                 const processedRadioGroups = new Set();
                 
+                // First, validate email and phone fields with enhanced validation
+                const emailField = form.querySelector('input[type="email"], input[name="email"], #email');
+                const phoneField = form.querySelector('input[name="phone_number"], #phone_number, input[name="phone"]');
+                
+                if (emailField && window.validateEmailField) {
+                    if (!window.validateEmailField()) {
+                        isValid = false;
+                    }
+                }
+                
+                if (phoneField && window.validatePhoneField) {
+                    if (!window.validatePhoneField()) {
+                        isValid = false;
+                    }
+                }
+                
                 requiredFields.forEach(field => {
+                    // Skip email and phone fields as they're handled above with enhanced validation
+                    if ((field.type === 'email' || field.name === 'email' || field.id === 'email') ||
+                        (field.name === 'phone_number' || field.id === 'phone_number' || field.name === 'phone')) {
+                        return; // Skip, already validated above
+                    }
+                    
                     // For radio buttons, only validate once per group
                     if (field.type === 'radio') {
                         if (!processedRadioGroups.has(field.name)) {
@@ -4159,65 +4302,197 @@
             }
         }
 
-        // Phone Number Formatting and Validation
+        // Enhanced Email and Phone Number Validation (matching account-settings pattern)
         function initializePhoneValidation() {
             const phoneInput = document.getElementById('phone_number');
-            const phoneError = document.getElementById('phone_error');
-            const step1Form = document.getElementById('step1Form');
+            const emailInput = document.getElementById('email');
             
-            if (phoneInput) {
-                phoneInput.addEventListener('input', function(e) {
-                    let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
-                    
-                    // Enforce no leading zero and exactly 10 digits after +63 (total 11 incl. leading 0 for PH pattern)
-                    if (value.startsWith('0')) {
-                        value = value.substring(1); // strip leading zero
+            // Helper functions for uniform validation
+            function getOrMakeErrorEl(input, id) {
+                // Check for existing error element first
+                const existing = document.getElementById(id);
+                if (existing) return existing;
+                
+                // For phone field, check if there's the original phone_error element
+                if (id === 'phone-error-inline' && input.name === 'phone_number') {
+                    const phoneError = document.getElementById('phone_error');
+                    if (phoneError) {
+                        phoneError.id = 'phone-error-inline'; // Update ID for consistency
+                        // Match small inline error styling
+                        phoneError.className = 'validation-error text-red-500 text-xs mt-1 hidden';
+                        return phoneError;
                     }
-                    // Show error if final numeric count != 10 (after +63)
-                    const isValidLen = value.length === 10;
-                    if (!isValidLen) {
-                        phoneError.classList.remove('hidden');
-                        e.target.classList.add('border-red-500');
-                        e.target.classList.remove('border-gray-300', 'border-slate-200');
-                    } else {
-                        phoneError.classList.add('hidden');
-                        e.target.classList.remove('border-red-500');
-                        e.target.classList.add('border-slate-200');
+                }
+                
+                // For email field, place error after any existing server validation errors
+                if (id === 'email-error-inline' && input.name === 'email') {
+                    // Look for existing server validation error
+                    const parentDiv = input.closest('.space-y-1, .space-y-2');
+                    if (parentDiv) {
+                        const existingError = parentDiv.querySelector('.error-message');
+                        if (existingError) {
+                            // Place after existing error
+                            const el = document.createElement('p');
+                            el.id = id;
+                            el.className = 'validation-error text-red-500 text-xs mt-1 hidden';
+                            existingError.insertAdjacentElement('afterend', el);
+                            return el;
+                        }
                     }
+                }
+                
+                // Create new error element with proper styling
+                const el = document.createElement('p');
+                el.id = id;
+                el.className = 'validation-error text-red-500 text-xs mt-1 hidden';
+                input.insertAdjacentElement('afterend', el);
+                return el;
+            }
+            
+            function showError(input, el, msg) {
+                input.classList.add('border-red-500');
+                input.classList.remove('border-green-500', 'border-gray-300', 'border-slate-200');
+                input.setAttribute('aria-invalid', 'true');
+                if (el) { 
+                    el.textContent = msg || ''; 
+                    el.classList.remove('hidden');
+                    el.classList.add('show'); // Add show class for consistency
+                }
+            }
+            
+            function clearError(input, el) {
+                input.classList.remove('border-red-500');
+                input.classList.add('border-slate-200');
+                input.removeAttribute('aria-invalid');
+                if (el) { 
+                    el.textContent = ''; 
+                    el.classList.add('hidden');
+                    el.classList.remove('show'); // Remove show class
+                }
+            }
+            
+            // Email validation
+            if (emailInput) {
+                const emailErr = getOrMakeErrorEl(emailInput, 'email-error-inline');
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
+                
+                function validateEmail() {
+                    const value = (emailInput.value || '').trim();
                     
-                    // Format the number (XXX XXX XXXX)
-                    if (value.length >= 3) {
-                        if (value.length >= 6) {
-                            value = value.substring(0, 3) + ' ' + value.substring(3, 6) + ' ' + value.substring(6, 10);
-                        } else {
-                            value = value.substring(0, 3) + ' ' + value.substring(3);
+                    // Clear any existing server validation errors for this field
+                    const parentDiv = emailInput.closest('.space-y-1, .space-y-2');
+                    if (parentDiv) {
+                        const serverError = parentDiv.querySelector('.error-message');
+                        if (serverError && serverError !== emailErr && serverError.textContent.includes('email')) {
+                            serverError.style.display = 'none';
                         }
                     }
                     
-                    e.target.value = value;
-                });
-
-                // Validate on blur too
-                phoneInput.addEventListener('blur', function(e) {
-                    const digits = e.target.value.replace(/\D/g, '').replace(/^0/, '');
-                    if (digits.length !== 10) {
-                        phoneError.classList.remove('hidden');
-                        e.target.classList.add('border-red-500');
+                    if (!value) {
+                        showError(emailInput, emailErr, 'Email is required.');
+                        return false;
                     }
-                });
+                    if (!emailRegex.test(value)) {
+                        showError(emailInput, emailErr, 'Please enter a valid email address.');
+                        return false;
+                    }
+                    clearError(emailInput, emailErr);
+                    return true;
+                }
+                
+                emailInput.addEventListener('input', validateEmail);
+                emailInput.addEventListener('blur', validateEmail);
+                
+                // Make validation accessible globally for form submission
+                window.validateEmailField = validateEmail;
             }
+            
+            // Phone number validation: Input holds only the 10 digits (UI shows +63 via prefix span)
+            if (phoneInput) {
+                const phoneErr = getOrMakeErrorEl(phoneInput, 'phone-error-inline');
+                const step1Form = document.getElementById('step1Form');
+                
+                function toDigits(raw) {
+                    let digits = String(raw || '').replace(/\D/g, '');
+                    // If pasted with country code, strip it
+                    if (digits.startsWith('63')) digits = digits.slice(2);
+                    // If local 11-digit starting with 0, drop the 0
+                    if (digits.startsWith('0')) digits = digits.slice(1);
+                    return digits.slice(0, 10); // keep at most 10
+                }
 
-            // Prevent Step 1 submit if invalid phone length
-            if (step1Form && phoneInput) {
-                step1Form.addEventListener('submit', function(ev) {
-                    const digits = phoneInput.value.replace(/\D/g, '').replace(/^0/, '');
+                function formatGroups(d) {
+                    // Format as 3-3-4 groups: 912 345 6789 (progressively as typed)
+                    if (!d) return '';
+                    const a = d.slice(0, 3);
+                    const b = d.slice(3, 6);
+                    const c = d.slice(6, 10);
+                    return [a, b, c].filter(Boolean).join(' ');
+                }
+
+                function normalizePhone(raw) {
+                    const digits = toDigits(raw);
+                    return formatGroups(digits);
+                }
+
+                function validatePhone() {
+                    const formatted = normalizePhone(phoneInput.value || '');
+                    if (formatted !== phoneInput.value) phoneInput.value = formatted;
+                    const digits = toDigits(formatted);
+                    if (!digits) {
+                        showError(phoneInput, phoneErr, 'Phone number is required.');
+                        return false;
+                    }
                     if (digits.length !== 10) {
-                        phoneError.classList.remove('hidden');
-                        phoneInput.classList.add('border-red-500');
-                        ev.preventDefault();
-                        ev.stopPropagation();
+                        showError(phoneInput, phoneErr, 'Phone must be +63 followed by 10 digits.');
+                        return false;
+                    }
+                    clearError(phoneInput, phoneErr);
+                    return true;
+                }
+
+                // Normalize any prefilled value (e.g., from server or cache)
+                if (phoneInput.value) {
+                    phoneInput.value = normalizePhone(phoneInput.value);
+                }
+
+                phoneInput.addEventListener('input', function(e) {
+                    const start = e.target.selectionStart || 0;
+                    const before = e.target.value;
+                    const formatted = normalizePhone(before);
+                    if (formatted !== before) {
+                        e.target.value = formatted;
+                        // best-effort cursor reposition near end
+                        const pos = Math.min(formatted.length, start + (formatted.length - before.length));
+                        setTimeout(() => e.target.setSelectionRange(pos, pos), 0);
+                    }
+                    // Light validate while typing (no error until blur unless over length)
+                    const digits = toDigits(formatted);
+                    if (digits.length > 10) {
+                        showError(phoneInput, phoneErr, 'Phone must be +63 followed by 10 digits.');
+                    } else {
+                        // Don't show error during typing unless cleared
+                        if (digits.length) clearError(phoneInput, phoneErr);
                     }
                 });
+
+                phoneInput.addEventListener('blur', validatePhone);
+                
+                // Prevent Step 1 submit if invalid phone
+                if (step1Form) {
+                    step1Form.addEventListener('submit', function(ev) {
+                        const phoneValid = validatePhone();
+                        const emailValid = window.validateEmailField ? window.validateEmailField() : true;
+                        
+                        if (!phoneValid || !emailValid) {
+                            ev.preventDefault();
+                            ev.stopPropagation();
+                        }
+                    });
+                }
+                
+                // Make validation accessible globally for form submission
+                window.validatePhoneField = validatePhone;
             }
         }
         
@@ -4323,7 +4598,6 @@
             // Initialize countdowns for main page if we're on step 6
             document.addEventListener('DOMContentLoaded', function() {
                 initializeCountdowns();
-                initializePhoneValidation();
                 initializePasswordValidation();
             });
         }

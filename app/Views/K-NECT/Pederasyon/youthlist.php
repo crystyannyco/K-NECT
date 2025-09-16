@@ -207,21 +207,30 @@
                         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                             <!-- Role Status Tabs -->
                             <div class="flex flex-wrap gap-2">
-                                <button class="status-tab active px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="all">
+                                <button class="status-tab active bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="all">
                                     All (<span id="countAll">0</span>)
                                 </button>
-                                <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="pederasyon">
+                                <button class="status-tab bg-green-100 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="pederasyon">
                                     Pederasyon (<span id="countPederasyon">0</span>)
                                 </button>
-                                <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="sk">
+                                <button class="status-tab bg-yellow-100 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="sk">
                                     SK Chairperson (<span id="countSK">0</span>)
                                 </button>
-                                <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="kk">
+                                <button class="status-tab bg-red-100 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="kk">
                                     KK Member (<span id="countKK">0</span>)
                                 </button>
                             </div>
-                            <!-- Barangay Filter -->
+                            
+                            <!-- Filters Section -->
                             <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                                <span class="text-sm font-medium text-gray-600">Status:</span>
+                                <select id="statusFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="all">All Status (<span id="countAllStatus">0</span>)</option>
+                                    <option value="approved">Approved (<span id="countApproved">0</span>)</option>
+                                    <option value="pending">Pending (<span id="countPending">0</span>)</option>
+                                    <option value="rejected">Rejected (<span id="countRejected">0</span>)</option>
+                                </select>
+                                
                                 <span class="text-sm font-medium text-gray-600">Barangay:</span>
                                 <div class="flex gap-3">
                                     <select id="barangayFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
@@ -252,7 +261,7 @@
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Name</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Age</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Sex</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Status</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Approval Status</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">User Type</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Action</th>
                                     </tr>
@@ -267,7 +276,9 @@
                                                 data-sk_username="<?= isset($user['sk_username']) ? esc($user['sk_username']) : '' ?>"
                                                 data-sk_password="<?= isset($user['sk_password']) ? esc($user['sk_password']) : '' ?>"
                                                 data-ped_username="<?= isset($user['ped_username']) ? esc($user['ped_username']) : '' ?>"
-                                                data-ped_password="<?= isset($user['ped_password']) ? esc($user['ped_password']) : '' ?>">
+                                                data-ped_password="<?= isset($user['ped_password']) ? esc($user['ped_password']) : '' ?>"
+                                                data-status="<?= isset($user['status']) ? (int)$user['status'] : 1 ?>"
+                                                data-user-type="<?= isset($user['user_type']) ? (int)$user['user_type'] : 1 ?>">
                                 <td class="px-4 py-4 whitespace-nowrap">
                                                     <input type="checkbox" class="rowCheckbox form-checkbox h-4 w-4 text-blue-600" value="<?= esc($user['id']) ?>">
                                                 </td>
@@ -286,7 +297,7 @@
                                                     switch($status) {
                                                         case 2:
                                                             $statusClass = 'bg-green-100 text-green-800';
-                                                            $statusText = 'Accepted';
+                                                            $statusText = 'Approved';
                                                             break;
                                                         case 3:
                                                             $statusClass = 'bg-red-100 text-red-800';
@@ -326,8 +337,8 @@
                                                     <svg class="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
                                                     </svg>
-                                                    <h3 class="text-lg font-medium text-gray-900 mb-2">No official records found</h3>
-                                                    <p class="text-gray-500">There are no official records in the database yet.</p>
+                                                    <h3 class="text-lg font-medium text-gray-900 mb-2">No records found</h3>
+                                                    <p class="text-gray-500">There are no user records in the database yet.</p>
                                                 </div>
                                             </td>
                                         </tr>
@@ -355,6 +366,16 @@
                 </svg>
             </button>
             <h3 class="text-xl font-bold text-gray-900 mb-4 text-center">Bulk Change User Position</h3>
+            <div class="mb-4">
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+                    <strong>Note:</strong> Pending users will be automatically accepted and assigned a user ID when their position is changed.
+                </div>
+            </div>
+            <div class="mb-4">
+                <div class="bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm text-orange-800">
+                    <strong>SK Chairperson Restriction:</strong> Only one SK Chairperson is allowed per barangay. The system will prevent conflicts automatically.
+                </div>
+            </div>
             <div class="mb-6">
                 <label for="bulkNewPosition" class="block text-sm font-medium text-gray-700 mb-2">Select New Position</label>
                 <select id="bulkNewPosition" class="w-full border border-gray-300 rounded-md px-2 py-2 text-base focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
@@ -433,6 +454,10 @@
                             <option value="2">SK Chairperson</option>
                             <option value="3">Pederasyon Officer</option>
                         </select>
+                        
+                        <!-- Hidden fields for storing user data -->
+                        <input type="hidden" id="modalUserBarangayId" value="">
+                        <input type="hidden" id="modalUserStatusValue" value="">
                         <button id="saveUserTypeBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm">
                             Update Role
                         </button>
@@ -722,11 +747,14 @@
             // Calculate original counts from all data (not filtered)
             function calculateOriginalCounts() {
                 let allCount = 0, skCount = 0, pederasyonCount = 0, kkCount = 0;
+                let approvedCount = 0, pendingCount = 0, rejectedCount = 0;
                 
                 // Count all rows, not just visible ones
                 $('#myTable tbody tr').each(function() {
                     if ($(this).find('td').length > 1) { // Skip "no data" rows
                         const userType = $(this).find('td').eq(7).text().trim();
+                        const status = parseInt($(this).data('status')) || 1;
+                        
                         allCount++;
                         if (userType === 'SK Chairman' || userType === 'SK Chairperson') {
                             skCount++;
@@ -734,6 +762,15 @@
                             pederasyonCount++;
                         } else if (userType === 'KK Member') {
                             kkCount++;
+                        }
+                        
+                        // Count by approval status
+                        if (status === 2) {
+                            approvedCount++;
+                        } else if (status === 3) {
+                            rejectedCount++;
+                        } else {
+                            pendingCount++;
                         }
                     }
                 });
@@ -743,7 +780,10 @@
                     all: allCount,
                     sk: skCount,
                     pederasyon: pederasyonCount,
-                    kk: kkCount
+                    kk: kkCount,
+                    approved: approvedCount,
+                    pending: pendingCount,
+                    rejected: rejectedCount
                 };
             }
 
@@ -753,6 +793,12 @@
                 $('#countSK').text(originalCounts.sk);
                 $('#countPederasyon').text(originalCounts.pederasyon);
                 $('#countKK').text(originalCounts.kk);
+                
+                // Update status dropdown option text with counts
+                $('#statusFilter option[value="all"]').text(`All Status (${originalCounts.all})`);
+                $('#statusFilter option[value="approved"]').text(`Approved (${originalCounts.approved})`);
+                $('#statusFilter option[value="pending"]').text(`Pending (${originalCounts.pending})`);
+                $('#statusFilter option[value="rejected"]').text(`Rejected (${originalCounts.rejected})`);
             }
 
             // Update role counts based on filtered data (now just updates display with original counts)
@@ -763,7 +809,7 @@
 
             // Role tab filtering logic
             function setActiveRoleTab(tab) {
-                $('.status-tab').removeClass('active bg-blue-500 text-white')
+                $('.status-tab[data-role]').removeClass('active bg-blue-500 text-white')
                     .addClass('bg-gray-100');
                 $('.status-tab[data-role="sk"]').removeClass('bg-gray-100').addClass('bg-yellow-100');
                 $('.status-tab[data-role="pederasyon"]').removeClass('bg-gray-100').addClass('bg-green-100');
@@ -775,7 +821,8 @@
 
             // Apply filters with DataTable integration
             function applyFilters() {
-                const roleFilter = $('.status-tab.active').data('role');
+                const roleFilter = $('.status-tab[data-role].active').data('role');
+                const statusFilter = $('#statusFilter').val();
                 const barangayFilter = $('#barangayFilter').val();
                 
                 // Clear existing DataTable search
@@ -798,6 +845,22 @@
                     }
                 }
                 
+                // Apply status filter using DataTable column search
+                if (statusFilter !== 'all') {
+                    let statusSearchTerm = '';
+                    if (statusFilter === 'approved') {
+                        statusSearchTerm = 'Approved';
+                    } else if (statusFilter === 'pending') {
+                        statusSearchTerm = 'Pending';
+                    } else if (statusFilter === 'rejected') {
+                        statusSearchTerm = 'Rejected';
+                    }
+                    
+                    if (statusSearchTerm) {
+                        table.column(6).search('^' + statusSearchTerm + '$', true, false);
+                    }
+                }
+                
                 // Apply barangay filter using DataTable column search
                 if (barangayFilter) {
                     table.column(2).search('^' + barangayFilter + '$', true, false);
@@ -811,10 +874,16 @@
             }
 
             // Role tab click handlers
-            $('.status-tab').on('click', function() {
+            $('.status-tab[data-role]').on('click', function() {
                 setActiveRoleTab($(this));
                 applyFilters();
                 localStorage.setItem('activeRoleTab', $(this).data('role'));
+            });
+
+            // Status dropdown change handler
+            $('#statusFilter').on('change', function() {
+                applyFilters();
+                localStorage.setItem('activeStatusFilter', $(this).val());
             });
 
             // Barangay filter change handler
@@ -826,9 +895,11 @@
             // Clear filters
             $('#clearFilters').on('click', function() {
                 $('.status-tab[data-role="all"]').trigger('click');
+                $('#statusFilter').val('all');
                 $('#barangayFilter').val('');
                 table.search('').columns().search('').draw();
                 localStorage.removeItem('activeRoleTab');
+                localStorage.removeItem('activeStatusFilter');
                 localStorage.removeItem('activeBarangayFilter');
                 updateDisplayedCounts();
             });
@@ -836,9 +907,11 @@
             // Function to restore saved filters
             function restoreFilters() {
                 const savedRoleTab = localStorage.getItem('activeRoleTab') || 'all';
+                const savedStatusFilter = localStorage.getItem('activeStatusFilter') || 'all';
                 const savedBarangayFilter = localStorage.getItem('activeBarangayFilter') || '';
                 
                 $('.status-tab[data-role="' + savedRoleTab + '"]').trigger('click');
+                $('#statusFilter').val(savedStatusFilter);
                 $('#barangayFilter').val(savedBarangayFilter);
                 applyFilters();
             }
@@ -883,31 +956,45 @@
                 }
                 
                 // Show loading state
-                $(this).prop('disabled', true).text('Updating...');
+                const $btn = $(this);
+                $btn.prop('disabled', true).text('Checking...');
                 
-                // AJAX request to bulk update
-                $.ajax({
-                    url: '/bulkUpdateUserType',
-                    method: 'POST',
-                    data: { user_ids: selectedIds, user_type: newType },
-                    success: function(response) {
-                        if (response && response.success) {
-                            showNotification('User positions updated successfully!', 'success');
-                            setTimeout(() => {
-                                location.reload();
-                            }, 1000);
-                        } else {
-                            showNotification(response.message || 'Failed to update user positions.', 'error');
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Bulk update error:', error);
-                        showNotification('Failed to update user positions. Please try again.', 'error');
-                    },
-                    complete: function() {
-                        $('#confirmBulkChangeBtn').prop('disabled', false).text('Confirm');
-                        $('#bulkChangeModal').addClass('hidden').css('display', 'none');
+                // Check SK Chairman restrictions before proceeding
+                checkBulkSKChairmanRestriction(selectedIds).then(function(canProceed) {
+                    if (!canProceed) {
+                        $btn.prop('disabled', false).text('Confirm');
+                        return;
                     }
+                    
+                    $btn.text('Updating...');
+                    
+                    // AJAX request to bulk update
+                    $.ajax({
+                        url: '/bulkUpdateUserType',
+                        method: 'POST',
+                        data: { user_ids: selectedIds, user_type: newType },
+                        success: function(response) {
+                            if (response && response.success) {
+                                showNotification('User positions updated successfully! Pending users have been automatically accepted.', 'success');
+                                setTimeout(() => {
+                                    location.reload();
+                                }, 1000);
+                            } else {
+                                showNotification(response.message || 'Failed to update user positions.', 'error');
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Bulk update error:', error);
+                            showNotification('Failed to update user positions. Please try again.', 'error');
+                        },
+                        complete: function() {
+                            $btn.prop('disabled', false).text('Confirm');
+                            $('#bulkChangeModal').addClass('hidden').css('display', 'none');
+                        }
+                    });
+                }).catch(function() {
+                    $btn.prop('disabled', false).text('Confirm');
+                    showNotification('Error checking SK Chairman restrictions. Please try again.', 'error');
                 });
             });
 
@@ -951,6 +1038,10 @@
                             $('#modalUserSex').text(u.sex == '1' ? 'Male' : (u.sex == '2' ? 'Female' : ''));
                             $('#modalUserType').val(String(u.user_type));
                             $('#modalUserEmail').text(u.email || '');
+                            
+                            // Store barangay ID and status in hidden fields
+                            $('#modalUserBarangayId').val(u.barangay || '');
+                            $('#modalUserStatusValue').val(u.status || '1');
                             
                             if (u.birthdate) {
                                 const dateObj = new Date(u.birthdate);
@@ -1047,14 +1138,8 @@
                                 $img.attr('src', imgUrl).show();
                             })();
                             
-                            // Disable user type change if status is Rejected or Pending
-                            if (u.status == 3 || u.status == 1) {
-                                $('#modalUserType').prop('disabled', true);
-                                $('#saveUserTypeBtn').prop('disabled', true).addClass('bg-gray-300 cursor-not-allowed').removeClass('bg-blue-600 hover:bg-blue-700');
-                            } else {
-                                $('#modalUserType').prop('disabled', false);
-                                $('#saveUserTypeBtn').prop('disabled', false).removeClass('bg-gray-300 cursor-not-allowed').addClass('bg-blue-600 hover:bg-blue-700');
-                            }
+                            // Check if user can be changed to SK Chairman based on barangay
+                            checkSKChairmanAvailability(u.id, null, u.user_type);
                         } else {
                             showNotification('User not found.', 'error');
                         }
@@ -2589,6 +2674,141 @@
                 closeCredentialsPreviewModal();
             }
         });
+
+        // ==================== SK CHAIRMAN AVAILABILITY CHECK ==================== //
+        
+        function checkSKChairmanAvailability(currentUserId, barangayId, currentUserType) {
+            // Always disable for rejected users (status 3) - they should not be able to change type
+            const userStatus = parseInt($('#modalUserStatusValue').val());
+            if (userStatus === 3) {
+                $('#modalUserType').prop('disabled', true);
+                $('#saveUserTypeBtn').prop('disabled', true).addClass('bg-gray-300 cursor-not-allowed').removeClass('bg-blue-600 hover:bg-blue-700');
+                return;
+            }
+            
+            // Default: enable the controls
+            $('#modalUserType').prop('disabled', false);
+            $('#saveUserTypeBtn').prop('disabled', false).removeClass('bg-gray-300 cursor-not-allowed').addClass('bg-blue-600 hover:bg-blue-700');
+            
+            // Get barangay ID from hidden field
+            const userBarangayId = $('#modalUserBarangayId').val();
+            
+            // Check if there's already an SK Chairman in this barangay
+            $.ajax({
+                url: '/checkSKChairmanByBarangay',
+                method: 'POST',
+                data: { 
+                    barangay_id: userBarangayId,
+                    current_user_id: currentUserId 
+                },
+                success: function(response) {
+                    if (response.success && response.hasChairman) {
+                        // There's already an SK Chairman in this barangay
+                        // Disable the SK Chairperson option (value="2")
+                        $('#modalUserType option[value="2"]').prop('disabled', true);
+                        
+                        // Add a note about the existing chairman
+                        let existingNote = $('#skChairmanNote');
+                        if (existingNote.length === 0) {
+                            $('#modalUserType').parent().append(
+                                '<div id="skChairmanNote" class="mt-2 text-sm text-orange-600 bg-orange-50 border border-orange-200 rounded-lg p-2">' +
+                                '<strong>Note:</strong> This barangay already has an SK Chairperson (' + response.chairman.name + '). ' +
+                                'Only one SK Chairperson is allowed per barangay.' +
+                                '</div>'
+                            );
+                        }
+                        
+                        // If current user type is SK Chairperson and we're trying to change it, show warning
+                        if (currentUserType == 2) {
+                            $('#modalUserType option[value="2"]').prop('disabled', false); // Allow keeping current position
+                        }
+                    } else {
+                        // No existing SK Chairman, enable the option
+                        $('#modalUserType option[value="2"]').prop('disabled', false);
+                        $('#skChairmanNote').remove();
+                    }
+                },
+                error: function() {
+                    // On error, default to allowing the change
+                    $('#modalUserType option[value="2"]').prop('disabled', false);
+                    $('#skChairmanNote').remove();
+                }
+            });
+        }
+
+        // Enhanced bulk change logic for SK Chairman restriction
+        function checkBulkSKChairmanRestriction(selectedIds) {
+            const newType = parseInt($('#bulkNewPosition').val());
+            
+            if (newType !== 2) {
+                // Not changing to SK Chairperson, proceed normally
+                return Promise.resolve(true);
+            }
+            
+            // Check each selected user's barangay for existing SK Chairman
+            const checkPromises = [];
+            const barangayChecks = new Map(); // Cache barangay checks
+            
+            selectedIds.forEach(function(userId) {
+                const row = $('.rowCheckbox[value="' + userId + '"]').closest('tr');
+                const barangayText = row.find('td').eq(2).text().trim();
+                
+                // Get barangay ID from the barangay helper map
+                let barangayId = null;
+                for (const [id, name] of Object.entries(barangayMap)) {
+                    if (name === barangayText) {
+                        barangayId = id;
+                        break;
+                    }
+                }
+                
+                if (barangayId && !barangayChecks.has(barangayId)) {
+                    barangayChecks.set(barangayId, userId);
+                    
+                    const checkPromise = $.ajax({
+                        url: '/checkSKChairmanByBarangay',
+                        method: 'POST',
+                        data: { 
+                            barangay_id: barangayId,
+                            current_user_id: userId 
+                        }
+                    });
+                    
+                    checkPromises.push(checkPromise);
+                }
+            });
+            
+            return Promise.all(checkPromises).then(function(responses) {
+                const conflicts = [];
+                responses.forEach(function(response, index) {
+                    if (response.success && response.hasChairman) {
+                        const barangayEntries = Array.from(barangayChecks.entries());
+                        const [barangayId, userId] = barangayEntries[index];
+                        const barangayName = barangayMap[barangayId];
+                        conflicts.push({
+                            barangay: barangayName,
+                            chairman: response.chairman.name
+                        });
+                    }
+                });
+                
+                if (conflicts.length > 0) {
+                    let conflictMessage = 'Cannot assign SK Chairperson to the following barangays that already have one:\n\n';
+                    conflicts.forEach(function(conflict) {
+                        conflictMessage += '• ' + conflict.barangay + ' (Current: ' + conflict.chairman + ')\n';
+                    });
+                    conflictMessage += '\nOnly one SK Chairperson is allowed per barangay.';
+                    
+                    showNotification(conflictMessage, 'error');
+                    return false;
+                }
+                
+                return true;
+            }).catch(function() {
+                // On error, allow the change (fail open)
+                return true;
+            });
+        }
 
     </script>
     

@@ -52,7 +52,54 @@ class MemberController extends BaseController
             return $this->response->setStatusCode(404)->setJSON(['success' => false, 'message' => 'User not found']);
         }
 
-        $updateData = ['user_type' => $userType];
+        $updateData = ['user_type' => (int)$userType];
+
+        // Enforce single SK Chairperson per barangay when setting to SK (type 2)
+        if ((int)$userType === 2) {
+            $addressModel = new AddressModel();
+            $address = $addressModel->where('user_id', $user['id'])->first();
+            $barangay = $address['barangay'] ?? null;
+            if ($barangay !== null && $barangay !== '') {
+                $existingChair = $userModel
+                    ->select('user.id')
+                    ->join('address', 'address.user_id = user.id', 'left')
+                    ->where('user.status', 2) // approved
+                    ->where('user.user_type', 2) // SK Chairperson
+                    ->where('address.barangay', $barangay)
+                    ->where('user.id !=', $user['id'])
+                    ->first();
+                if ($existingChair) {
+                    return $this->response->setStatusCode(409)->setJSON([
+                        'success' => false,
+                        'message' => 'This barangay already has an SK Chairperson. Only one is allowed per barangay.'
+                    ]);
+                }
+            }
+            // Ensure position aligns to Chairperson
+            $updateData['position'] = 1;
+        }
+
+        // Auto-accept pending users and generate USER_ID when promoting to SK/Pederasyon
+        $isPromotionType = ((int)$userType === 2 || (int)$userType === 3);
+        if ($isPromotionType && (int)($user['status'] ?? 0) === 1) {
+            $updateData['status'] = 2; // accept
+            if (empty($user['user_id'])) {
+                // Generate like SK youth_profile approval (yy-XXXXXX)
+                $tries = 0;
+                do {
+                    $newId = UserHelper::generateYearPrefixedUserId();
+                    $exists = $userModel->where('user_id', $newId)->first();
+                    $tries++;
+                } while ($exists && $tries < 5);
+                if ($exists) {
+                    return $this->response->setStatusCode(500)->setJSON([
+                        'success' => false,
+                        'message' => 'Failed to generate a unique USER ID. Please try again.'
+                    ]);
+                }
+                $updateData['user_id'] = $newId;
+            }
+        }
 
         if ($userType == 2) { // SK Chairperson
             // Only generate SK credentials if missing
@@ -204,44 +251,85 @@ class MemberController extends BaseController
         }
         $userModel = new UserModel();
         $updated = 0;
+        $errors = [];
         foreach ($userIds as $id) {
             $user = $userModel->find($id);
-            if ($user && $user['status'] == 2) {
-                $updateData = ['user_type' => $userType];
+            if (!$user) { continue; }
 
-                if ($userType == 2) { // SK Chairperson
-                    // Only generate SK credentials if missing
+            $updateData = ['user_type' => (int)$userType];
+
+            // Enforce single SK Chairperson per barangay
+            if ((int)$userType === 2) {
+                $addressModel = new AddressModel();
+                $address = $addressModel->where('user_id', $user['id'])->first();
+                $barangay = $address['barangay'] ?? null;
+                if ($barangay !== null && $barangay !== '') {
+                    $existingChair = $userModel
+                        ->select('user.id')
+                        ->join('address', 'address.user_id = user.id', 'left')
+                        ->where('user.status', 2)
+                        ->where('user.user_type', 2)
+                        ->where('address.barangay', $barangay)
+                        ->where('user.id !=', $user['id'])
+                        ->first();
+                    if ($existingChair) {
+                        $errors[] = "Barangay already has SK Chairperson for user {$user['id']}";
+                        continue;
+                    }
+                }
+                $updateData['position'] = 1;
+            }
+
+            // Auto-accept pending users and generate USER_ID when promoting to SK/PED
+            $isPromotionType = ((int)$userType === 2 || (int)$userType === 3);
+            if ($isPromotionType && (int)($user['status'] ?? 0) === 1) {
+                $updateData['status'] = 2;
+                if (empty($user['user_id'])) {
+                    $tries = 0;
+                    do {
+                        $newId = UserHelper::generateYearPrefixedUserId();
+                        $exists = $userModel->where('user_id', $newId)->first();
+                        $tries++;
+                    } while ($exists && $tries < 5);
+                    if ($exists) {
+                        $errors[] = "Failed to generate USER ID for user {$user['id']}";
+                        continue;
+                    }
+                    $updateData['user_id'] = $newId;
+                }
+            }
+
+            if ((int)$userType === 2) { // SK Chairperson
+                // Only generate SK credentials if missing
+                if (empty($user['sk_username']) || empty($user['sk_password'])) {
+                    $updateData['sk_username'] = UserHelper::generateSKUsername($user['first_name'], $user['last_name']);
+                    $updateData['sk_password'] = UserHelper::generatePassword(8);
+                }
+            } elseif ((int)$userType === 3) { // Pederasyon Officer
+                $wasSK = isset($user['user_type']) && (int)$user['user_type'] === 2;
+                // Ensure PED credentials exist
+                if (empty($user['ped_username']) || empty($user['ped_password'])) {
+                    $updateData['ped_username'] = UserHelper::generatePEDUsername($user['first_name'], $user['last_name']);
+                    $updateData['ped_password'] = UserHelper::generatePassword(8);
+                }
+                // If not SK previously, ensure SK creds and set position = 1
+                if (!$wasSK) {
                     if (empty($user['sk_username']) || empty($user['sk_password'])) {
                         $updateData['sk_username'] = UserHelper::generateSKUsername($user['first_name'], $user['last_name']);
                         $updateData['sk_password'] = UserHelper::generatePassword(8);
                     }
-                } elseif ($userType == 3) { // Pederasyon Officer
-                    $wasSK = isset($user['user_type']) && (int)$user['user_type'] === 2;
-                    // Ensure PED credentials exist
-                    if (empty($user['ped_username']) || empty($user['ped_password'])) {
-                        $updateData['ped_username'] = UserHelper::generatePEDUsername($user['first_name'], $user['last_name']);
-                        $updateData['ped_password'] = UserHelper::generatePassword(8);
-                    }
-                    // If not SK previously, ensure SK creds and set position = 1
-                    if (!$wasSK) {
-                        if (empty($user['sk_username']) || empty($user['sk_password'])) {
-                            $updateData['sk_username'] = UserHelper::generateSKUsername($user['first_name'], $user['last_name']);
-                            $updateData['sk_password'] = UserHelper::generatePassword(8);
-                        }
-                        $updateData['position'] = 1;
-                    }
+                    $updateData['position'] = 1;
                 }
-                // If KK Member (userType == 1), do not change username/password
+            }
 
-                $userModel->update($id, $updateData);
+            if ($userModel->update($id, $updateData)) {
                 $updated++;
             }
         }
-        if ($updated > 0) {
-            return $this->response->setJSON(['success' => true, 'message' => 'User positions updated successfully']);
-        } else {
-            return $this->response->setStatusCode(400)->setJSON(['success' => false, 'message' => 'No users updated (only accepted users can be changed)']);
-        }
+        $message = $updated > 0 ? 'User types updated successfully' : 'No users updated';
+        if (!empty($errors)) { $message .= '. Notes: ' . implode('; ', $errors); }
+        $status = $updated > 0 ? 200 : 400;
+        return $this->response->setStatusCode($status)->setJSON(['success' => $updated > 0, 'message' => $message]);
     }
 
     public function bulkUpdateUserPosition()

@@ -12,6 +12,7 @@ use App\Models\SystemLogoModel;
 use App\Models\BarangayModel;
 use App\Libraries\BarangayHelper;
 use App\Libraries\DemographicsHelper;
+use App\Libraries\UserHelper;
 use CodeIgniter\HTTP\ResponseInterface;
 
 class PederasyonController extends BaseController
@@ -114,7 +115,8 @@ class PederasyonController extends BaseController
     {
         // Use shared ProfileController for common functionality
         $profileController = new ProfileController();
-        $users = $profileController->getAllUsersWithExtendedInfo();
+        // Pass null as statusFilter to show ALL users regardless of approval status
+        $users = $profileController->getAllUsersWithExtendedInfo(null, null);
         $users = $profileController->processUsersForMemberListing($users, 'pederasyon');
         
     $data['user_list'] = $users;
@@ -3219,6 +3221,187 @@ class PederasyonController extends BaseController
         } catch (\Exception $e) {
             log_message('error', 'Error in generateAttendanceWordDocument: ' . $e->getMessage());
             throw $e;
+        }
+    }
+
+    public function bulkUpdateUserType()
+    {
+        try {
+            $userIds = $this->request->getPost('user_ids');
+            $newUserType = (int)$this->request->getPost('user_type');
+
+            if (empty($userIds) || !is_array($userIds) || !in_array($newUserType, [1, 2, 3])) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Invalid input data']);
+            }
+
+            $userModel = new UserModel();
+            $userExtInfoModel = new UserExtInfoModel();
+            $db = \Config\Database::connect();
+            
+            $db->transStart();
+
+            $successCount = 0;
+            $errors = [];
+
+            foreach ($userIds as $userId) {
+                try {
+                    if (!is_numeric($userId)) {
+                        $errors[] = "Invalid user ID: $userId";
+                        continue;
+                    }
+
+                    $user = $userModel->find($userId);
+                    if (!$user) {
+                        $errors[] = "User not found: ID $userId";
+                        continue;
+                    }
+
+                    // Additional validation for SK Chairperson (user_type = 2)
+                    if ($newUserType === 2) {
+                        // Get user's barangay
+                        $addressModel = new AddressModel();
+                        $userAddress = $addressModel->where('user_id', $userId)->first();
+                        
+                        if ($userAddress) {
+                            // Check if there's already an SK Chairperson in this barangay (excluding current user)
+                            $existingChairman = $userModel
+                                ->select('user.id')
+                                ->join('address', 'address.user_id = user.id', 'left')
+                                ->where('user.user_type', 2) // SK Chairperson
+                                ->where('user.status', 2) // Approved users only
+                                ->where('address.barangay', $userAddress['barangay'])
+                                ->where('user.id !=', $userId) // Exclude current user
+                                ->first();
+                                
+                            if ($existingChairman) {
+                                $errors[] = "Cannot assign SK Chairperson to user ID $userId: This barangay already has an SK Chairperson";
+                                continue;
+                            }
+                        }
+                    }
+
+                    $updateData = ['user_type' => $newUserType];
+                    
+                    // If user is pending (status = 1), auto-accept them and generate user_id
+                    if ((int)$user['status'] === 1) {
+                        $updateData['status'] = 2; // Accept the user
+                        
+                        // Ensure we have a unique user_id if missing
+                        if (empty($user['user_id'])) {
+                            $attempts = 0;
+                            $newId = null;
+                            do {
+                                $newId = UserHelper::generateYearPrefixedUserId();
+                                $exists = $userModel->where('user_id', $newId)->first();
+                                $attempts++;
+                            } while ($exists && $attempts < 5);
+                            
+                            if (!$newId) {
+                                $errors[] = "Failed to generate unique user_id for user ID $userId";
+                                continue;
+                            }
+                            $updateData['user_id'] = $newId;
+                        }
+                    }
+
+                    // Update user table
+                    $result = $userModel->update($userId, $updateData);
+                    if (!$result) {
+                        $errors[] = "Failed to update user ID $userId";
+                        continue;
+                    }
+
+                    // Set position = 1 for SK Chairperson (user_type = 2)
+                    if ($newUserType === 2) {
+                        $extInfoData = ['position' => 1];
+                        
+                        // Check if user_ext_info record exists
+                        $existingExtInfo = $userExtInfoModel->where('user_id', $userId)->first();
+                        if ($existingExtInfo) {
+                            $userExtInfoModel->update($userId, $extInfoData);
+                        } else {
+                            $extInfoData['user_id'] = $userId;
+                            $userExtInfoModel->insert($extInfoData);
+                        }
+                    }
+
+                    $successCount++;
+                } catch (\Exception $e) {
+                    $errors[] = "Error updating user ID $userId: " . $e->getMessage();
+                }
+            }
+
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Database transaction failed']);
+            }
+
+            if ($successCount === 0) {
+                return $this->response->setJSON(['success' => false, 'message' => 'No users were updated. Errors: ' . implode('; ', $errors)]);
+            }
+
+            $message = "$successCount user(s) updated successfully.";
+            if (!empty($errors)) {
+                $message .= " Errors: " . implode('; ', $errors);
+            }
+
+            return $this->response->setJSON(['success' => true, 'message' => $message]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error in bulkUpdateUserType: ' . $e->getMessage());
+            return $this->response->setJSON(['success' => false, 'message' => 'An error occurred while updating users']);
+        }
+    }
+
+    public function checkSKChairmanByBarangay()
+    {
+        try {
+            $barangayId = $this->request->getPost('barangay_id');
+            $currentUserId = $this->request->getPost('current_user_id'); // Optional: exclude current user from check
+
+            if (!$barangayId) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Barangay ID is required']);
+            }
+
+            $userModel = new UserModel();
+            $addressModel = new AddressModel();
+
+            // Query to find existing SK Chairperson in the barangay
+            $query = $userModel
+                ->select('user.id, user.user_id, user.first_name, user.last_name, user.status')
+                ->join('address', 'address.user_id = user.id', 'left')
+                ->where('user.user_type', 2) // SK Chairperson
+                ->where('user.status', 2) // Approved users only
+                ->where('address.barangay', $barangayId);
+
+            // Exclude current user if provided (for editing existing user)
+            if ($currentUserId) {
+                $query->where('user.id !=', $currentUserId);
+            }
+
+            $existingChairman = $query->first();
+
+            if ($existingChairman) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'hasChairman' => true,
+                    'chairman' => [
+                        'id' => $existingChairman['id'],
+                        'user_id' => $existingChairman['user_id'],
+                        'name' => $existingChairman['first_name'] . ' ' . $existingChairman['last_name']
+                    ]
+                ]);
+            } else {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'hasChairman' => false
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error in checkSKChairmanByBarangay: ' . $e->getMessage());
+            return $this->response->setJSON(['success' => false, 'message' => 'An error occurred while checking SK Chairman']);
         }
     }
 

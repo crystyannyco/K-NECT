@@ -45,6 +45,9 @@ $RECYCLE.BIN/
 .vagrant
 Vagrantfile
 
+# But include the example template
+!.env.example
+
 #-------------------------
 # Temporary Files
 #-------------------------
@@ -129,7 +132,6 @@ _modules/*
 # Security & Credentials
 #-------------------------
 # Google Cloud Service Account files
-*.json
 app/ThirdParty/google/*.json
 app/ThirdParty/google/
 # Other credential files
@@ -137,3 +139,12 @@ app/ThirdParty/google/
 *.pem
 *.key
 *.crt
+
+#-------------------------
+# Allow Important Config Files
+#-------------------------
+# These files should be included in version control
+!composer.json
+!composer.lock
+!package.json
+!package-lock.json

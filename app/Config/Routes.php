@@ -218,6 +218,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     // ============== Module: Analytics ============== //
     // Pederasyon Analytics (City-wide)
     $routes->get('pederasyon/analytics', 'AnalyticsController::pederasyonDashboard');
+    $routes->get('analytics/pederasyon/demographics-summary', 'AnalyticsController::getFilteredDemographicsSummary');
     $routes->get('analytics/pederasyon/gender-distribution', 'AnalyticsController::getGenderDistribution');
     $routes->get('analytics/pederasyon/age-distribution', 'AnalyticsController::getAgeGroupDistribution');
     $routes->get('analytics/pederasyon/youth-classification', 'AnalyticsController::getYouthClassificationDistribution');
@@ -228,9 +229,12 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
 
     // Event Analytics
     $routes->get('pederasyon/event-analytics', 'AnalyticsController::pederasyonEventAnalytics');
+    $routes->get('analytics/pederasyon/event-summary', 'AnalyticsController::getFilteredEventSummary');
     $routes->get('analytics/pederasyon/event-participation-trend', 'AnalyticsController::getEventParticipationTrend');
     $routes->get('analytics/pederasyon/top-engaged-barangays', 'AnalyticsController::getTopEngagedBarangays');
     $routes->get('analytics/pederasyon/top-active-members', 'AnalyticsController::getTopActiveMembers');
+    $routes->get('analytics/pederasyon/top-active-sk-officials', 'AnalyticsController::getTopActiveSKOfficials');
+    $routes->get('analytics/pederasyon/top-active-kk-members', 'AnalyticsController::getTopActiveKKMembers');
     $routes->get('analytics/pederasyon/attendance-consistency', 'AnalyticsController::getAttendanceConsistency');
     $routes->get('analytics/pederasyon/popular-event-categories', 'AnalyticsController::getMostPopularEventCategories');
     $routes->get('analytics/pederasyon/event-reach', 'AnalyticsController::getEventReach');
@@ -238,6 +242,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
 
     // Document Analytics
     $routes->get('pederasyon/document-analytics', 'AnalyticsController::pederasyonDocumentAnalytics');
+    $routes->get('analytics/pederasyon/document-summary', 'AnalyticsController::getFilteredDocumentSummary');
     $routes->get('analytics/pederasyon/document-categories', 'AnalyticsController::getMostAccessedDocumentCategories');
     $routes->get('analytics/pederasyon/document-approval-time', 'AnalyticsController::getDocumentApprovalTime');
     $routes->get('analytics/pederasyon/top-downloaded-documents', 'AnalyticsController::getTopDownloadedDocuments');
@@ -249,6 +254,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
 
     // SK Analytics (Barangay-specific)
     $routes->get('sk/analytics', 'AnalyticsController::skDashboard');
+    $routes->get('analytics/sk/demographics-summary', 'AnalyticsController::getFilteredDemographicsSummary');
     $routes->get('analytics/sk/gender-distribution', 'AnalyticsController::getGenderDistribution');
     $routes->get('analytics/sk/age-distribution', 'AnalyticsController::getAgeGroupDistribution');
     $routes->get('analytics/sk/youth-classification', 'AnalyticsController::getYouthClassificationDistribution');
@@ -258,14 +264,18 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
 
     // SK Event Analytics
     $routes->get('sk/event-analytics', 'AnalyticsController::skEventAnalytics');
+    $routes->get('analytics/sk/event-summary', 'AnalyticsController::getFilteredEventSummary');
     $routes->get('analytics/sk/event-participation-trend', 'AnalyticsController::getEventParticipationTrend');
     $routes->get('analytics/sk/top-active-members', 'AnalyticsController::getTopActiveMembers');
+    $routes->get('analytics/sk/top-active-sk-officials', 'AnalyticsController::getTopActiveSKOfficials');
+    $routes->get('analytics/sk/top-active-kk-members', 'AnalyticsController::getTopActiveKKMembers');
     $routes->get('analytics/sk/attendance-consistency', 'AnalyticsController::getAttendanceConsistency');
     $routes->get('analytics/sk/popular-event-categories', 'AnalyticsController::getMostPopularEventCategories');
     $routes->get('analytics/sk/participation-by-gender', 'AnalyticsController::getParticipationByGenderPerEvent');
 
     // SK Document Analytics
     $routes->get('sk/document-analytics', 'AnalyticsController::skDocumentAnalytics');
+    $routes->get('analytics/sk/document-summary', 'AnalyticsController::getFilteredDocumentSummary');
     $routes->get('analytics/sk/document-categories', 'AnalyticsController::getMostAccessedDocumentCategories');
     $routes->get('analytics/sk/document-approval-time', 'AnalyticsController::getDocumentApprovalTime');
     $routes->get('analytics/sk/top-downloaded-documents', 'AnalyticsController::getTopDownloadedDocuments');
@@ -273,6 +283,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     // SK Performance Analytics
     $routes->get('sk/performance-analytics', 'AnalyticsController::skPerformanceAnalytics');
     $routes->get('analytics/sk/barangay-performance-score', 'AnalyticsController::getBarangayPerformanceScore');
+    $routes->get('analytics/sk/inactive-members', 'AnalyticsController::getInactiveMembers');
     $routes->get('analytics/sk/inactive-members', 'AnalyticsController::getInactiveMembers');
 
     // ============================================================================

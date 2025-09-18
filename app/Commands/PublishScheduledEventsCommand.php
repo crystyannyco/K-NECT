@@ -156,6 +156,15 @@ class PublishScheduledEventsCommand extends BaseCommand
             $roleConditions = [];
             foreach ($recipientRoles as $role) {
                 switch ($role) {
+                    case 'all_pederasyon_officials':
+                        $roleConditions[] = "user.position LIKE '%Pederasyon%'";
+                        break;
+                    case 'pederasyon_officers':
+                        $roleConditions[] = "(user.position LIKE '%Pederasyon President%' OR user.position LIKE '%Pederasyon Vice President%' OR user.position LIKE '%Pederasyon Secretary%' OR user.position LIKE '%Pederasyon Treasurer%' OR user.position LIKE '%Pederasyon Auditor%' OR user.position LIKE '%Pederasyon Public Information Officer%' OR user.position LIKE '%Pederasyon Sergeant at Arms%')";
+                        break;
+                    case 'pederasyon_members':
+                        $roleConditions[] = "(user.position LIKE '%Pederasyon%' AND user.position NOT LIKE '%Pederasyon President%' AND user.position NOT LIKE '%Pederasyon Vice President%' AND user.position NOT LIKE '%Pederasyon Secretary%' AND user.position NOT LIKE '%Pederasyon Treasurer%' AND user.position NOT LIKE '%Pederasyon Auditor%' AND user.position NOT LIKE '%Pederasyon Public Information Officer%' AND user.position NOT LIKE '%Pederasyon Sergeant at Arms%')";
+                        break;
                     case 'all_officials':
                         $roleConditions[] = "user.position LIKE '%SK%'";
                         break;

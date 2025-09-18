@@ -265,6 +265,12 @@
                     <div class="space-y-4">
                         <div class="w-full max-w-5xl mx-auto">
                             <div>
+                                <!-- Select All Checkbox above event cards - only for city-wide events -->
+                                <div id="selectAllContainer" class="mb-4 flex items-center gap-2" style="display: none;">
+                                    <input type="checkbox" id="selectAllCheckbox" class="w-4 h-4">
+                                    <span class="text-sm text-gray-600">Select All</span>
+                                </div>
+                                
                                 <div class="space-y-4 flex flex-col" style="cursor: auto;">
                             <?php if (!empty($events)): ?>
                                 <?php foreach ($events as $event): ?>
@@ -686,6 +692,9 @@
                 // Initialize toggle functionality for dynamically loaded form
                 initializeToggleFunctionality();
 
+                // Initialize date/time restrictions for dynamically loaded form
+                initializeDateTimeRestrictions();
+
                 // Initialize file upload handlers from parent scope (injected scripts may not run)
                 if (typeof initializeEventFormUpload === 'function') {
                     initializeEventFormUpload();
@@ -899,6 +908,52 @@
             }
             
             console.log('Toggle functionality initialization complete');
+        }
+
+        // ===== DATE/TIME PICKER RESTRICTIONS FOR DYNAMIC FORMS =====
+        function initializeDateTimeRestrictions() {
+            console.log('Initializing date/time restrictions for dynamically loaded form');
+            
+            // Function to get current date and time in local timezone
+            function getCurrentDateTime() {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                return `${year}-${month}-${day}T${hours}:${minutes}`;
+            }
+
+            const currentDateTime = getCurrentDateTime();
+            
+            // Set minimum for event start datetime
+            const startDatetimeInput = document.getElementById('start_datetime');
+            if (startDatetimeInput) {
+                startDatetimeInput.min = currentDateTime;
+                
+                // Update end datetime minimum when start changes (without showing alerts)
+                startDatetimeInput.addEventListener('change', function() {
+                    const endDatetimeInput = document.getElementById('end_datetime');
+                    if (endDatetimeInput && this.value) {
+                        endDatetimeInput.min = this.value;
+                    }
+                });
+            }
+            
+            // Set minimum for event end datetime
+            const endDatetimeInput = document.getElementById('end_datetime');
+            if (endDatetimeInput) {
+                endDatetimeInput.min = currentDateTime;
+            }
+            
+            // Set minimum for scheduled publish datetime
+            const scheduledDatetimeInput = document.getElementById('scheduled_publish_datetime');
+            if (scheduledDatetimeInput) {
+                scheduledDatetimeInput.min = currentDateTime;
+            }
+            
+            console.log('Date/time restrictions initialized');
         }
 
         function closeEventModal(modalId = null) {
@@ -1445,12 +1500,25 @@ function initializeEventFormUpload() {
             const checkboxes = document.querySelectorAll('.event-checkbox');
             const bulkBar = document.getElementById('bulkDeleteBar');
             const bulkBtn = document.getElementById('bulkDeleteBtn');
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
             
             // Helper function to get only visible checkboxes (in current active tab)
             function getVisibleCheckboxes() {
                 return Array.from(checkboxes).filter(cb => {
                     const row = cb.closest('.event-row');
                     return row && row.style.display !== 'none';
+                });
+            }
+            
+            // Helper function to get visible city-wide checkboxes only
+            function getVisibleCityWideCheckboxes() {
+                return Array.from(checkboxes).filter(cb => {
+                    const row = cb.closest('.event-row');
+                    if (!row || row.style.display === 'none') return false;
+                    
+                    // Check if it's a city-wide event (barangay_id === 0)
+                    const barangayId = parseInt(row.dataset.barangayId);
+                    return barangayId === 0;
                 });
             }
             
@@ -1468,11 +1536,60 @@ function initializeEventFormUpload() {
                 }
             }
             
+            function updateSelectAllCheckbox() {
+                const visibleCityWideCheckboxes = getVisibleCityWideCheckboxes();
+                const checked = visibleCityWideCheckboxes.filter(cb => cb.checked);
+                const allChecked = checked.length === visibleCityWideCheckboxes.length && visibleCityWideCheckboxes.length > 0;
+                const partiallyChecked = checked.length > 0 && checked.length < visibleCityWideCheckboxes.length;
+                
+                console.log('UpdateSelectAllCheckbox called:', {
+                    visibleCityWideCheckboxes: visibleCityWideCheckboxes.length,
+                    checked: checked.length,
+                    allChecked: allChecked,
+                    partiallyChecked: partiallyChecked
+                });
+                
+                // Show select all checkbox only when viewing city-wide tab (globalActiveBarangayId === 0)
+                const selectAllContainer = document.getElementById('selectAllContainer');
+                const isCityWideTabActive = globalActiveBarangayId === 0;
+                
+                if (selectAllContainer && selectAllCheckbox) {
+                    if (isCityWideTabActive && visibleCityWideCheckboxes.length > 0) {
+                        selectAllContainer.style.display = '';
+                        selectAllCheckbox.checked = allChecked;
+                        selectAllCheckbox.indeterminate = partiallyChecked;
+                    } else {
+                        selectAllContainer.style.display = 'none';
+                    }
+                }
+            }
+            
             checkboxes.forEach(cb => {
                 cb.addEventListener('change', function() {
                     updateBulkBar();
+                    updateSelectAllCheckbox();
                 });
             });
+            
+            // Select All checkbox functionality
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', function() {
+                    const allChecked = this.checked;
+                    const visibleCityWideCheckboxes = getVisibleCityWideCheckboxes();
+                    
+                    console.log('Select all clicked:', { 
+                        allChecked: allChecked, 
+                        visibleCityWideCheckboxes: visibleCityWideCheckboxes.length 
+                    });
+                    
+                    visibleCityWideCheckboxes.forEach(cb => {
+                        cb.checked = allChecked;
+                    });
+                    
+                    updateBulkBar();
+                    updateSelectAllCheckbox();
+                });
+            }
             
             bulkBtn.addEventListener('click', function() {
                 const visibleCheckboxes = getVisibleCheckboxes();
@@ -1488,7 +1605,13 @@ function initializeEventFormUpload() {
             // Listen for tab changes to update bulk selection UI
             document.addEventListener('tabChanged', function() {
                 updateBulkBar();
+                updateSelectAllCheckbox();
             });
+            
+            // Initialize select all checkbox visibility and state - with longer delay to ensure everything is ready
+            setTimeout(() => {
+                updateSelectAllCheckbox();
+            }, 250);
         });
 
         // Update heading and button visibility on tab click

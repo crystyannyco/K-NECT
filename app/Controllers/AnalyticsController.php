@@ -15,6 +15,22 @@ class AnalyticsController extends BaseController
     }
 
     /**
+     * Helper method to standardize barangay filtering logic
+     * @param string $barangayId The barangay filter value from request
+     * @return array ['type' => 'all'|'city-wide'|'specific', 'id' => null|0|barangay_id]
+     */
+    private function parseBarangayFilter($barangayId)
+    {
+        if ($barangayId === 'city-wide') {
+            return ['type' => 'city-wide', 'id' => 0];
+        } elseif ($barangayId === 'all' || !$barangayId) {
+            return ['type' => 'all', 'id' => null];
+        } else {
+            return ['type' => 'specific', 'id' => (int)$barangayId];
+        }
+    }
+
+    /**
      * Pederasyon (City-wide) Analytics Dashboard
      */
     public function pederasyonDashboard()
@@ -403,7 +419,7 @@ class AnalyticsController extends BaseController
         $months = $request->getGet('months') ?? 12;
         
         if ($viewType === 'citywide') {
-            $filterBarangay = ($barangayId && $barangayId !== 'all') ? $barangayId : null;
+            $filterBarangay = ($barangayId && $barangayId !== 'all' && $barangayId !== 'city-wide') ? $barangayId : null;
             $data = $this->analyticsModel->getEventParticipationTrend($filterBarangay, $months);
         } else {
             $session = session();
@@ -464,6 +480,48 @@ class AnalyticsController extends BaseController
             $session = session();
             $skBarangay = $session->get('sk_barangay');
             $data = $this->analyticsModel->getTopActiveMembers($skBarangay);
+        }
+        
+        return $this->response->setJSON($data);
+    }
+
+    /**
+     * Get top active SK officials
+     */
+    public function getTopActiveSKOfficials()
+    {
+        $request = $this->request;
+        $barangayId = $request->getGet('barangay_id');
+        $viewType = $request->getGet('view_type');
+        
+        if ($viewType === 'citywide') {
+            $filterBarangay = ($barangayId && $barangayId !== 'all') ? $barangayId : null;
+            $data = $this->analyticsModel->getTopActiveSKOfficials($filterBarangay, 5);
+        } else {
+            $session = session();
+            $skBarangay = $session->get('sk_barangay');
+            $data = $this->analyticsModel->getTopActiveSKOfficials($skBarangay, 5);
+        }
+        
+        return $this->response->setJSON($data);
+    }
+
+    /**
+     * Get top active KK members
+     */
+    public function getTopActiveKKMembers()
+    {
+        $request = $this->request;
+        $barangayId = $request->getGet('barangay_id');
+        $viewType = $request->getGet('view_type');
+        
+        if ($viewType === 'citywide') {
+            $filterBarangay = ($barangayId && $barangayId !== 'all') ? $barangayId : null;
+            $data = $this->analyticsModel->getTopActiveKKMembers($filterBarangay, 5);
+        } else {
+            $session = session();
+            $skBarangay = $session->get('sk_barangay');
+            $data = $this->analyticsModel->getTopActiveKKMembers($skBarangay, 5);
         }
         
         return $this->response->setJSON($data);
@@ -648,7 +706,8 @@ class AnalyticsController extends BaseController
             'username' => $session->get('username'),
             'view_type' => 'citywide',
             'page_title' => 'Document Analytics Dashboard',
-            'document_summary' => $this->analyticsModel->getDocumentSummary()
+            'document_summary' => $this->analyticsModel->getDocumentSummary(),
+            'barangays' => $this->analyticsModel->getBarangays()
         ];
 
         return 
@@ -673,7 +732,7 @@ class AnalyticsController extends BaseController
             'barangay_name' => $barangayName,
             'view_type' => 'barangay',
             'page_title' => $barangayName . ' Document Analytics',
-            'document_summary' => $this->analyticsModel->getDocumentSummary()
+            'document_summary' => $this->analyticsModel->getDocumentSummary($barangayId)
         ];
 
         return 
@@ -687,7 +746,19 @@ class AnalyticsController extends BaseController
      */
     public function getMostAccessedDocumentCategories()
     {
-        $data = $this->analyticsModel->getMostAccessedDocumentCategories();
+        $request = $this->request;
+        $barangayId = $request->getGet('barangay_id');
+        $viewType = $request->getGet('view_type');
+        
+        if ($viewType === 'citywide') {
+            $filterBarangay = ($barangayId && $barangayId !== 'all' && $barangayId !== 'city-wide') ? $barangayId : null;
+            $data = $this->analyticsModel->getMostAccessedDocumentCategories($filterBarangay);
+        } else {
+            // SK view - barangay specific
+            $session = session();
+            $skBarangay = $session->get('sk_barangay');
+            $data = $this->analyticsModel->getMostAccessedDocumentCategories($skBarangay);
+        }
         
         // Transform data for bar chart
         $categories = [];
@@ -709,11 +780,22 @@ class AnalyticsController extends BaseController
      */
     public function getDocumentApprovalTime()
     {
-        $data = $this->analyticsModel->getDocumentApprovalTime();
+        $request = $this->request;
+        $barangayId = $request->getGet('barangay_id');
+        $viewType = $request->getGet('view_type');
+        
+        if ($viewType === 'citywide') {
+            $filterBarangay = ($barangayId && $barangayId !== 'all' && $barangayId !== 'city-wide') ? $barangayId : null;
+            $data = $this->analyticsModel->getDocumentApprovalTime($filterBarangay);
+        } else {
+            // SK view - barangay specific
+            $session = session();
+            $skBarangay = $session->get('sk_barangay');
+            $data = $this->analyticsModel->getDocumentApprovalTime($skBarangay);
+        }
         
         // Transform data for histogram
-        $categories = [];
-        $series = [];
+        $groupedData = [];
         
         foreach ($data as $item) {
             $days = (int)$item['approval_days'];
@@ -723,15 +805,15 @@ class AnalyticsController extends BaseController
                        ($days <= 7 ? '4-7 days' : 
                        ($days <= 14 ? '1-2 weeks' : '2+ weeks'))));
             
-            if (!isset($categories[$dayRange])) {
-                $categories[$dayRange] = 0;
+            if (!isset($groupedData[$dayRange])) {
+                $groupedData[$dayRange] = 0;
             }
-            $categories[$dayRange] += (int)$item['document_count'];
+            $groupedData[$dayRange] += (int)$item['document_count'];
         }
         
         return $this->response->setJSON([
-            'categories' => array_keys($categories),
-            'series' => array_values($categories)
+            'categories' => array_keys($groupedData),
+            'series' => array_values($groupedData)
         ]);
     }
 
@@ -811,20 +893,39 @@ class AnalyticsController extends BaseController
      */
     public function getBarangayPerformanceScore()
     {
-        $request = $this->request;
-        $barangayId = $request->getGet('barangay_id');
-        $viewType = $request->getGet('view_type');
-        
-        if ($viewType === 'citywide') {
-            $filterBarangay = ($barangayId && $barangayId !== 'all') ? $barangayId : null;
-            $data = $this->analyticsModel->getBarangayPerformanceScore($filterBarangay);
-        } else {
-            $session = session();
-            $skBarangay = $session->get('sk_barangay');
-            $data = $this->analyticsModel->getBarangayPerformanceScore($skBarangay);
+        try {
+            $request = $this->request;
+            $barangayId = $request->getGet('barangay_id');
+            $viewType = $request->getGet('view_type');
+            
+            if ($viewType === 'citywide') {
+                $filterBarangay = ($barangayId && $barangayId !== 'all') ? $barangayId : null;
+                $data = $this->analyticsModel->getBarangayPerformanceScore($filterBarangay, 'citywide');
+            } else {
+                $session = session();
+                $skBarangay = $session->get('sk_barangay');
+                $data = $this->analyticsModel->getBarangayPerformanceScore($skBarangay, 'sk');
+            }
+            
+            // Clean up the data - remove debug columns
+            $cleanData = [];
+            foreach ($data as $row) {
+                $cleanData[] = [
+                    'barangay' => $row['barangay'],
+                    'event_participation_score' => $row['event_participation_score'],
+                    'document_activity_score' => $row['document_activity_score'],
+                    'attendance_consistency_score' => $row['attendance_consistency_score']
+                ];
+            }
+            
+            // Log the number of barangays returned
+            log_message('info', "Returning performance data for " . count($cleanData) . " barangays (view: {$viewType})");
+            
+            return $this->response->setJSON($cleanData);
+        } catch (\Exception $e) {
+            log_message('error', 'Error in getBarangayPerformanceScore: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON(['error' => 'Failed to load performance data']);
         }
-        
-        return $this->response->setJSON($data);
     }
 
     /**
@@ -844,6 +945,91 @@ class AnalyticsController extends BaseController
             $session = session();
             $skBarangay = $session->get('sk_barangay');
             $data = $this->analyticsModel->getInactiveMembers($skBarangay, $inactiveDays);
+        }
+        
+        return $this->response->setJSON($data);
+    }
+
+    /**
+     * Get filtered demographics summary data
+     */
+    public function getFilteredDemographicsSummary()
+    {
+        $request = $this->request;
+        $barangayId = $request->getGet('barangay_id');
+        $viewType = $request->getGet('view_type');
+        
+        if ($viewType === 'citywide') {
+            $filterBarangay = ($barangayId && $barangayId !== 'all' && $barangayId !== 'city-wide') ? $barangayId : null;
+            $data = $this->analyticsModel->getDemographicsSummary($filterBarangay);
+        } else {
+            $session = session();
+            $skBarangay = $session->get('sk_barangay');
+            $data = $this->analyticsModel->getDemographicsSummary($skBarangay);
+        }
+        
+        return $this->response->setJSON($data);
+    }
+
+    /**
+     * Get filtered event summary data
+     */
+    public function getFilteredEventSummary()
+    {
+        $request = $this->request;
+        $barangayId = $request->getGet('barangay_id');
+        $viewType = $request->getGet('view_type');
+        
+        if ($viewType === 'citywide') {
+            if ($barangayId === 'city-wide') {
+                // Show only city-wide/superadmin events (barangay_id = 0)
+                $data = $this->analyticsModel->getEventSummary(0);
+            } elseif ($barangayId === 'all') {
+                // Show all barangays except city-wide (barangay_id > 0)
+                $data = $this->analyticsModel->getEventSummaryAllBarangays();
+            } elseif ($barangayId && $barangayId !== 'all' && $barangayId !== 'city-wide') {
+                // Show specific barangay
+                $data = $this->analyticsModel->getEventSummary($barangayId);
+            } else {
+                // Default to all barangays (excluding city-wide)
+                $data = $this->analyticsModel->getEventSummaryAllBarangays();
+            }
+        } else {
+            $session = session();
+            $skBarangay = $session->get('sk_barangay');
+            $data = $this->analyticsModel->getEventSummary($skBarangay);
+        }
+        
+        return $this->response->setJSON($data);
+    }
+
+    /**
+     * Get filtered document summary data
+     */
+    public function getFilteredDocumentSummary()
+    {
+        $request = $this->request;
+        $barangayId = $request->getGet('barangay_id');
+        $viewType = $request->getGet('view_type');
+        
+        if ($viewType === 'citywide') {
+            if ($barangayId === 'city-wide') {
+                // Show only city-wide/superadmin documents (barangay_id = 0)
+                $data = $this->analyticsModel->getDocumentSummary(0);
+            } elseif ($barangayId === 'all') {
+                // Show all barangays except city-wide (barangay_id > 0)
+                $data = $this->analyticsModel->getDocumentSummaryAllBarangays();
+            } elseif ($barangayId && $barangayId !== 'all' && $barangayId !== 'city-wide') {
+                // Show specific barangay
+                $data = $this->analyticsModel->getDocumentSummary($barangayId);
+            } else {
+                // Default to all barangays (excluding city-wide)
+                $data = $this->analyticsModel->getDocumentSummaryAllBarangays();
+            }
+        } else {
+            $session = session();
+            $skBarangay = $session->get('sk_barangay');
+            $data = $this->analyticsModel->getDocumentSummary($skBarangay);
         }
         
         return $this->response->setJSON($data);

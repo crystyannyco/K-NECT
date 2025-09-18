@@ -7,31 +7,13 @@ use App\Models\UserExtInfoModel;
 use App\Models\AddressModel;
 use App\Models\AttendanceModel;
 use App\Models\EventModel;
+use App\Models\BulletinModel;
+use App\Controllers\ProfileController;
 use App\Libraries\BarangayHelper;
 // Note: NotificationSettingsModel and PrivacySettingsModel are optional and not required for basic settings
 
 class KKController extends BaseController
 {
-    public function checkEmail()
-    {
-        $email = trim((string)$this->request->getGet('email'));
-        $isValid = filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
-        if (!$isValid) {
-            return $this->response->setJSON(['available' => false, 'reason' => 'invalid']);
-        }
-        $session = session();
-        $permanentUserId = $session->get('user_id');
-        $currentId = null;
-        if ($permanentUserId) {
-            $um = new \App\Models\UserModel();
-            $me = $um->where('user_id', $permanentUserId)->first();
-            $currentId = $me['id'] ?? null;
-        }
-        $um = isset($um) ? $um : new \App\Models\UserModel();
-        $row = $um->where('email', $email)->first();
-        $available = !$row || ((int)($row['id'] ?? 0) === (int)($currentId ?? -1));
-        return $this->response->setJSON(['available' => (bool)$available]);
-    }
     public function dashboard()
     {
         $session = session();
@@ -431,6 +413,8 @@ class KKController extends BaseController
         }
 
         // Handle notification settings update
+        // TODO: Implement NotificationSettingsModel when needed
+        /*
         $notificationModel = new NotificationSettingsModel();
         
         $data = [
@@ -457,6 +441,10 @@ class KKController extends BaseController
         } catch (\Exception $e) {
             return redirect()->to('kk/settings')->with('error', 'Failed to update notification preferences: ' . $e->getMessage());
         }
+        */
+        
+        // Temporary implementation - just return success message
+        return redirect()->to('kk/settings')->with('success', 'Notification preferences will be implemented soon.');
     }
 
     /**
@@ -543,6 +531,8 @@ class KKController extends BaseController
         }
 
         // Handle privacy settings update
+        // TODO: Implement PrivacySettingsModel when needed
+        /*
         $privacyModel = new PrivacySettingsModel();
         
         $data = [
@@ -567,6 +557,10 @@ class KKController extends BaseController
         } catch (\Exception $e) {
             return redirect()->to('kk/settings')->with('error', 'Failed to update privacy settings: ' . $e->getMessage());
         }
+        */
+        
+        // Temporary implementation - just return success message
+        return redirect()->to('kk/settings')->with('success', 'Privacy settings will be implemented soon.');
     }
 
     /**

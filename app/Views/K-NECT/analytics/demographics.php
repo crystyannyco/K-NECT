@@ -340,6 +340,13 @@
         $.get(`${baseApiUrl}/gender-distribution?${params.toString()}`)
             .done(function(data) {
                 console.log('Gender distribution data received:', data);
+                
+                // Handle empty data
+                if (!data || data.length === 0) {
+                    $('#genderChart').html('<div class="text-center text-gray-500 py-8">No data available</div>');
+                    return;
+                }
+                
                 // Map colors specifically - Female: pink, Male: blue
                 const mappedData = data.map(item => {
                     if (item.name === 'Female') {
@@ -350,7 +357,8 @@
                     return item;
                 });
 
-                genderChart = Highcharts.chart('genderChart', {
+                // Configure chart options based on data
+                const chartOptions = {
                     chart: {
                         type: 'pie'
                     },
@@ -373,7 +381,13 @@
                                 enabled: true,
                                 format: '<b>{point.name}</b>: {point.percentage:.1f} %'
                             },
-                            showInLegend: true
+                            showInLegend: true,
+                            // Prevent artificial separation in single-slice pies
+                            slicedOffset: data.length === 1 ? 0 : 10,
+                            // Disable border for single-slice scenarios
+                            borderWidth: data.length === 1 ? 0 : 1,
+                            // Ensure proper spacing
+                            innerSize: data.length === 1 ? '0%' : '20%'
                         }
                     },
                     series: [{
@@ -384,7 +398,9 @@
                     exporting: {
                         enabled: true
                     }
-                });
+                };
+
+                genderChart = Highcharts.chart('genderChart', chartOptions);
             })
             .fail(function() {
                 $('#genderChart').html('<div class="text-center text-gray-500">Error loading gender distribution data</div>');

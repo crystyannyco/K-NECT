@@ -1,64 +1,79 @@
 <!-- Main Content Area -->
 <?= $this->include('K-NECT/includes/bulletin-assets') ?>
-<?= $this->include('K-NECT/includes/bulletin-assets') ?>
 <div class="flex-1 lg:ml-64 min-h-screen bg-gray-50 pt-24">
-    <!-- Hero / Header -->
-    <section class="relative bg-blue-600 mb-6">
-        <div class="relative px-4 sm:px-6 lg:px-8 py-6">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                    <h1 class="text-2xl font-bold text-white tracking-tight animate-slide-up">Bulletin</h1>
-                    <p class="mt-1 text-white/90 animate-fade-in-delay">Curate, publish, and oversee system-wide announcements.</p>
-                </div>
-                <div class="flex flex-col sm:flex-row gap-2">
-                    <a href="<?= base_url('/bulletin/categories') ?>" class="inline-flex items-center justify-center px-3 py-2 rounded-md text-sm font-medium bg-white/10 text-white hover:bg-white/20 border border-white/20">
-                        <i class="fa-regular fa-folder-open mr-2"></i>
-                        Manage Categories
-                    </a>
-                    <a href="<?= base_url('/bulletin/create') ?>" class="inline-flex items-center justify-center px-3 py-2 rounded-md text-sm font-semibold text-white bg-blue-500 hover:bg-blue-400">
-                        <i class="fa-solid fa-plus mr-2"></i>
-                        Create Post
-                    </a>
-                </div>
-            </div>
-
-            <!-- Action Bar -->
-            <div class="mt-4 bg-white/10 backdrop-blur rounded-lg p-3 border border-white/10">
-                <div class="flex flex-col lg:flex-row lg:items-center gap-3">
-                    <!-- Search -->
-                    <div class="flex-1">
-                        <div class="relative">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-white/70">
-                                <i class="fa-solid fa-magnifying-glass"></i>
-                            </span>
-                            <input id="search-posts" type="text" placeholder="Search posts, content, tags..." class="w-full pl-10 pr-4 py-2 rounded-md bg-white/15 border border-white/20 placeholder-white/70 text-white focus:outline-none focus:ring-2 focus:ring-white/50">
+    <!-- Unified compact header -->
+    <div class="px-0 py-4 bulletin-wrap">
+        <div class="mx-auto">
+            <div class="p-4 md:p-5 rounded-2xl shadow-md border border-gray-200 bg-white flex flex-col gap-3 animate-fade-in bulletin-header">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-1">
+                    <div class="min-w-0">
+                        <?php $welcomeName = $currentUser['first_name'] ?? session('first_name') ?? ($currentUser['full_name'] ?? session('full_name') ?? 'Admin'); ?>
+                        <div class="text-[1.4rem] md:text-[1.6rem] font-extrabold text-gray-900 leading-tight tracking-tight animate-slide-up truncate">
+                            Welcome, <span class="text-blue-700 drop-shadow-[0_1px_0_rgba(59,130,246,0.25)]"><?= esc($welcomeName) ?></span>
                         </div>
                     </div>
-                    <!-- Filters -->
                     <div class="flex items-center gap-2">
-                        <button data-chip="all" class="chip-btn active">All</button>
-                        <button data-chip="featured" class="chip-btn">Featured</button>
-                        <button data-chip="urgent" class="chip-btn">Urgent</button>
+                        <a href="<?= base_url('/bulletin/categories') ?>" class="inline-flex items-center justify-center gap-2 text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:ring-offset-1 focus:ring-offset-white px-3.5 py-2 rounded-lg text-sm font-medium shadow-sm border border-gray-200">
+                            <i class="fa-regular fa-folder-open"></i>
+                            <span class="whitespace-nowrap">Manage Categories</span>
+                        </a>
+                        <a href="<?= base_url('/bulletin/create') ?>" class="inline-flex items-center justify-center gap-2 text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:ring-offset-1 focus:ring-offset-white px-3.5 py-2 rounded-lg text-sm font-semibold shadow-sm">
+                            <i class="fa-solid fa-plus"></i>
+                            <span class="whitespace-nowrap">Create Post</span>
+                        </a>
+                        <button type="button" onclick="window.location.reload()" class="inline-flex items-center justify-center gap-2 text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:ring-offset-1 focus:ring-offset-white px-3.5 py-2 rounded-lg text-sm font-semibold shadow-sm">
+                            <i class="fa-solid fa-rotate"></i>
+                            <span class="whitespace-nowrap">Refresh</span>
+                        </button>
                     </div>
-                    <!-- Category selector (export removed) -->
-                    <div class="flex items-center gap-2">
-                        <select id="category-filter" class="px-3 py-2 rounded-md bg-white text-gray-800 border border-white/0 focus:outline-none">
-                            <option value="">All Categories</option>
-                            <?php foreach ($categories as $category): ?>
-                                <option value="<?= $category['id'] ?>"><?= esc($category['name']) ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                </div>
+
+                <form id="headerSearchForm" class="controls flex flex-col sm:flex-row gap-2.5 w-full items-center bg-gradient-to-r from-blue-50 to-indigo-50/70 rounded-2xl shadow-sm p-3.5 md:p-4 border border-blue-100 transition-all duration-300 hover:shadow-md animate-fade-in-more">
+                    <div class="relative flex-1 w-full">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fa-solid fa-magnifying-glass text-gray-400"></i>
+                        </div>
+                        <input type="text" id="header-search" placeholder="Search posts..." class="block w-full pl-10 pr-3 h-10 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500 bg-white text-gray-900 placeholder-gray-400 text-sm shadow-sm" />
                     </div>
+
+                    <select id="header-category" class="w-full sm:w-auto h-10 border border-gray-200 rounded-lg px-3.5 text-sm focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500 bg-white text-gray-900 shadow-sm">
+                        <option value="">All Categories</option>
+                        <?php foreach (($categories ?? []) as $cat): ?>
+                            <option value="<?= $cat['id'] ?>"><?= esc($cat['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+
+                    <select id="header-status" class="w-full sm:w-auto h-10 border border-gray-200 rounded-lg px-3.5 text-sm focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500 bg-white text-gray-900 shadow-sm">
+                        <option value="all">All Status</option>
+                        <option value="featured">Featured</option>
+                        <option value="urgent">Urgent</option>
+                    </select>
+
+                    <button id="header-search-btn" type="submit" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-10 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 rounded-lg text-sm font-semibold shadow-sm hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:ring-offset-1 focus:ring-offset-white transition">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <span>Search</span>
+                    </button>
+
+                    <button id="header-clear-btn" type="button" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-10 bg-white text-gray-700 px-4 rounded-lg text-sm font-semibold shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:ring-offset-1 focus:ring-offset-white border border-gray-200">
+                        <i class="fa-regular fa-circle-xmark"></i>
+                        <span>Clear</span>
+                    </button>
+                </form>
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <button type="button" class="chip bg-white text-gray-700 border border-gray-200 hover:border-blue-200 hover:bg-blue-50/60" data-kk-chip="all">All</button>
+                    <button type="button" class="chip bg-yellow-50 text-yellow-800 border border-yellow-200 hover:bg-yellow-50" data-kk-chip="featured">Featured</button>
+                    <button type="button" class="chip bg-red-50 text-red-700 border border-red-200 hover:bg-red-50" data-kk-chip="urgent">Urgent</button>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
 
     <!-- System-wide Stats removed per request -->
 
     <!-- Urgent Posts Section -->
     <?php if (!empty($urgent_posts)): ?>
-    <div class="px-4 sm:px-6 lg:px-8 py-4">
+    <div class="px-0 py-4 bulletin-section">
         <div class="bg-red-50 border border-red-200 p-4 rounded-lg shadow-sm">
             <div class="flex items-center">
                 <div class="flex-shrink-0">
@@ -89,28 +104,23 @@
     <?php endif; ?>
 
     <!-- Main Content Grid -->
-    <div class="px-4 sm:px-6 lg:px-8 py-6">
+    <div class="px-0 py-6 bulletin-section">
         <div class="grid grid-cols-1 gap-6">
             <!-- Main Content Area -->
             <div class="w-full">
 
                 <!-- Featured Posts (moved above Events) -->
                 <?php if (!empty($featured_posts)): ?>
-                <div class="mb-8">
-                    <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                        <svg class="w-5 h-5 text-yellow-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                        </svg>
-                        Featured Posts
-                    </h2>
+                <div class="mb-8 bulletin-section">
+                    <!-- Featured Posts heading removed per request -->
                     <?php $primary = $featured_posts[0]; $others = array_slice($featured_posts, 1, 4); ?>
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 lg:auto-rows-[220px] gap-5">
                         <!-- Primary featured (large) -->
                         <article class="relative overflow-hidden rounded-xl border border-gray-200 shadow-sm lg:col-span-2 lg:row-span-2">
                             <?php 
                                 $pImg = !empty($primary['featured_image']) ? base_url('/uploads/bulletin/' . $primary['featured_image']) : null;
                             ?>
-                            <div class="relative w-full h-72 md:h-80 lg:h-full">
+                            <div class="relative w-full h-64 md:h-72 lg:h-full">
                                 <?php if ($pImg): ?>
                                     <img src="<?= $pImg ?>" alt="<?= esc($primary['title']) ?>" class="w-full h-full object-cover">
                                     <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
@@ -141,7 +151,7 @@
 
                         <!-- Secondary featured (small grid) -->
                         <?php foreach ($others as $item): ?>
-                        <article class="relative overflow-hidden rounded-xl border border-gray-200 shadow-sm h-44">
+                        <article class="relative overflow-hidden rounded-xl border border-gray-200 shadow-sm h-52 lg:h-auto">
                             <?php $sImg = !empty($item['featured_image']) ? base_url('/uploads/bulletin/' . $item['featured_image']) : null; ?>
                             <div class="relative w-full h-full">
                                 <?php if ($sImg): ?>
@@ -175,7 +185,7 @@
 
                 <!-- Upcoming Events Preview -->
                 <?php if (!empty($recent_events)): ?>
-                <div class="mb-8">
+                <div class="mb-8 bulletin-section">
                     <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
                         <i class="fa-regular fa-calendar-days text-blue-600 mr-2"></i>
                         Upcoming Events
@@ -220,7 +230,7 @@
 
                 <!-- Uploaded Documents Preview (carousel) -->
                 <?php if (!empty($recent_documents)): ?>
-                <div class="mb-8">
+                <div class="mb-8 bulletin-section">
                     <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
                         <i class="fa-regular fa-folder-open text-blue-600 mr-2"></i>
                         Uploaded Documents

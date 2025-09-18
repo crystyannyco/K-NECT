@@ -27,7 +27,8 @@ class BulletinController extends BaseController
         $session = session();
         $userType = $session->get('user_type');
         $userId = $session->get('user_id');
-        $barangayId = $session->get('sk_barangay') ?? $session->get('kk_barangay');
+        // Resolve barangay id robustly based on user type (avoid empty sk_barangay overshadowing kk)
+        $barangayId = $this->getCurrentBarangayId();
         
         // Map session user_id (permanent) to DB primary key (id) for accurate stats
         $authorDbId = null;
@@ -109,7 +110,7 @@ class BulletinController extends BaseController
     {
         $session = session();
         $userType = $session->get('user_type');
-        $barangayId = $session->get('sk_barangay') ?? $session->get('kk_barangay');
+        $barangayId = $this->getCurrentBarangayId();
 
         try {
         $post = $this->bulletinModel->getPostWithDetails($postId);
@@ -275,6 +276,13 @@ class BulletinController extends BaseController
             // Handle barangay_id based on user type
             if ($userType === 'sk') {
                 $data['barangay_id'] = $session->get('sk_barangay');
+                if (empty($data['barangay_id'])) {
+                    $msg = 'Your account is not linked to a barangay. Please contact an administrator.';
+                    if ($this->request->isAJAX()) {
+                        return $this->response->setJSON(['success' => false, 'message' => $msg]);
+                    }
+                    return redirect()->back()->withInput()->with('error', $msg);
+                }
                 // Double-assurance (in case of future refactors) that SK posts remain barangay visibility
                 $data['visibility'] = 'barangay';
         } elseif ($userType === 'pederasyon') {
@@ -304,9 +312,11 @@ class BulletinController extends BaseController
                 $data['featured_image'] = $newName;
         }
 
-        $postId = $this->bulletinModel->insert($data);
+        // Insert post with robust handling for return types across drivers
+        $insertResult = $this->bulletinModel->insert($data);
+        $postId = is_numeric($insertResult) ? (int) $insertResult : (int) ($this->bulletinModel->getInsertID() ?? 0);
 
-        if ($postId) {
+        if ($insertResult) {
                 // Process tags if provided
                 $tagsRaw = (string) ($this->request->getPost('tags') ?? '');
                 if ($tagsRaw !== '') {
@@ -318,7 +328,7 @@ class BulletinController extends BaseController
                     }
                 }
                 if ($this->request->isAJAX()) {
-                    return $this->response->setJSON(['success' => true, 'message' => 'Post created successfully.', 'post_id' => $postId]);
+                    return $this->response->setJSON(['success' => true, 'message' => 'Post created successfully.', 'post_id' => $postId ?: null]);
                 }
                 return redirect()->to('/bulletin')->with('success', 'Post created successfully.');
             } else {
@@ -462,6 +472,13 @@ class BulletinController extends BaseController
             // Handle barangay_id based on user type
             if ($userType === 'sk') {
                 $data['barangay_id'] = $session->get('sk_barangay');
+                if (empty($data['barangay_id'])) {
+                    $msg = 'Your account is not linked to a barangay. Please contact an administrator.';
+                    if ($this->request->isAJAX()) {
+                        return $this->response->setJSON(['success' => false, 'message' => $msg]);
+                    }
+                    return redirect()->back()->withInput()->with('error', $msg);
+                }
                 $data['visibility'] = 'barangay'; // ensure consistency
             } elseif ($userType === 'pederasyon') {
                 $data['barangay_id'] = $this->request->getPost('barangay_id') ?: null;
@@ -832,7 +849,7 @@ class BulletinController extends BaseController
     {
         $session = session();
         $userType = $session->get('user_type');
-        $barangayId = $session->get('sk_barangay') ?? $session->get('kk_barangay');
+        $barangayId = $this->getCurrentBarangayId();
         try {
             // Simple pagination params
             $limit = (int) ($this->request->getGet('limit') ?? 10);
@@ -860,7 +877,7 @@ class BulletinController extends BaseController
     {
         $session = session();
         $userType = $session->get('user_type');
-        $barangayId = $session->get('sk_barangay') ?? $session->get('kk_barangay');
+        $barangayId = $this->getCurrentBarangayId();
         $q = trim((string) $this->request->getGet('q'));
         if ($q === '') {
             return $this->response->setJSON(['success' => false, 'message' => 'Missing query']);
@@ -895,7 +912,7 @@ class BulletinController extends BaseController
             // Load event counts for sidebar
             $eventModel = new \App\Models\EventModel();
         $session = session();
-        $barangayId = $session->get('sk_barangay') ?? $session->get('kk_barangay');
+        $barangayId = $this->getCurrentBarangayId();
             $eventCount = $eventModel->where('barangay_id', $barangayId)->countAllResults();
             
             // Merge template data
@@ -971,5 +988,33 @@ class BulletinController extends BaseController
             log_message('error', 'User resolution error: ' . $t->getMessage());
             return null;
         }
+    }
+
+    /**
+     * Determine the current barangay id for the active user robustly.
+     * - SK: uses sk_barangay
+     * - KK: prefers kk_barangay; falls back to sk_barangay only if kk not set
+     * - Others: try kk first then sk
+     */
+    private function getCurrentBarangayId()
+    {
+        $session = session();
+        $userType = strtolower((string) $session->get('user_type'));
+    $sk = $session->get('sk_barangay');
+    $kk = $session->get('kk_barangay');
+    $gen = $session->get('barangay_id'); // generic key used elsewhere in app
+
+        // Normalize empties to null for consistent fallback behavior
+    $sk = ($sk === '' || $sk === 0 || $sk === '0') ? null : $sk;
+    $kk = ($kk === '' || $kk === 0 || $kk === '0') ? null : $kk;
+    $gen = ($gen === '' || $gen === 0 || $gen === '0') ? null : $gen;
+
+        if ($userType === 'sk') {
+            return $sk ?? $gen;
+        }
+        if ($userType === 'kk') {
+            return $kk ?? $gen ?? $sk;
+        }
+        return $kk ?? $gen ?? $sk;
     }
 } 

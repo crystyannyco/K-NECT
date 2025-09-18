@@ -284,7 +284,7 @@ class EventController extends BaseController
             
             // Validate that if "All SK Officials" is selected, individual roles are not selected
             if (in_array('all_officials', $recipientRoles)) {
-                $individualRoles = ['chairman', 'secretary', 'treasurer'];
+                $individualRoles = ['chairperson', 'secretary', 'treasurer'];
                 foreach ($individualRoles as $role) {
                     if (in_array($role, $recipientRoles)) {
                         return redirect()->back()->withInput()->with('error', 'Cannot select "All SK Officials" and individual SK roles at the same time.');
@@ -621,7 +621,7 @@ class EventController extends BaseController
             
             // Validate that if "All SK Officials" is selected, individual roles are not selected
             if (in_array('all_officials', $recipientRoles)) {
-                $individualRoles = ['chairman', 'secretary', 'treasurer'];
+                $individualRoles = ['chairperson', 'secretary', 'treasurer'];
                 foreach ($individualRoles as $role) {
                     if (in_array($role, $recipientRoles)) {
                         return $this->handleErrorResponse('Cannot select "All SK Officials" and individual SK roles at the same time.');
@@ -1131,8 +1131,8 @@ class EventController extends BaseController
                     case 'all_officials':
                         $roleConditions[] = "user.position LIKE '%SK%'";
                         break;
-                    case 'chairman':
-                        $roleConditions[] = "user.position LIKE '%Chairman%'";
+                    case 'chairperson':
+                        $roleConditions[] = "user.position LIKE '%Chairperson%'";
                         break;
                     case 'secretary':
                         $roleConditions[] = "user.position LIKE '%Secretary%'";

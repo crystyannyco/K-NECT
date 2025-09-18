@@ -1596,7 +1596,7 @@
             let userTypeLabel = '';
             if (user.user_type == 1) userTypeLabel = 'KK';
             else if (user.user_type == 2) userTypeLabel = 'SK Official';
-            else if (user.user_type == 3) userTypeLabel = 'Pederasyon Officer';
+            else if (user.user_type == 3) userTypeLabel = 'Pederasyon Officer | SK Chairperson';
             userInfoContent.innerHTML = `
                 <!-- Profile Picture or Initial -->
                 <div class="w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center overflow-hidden shadow-md border-2 border-white">

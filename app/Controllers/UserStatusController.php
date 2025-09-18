@@ -393,7 +393,7 @@ class UserStatusController extends BaseController
             }
             
             if (!empty($positionFilter)) {
-                // Filter by position (SK Chairman, Secretary, etc.)
+                // Filter by position (SK Chairperson, Secretary, etc.)
                 $query->where('user.position', $positionFilter);
             }
 
@@ -448,18 +448,17 @@ class UserStatusController extends BaseController
                 $userTypes = [
                     1 => 'KK Member',
                     2 => 'SK Official', 
-                    3 => 'Pederasyon Officer'
+                    3 => 'Pederasyon Officer | SK Chairperson'
                 ];
                 $user['user_type_text'] = $userTypes[$user['user_type']] ?? 'Unknown';
 
                 // Get position text for SK/Pederasyon users
                 if ($user['user_type'] == 2 && !empty($user['position'])) {
                     $skPositions = [
-                        1 => 'Chairman',
-                        2 => 'Vice Chairman',
-                        3 => 'Secretary',
-                        4 => 'Treasurer',
-                        5 => 'Member'
+                        1 => 'Chairperson',
+                        2 => 'Secretary',
+                        3 => 'Treasurer',
+                        4 => 'Member'
                     ];
                     $user['position_text'] = $skPositions[$user['position']] ?? 'Member';
                 } else {

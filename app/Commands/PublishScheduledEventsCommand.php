@@ -159,8 +159,8 @@ class PublishScheduledEventsCommand extends BaseCommand
                     case 'all_officials':
                         $roleConditions[] = "user.position LIKE '%SK%'";
                         break;
-                    case 'chairman':
-                        $roleConditions[] = "user.position LIKE '%Chairman%'";
+                    case 'chairperson':
+                        $roleConditions[] = "user.position LIKE '%Chairperson%'";
                         break;
                     case 'secretary':
                         $roleConditions[] = "user.position LIKE '%Secretary%'";

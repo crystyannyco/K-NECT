@@ -142,12 +142,14 @@ class ProfilingController extends BaseController
             'suffix' => $this->request->getPost('suffix'),
             'birthdate' => $this->request->getPost('birthdate'),
             'sex' => $this->request->getPost('sex'),
+            'gender' => $this->request->getPost('gender'),
             'email' => $this->request->getPost('email'),
             'phone_number' => $phoneNumber,
             'user_type' => 1,
             'is_active' => 1,
             'status' => 1,
         ];
+        
         $addressData = [
             'region' => '1', // Always save as ID 1 for Region V
             'province' => '1', // Always save as ID 1 for Camarines Sur
@@ -161,6 +163,9 @@ class ProfilingController extends BaseController
         if ($reuploadUserId) {
             $userModel->setValidationRule('email', 'required|valid_email');
         }
+
+        // Custom validation for age restrictions
+        $customValidationErrors = [];
 
         $userValid = $userModel->validate($userData);
         $addressValid = $addressModel->validate($addressData);
@@ -177,13 +182,13 @@ class ProfilingController extends BaseController
             $isTurning15Soon = ($age === 14 && $months === 11 && $days >= 0) || ($age === 14 && $months === 10 && $days > 0);
             if ($age < 15 && !$isTurning15Soon) {
                 session()->set('profiling_step', 2);
-                session()->set('profile_data', $userData + ['region' => 'Region V', 'province' => 'Camarines Sur', 'municipality' => 'Iriga City', 'barangay' => $addressData['barangay'], 'zone_purok' => $addressData['zone_purok'], 'age_group' => $ageGroup]);
+                session()->set('profile_data', $userData + $genderData + ['region' => 'Region V', 'province' => 'Camarines Sur', 'municipality' => 'Iriga City', 'barangay' => $addressData['barangay'], 'zone_purok' => $addressData['zone_purok'], 'age_group' => $ageGroup]);
                 return redirect()->back()->withInput()->with('validation_user', $userModel->validation)
                     ->with('age_error', 'Only users who are at least 15 years old (or turning 15 within 1 month) are allowed.');
             }
             if ($age > 30) {
                 session()->set('profiling_step', 2);
-                session()->set('profile_data', $userData + ['region' => 'Region V', 'province' => 'Camarines Sur', 'municipality' => 'Iriga City', 'barangay' => $addressData['barangay'], 'zone_purok' => $addressData['zone_purok'], 'age_group' => $ageGroup]);
+                session()->set('profile_data', $userData + $genderData + ['region' => 'Region V', 'province' => 'Camarines Sur', 'municipality' => 'Iriga City', 'barangay' => $addressData['barangay'], 'zone_purok' => $addressData['zone_purok'], 'age_group' => $ageGroup]);
                 return redirect()->back()->withInput()->with('validation_user', $userModel->validation)
                     ->with('age_error', 'Only users aged between 15 to 30 years old are allowed.');
             }
@@ -197,9 +202,10 @@ class ProfilingController extends BaseController
             }
         }
 
-        if (!$userValid || !$addressValid) {
+        if (!$userValid || !$addressValid || !empty($customValidationErrors)) {
             session()->set('profiling_step', 2);
             session()->set('profile_data', $userData + ['region' => 'Region V', 'province' => 'Camarines Sur', 'municipality' => 'Iriga City', 'barangay' => $addressData['barangay'], 'zone_purok' => $addressData['zone_purok'], 'age_group' => $ageGroup]);
+            
             return redirect()->back()->withInput()
                 ->with('validation_user', $userModel->validation)
                 ->with('validation_address', $addressModel->validation);
@@ -559,6 +565,7 @@ class ProfilingController extends BaseController
                 'suffix' => $profile['suffix'],
                 'birthdate' => $profile['birthdate'],
                 'sex' => $profile['sex'],
+                'gender' => $profile['gender'] ?? null,
                 'email' => $profile['email'],
                 'phone_number' => $profile['phone_number'],
                 'username' => $account['username'],
@@ -640,6 +647,7 @@ class ProfilingController extends BaseController
                 'suffix' => $profile['suffix'],
                 'birthdate' => $profile['birthdate'],
                 'sex' => $profile['sex'],
+                'gender' => $profile['gender'] ?? null,
                 'email' => $profile['email'],
                 'phone_number' => $profile['phone_number'],
                 'username' => $account['username'],
@@ -735,6 +743,7 @@ class ProfilingController extends BaseController
             'suffix' => $user['suffix'],
             'birthdate' => $user['birthdate'],
             'sex' => $user['sex'],
+            'gender' => $user['gender'] ?? null,
             'email' => $user['email'],
             'phone_number' => $user['phone_number'],
             'region' => 'Region V', // Always display as Region V

@@ -872,9 +872,9 @@
                             
                             <div class="space-y-1 sm:space-y-2">
                                 <label class="block text-xs sm:text-sm font-medium text-slate-700">
-                                    Municipality <span class="text-red-500">*</span>
+                                    City <span class="text-red-500">*</span>
                                 </label>
-                                <input type="text" name="municipality" placeholder="Municipality"
+                                <input type="text" name="municipality" placeholder="City"
                                     value="<?= old('municipality') !== null ? old('municipality') : (isset($profile_data['municipality']) ? esc($profile_data['municipality']) : 'Iriga City') ?>"
                                     readonly
                                     class="form-field w-full p-3 sm:p-3 border-2 rounded-lg sm:rounded-xl bg-slate-50 text-slate-600 cursor-not-allowed border-slate-200 text-sm sm:text-base">
@@ -955,136 +955,175 @@
                             Personal Details
                         </h3>
                         
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                            <div class="space-y-1 sm:space-y-2">
-                                <label class="block text-xs sm:text-sm font-medium text-slate-700">
-                                    Sex <span class="text-red-500">*</span>
-                                </label>
-                                <select name="sex" data-required="true"
-                                    class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= session('validation_user') && session('validation_user')->hasError('sex') ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base">
-                                    <?php $sex_val = old('sex') !== null ? old('sex') : (isset($profile_data['sex']) ? $profile_data['sex'] : ''); ?>
-                                    <option value="">Select Sex</option>
-                                    <option value="1" <?= $sex_val == '1' ? 'selected' : '' ?>>Male</option>
-                                    <option value="2" <?= $sex_val == '2' ? 'selected' : '' ?>>Female</option>
-                                </select>
-                                <?php if (session('validation_user') && session('validation_user')->hasError('sex')): ?>
-                                    <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('validation_user')->getError('sex') ?></p>
-                                <?php endif; ?>
-                            </div>
-                            
-                            <div class="space-y-1 sm:space-y-2">
-                                <label class="block text-xs sm:text-sm font-medium text-slate-700">
-                                    Date of Birth <span class="text-red-500">*</span>
-                                </label>
-                                <div class="grid grid-cols-3 gap-2 sm:gap-3">
-                                    <!-- Month -->
-                                    <div>
-                                        <label class="block text-xs text-slate-500 mb-1">Month</label>
-                                        <select name="birth_month" data-required="true" 
-                                                class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?php if ((session('validation_user') && session('validation_user')->hasError('birthdate')) || session('age_error')) { echo 'border-red-400 bg-red-50'; } else { echo 'border-slate-200'; } ?> transition-all duration-200 text-xs sm:text-sm">
-                                            <option value="">Month</option>
-                                            <?php 
-                                            $months = [
-                                                '01' => 'January', '02' => 'February', '03' => 'March', '04' => 'April',
-                                                '05' => 'May', '06' => 'June', '07' => 'July', '08' => 'August',
-                                                '09' => 'September', '10' => 'October', '11' => 'November', '12' => 'December'
-                                            ];
-                                            $current_month = '';
-                                            if (old('birth_month')) {
-                                                $current_month = old('birth_month');
-                                            } elseif (isset($profile_data['birthdate']) && $profile_data['birthdate']) {
-                                                $current_month = date('m', strtotime($profile_data['birthdate']));
-                                            }
-                                            foreach ($months as $value => $label): ?>
-                                                <option value="<?= $value ?>" <?= $current_month == $value ? 'selected' : '' ?>><?= $label ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </div>
-                                    <!-- Day -->
-                                    <div>
-                                        <label class="block text-xs text-slate-500 mb-1">Day</label>
-                                        <select name="birth_day" data-required="true" 
-                                                class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?php if ((session('validation_user') && session('validation_user')->hasError('birthdate')) || session('age_error')) { echo 'border-red-400 bg-red-50'; } else { echo 'border-slate-200'; } ?> transition-all duration-200 text-xs sm:text-sm">
-                                            <option value="">Day</option>
-                                            <?php 
-                                            $current_day = '';
-                                            if (old('birth_day')) {
-                                                $current_day = old('birth_day');
-                                            } elseif (isset($profile_data['birthdate']) && $profile_data['birthdate']) {
-                                                $current_day = date('d', strtotime($profile_data['birthdate']));
-                                            }
-                                            for ($i = 1; $i <= 31; $i++): 
-                                                $day_value = str_pad($i, 2, '0', STR_PAD_LEFT);
-                                            ?>
-                                                <option value="<?= $day_value ?>" <?= $current_day == $day_value ? 'selected' : '' ?>><?= $i ?></option>
-                                            <?php endfor; ?>
-                                        </select>
-                                    </div>
-                                    <!-- Year -->
-                                    <div>
-                                        <label class="block text-xs text-slate-500 mb-1">Year</label>
-                                        <select name="birth_year" data-required="true" 
-                                                class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?php if ((session('validation_user') && session('validation_user')->hasError('birthdate')) || session('age_error')) { echo 'border-red-400 bg-red-50'; } else { echo 'border-slate-200'; } ?> transition-all duration-200 text-xs sm:text-sm">
-                                            <option value="">Year</option>
-                                            <?php 
-                                            $current_year = '';
-                                            if (old('birth_year')) {
-                                                $current_year = old('birth_year');
-                                            } elseif (isset($profile_data['birthdate']) && $profile_data['birthdate']) {
-                                                $current_year = date('Y', strtotime($profile_data['birthdate']));
-                                            }
-                                            $start_year = date('Y') - 50; // 50 years ago
-                                            $end_year = date('Y') - 15; // 15 years ago (minimum age)
-                                            for ($year = $end_year; $year >= $start_year; $year--): ?>
-                                                <option value="<?= $year ?>" <?= $current_year == $year ? 'selected' : '' ?>><?= $year ?></option>
-                                            <?php endfor; ?>
-                                        </select>
+                        <div class="space-y-4 sm:space-y-6">
+                            <!-- First Row: Sex & Gender and Date of Birth -->
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                                <!-- Sex and Gender Container -->
+                                <div class="space-y-1 sm:space-y-2">
+                                    <label class="block text-xs sm:text-sm font-medium text-slate-700 mb-3">
+                                        Sex & Gender
+                                    </label>
+                                    <div class="grid grid-cols-2 gap-3 sm:gap-4">
+                                        <!-- Sex -->
+                                        <div class="space-y-1 sm:space-y-2">
+                                            <label class="block text-xs sm:text-sm font-medium text-slate-700">
+                                                Sex (Assigned at Birth)<span class="text-red-500">*</span>
+                                            </label>
+                                            <select name="sex" data-required="true"
+                                                class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= session('validation_user') && session('validation_user')->hasError('sex') ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base">
+                                                <?php $sex_val = old('sex') !== null ? old('sex') : (isset($profile_data['sex']) ? $profile_data['sex'] : ''); ?>
+                                                <option value="">Select Sex</option>
+                                                <option value="1" <?= $sex_val == '1' ? 'selected' : '' ?>>Male</option>
+                                                <option value="2" <?= $sex_val == '2' ? 'selected' : '' ?>>Female</option>
+                                            </select>
+                                            <?php if (session('validation_user') && session('validation_user')->hasError('sex')): ?>
+                                                <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('validation_user')->getError('sex') ?></p>
+                                            <?php endif; ?>
+                                        </div>
+                                        
+                                        <!-- Gender -->
+                                        <div class="space-y-1 sm:space-y-2">
+                                            <label class="block text-xs sm:text-sm font-medium text-slate-700">
+                                                Gender (Optional)
+                                            </label>
+                                            <select name="gender" id="gender_select"
+                                                class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= session('validation_user') && session('validation_user')->hasError('gender') ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base">
+                                                <?php $gender_val = old('gender') !== null ? old('gender') : (isset($profile_data['gender']) ? $profile_data['gender'] : ''); ?>
+                                                <option value="">Select Gender</option>
+                                                <option value="1" <?= $gender_val == '1' ? 'selected' : '' ?>>Man</option>
+                                                <option value="2" <?= $gender_val == '2' ? 'selected' : '' ?>>Woman</option>
+                                                <option value="3" <?= $gender_val == '3' ? 'selected' : '' ?>>Non-binary</option>
+                                                <option value="4" <?= $gender_val == '4' ? 'selected' : '' ?>>Prefer not to say</option>
+                                                <option value="5" <?= $gender_val == '5' ? 'selected' : '' ?>>Other</option>
+                                            </select>
+                                            
+                                            <?php if (session('validation_user') && session('validation_user')->hasError('gender')): ?>
+                                                <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('validation_user')->getError('gender') ?></p>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
                                 </div>
-                                <!-- Hidden input for combined birthdate -->
-                                <input type="hidden" name="birthdate" id="birthdate_hidden" 
-                                       value="<?= old('birthdate') !== null ? old('birthdate') : (isset($profile_data['birthdate']) ? esc($profile_data['birthdate']) : '') ?>">
-                                <?php if (session('validation_user') && session('validation_user')->hasError('birthdate')): ?>
-                                    <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('validation_user')->getError('birthdate') ?></p>
-                                <?php endif; ?>
-                                <?php if (session('age_error')): ?>
-                                    <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('age_error') ?></p>
-                                <?php endif; ?>
-                            </div>
-                            
-                            <div class="space-y-1 sm:space-y-2">
-                                <label class="block text-xs sm:text-sm font-medium text-slate-700">
-                                    Email Address <span class="text-red-500">*</span>
-                                </label>
-                                <input type="email" name="email" id="email" placeholder="juan.delacruz@example.com"
-                                    value="<?= old('email') !== null ? old('email') : (isset($profile_data['email']) ? esc($profile_data['email']) : '') ?>"
-                                    class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= session('validation_user') && session('validation_user')->hasError('email') ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base">
-                                <?php if (session('validation_user') && session('validation_user')->hasError('email')): ?>
-                                    <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('validation_user')->getError('email') ?></p>
-                                <?php endif; ?>
-                            </div>
-                            
-                            <div class="space-y-1 sm:space-y-2">
-                                <label class="block text-xs sm:text-sm font-medium text-slate-700">
-                                    Phone Number <span class="text-red-500">*</span>
-                                </label>
-                                <div class="relative">
-                                    <?php
-                                    $phoneValue = old('phone_number') !== null ? old('phone_number') : (isset($profile_data['phone_number']) ? $profile_data['phone_number'] : '');
-                                    // Strip +63 prefix for display since we show it separately
-                                    if (str_starts_with($phoneValue, '+63')) {
-                                        $phoneValue = ltrim(substr($phoneValue, 3), '0');
-                                    }
-                                    ?>
-                                    <input type="tel" id="phone_number" name="phone_number" placeholder="912 345 6789" data-required="true"
-                                        value="<?= esc($phoneValue) ?>"
-                                        class="form-field w-full p-2 sm:p-3 pl-12 sm:pl-14 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= session('validation_user') && session('validation_user')->hasError('phone_number') ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base">
-                                    <span class="absolute left-3 sm:left-4 top-2 sm:top-3 text-slate-600 text-sm sm:text-base font-medium pointer-events-none">+63</span>
+                                
+                                <!-- Date of Birth -->
+                                <div class="space-y-1 sm:space-y-2">
+                                    <label class="block text-xs sm:text-sm font-medium text-slate-700 mb-3">
+                                        Date of Birth <span class="text-red-500">*</span>
+                                    </label>
+                                    <div class="grid grid-cols-3 gap-2 sm:gap-3">
+                                        <!-- Month -->
+                                        <div>
+                                            <label class="block text-xs text-slate-500 mb-1">Month</label>
+                                            <select name="birth_month" data-required="true" 
+                                                    class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?php if ((session('validation_user') && session('validation_user')->hasError('birthdate')) || session('age_error')) { echo 'border-red-400 bg-red-50'; } else { echo 'border-slate-200'; } ?> transition-all duration-200 text-xs sm:text-sm">
+                                                <option value="">Month</option>
+                                                <?php 
+                                                $months = [
+                                                    '01' => 'January', '02' => 'February', '03' => 'March', '04' => 'April',
+                                                    '05' => 'May', '06' => 'June', '07' => 'July', '08' => 'August',
+                                                    '09' => 'September', '10' => 'October', '11' => 'November', '12' => 'December'
+                                                ];
+                                                $current_month = '';
+                                                if (old('birth_month')) {
+                                                    $current_month = old('birth_month');
+                                                } elseif (isset($profile_data['birthdate']) && $profile_data['birthdate']) {
+                                                    $current_month = date('m', strtotime($profile_data['birthdate']));
+                                                }
+                                                foreach ($months as $value => $label): ?>
+                                                    <option value="<?= $value ?>" <?= $current_month == $value ? 'selected' : '' ?>><?= $label ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                        <!-- Day -->
+                                        <div>
+                                            <label class="block text-xs text-slate-500 mb-1">Day</label>
+                                            <select name="birth_day" data-required="true" 
+                                                    class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?php if ((session('validation_user') && session('validation_user')->hasError('birthdate')) || session('age_error')) { echo 'border-red-400 bg-red-50'; } else { echo 'border-slate-200'; } ?> transition-all duration-200 text-xs sm:text-sm">
+                                                <option value="">Day</option>
+                                                <?php 
+                                                $current_day = '';
+                                                if (old('birth_day')) {
+                                                    $current_day = old('birth_day');
+                                                } elseif (isset($profile_data['birthdate']) && $profile_data['birthdate']) {
+                                                    $current_day = date('d', strtotime($profile_data['birthdate']));
+                                                }
+                                                for ($i = 1; $i <= 31; $i++): 
+                                                    $day_value = str_pad($i, 2, '0', STR_PAD_LEFT);
+                                                ?>
+                                                    <option value="<?= $day_value ?>" <?= $current_day == $day_value ? 'selected' : '' ?>><?= $i ?></option>
+                                                <?php endfor; ?>
+                                            </select>
+                                        </div>
+                                        <!-- Year -->
+                                        <div>
+                                            <label class="block text-xs text-slate-500 mb-1">Year</label>
+                                            <select name="birth_year" data-required="true" 
+                                                    class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?php if ((session('validation_user') && session('validation_user')->hasError('birthdate')) || session('age_error')) { echo 'border-red-400 bg-red-50'; } else { echo 'border-slate-200'; } ?> transition-all duration-200 text-xs sm:text-sm">
+                                                <option value="">Year</option>
+                                                <?php 
+                                                $current_year = '';
+                                                if (old('birth_year')) {
+                                                    $current_year = old('birth_year');
+                                                } elseif (isset($profile_data['birthdate']) && $profile_data['birthdate']) {
+                                                    $current_year = date('Y', strtotime($profile_data['birthdate']));
+                                                }
+                                                $start_year = date('Y') - 50; // 50 years ago
+                                                $end_year = date('Y') - 15; // 15 years ago (minimum age)
+                                                for ($year = $end_year; $year >= $start_year; $year--): ?>
+                                                    <option value="<?= $year ?>" <?= $current_year == $year ? 'selected' : '' ?>><?= $year ?></option>
+                                                <?php endfor; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <!-- Hidden input for combined birthdate -->
+                                    <input type="hidden" name="birthdate" id="birthdate_hidden" 
+                                           value="<?= old('birthdate') !== null ? old('birthdate') : (isset($profile_data['birthdate']) ? esc($profile_data['birthdate']) : '') ?>">
+                                    <?php if (session('validation_user') && session('validation_user')->hasError('birthdate')): ?>
+                                        <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('validation_user')->getError('birthdate') ?></p>
+                                    <?php endif; ?>
+                                    <?php if (session('age_error')): ?>
+                                        <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('age_error') ?></p>
+                                    <?php endif; ?>
                                 </div>
-                                <?php if (session('validation_user') && session('validation_user')->hasError('phone_number')): ?>
-                                    <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('validation_user')->getError('phone_number') ?></p>
-                                <?php endif; ?>
-                                <p id="phone_error" class="error-message text-red-500 text-xs sm:text-sm hidden">Phone number must be 11 digits (enter 10 digits after +63).</p>
+                            </div>
+                            
+                            <!-- Second Row: Email and Phone -->
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                                <!-- Email Address -->
+                                <div class="space-y-1 sm:space-y-2">
+                                    <label class="block text-xs sm:text-sm font-medium text-slate-700">
+                                        Email Address <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="email" name="email" id="email" placeholder="juan.delacruz@example.com"
+                                        value="<?= old('email') !== null ? old('email') : (isset($profile_data['email']) ? esc($profile_data['email']) : '') ?>"
+                                        class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= session('validation_user') && session('validation_user')->hasError('email') ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base">
+                                    <?php if (session('validation_user') && session('validation_user')->hasError('email')): ?>
+                                        <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('validation_user')->getError('email') ?></p>
+                                    <?php endif; ?>
+                                </div>
+                                
+                                <!-- Phone Number -->
+                                <div class="space-y-1 sm:space-y-2">
+                                    <label class="block text-xs sm:text-sm font-medium text-slate-700">
+                                        Phone Number <span class="text-red-500">*</span>
+                                    </label>
+                                    <div class="relative">
+                                        <?php
+                                        $phoneValue = old('phone_number') !== null ? old('phone_number') : (isset($profile_data['phone_number']) ? $profile_data['phone_number'] : '');
+                                        // Strip +63 prefix for display since we show it separately
+                                        if (str_starts_with($phoneValue, '+63')) {
+                                            $phoneValue = ltrim(substr($phoneValue, 3), '0');
+                                        }
+                                        ?>
+                                        <input type="tel" id="phone_number" name="phone_number" placeholder="912 345 6789" data-required="true"
+                                            value="<?= esc($phoneValue) ?>"
+                                            class="form-field w-full p-2 sm:p-3 pl-12 sm:pl-14 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= session('validation_user') && session('validation_user')->hasError('phone_number') ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base">
+                                        <span class="absolute left-3 sm:left-4 top-2 sm:top-3 text-slate-600 text-sm sm:text-base font-medium pointer-events-none">+63</span>
+                                    </div>
+                                    <?php if (session('validation_user') && session('validation_user')->hasError('phone_number')): ?>
+                                        <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('validation_user')->getError('phone_number') ?></p>
+                                    <?php endif; ?>
+                                    <p id="phone_error" class="error-message text-red-500 text-xs sm:text-sm hidden">Phone number must be 11 digits (enter 10 digits after +63).</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1111,481 +1150,608 @@
             </div>
         </div>
         <!-- Step 3: Demographic Form -->
-        <div class="demographic_container" id="part2" style="<?= $step == 3 ? '' : 'display:none;' ?>">
-            <h2 class="text-lg sm:text-xl font-semibold mb-2">II. DEMOGRAPHIC CHARACTERISTICS</h2>
-            <p class="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">Please put a check mark next to the word or phrase that matches your response</p>
-            <form action="<?= base_url('profiling/step2') ?>" method="post" class="space-y-4 sm:space-y-6" id="step2Form" enctype="multipart/form-data">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                    <!-- Civil Status -->
-                    <div class="bg-gray-50 border <?= session('validation') && session('validation')->hasError('civil_status') ? 'border-red-500' : 'border-gray-200' ?> rounded-lg p-3 sm:p-4 shadow-sm">
-                        <h4 class="text-sm sm:text-base font-medium mb-2">1. Civil Status: <span class="text-red-500">*</span></h4>
-                        <select name="civil_status" data-required="true" class="w-full p-2 sm:p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400 <?= session('validation') && session('validation')->hasError('civil_status') ? 'border-red-500' : 'border-gray-300' ?> text-sm sm:text-base">
-                            <?php $civil_status_val = old('civil_status') !== null ? old('civil_status') : (isset($demographic_data['civil_status']) ? $demographic_data['civil_status'] : ''); ?>
-                            <option value="">Select Civil Status...</option>
-                            <option value="1" <?= $civil_status_val == '1' ? 'selected' : '' ?>>Single</option>
-                            <option value="2" <?= $civil_status_val == '2' ? 'selected' : '' ?>>Married</option>
-                            <option value="3" <?= $civil_status_val == '3' ? 'selected' : '' ?>>Widowed</option>
-                            <option value="4" <?= $civil_status_val == '4' ? 'selected' : '' ?>>Divorced</option>
-                            <option value="5" <?= $civil_status_val == '5' ? 'selected' : '' ?>>Separated</option>
-                            <option value="6" <?= $civil_status_val == '6' ? 'selected' : '' ?>>Annulled</option>
-                            <option value="7" <?= $civil_status_val == '7' ? 'selected' : '' ?>>Live-in</option>
-                            <option value="8" <?= $civil_status_val == '8' ? 'selected' : '' ?>>Unknown</option>
-                        </select>
-                        <?php if (session('validation') && session('validation')->hasError('civil_status')): ?>
-                            <p class="text-red-500 text-xs mt-1"><?= session('validation')->getError('civil_status') ?></p>
-                        <?php endif; ?>
-                    </div>
-                    <!-- Youth Classification -->
-                    <div class="bg-gray-50 border <?= session('validation') && session('validation')->hasError('youth_classification') ? 'border-red-500' : 'border-gray-200' ?> rounded-lg p-3 sm:p-4 shadow-sm">
-                        <h4 class="text-sm sm:text-base font-medium mb-2">2. Youth Classification: <span class="text-red-500">*</span></h4>
-                        <?php $youth_classification_val = old('youth_classification') !== null ? old('youth_classification') : (isset($demographic_data['youth_classification']) ? $demographic_data['youth_classification'] : ''); ?>
-                        <select name="youth_classification" data-required="true" class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400 <?= session('validation') && session('validation')->hasError('youth_classification') ? 'border-red-500' : 'border-gray-300' ?> text-sm sm:text-base">
-                            <option value="">Select Youth Classification...</option>
-                            <option value="1" <?= $youth_classification_val == '1' ? 'selected' : '' ?>>In School Youth</option>
-                            <option value="2" <?= $youth_classification_val == '2' ? 'selected' : '' ?>>Out-of-School Youth</option>
-                            <option value="3" <?= $youth_classification_val == '3' ? 'selected' : '' ?>>Working Youth</option>
-                            <option value="4" <?= $youth_classification_val == '4' ? 'selected' : '' ?>>Youth with Specific Needs</option>
-                            <option value="5" <?= $youth_classification_val == '5' ? 'selected' : '' ?>>Person with Disability</option>
-                            <option value="6" <?= $youth_classification_val == '6' ? 'selected' : '' ?>>Children in Conflict with the Law</option>
-                            <option value="7" <?= $youth_classification_val == '7' ? 'selected' : '' ?>>Indigenous People</option>
-                        </select>
-                        <?php if (session('validation') && session('validation')->hasError('youth_classification')): ?>
-                            <p class="text-red-500 text-xs mt-1"><?= session('validation')->getError('youth_classification') ?></p>
-                        <?php endif; ?>
-                    </div>
-                    <!-- Age Group -->
-                    <div class="bg-gray-50 border <?= session('validation') && session('validation')->hasError('age_group') ? 'border-red-500' : 'border-gray-200' ?> rounded-lg p-3 sm:p-4 shadow-sm">
-                        <h4 class="text-sm sm:text-base font-medium mb-2">3. Youth Age Group: <span class="text-red-500">*</span></h4>
-                        <?php $age_group_val = old('age_group') !== null ? old('age_group') : (isset($profile_data['age_group']) ? $profile_data['age_group'] : (isset($demographic_data['age_group']) ? $demographic_data['age_group'] : '')); ?>
-                        <select name="age_group" id="age_group_select" class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400 <?= session('validation') && session('validation')->hasError('age_group') ? 'border-red-500' : 'border-gray-300' ?> text-sm sm:text-base" disabled>
-                            <option value="">Select Age Group...</option>
-                            <option value="1" <?= $age_group_val == '1' ? 'selected' : '' ?>>Child Youth (15-17 years old)</option>
-                            <option value="2" <?= $age_group_val == '2' ? 'selected' : '' ?>>Young Adult (18-24 years old)</option>
-                            <option value="3" <?= $age_group_val == '3' ? 'selected' : '' ?>>Adult (25-30 years old)</option>
-                        </select>
-                        <input type="hidden" name="age_group" value="<?= esc($age_group_val) ?>">
-                        <?php if (session('validation') && session('validation')->hasError('age_group')): ?>
-                            <p class="text-red-500 text-xs mt-1"><?= session('validation')->getError('age_group') ?></p>
-                        <?php endif; ?>
-                    </div>
-                    <!-- Work Status -->
-                    <div class="bg-gray-50 border <?= session('validation') && session('validation')->hasError('work_status') ? 'border-red-500' : 'border-gray-200' ?> rounded-lg p-3 sm:p-4 shadow-sm">
-                        <h4 class="text-sm sm:text-base font-medium mb-2">4. Work Status: <span class="text-red-500">*</span></h4>
-                        <?php $work_status_val = old('work_status') !== null ? old('work_status') : (isset($demographic_data['work_status']) ? $demographic_data['work_status'] : ''); ?>
-                        <select name="work_status" data-required="true" class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400 <?= session('validation') && session('validation')->hasError('work_status') ? 'border-red-500' : 'border-gray-300' ?> text-sm sm:text-base">
-                            <option value="">Select Work Status...</option>
-                            <option value="1" <?= $work_status_val == '1' ? 'selected' : '' ?>>Employed</option>
-                            <option value="2" <?= $work_status_val == '2' ? 'selected' : '' ?>>Unemployed</option>
-                            <option value="3" <?= $work_status_val == '3' ? 'selected' : '' ?>>Currently looking for a Job</option>
-                            <option value="4" <?= $work_status_val == '4' ? 'selected' : '' ?>>Not Interested in finding a job</option>
-                        </select>
-                        <?php if (session('validation') && session('validation')->hasError('work_status')): ?>
-                            <p class="text-red-500 text-xs mt-1"><?= session('validation')->getError('work_status') ?></p>
-                        <?php endif; ?>
-                    </div>
-                    <!-- Educational Background -->
-                    <div class="bg-gray-50 border <?= session('validation') && session('validation')->hasError('educational_background') ? 'border-red-500' : 'border-gray-200' ?> rounded-lg p-4 shadow-sm md:col-span-2">
-                        <h4 class="font-medium mb-2">5. Educational Background: <span class="text-red-500">*</span></h4>
-                        <?php $educational_background_val = old('educational_background') !== null ? old('educational_background') : (isset($demographic_data['educational_background']) ? $demographic_data['educational_background'] : ''); ?>
-                        <select name="educational_background" data-required="true" class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400 <?= session('validation') && session('validation')->hasError('educational_background') ? 'border-red-500' : 'border-gray-300' ?>">
-                            <option value="">Select Educational Background...</option>
-                            <option value="1" <?= $educational_background_val == '1' ? 'selected' : '' ?>>Elementary Level</option>
-                            <option value="2" <?= $educational_background_val == '2' ? 'selected' : '' ?>>Elementary Graduate</option>
-                            <option value="3" <?= $educational_background_val == '3' ? 'selected' : '' ?>>High School Level</option>
-                            <option value="4" <?= $educational_background_val == '4' ? 'selected' : '' ?>>High School Graduate</option>
-                            <option value="5" <?= $educational_background_val == '5' ? 'selected' : '' ?>>Vocational Level</option>
-                            <option value="6" <?= $educational_background_val == '6' ? 'selected' : '' ?>>College Level</option>
-                            <option value="7" <?= $educational_background_val == '7' ? 'selected' : '' ?>>College Graduate</option>
-                            <option value="8" <?= $educational_background_val == '8' ? 'selected' : '' ?>>Master Level</option>
-                            <option value="9" <?= $educational_background_val == '9' ? 'selected' : '' ?>>Master Graduate</option>
-                            <option value="10" <?= $educational_background_val == '10' ? 'selected' : '' ?>>Doctorate Level</option>
-                            <option value="11" <?= $educational_background_val == '11' ? 'selected' : '' ?>>Doctorate Graduate</option>
-                        </select>
-                        <?php if (session('validation') && session('validation')->hasError('educational_background')): ?>
-                            <p class="text-red-500 text-xs mt-1"><?= session('validation')->getError('educational_background') ?></p>
-                        <?php endif; ?>
-                    </div>
+        <div class="demographic_container step-transition" id="part2" style="<?= $step == 3 ? '' : 'display:none;' ?>">
+            <div class="animate-slide-in px-2 sm:px-0">
+                <div class="text-center mb-6 sm:mb-8 md:mb-10">
+                    <h2 class="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-slate-800 mb-2 px-2">Demographic Characteristics</h2>
+                    <p class="text-xs sm:text-sm md:text-base text-slate-600 px-4">Please provide your demographic information</p>
                 </div>
-                <!-- Voters Info and Assembly -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                    <div class="flex flex-col gap-6">
-                        <!-- 6. Registered SK Voter? -->
-                        <div id="sk_voter_container" class="bg-gray-50 border <?= session('validation') && session('validation')->hasError('sk_voter') ? 'border-red-500' : 'border-gray-200' ?> rounded-lg p-4 shadow-sm flex flex-col gap-2">
-                            <h4 class="font-medium mb-2">6. Registered SK Voter? <span class="text-red-500">*</span></h4>
-                            <div class="flex gap-4">
-                                <?php $sk_voter_val = old('sk_voter') !== null ? old('sk_voter') : (isset($demographic_data['sk_voter']) ? $demographic_data['sk_voter'] : ''); ?>
-                                <label class="inline-flex items-center cursor-pointer hover:bg-blue-50 rounded px-2 py-1">
-                                    <input type="radio" name="sk_voter" value="1" <?= $sk_voter_val === '1' ? 'checked' : '' ?> class="form-radio text-blue-600" data-required="true">
-                                    <span class="ml-2">Yes</span>
-                                </label>
-                                <label class="inline-flex items-center cursor-pointer hover:bg-blue-50 rounded px-2 py-1">
-                                    <input type="radio" name="sk_voter" value="0" <?= $sk_voter_val === '0' ? 'checked' : '' ?> class="form-radio text-blue-600" data-required="true">
-                                    <span class="ml-2">No</span>
-                                </label>
+                
+                <form action="<?= base_url('profiling/step2') ?>" method="post" class="space-y-4 sm:space-y-6 md:space-y-8" id="step2Form" enctype="multipart/form-data">
+                    <!-- Basic Information Section -->
+                    <div class="form-section rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 mx-2 sm:mx-0">
+                        <h3 class="text-base sm:text-lg md:text-xl font-semibold text-slate-800 mb-3 sm:mb-4 md:mb-6 flex items-center">
+                            <div class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
+                                <svg class="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
                             </div>
-                            <?php if (session('validation') && session('validation')->hasError('sk_voter')): ?>
-                                <p class="text-red-500 text-xs mt-1"><?= session('validation')->getError('sk_voter') ?></p>
-                            <?php endif; ?>
-                        </div>
-                        <!-- 7. Did you vote last SK election? -->
-                        <div id="sk_election_container" class="bg-gray-50 border <?= session('validation') && session('validation')->hasError('sk_election') ? 'border-red-500' : 'border-gray-200' ?> rounded-lg p-4 shadow-sm flex flex-col gap-2">
-                            <h4 class="font-medium mb-2">7. Did you vote last SK election? <span class="text-red-500">*</span></h4>
-                            <div class="flex gap-4">
-                                <?php $sk_election_val = old('sk_election') !== null ? old('sk_election') : (isset($demographic_data['sk_election']) ? $demographic_data['sk_election'] : ''); ?>
-                                <label class="inline-flex items-center cursor-pointer hover:bg-blue-50 rounded px-2 py-1">
-                                    <input type="radio" name="sk_election" value="1" <?= $sk_election_val === '1' ? 'checked' : '' ?> class="form-radio text-blue-600" data-required="true">
-                                    <span class="ml-2">Yes</span>
-                                </label>
-                                <label class="inline-flex items-center cursor-pointer hover:bg-blue-50 rounded px-2 py-1">
-                                    <input type="radio" name="sk_election" value="0" <?= $sk_election_val === '0' ? 'checked' : '' ?> class="form-radio text-blue-600" data-required="true">
-                                    <span class="ml-2">No</span>
-                                </label>
-                            </div>
-                            <?php if (session('validation') && session('validation')->hasError('sk_election')): ?>
-                                <p class="text-red-500 text-xs mt-1"><?= session('validation')->getError('sk_election') ?></p>
-                            <?php endif; ?>
-                        </div>
-                        <!-- 8. Registered National Voter? -->
-                        <div id="national_voter_container" class="bg-gray-50 border <?= session('validation') && session('validation')->hasError('national_voter') ? 'border-red-500' : 'border-gray-200' ?> rounded-lg p-4 shadow-sm flex flex-col gap-2">
-                            <h4 class="font-medium mb-2">8. Registered National Voter? <span class="text-red-500">*</span></h4>
-                            <div class="flex gap-4">
-                                <?php $national_voter_val = old('national_voter') !== null ? old('national_voter') : (isset($demographic_data['national_voter']) ? $demographic_data['national_voter'] : ''); ?>
-                                <label class="inline-flex items-center cursor-pointer hover:bg-blue-50 rounded px-2 py-1">
-                                    <input type="radio" name="national_voter" value="1" <?= $national_voter_val === '1' ? 'checked' : '' ?> class="form-radio text-blue-600" data-required="true">
-                                    <span class="ml-2">Yes</span>
-                                </label>
-                                <label class="inline-flex items-center cursor-pointer hover:bg-blue-50 rounded px-2 py-1">
-                                    <input type="radio" name="national_voter" value="0" <?= $national_voter_val === '0' ? 'checked' : '' ?> class="form-radio text-blue-600" data-required="true">
-                                    <span class="ml-2">No</span>
-                                </label>
-                            </div>
-                            <?php if (session('validation') && session('validation')->hasError('national_voter')): ?>
-                                <p class="text-red-500 text-xs mt-1"><?= session('validation')->getError('national_voter') ?></p>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                    <div class="flex flex-col gap-6">
-                        <!-- 9. Have you already attended a KK Assembly? -->
-                        <div id="kk_assembly_container" class="bg-gray-50 border <?= session('validation') && session('validation')->hasError('kk_assembly') ? 'border-red-500' : 'border-gray-200' ?> rounded-lg p-4 shadow-sm flex flex-col gap-2">
-                            <h4 class="font-medium mb-2">9. Have you already attended a KK Assembly? <span class="text-red-500">*</span></h4>
-                            <div class="flex gap-4">
-                                <?php $kk_assembly_val = old('kk_assembly') !== null ? old('kk_assembly') : (isset($demographic_data['kk_assembly']) ? $demographic_data['kk_assembly'] : ''); ?>
-                                <label class="inline-flex items-center cursor-pointer hover:bg-blue-50 rounded px-2 py-1">
-                                    <input type="radio" name="kk_assembly" value="1" <?= $kk_assembly_val === '1' ? 'checked' : '' ?> class="form-radio text-blue-600" data-required="true">
-                                    <span class="ml-2">Yes</span>
-                                </label>
-                                <label class="inline-flex items-center cursor-pointer hover:bg-blue-50 rounded px-2 py-1">
-                                    <input type="radio" name="kk_assembly" value="0" <?= $kk_assembly_val === '0' ? 'checked' : '' ?> class="form-radio text-blue-600" data-required="true">
-                                    <span class="ml-2">No</span>
-                                </label>
-                            </div>
-                            <?php if (session('validation') && session('validation')->hasError('kk_assembly')): ?>
-                                <p class="text-red-500 text-xs mt-1"><?= session('validation')->getError('kk_assembly') ?></p>
-                            <?php endif; ?>
-                        </div>
-                        <!-- 10. If Yes, How many times? -->
-                        <div id="how_many_times_container" class="bg-gray-50 border <?= session('validation') && session('validation')->hasError('how_many_times') ? 'border-red-500' : 'border-gray-200' ?> rounded-lg p-4 shadow-sm flex flex-col gap-2">
-                            <h4 class="font-medium mb-2">10. If Yes, How many times?</h4>
-                            <div class="flex gap-4">
-                                <?php $how_many_times_val = old('how_many_times') !== null ? old('how_many_times') : (isset($demographic_data['how_many_times']) ? $demographic_data['how_many_times'] : ''); ?>
-                                <label class="inline-flex items-center cursor-pointer hover:bg-blue-50 rounded px-2 py-1">
-                                    <input type="radio" name="how_many_times" value="1" <?= $how_many_times_val === '1' ? 'checked' : '' ?> class="form-radio text-blue-600">
-                                    <span class="ml-2">1-2 times</span>
-                                </label>
-                                <label class="inline-flex items-center cursor-pointer hover:bg-blue-50 rounded px-2 py-1">
-                                    <input type="radio" name="how_many_times" value="2" <?= $how_many_times_val === '2' ? 'checked' : '' ?> class="form-radio text-blue-600">
-                                    <span class="ml-2">3-4 times</span>
-                                </label>
-                                <label class="inline-flex items-center cursor-pointer hover:bg-blue-50 rounded px-2 py-1">
-                                    <input type="radio" name="how_many_times" value="3" <?= $how_many_times_val === '3' ? 'checked' : '' ?> class="form-radio text-blue-600">
-                                    <span class="ml-2">5 or more times</span>
-                                </label>
-                            </div>
-                            <?php if (session('validation') && session('validation')->hasError('how_many_times')): ?>
-                                <p class="text-red-500 text-xs mt-1"><?= session('validation')->getError('how_many_times') ?></p>
-                            <?php endif; ?>
-                        </div>
-                        <!-- 11. If No, Why? -->
-                        <div id="no_why_container" class="bg-gray-50 border <?= session('validation') && session('validation')->hasError('no_why') ? 'border-red-500' : 'border-gray-200' ?> rounded-lg p-4 shadow-sm flex flex-col gap-2">
-                            <h4 class="font-medium mb-2">11. If No, Why?</h4>
-                            <div class="flex gap-4 flex-wrap">
-                                <?php $no_why_val = old('no_why') !== null ? old('no_why') : (isset($demographic_data['no_why']) ? $demographic_data['no_why'] : ''); ?>
-                                <label class="inline-flex items-center cursor-pointer hover:bg-blue-50 rounded px-2 py-1">
-                                    <input type="radio" name="no_why" value="1" <?= $no_why_val === '1' ? 'checked' : '' ?> class="form-radio text-blue-600">
-                                    <span class="ml-2">There was no KK Assembly Meeting</span>
-                                </label>
-                                <label class="inline-flex items-center cursor-pointer hover:bg-blue-50 rounded px-2 py-1">
-                                    <input type="radio" name="no_why" value="0" <?= $no_why_val === '0' ? 'checked' : '' ?> class="form-radio text-blue-600">
-                                    <span class="ml-2">Not Interested to Attend</span>
-                                </label>
-                            </div>
-                            <?php if (session('validation') && session('validation')->hasError('no_why')): ?>
-                                <p class="text-red-500 text-xs mt-1"><?= session('validation')->getError('no_why') ?></p>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-                <!-- Document Uploads -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                    <?php 
-                    $birth_cert_file = old('birth_certificate') ?? ($demographic_data['birth_certificate'] ?? ''); 
-                    $has_birth_cert_error = session('file_errors') && isset(session('file_errors')['birth_certificate']);
-                    $upload_id_file = old('upload_id') ?? ($demographic_data['upload_id'] ?? ''); 
-                    $upload_id_back_file = old('upload_id_back') ?? ($demographic_data['upload_id-back'] ?? '');
-                    $has_upload_id_error = session('file_errors') && isset(session('file_errors')['upload_id']);
-                    $has_upload_id_back_error = session('file_errors') && isset(session('file_errors')['upload_id_back']);
-                    ?>
-                    <div class="bg-gray-50 border <?= $has_birth_cert_error ? 'border-red-500' : 'border-gray-200' ?> rounded-lg p-4 shadow-sm flex flex-col gap-2">
-                        <h4 class="font-medium mb-2 flex items-center gap-2">Upload Birth Certificate <span class="text-red-500">*</span>
-                            <button type="button" id="showSampleBirthCertBtn" class="ml-2 text-green-600 underline text-xs hover:text-green-800">Sample</button>
-                        </h4>
+                            <span class="text-sm sm:text-base md:text-lg lg:text-xl">Basic Demographics</span>
+                        </h3>
                         
-                        <div class="file-upload-container" data-has-existing-file="<?= ($birth_cert_file && !$has_birth_cert_error) ? 'true' : 'false' ?>">
-                            <input type="file" name="birth_certificate" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" 
-                                   class="file-upload-input" id="birth_certificate_input" 
-                                   <?= (!$birth_cert_file || $has_birth_cert_error) ? 'data-required="true"' : '' ?>>
-                            <div class="file-upload-button <?= $birth_cert_file && !$has_birth_cert_error ? 'has-file' : '' ?> <?= $has_birth_cert_error ? 'error' : '' ?>" 
-                                 id="birth_certificate_button">
-                                <div class="file-upload-text">
-                                    <svg class="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                                    </svg>
-                                    <span class="text-xs font-medium text-gray-700" id="birth_certificate_text">
-                                        <?php if ($birth_cert_file && !$has_birth_cert_error): ?>
-                                            <strong>File uploaded:</strong><br>
-                                            <span class="text-green-600 file-upload-filename" title="<?= esc($birth_cert_file) ?>"><?= esc($birth_cert_file) ?></span><br>
-                                            <span class="text-xs text-blue-500">Click to replace</span>
-                                        <?php elseif ($has_birth_cert_error): ?>
-                                            <strong>File needs to be re-uploaded</strong><br>
-                                            <span class="text-red-500">Previous file had errors</span>
-                                        <?php else: ?>
-                                            Click to upload or drag and drop
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                            <!-- Civil Status -->
+                            <div class="space-y-1 sm:space-y-2">
+                                <label class="block text-xs sm:text-sm font-medium text-slate-700">
+                                    Civil Status <span class="text-red-500">*</span>
+                                </label>
+                                <select name="civil_status" data-required="true" class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= session('validation') && session('validation')->hasError('civil_status') ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base">
+                                    <?php $civil_status_val = old('civil_status') !== null ? old('civil_status') : (isset($demographic_data['civil_status']) ? $demographic_data['civil_status'] : ''); ?>
+                                    <option value="">Select Civil Status...</option>
+                                    <option value="1" <?= $civil_status_val == '1' ? 'selected' : '' ?>>Single</option>
+                                    <option value="2" <?= $civil_status_val == '2' ? 'selected' : '' ?>>Married</option>
+                                    <option value="3" <?= $civil_status_val == '3' ? 'selected' : '' ?>>Widowed</option>
+                                    <option value="4" <?= $civil_status_val == '4' ? 'selected' : '' ?>>Divorced</option>
+                                    <option value="5" <?= $civil_status_val == '5' ? 'selected' : '' ?>>Separated</option>
+                                    <option value="6" <?= $civil_status_val == '6' ? 'selected' : '' ?>>Annulled</option>
+                                    <option value="7" <?= $civil_status_val == '7' ? 'selected' : '' ?>>Live-in</option>
+                                    <option value="8" <?= $civil_status_val == '8' ? 'selected' : '' ?>>Unknown</option>
+                                </select>
+                                <?php if (session('validation') && session('validation')->hasError('civil_status')): ?>
+                                    <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('validation')->getError('civil_status') ?></p>
+                                <?php endif; ?>
+                            </div>
+                            
+                            <!-- Youth Classification -->
+                            <div class="space-y-1 sm:space-y-2">
+                                <label class="block text-xs sm:text-sm font-medium text-slate-700">
+                                    Youth Classification <span class="text-red-500">*</span>
+                                </label>
+                                <?php $youth_classification_val = old('youth_classification') !== null ? old('youth_classification') : (isset($demographic_data['youth_classification']) ? $demographic_data['youth_classification'] : ''); ?>
+                                <select name="youth_classification" data-required="true" class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= session('validation') && session('validation')->hasError('youth_classification') ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base">
+                                    <option value="">Select Youth Classification...</option>
+                                    <option value="1" <?= $youth_classification_val == '1' ? 'selected' : '' ?>>In School Youth</option>
+                                    <option value="2" <?= $youth_classification_val == '2' ? 'selected' : '' ?>>Out-of-School Youth</option>
+                                    <option value="3" <?= $youth_classification_val == '3' ? 'selected' : '' ?>>Working Youth</option>
+                                    <option value="4" <?= $youth_classification_val == '4' ? 'selected' : '' ?>>Youth with Specific Needs</option>
+                                    <option value="5" <?= $youth_classification_val == '5' ? 'selected' : '' ?>>Person with Disability</option>
+                                    <option value="6" <?= $youth_classification_val == '6' ? 'selected' : '' ?>>Children in Conflict with the Law</option>
+                                    <option value="7" <?= $youth_classification_val == '7' ? 'selected' : '' ?>>Indigenous People</option>
+                                </select>
+                                <?php if (session('validation') && session('validation')->hasError('youth_classification')): ?>
+                                    <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('validation')->getError('youth_classification') ?></p>
+                                <?php endif; ?>
+                            </div>
+                            
+                            <!-- Age Group -->
+                            <div class="space-y-1 sm:space-y-2">
+                                <label class="block text-xs sm:text-sm font-medium text-slate-700">
+                                    Youth Age Group <span class="text-red-500">*</span>
+                                </label>
+                                <?php $age_group_val = old('age_group') !== null ? old('age_group') : (isset($profile_data['age_group']) ? $profile_data['age_group'] : (isset($demographic_data['age_group']) ? $demographic_data['age_group'] : '')); ?>
+                                <select name="age_group" id="age_group_select" class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= session('validation') && session('validation')->hasError('age_group') ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base bg-slate-50 text-slate-600 cursor-not-allowed" disabled>
+                                    <option value="">Select Age Group...</option>
+                                    <option value="1" <?= $age_group_val == '1' ? 'selected' : '' ?>>Child Youth (15-17 years old)</option>
+                                    <option value="2" <?= $age_group_val == '2' ? 'selected' : '' ?>>Young Adult (18-24 years old)</option>
+                                    <option value="3" <?= $age_group_val == '3' ? 'selected' : '' ?>>Adult (25-30 years old)</option>
+                                </select>
+                                <input type="hidden" name="age_group" value="<?= esc($age_group_val) ?>">
+                                <?php if (session('validation') && session('validation')->hasError('age_group')): ?>
+                                    <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('validation')->getError('age_group') ?></p>
+                                <?php endif; ?>
+                            </div>
+                            
+                            <!-- Work Status -->
+                            <div class="space-y-1 sm:space-y-2">
+                                <label class="block text-xs sm:text-sm font-medium text-slate-700">
+                                    Work Status <span class="text-red-500">*</span>
+                                </label>
+                                <?php $work_status_val = old('work_status') !== null ? old('work_status') : (isset($demographic_data['work_status']) ? $demographic_data['work_status'] : ''); ?>
+                                <select name="work_status" data-required="true" class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= session('validation') && session('validation')->hasError('work_status') ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base">
+                                    <option value="">Select Work Status...</option>
+                                    <option value="1" <?= $work_status_val == '1' ? 'selected' : '' ?>>Employed</option>
+                                    <option value="2" <?= $work_status_val == '2' ? 'selected' : '' ?>>Unemployed</option>
+                                    <option value="3" <?= $work_status_val == '3' ? 'selected' : '' ?>>Currently looking for a Job</option>
+                                    <option value="4" <?= $work_status_val == '4' ? 'selected' : '' ?>>Not Interested in finding a job</option>
+                                </select>
+                                <?php if (session('validation') && session('validation')->hasError('work_status')): ?>
+                                    <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('validation')->getError('work_status') ?></p>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        
+                        <!-- Educational Background (Full Width) -->
+                        <div class="mt-4 sm:mt-6 space-y-1 sm:space-y-2">
+                            <label class="block text-xs sm:text-sm font-medium text-slate-700">
+                                Educational Background <span class="text-red-500">*</span>
+                            </label>
+                            <?php $educational_background_val = old('educational_background') !== null ? old('educational_background') : (isset($demographic_data['educational_background']) ? $demographic_data['educational_background'] : ''); ?>
+                            <select name="educational_background" data-required="true" class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= session('validation') && session('validation')->hasError('educational_background') ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base">
+                                <option value="">Select Educational Background...</option>
+                                <option value="1" <?= $educational_background_val == '1' ? 'selected' : '' ?>>Elementary Level</option>
+                                <option value="2" <?= $educational_background_val == '2' ? 'selected' : '' ?>>Elementary Graduate</option>
+                                <option value="3" <?= $educational_background_val == '3' ? 'selected' : '' ?>>High School Level</option>
+                                <option value="4" <?= $educational_background_val == '4' ? 'selected' : '' ?>>High School Graduate</option>
+                                <option value="5" <?= $educational_background_val == '5' ? 'selected' : '' ?>>Vocational Level</option>
+                                <option value="6" <?= $educational_background_val == '6' ? 'selected' : '' ?>>College Level</option>
+                                <option value="7" <?= $educational_background_val == '7' ? 'selected' : '' ?>>College Graduate</option>
+                                <option value="8" <?= $educational_background_val == '8' ? 'selected' : '' ?>>Master Level</option>
+                                <option value="9" <?= $educational_background_val == '9' ? 'selected' : '' ?>>Master Graduate</option>
+                                <option value="10" <?= $educational_background_val == '10' ? 'selected' : '' ?>>Doctorate Level</option>
+                                <option value="11" <?= $educational_background_val == '11' ? 'selected' : '' ?>>Doctorate Graduate</option>
+                            </select>
+                            <?php if (session('validation') && session('validation')->hasError('educational_background')): ?>
+                                <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('validation')->getError('educational_background') ?></p>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <!-- Voting & Assembly Section -->
+                    <div class="form-section rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 mx-2 sm:mx-0">
+                        <h3 class="text-base sm:text-lg md:text-xl font-semibold text-slate-800 mb-3 sm:mb-4 md:mb-6 flex items-center">
+                            <div class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
+                                <svg class="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                                </svg>
+                            </div>
+                            <span class="text-sm sm:text-base md:text-lg lg:text-xl">Civic Participation</span>
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                            <!-- Left Column -->
+                            <div class="space-y-4 sm:space-y-6">
+                                <!-- SK Voter -->
+                                <div id="sk_voter_container" class="space-y-1 sm:space-y-2">
+                                    <label class="block text-xs sm:text-sm font-medium text-slate-700">
+                                        Registered SK Voter? <span class="text-red-500">*</span>
+                                    </label>
+                                    <div class="flex gap-3 sm:gap-4">
+                                        <?php $sk_voter_val = old('sk_voter') !== null ? old('sk_voter') : (isset($demographic_data['sk_voter']) ? $demographic_data['sk_voter'] : ''); ?>
+                                        <label class="inline-flex items-center cursor-pointer hover:bg-blue-50 rounded-lg px-3 py-2 transition-colors">
+                                            <input type="radio" name="sk_voter" value="1" <?= $sk_voter_val === '1' ? 'checked' : '' ?> class="form-radio text-blue-600 border-2 border-slate-300 focus:ring-2 focus:ring-blue-500" data-required="true">
+                                            <span class="ml-2 text-sm sm:text-base text-slate-700 font-medium">Yes</span>
+                                        </label>
+                                        <label class="inline-flex items-center cursor-pointer hover:bg-blue-50 rounded-lg px-3 py-2 transition-colors">
+                                            <input type="radio" name="sk_voter" value="0" <?= $sk_voter_val === '0' ? 'checked' : '' ?> class="form-radio text-blue-600 border-2 border-slate-300 focus:ring-2 focus:ring-blue-500" data-required="true">
+                                            <span class="ml-2 text-sm sm:text-base text-slate-700 font-medium">No</span>
+                                        </label>
+                                    </div>
+                                    <?php if (session('validation') && session('validation')->hasError('sk_voter')): ?>
+                                        <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('validation')->getError('sk_voter') ?></p>
+                                    <?php endif; ?>
+                                </div>
+                                
+                                <!-- SK Election -->
+                                <div id="sk_election_container" class="space-y-1 sm:space-y-2">
+                                    <label class="block text-xs sm:text-sm font-medium text-slate-700">
+                                        Did you vote last SK election? <span class="text-red-500">*</span>
+                                    </label>
+                                    <div class="flex gap-3 sm:gap-4">
+                                        <?php $sk_election_val = old('sk_election') !== null ? old('sk_election') : (isset($demographic_data['sk_election']) ? $demographic_data['sk_election'] : ''); ?>
+                                        <label class="inline-flex items-center cursor-pointer hover:bg-blue-50 rounded-lg px-3 py-2 transition-colors">
+                                            <input type="radio" name="sk_election" value="1" <?= $sk_election_val === '1' ? 'checked' : '' ?> class="form-radio text-blue-600 border-2 border-slate-300 focus:ring-2 focus:ring-blue-500" data-required="true">
+                                            <span class="ml-2 text-sm sm:text-base text-slate-700 font-medium">Yes</span>
+                                        </label>
+                                        <label class="inline-flex items-center cursor-pointer hover:bg-blue-50 rounded-lg px-3 py-2 transition-colors">
+                                            <input type="radio" name="sk_election" value="0" <?= $sk_election_val === '0' ? 'checked' : '' ?> class="form-radio text-blue-600 border-2 border-slate-300 focus:ring-2 focus:ring-blue-500" data-required="true">
+                                            <span class="ml-2 text-sm sm:text-base text-slate-700 font-medium">No</span>
+                                        </label>
+                                    </div>
+                                    <?php if (session('validation') && session('validation')->hasError('sk_election')): ?>
+                                        <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('validation')->getError('sk_election') ?></p>
+                                    <?php endif; ?>
+                                </div>
+                                
+                                <!-- National Voter -->
+                                <div id="national_voter_container" class="space-y-1 sm:space-y-2">
+                                    <label class="block text-xs sm:text-sm font-medium text-slate-700">
+                                        Registered National Voter? <span class="text-red-500">*</span>
+                                    </label>
+                                    <div class="flex gap-3 sm:gap-4">
+                                        <?php $national_voter_val = old('national_voter') !== null ? old('national_voter') : (isset($demographic_data['national_voter']) ? $demographic_data['national_voter'] : ''); ?>
+                                        <label class="inline-flex items-center cursor-pointer hover:bg-blue-50 rounded-lg px-3 py-2 transition-colors">
+                                            <input type="radio" name="national_voter" value="1" <?= $national_voter_val === '1' ? 'checked' : '' ?> class="form-radio text-blue-600 border-2 border-slate-300 focus:ring-2 focus:ring-blue-500" data-required="true">
+                                            <span class="ml-2 text-sm sm:text-base text-slate-700 font-medium">Yes</span>
+                                        </label>
+                                        <label class="inline-flex items-center cursor-pointer hover:bg-blue-50 rounded-lg px-3 py-2 transition-colors">
+                                            <input type="radio" name="national_voter" value="0" <?= $national_voter_val === '0' ? 'checked' : '' ?> class="form-radio text-blue-600 border-2 border-slate-300 focus:ring-2 focus:ring-blue-500" data-required="true">
+                                            <span class="ml-2 text-sm sm:text-base text-slate-700 font-medium">No</span>
+                                        </label>
+                                    </div>
+                                    <?php if (session('validation') && session('validation')->hasError('national_voter')): ?>
+                                        <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('validation')->getError('national_voter') ?></p>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            
+                            <!-- Right Column -->
+                            <div class="space-y-4 sm:space-y-6">
+                                <!-- KK Assembly -->
+                                <div id="kk_assembly_container" class="space-y-1 sm:space-y-2">
+                                    <label class="block text-xs sm:text-sm font-medium text-slate-700">
+                                        Have you already attended a KK Assembly? <span class="text-red-500">*</span>
+                                    </label>
+                                    <div class="flex gap-3 sm:gap-4">
+                                        <?php $kk_assembly_val = old('kk_assembly') !== null ? old('kk_assembly') : (isset($demographic_data['kk_assembly']) ? $demographic_data['kk_assembly'] : ''); ?>
+                                        <label class="inline-flex items-center cursor-pointer hover:bg-blue-50 rounded-lg px-3 py-2 transition-colors">
+                                            <input type="radio" name="kk_assembly" value="1" <?= $kk_assembly_val === '1' ? 'checked' : '' ?> class="form-radio text-blue-600 border-2 border-slate-300 focus:ring-2 focus:ring-blue-500" data-required="true">
+                                            <span class="ml-2 text-sm sm:text-base text-slate-700 font-medium">Yes</span>
+                                        </label>
+                                        <label class="inline-flex items-center cursor-pointer hover:bg-blue-50 rounded-lg px-3 py-2 transition-colors">
+                                            <input type="radio" name="kk_assembly" value="0" <?= $kk_assembly_val === '0' ? 'checked' : '' ?> class="form-radio text-blue-600 border-2 border-slate-300 focus:ring-2 focus:ring-blue-500" data-required="true">
+                                            <span class="ml-2 text-sm sm:text-base text-slate-700 font-medium">No</span>
+                                        </label>
+                                    </div>
+                                    <?php if (session('validation') && session('validation')->hasError('kk_assembly')): ?>
+                                        <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('validation')->getError('kk_assembly') ?></p>
+                                    <?php endif; ?>
+                                </div>
+                                
+                                <!-- How many times -->
+                                <div id="how_many_times_container" class="space-y-1 sm:space-y-2">
+                                    <label class="block text-xs sm:text-sm font-medium text-slate-700">
+                                        If Yes, How many times?
+                                    </label>
+                                    <div class="flex flex-wrap gap-3 sm:gap-4">
+                                        <?php $how_many_times_val = old('how_many_times') !== null ? old('how_many_times') : (isset($demographic_data['how_many_times']) ? $demographic_data['how_many_times'] : ''); ?>
+                                        <label class="inline-flex items-center cursor-pointer hover:bg-blue-50 rounded-lg px-3 py-2 transition-colors">
+                                            <input type="radio" name="how_many_times" value="1" <?= $how_many_times_val === '1' ? 'checked' : '' ?> class="form-radio text-blue-600 border-2 border-slate-300 focus:ring-2 focus:ring-blue-500">
+                                            <span class="ml-2 text-sm sm:text-base text-slate-700 font-medium">1-2 times</span>
+                                        </label>
+                                        <label class="inline-flex items-center cursor-pointer hover:bg-blue-50 rounded-lg px-3 py-2 transition-colors">
+                                            <input type="radio" name="how_many_times" value="2" <?= $how_many_times_val === '2' ? 'checked' : '' ?> class="form-radio text-blue-600 border-2 border-slate-300 focus:ring-2 focus:ring-blue-500">
+                                            <span class="ml-2 text-sm sm:text-base text-slate-700 font-medium">3-4 times</span>
+                                        </label>
+                                        <label class="inline-flex items-center cursor-pointer hover:bg-blue-50 rounded-lg px-3 py-2 transition-colors">
+                                            <input type="radio" name="how_many_times" value="3" <?= $how_many_times_val === '3' ? 'checked' : '' ?> class="form-radio text-blue-600 border-2 border-slate-300 focus:ring-2 focus:ring-blue-500">
+                                            <span class="ml-2 text-sm sm:text-base text-slate-700 font-medium">5 or more times</span>
+                                        </label>
+                                    </div>
+                                    <?php if (session('validation') && session('validation')->hasError('how_many_times')): ?>
+                                        <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('validation')->getError('how_many_times') ?></p>
+                                    <?php endif; ?>
+                                </div>
+                                
+                                <!-- If No, Why -->
+                                <div id="no_why_container" class="space-y-1 sm:space-y-2">
+                                    <label class="block text-xs sm:text-sm font-medium text-slate-700">
+                                        If No, Why?
+                                    </label>
+                                    <div class="space-y-2">
+                                        <?php $no_why_val = old('no_why') !== null ? old('no_why') : (isset($demographic_data['no_why']) ? $demographic_data['no_why'] : ''); ?>
+                                        <label class="inline-flex items-center cursor-pointer hover:bg-blue-50 rounded-lg px-3 py-2 transition-colors w-full">
+                                            <input type="radio" name="no_why" value="1" <?= $no_why_val === '1' ? 'checked' : '' ?> class="form-radio text-blue-600 border-2 border-slate-300 focus:ring-2 focus:ring-blue-500">
+                                            <span class="ml-2 text-sm sm:text-base text-slate-700 font-medium">There was no KK Assembly Meeting</span>
+                                        </label>
+                                        <label class="inline-flex items-center cursor-pointer hover:bg-blue-50 rounded-lg px-3 py-2 transition-colors w-full">
+                                            <input type="radio" name="no_why" value="0" <?= $no_why_val === '0' ? 'checked' : '' ?> class="form-radio text-blue-600 border-2 border-slate-300 focus:ring-2 focus:ring-blue-500">
+                                            <span class="ml-2 text-sm sm:text-base text-slate-700 font-medium">Not Interested to Attend</span>
+                                        </label>
+                                    </div>
+                                    <?php if (session('validation') && session('validation')->hasError('no_why')): ?>
+                                        <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('validation')->getError('no_why') ?></p>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Document Uploads Section -->
+                    <div class="form-section rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 mx-2 sm:mx-0">
+                        <h3 class="text-base sm:text-lg md:text-xl font-semibold text-slate-800 mb-3 sm:mb-4 md:mb-6 flex items-center">
+                            <div class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
+                                <svg class="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                </svg>
+                            </div>
+                            <span class="text-sm sm:text-base md:text-lg lg:text-xl">Required Documents</span>
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                            <?php 
+                            $birth_cert_file = old('birth_certificate') ?? ($demographic_data['birth_certificate'] ?? ''); 
+                            $has_birth_cert_error = session('file_errors') && isset(session('file_errors')['birth_certificate']);
+                            $upload_id_file = old('upload_id') ?? ($demographic_data['upload_id'] ?? ''); 
+                            $upload_id_back_file = old('upload_id_back') ?? ($demographic_data['upload_id-back'] ?? '');
+                            $has_upload_id_error = session('file_errors') && isset(session('file_errors')['upload_id']);
+                            $has_upload_id_back_error = session('file_errors') && isset(session('file_errors')['upload_id_back']);
+                            ?>
+                            
+                            <!-- Birth Certificate -->
+                            <div class="space-y-1 sm:space-y-2">
+                                <label class="block text-xs sm:text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+                                    Birth Certificate <span class="text-red-500">*</span>
+                                    <button type="button" id="showSampleBirthCertBtn" class="text-green-600 underline text-xs hover:text-green-800 transition-colors">Sample</button>
+                                </label>
+                                
+                                <div class="file-upload-container" data-has-existing-file="<?= ($birth_cert_file && !$has_birth_cert_error) ? 'true' : 'false' ?>">
+                                    <input type="file" name="birth_certificate" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" 
+                                           class="file-upload-input" id="birth_certificate_input" 
+                                           <?= (!$birth_cert_file || $has_birth_cert_error) ? 'data-required="true"' : '' ?>>
+                                    <div class="file-upload-button <?= $birth_cert_file && !$has_birth_cert_error ? 'has-file' : '' ?> <?= $has_birth_cert_error ? 'error' : '' ?>" 
+                                         id="birth_certificate_button">
+                                        <div class="file-upload-text">
+                                            <svg class="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                            </svg>
+                                            <span class="text-xs font-medium text-gray-700" id="birth_certificate_text">
+                                                <?php if ($birth_cert_file && !$has_birth_cert_error): ?>
+                                                    <strong>File uploaded:</strong><br>
+                                                    <span class="text-green-600 file-upload-filename" title="<?= esc($birth_cert_file) ?>"><?= esc($birth_cert_file) ?></span><br>
+                                                    <span class="text-xs text-blue-500">Click to replace</span>
+                                                <?php elseif ($has_birth_cert_error): ?>
+                                                    <strong>File needs to be re-uploaded</strong><br>
+                                                    <span class="text-red-500">Previous file had errors</span>
+                                                <?php else: ?>
+                                                    Click to upload or drag and drop
+                                                <?php endif; ?>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <?php if ($has_birth_cert_error): ?>
+                                    <div class="validation-message error show" style="color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem; padding: 0.5rem; background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 0.375rem;">
+                                        <?= session('file_errors')['birth_certificate'] ?>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                            
+                            <!-- Valid ID -->
+                            <div class="space-y-1 sm:space-y-2">
+                                <label class="block text-xs sm:text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+                                    Valid ID (Front and Back)
+                                    <button type="button" id="showSampleValidIdBtn" class="text-blue-600 underline text-xs hover:text-blue-800 transition-colors">Sample</button>
+                                </label>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                                    <!-- Front -->
+                                    <div class="space-y-1 sm:space-y-2">
+                                        <label class="block text-xs text-slate-500 mb-1">Front Side <span class="text-red-500">*</span></label>
+                                        <div class="file-upload-container" data-has-existing-file="<?= ($upload_id_file && !$has_upload_id_error) ? 'true' : 'false' ?>">
+                                            <input type="file" name="upload_id" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" 
+                                                   class="file-upload-input" id="upload_id_input" 
+                                                   <?= (!$upload_id_file || $has_upload_id_error) ? 'data-required="true"' : '' ?>>
+                                            <div class="file-upload-button <?= $upload_id_file && !$has_upload_id_error ? 'has-file' : '' ?> <?= $has_upload_id_error ? 'error' : '' ?>" 
+                                                 id="upload_id_button">
+                                                <div class="file-upload-text">
+                                                    <svg class="w-6 h-6 text-gray-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                                    </svg>
+                                                    <span class="text-xs font-medium text-gray-700" id="upload_id_text">
+                                                        <?php if ($upload_id_file && !$has_upload_id_error): ?>
+                                                            <strong>Uploaded:</strong><br>
+                                                            <span class="text-green-600 file-upload-filename" title="<?= esc($upload_id_file) ?>"><?= esc($upload_id_file) ?></span>
+                                                        <?php elseif ($has_upload_id_error): ?>
+                                                            <strong>Re-upload needed</strong><br>
+                                                            <span class="text-red-500">File had errors</span>
+                                                        <?php else: ?>
+                                                            Click to upload
+                                                        <?php endif; ?>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <?php if ($has_upload_id_error): ?>
+                                            <div class="validation-message error show" style="color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem; padding: 0.5rem; background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 0.375rem;">
+                                                <?= session('file_errors')['upload_id'] ?>
+                                            </div>
                                         <?php endif; ?>
-                                    </span>
+                                    </div>
+                                    
+                                    <!-- Back (Optional) -->
+                                    <div class="space-y-1 sm:space-y-2">
+                                        <label class="block text-xs text-slate-500 mb-1">Back Side <span class="text-slate-400">(Optional)</span></label>
+                                        <div class="file-upload-container" data-has-existing-file="<?= ($upload_id_back_file && !$has_upload_id_back_error) ? 'true' : 'false' ?>">
+                                            <input type="file" name="upload_id_back" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" 
+                                                   class="file-upload-input" id="upload_id_back_input">
+                                            <div class="file-upload-button <?= $upload_id_back_file && !$has_upload_id_back_error ? 'has-file' : '' ?> <?= $has_upload_id_back_error ? 'error' : '' ?>" 
+                                                 id="upload_id_back_button">
+                                                <div class="file-upload-text">
+                                                    <svg class="w-6 h-6 text-gray-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                                    </svg>
+                                                    <span class="text-xs font-medium text-gray-700" id="upload_id_back_text">
+                                                        <?php if ($upload_id_back_file && !$has_upload_id_back_error): ?>
+                                                            <strong>Uploaded:</strong><br>
+                                                            <span class="text-green-600 file-upload-filename" title="<?= esc($upload_id_back_file) ?>"><?= esc($upload_id_back_file) ?></span>
+                                                        <?php elseif ($has_upload_id_back_error): ?>
+                                                            <strong>Re-upload needed</strong><br>
+                                                            <span class="text-red-500">File had errors</span>
+                                                        <?php else: ?>
+                                                            Click to upload
+                                                        <?php endif; ?>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <?php if ($has_upload_id_back_error): ?>
+                                            <div class="validation-message error show" style="color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem; padding: 0.5rem; background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 0.375rem;">
+                                                <?= session('file_errors')['upload_id_back'] ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        
-                        <?php if ($has_birth_cert_error): ?>
-                            <div class="validation-message error show" style="color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem; padding: 0.5rem; background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 0.375rem;">
-                                <?= session('file_errors')['birth_certificate'] ?>
-                            </div>
-                        <?php endif; ?>
                     </div>
-                    
-                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 shadow-sm flex flex-col gap-2">
-                        <h4 class="font-medium mb-2 flex items-center gap-2">Upload Valid ID (Front and Back)
-                            <button type="button" id="showSampleValidIdBtn" class="ml-2 text-blue-600 underline text-xs hover:text-blue-800">Sample</button>
-                        </h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- Front -->
-                            <div>
-                                <label class="block text-xs text-slate-700 mb-1">Front Side <span class="text-red-500">*</span></label>
-                                <div class="file-upload-container" data-has-existing-file="<?= ($upload_id_file && !$has_upload_id_error) ? 'true' : 'false' ?>">
-                                    <input type="file" name="upload_id" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" 
-                                           class="file-upload-input" id="upload_id_input" 
-                                           <?= (!$upload_id_file || $has_upload_id_error) ? 'data-required="true"' : '' ?>>
-                                    <div class="file-upload-button <?= $upload_id_file && !$has_upload_id_error ? 'has-file' : '' ?> <?= $has_upload_id_error ? 'error' : '' ?>" 
-                                         id="upload_id_button">
-                                        <div class="file-upload-text">
-                                            <svg class="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                                            </svg>
-                                            <span class="text-xs font-medium text-gray-700" id="upload_id_text">
-                                                <?php if ($upload_id_file && !$has_upload_id_error): ?>
-                                                    <strong>File uploaded:</strong><br>
-                                                    <span class="text-green-600 file-upload-filename" title="<?= esc($upload_id_file) ?>"><?= esc($upload_id_file) ?></span><br>
-                                                    <span class="text-xs text-blue-500">Click to replace</span>
-                                                <?php elseif ($has_upload_id_error): ?>
-                                                    <strong>File needs to be re-uploaded</strong><br>
-                                                    <span class="text-red-500">Previous file had errors</span>
-                                                <?php else: ?>
-                                                    Click to upload or drag and drop
-                                                <?php endif; ?>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <?php if ($has_upload_id_error): ?>
-                                    <div class="validation-message error show" style="color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem; padding: 0.5rem; background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 0.375rem;">
-                                        <?= session('file_errors')['upload_id'] ?>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                            <!-- Back (Optional) -->
-                            <div>
-                                <label class="block text-xs text-slate-700 mb-1">Back Side <span class="text-slate-400">(Optional)</span></label>
-                                <div class="file-upload-container" data-has-existing-file="<?= ($upload_id_back_file && !$has_upload_id_back_error) ? 'true' : 'false' ?>">
-                                    <input type="file" name="upload_id_back" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" 
-                                           class="file-upload-input" id="upload_id_back_input">
-                                    <div class="file-upload-button <?= $upload_id_back_file && !$has_upload_id_back_error ? 'has-file' : '' ?> <?= $has_upload_id_back_error ? 'error' : '' ?>" 
-                                         id="upload_id_back_button">
-                                        <div class="file-upload-text">
-                                            <svg class="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                                            </svg>
-                                            <span class="text-xs font-medium text-gray-700" id="upload_id_back_text">
-                                                <?php if ($upload_id_back_file && !$has_upload_id_back_error): ?>
-                                                    <strong>File uploaded:</strong><br>
-                                                    <span class="text-green-600 file-upload-filename" title="<?= esc($upload_id_back_file) ?>"><?= esc($upload_id_back_file) ?></span><br>
-                                                    <span class="text-xs text-blue-500">Click to replace</span>
-                                                <?php elseif ($has_upload_id_back_error): ?>
-                                                    <strong>File needs to be re-uploaded</strong><br>
-                                                    <span class="text-red-500">Previous file had errors</span>
-                                                <?php else: ?>
-                                                    Click to upload or drag and drop
-                                                <?php endif; ?>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <?php if ($has_upload_id_back_error): ?>
-                                    <div class="validation-message error show" style="color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem; padding: 0.5rem; background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 0.375rem;">
-                                        <?= session('file_errors')['upload_id_back'] ?>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                        </div>
+                    <!-- Form Actions -->
+                    <div class="flex flex-col sm:flex-row justify-between items-center pt-4 sm:pt-6 space-y-3 sm:space-y-0">
+                        <button type="submit" formaction="<?= base_url('profiling/backToStep2') ?>" formmethod="post" class="btn-secondary bg-slate-300 text-slate-700 text-sm sm:text-base font-semibold py-2 sm:py-3 px-4 sm:px-6 rounded-lg sm:rounded-xl hover:bg-slate-400 transition-all duration-200 flex items-center space-x-2 w-full sm:w-auto justify-center">
+                            <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"></path>
+                            </svg>
+                            <span>Back</span>
+                        </button>
+                        <button type="submit" class="btn-primary text-white text-sm sm:text-base font-semibold py-2 sm:py-3 px-6 sm:px-8 rounded-lg sm:rounded-xl transition-all duration-200 flex items-center space-x-2 hover:shadow-lg transform hover:scale-105 w-full sm:w-auto justify-center">
+                            <span>Continue</span>
+                            <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                            </svg>
+                        </button>
                     </div>
-                </div>
-                <div class="flex flex-col sm:flex-row justify-between mt-6 sm:mt-8 space-y-3 sm:space-y-0">
-                    <button type="submit" formaction="<?= base_url('profiling/backToStep2') ?>" formmethod="post" class="btn-secondary bg-slate-300 text-slate-700 text-sm sm:text-base font-semibold py-2 sm:py-3 px-4 sm:px-6 rounded-lg sm:rounded-xl hover:bg-slate-400 transition-all duration-200 flex items-center space-x-2 w-full sm:w-auto justify-center">
-                        <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"></path>
-                        </svg>
-                        <span>Back</span>
-                    </button>
-                    <button type="submit" class="btn-primary text-white text-sm sm:text-base font-semibold py-2 sm:py-3 px-6 sm:px-8 rounded-lg sm:rounded-xl transition-all duration-200 flex items-center space-x-2 hover:shadow-lg transform hover:scale-105 w-full sm:w-auto justify-center">
-                        <span>Continue</span>
-                        <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
-                        </svg>
-                    </button>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
         
         <!-- Step 4: Account Form -->
-        <div class="account_container" id="part3" style="<?= $step == 4 ? '' : 'display:none;' ?>">
-            <h2 class="text-lg sm:text-xl font-semibold mb-2">III. ACCOUNT INFORMATION</h2>
-            <form action="<?= base_url('profiling/step3') ?>" method="post" class="space-y-4 sm:space-y-6" id="step3Form" enctype="multipart/form-data">
-                <div class="grid grid-cols-1 gap-6">
-                    <div class="info-container mb-2 flex flex-col">
-                        <h4 class="font-medium mb-1">Username <span class="text-red-500">*</span></h4>
-                        <?php $validationAccountErrors = session('validation_account_errors') ?? []; ?>
-                        <input type="text" name="username" placeholder="Username" data-required="true" value="<?= old('username') !== null ? old('username') : (isset($account_data['username']) ? esc($account_data['username']) : '') ?>" class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400 <?= isset($validationAccountErrors['username']) ? 'border-red-500' : 'border-gray-300' ?>">
-                        <?php if (isset($validationAccountErrors['username'])): ?>
-                            <p class="text-red-500 text-xs mt-1"><?= $validationAccountErrors['username'] ?></p>
-                        <?php endif; ?>
-                    </div>
-                    <div class="info-container mb-2 flex flex-col">
-                        <h4 class="font-medium mb-1">Password <span class="text-red-500">*</span></h4>
-                        <?php $validationAccountErrors = session('validation_account_errors') ?? []; ?>
-                        <input type="password" id="password" name="password" placeholder="Password" data-required="true" value="<?= old('password') !== null ? old('password') : (isset($account_data['password']) ? esc($account_data['password']) : '') ?>" class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400 <?= isset($validationAccountErrors['password']) ? 'border-red-500' : 'border-gray-300' ?>">
-                        <?php if (isset($validationAccountErrors['password'])): ?>
-                            <p class="text-red-500 text-xs mt-1"><?= $validationAccountErrors['password'] ?></p>
-                        <?php endif; ?>
-                        <!-- Password Strength Indicator -->
-                        <div id="password-strength" class="mt-2 hidden">
-                            <div class="flex items-center space-x-2">
-                                <div class="flex space-x-1">
-                                    <div id="strength-bar-1" class="w-6 h-1 bg-gray-300 rounded"></div>
-                                    <div id="strength-bar-2" class="w-6 h-1 bg-gray-300 rounded"></div>
-                                    <div id="strength-bar-3" class="w-6 h-1 bg-gray-300 rounded"></div>
-                                    <div id="strength-bar-4" class="w-6 h-1 bg-gray-300 rounded"></div>
-                                </div>
-                                <span id="strength-text" class="text-xs font-medium">Weak</span>
+        <div class="account_container step-transition" id="part3" style="<?= $step == 4 ? '' : 'display:none;' ?>">
+            <div class="animate-slide-in px-2 sm:px-0">
+                <div class="text-center mb-6 sm:mb-8 md:mb-10">
+                    <h2 class="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-slate-800 mb-2 px-2">Account Information</h2>
+                    <p class="text-xs sm:text-sm md:text-base text-slate-600 px-4">Create your account credentials and upload your profile picture</p>
+                </div>
+                
+                <form action="<?= base_url('profiling/step3') ?>" method="post" class="space-y-4 sm:space-y-6 md:space-y-8" id="step3Form" enctype="multipart/form-data">
+                    <!-- Account Credentials Section -->
+                    <div class="form-section rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 mx-2 sm:mx-0">
+                        <h3 class="text-base sm:text-lg md:text-xl font-semibold text-slate-800 mb-3 sm:mb-4 md:mb-6 flex items-center">
+                            <div class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
+                                <svg class="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+                                </svg>
                             </div>
-                            <div id="password-requirements" class="mt-2 space-y-1 text-xs">
-                                <div id="req-length" class="flex items-center space-x-2">
-                                    <span class="requirement-icon">✗</span>
-                                    <span class="text-gray-600">At least 8 characters</span>
+                            <span class="text-sm sm:text-base md:text-lg lg:text-xl">Login Credentials</span>
+                        </h3>
+                        
+                        <div class="space-y-4 sm:space-y-6">
+                            <!-- Username -->
+                            <div class="space-y-1 sm:space-y-2">
+                                <label class="block text-xs sm:text-sm font-medium text-slate-700">
+                                    Username <span class="text-red-500">*</span>
+                                </label>
+                                <?php $validationAccountErrors = session('validation_account_errors') ?? []; ?>
+                                <input type="text" name="username" placeholder="Enter your username" data-required="true" 
+                                    value="<?= old('username') !== null ? old('username') : (isset($account_data['username']) ? esc($account_data['username']) : '') ?>" 
+                                    class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= isset($validationAccountErrors['username']) ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base">
+                                <?php if (isset($validationAccountErrors['username'])): ?>
+                                    <p class="error-message text-red-500 text-xs sm:text-sm"><?= $validationAccountErrors['username'] ?></p>
+                                <?php endif; ?>
+                            </div>
+                            
+                            <!-- Password -->
+                            <div class="space-y-1 sm:space-y-2">
+                                <label class="block text-xs sm:text-sm font-medium text-slate-700">
+                                    Password <span class="text-red-500">*</span>
+                                </label>
+                                <input type="password" id="password" name="password" placeholder="Enter your password" data-required="true" 
+                                    value="<?= old('password') !== null ? old('password') : (isset($account_data['password']) ? esc($account_data['password']) : '') ?>" 
+                                    class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= isset($validationAccountErrors['password']) ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base">
+                                <?php if (isset($validationAccountErrors['password'])): ?>
+                                    <p class="error-message text-red-500 text-xs sm:text-sm"><?= $validationAccountErrors['password'] ?></p>
+                                <?php endif; ?>
+                                
+                                <!-- Password Strength Indicator -->
+                                <div id="password-strength" class="mt-2 hidden">
+                                    <div class="flex items-center space-x-2">
+                                        <div class="flex space-x-1">
+                                            <div id="strength-bar-1" class="w-6 h-1 bg-gray-300 rounded"></div>
+                                            <div id="strength-bar-2" class="w-6 h-1 bg-gray-300 rounded"></div>
+                                            <div id="strength-bar-3" class="w-6 h-1 bg-gray-300 rounded"></div>
+                                            <div id="strength-bar-4" class="w-6 h-1 bg-gray-300 rounded"></div>
+                                        </div>
+                                        <span id="strength-text" class="text-xs font-medium">Weak</span>
+                                    </div>
+                                    <div id="password-requirements" class="mt-2 space-y-1 text-xs">
+                                        <div id="req-length" class="flex items-center space-x-2">
+                                            <span class="requirement-icon">✗</span>
+                                            <span class="text-gray-600">At least 8 characters</span>
+                                        </div>
+                                        <div id="req-uppercase" class="flex items-center space-x-2">
+                                            <span class="requirement-icon">✗</span>
+                                            <span class="text-gray-600">One uppercase letter</span>
+                                        </div>
+                                        <div id="req-lowercase" class="flex items-center space-x-2">
+                                            <span class="requirement-icon">✗</span>
+                                            <span class="text-gray-600">One lowercase letter</span>
+                                        </div>
+                                        <div id="req-number" class="flex items-center space-x-2">
+                                            <span class="requirement-icon">✗</span>
+                                            <span class="text-gray-600">One number</span>
+                                        </div>
+                                        <div id="req-special" class="flex items-center space-x-2">
+                                            <span class="requirement-icon">✗</span>
+                                            <span class="text-gray-600">One special character</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div id="req-uppercase" class="flex items-center space-x-2">
-                                    <span class="requirement-icon">✗</span>
-                                    <span class="text-gray-600">One uppercase letter</span>
-                                </div>
-                                <div id="req-lowercase" class="flex items-center space-x-2">
-                                    <span class="requirement-icon">✗</span>
-                                    <span class="text-gray-600">One lowercase letter</span>
-                                </div>
-                                <div id="req-number" class="flex items-center space-x-2">
-                                    <span class="requirement-icon">✗</span>
-                                    <span class="text-gray-600">One number</span>
-                                </div>
-                                <div id="req-special" class="flex items-center space-x-2">
-                                    <span class="requirement-icon">✗</span>
-                                    <span class="text-gray-600">One special character</span>
-                                </div>
+                            </div>
+                            
+                            <!-- Confirm Password -->
+                            <div class="space-y-1 sm:space-y-2">
+                                <label class="block text-xs sm:text-sm font-medium text-slate-700">
+                                    Confirm Password <span class="text-red-500">*</span>
+                                </label>
+                                <input type="password" name="confirm_password" placeholder="Confirm your password" data-required="true" 
+                                    value="<?= old('confirm_password') !== null ? old('confirm_password') : (isset($account_data['confirm_password']) ? esc($account_data['confirm_password']) : '') ?>" 
+                                    class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= isset($validationAccountErrors['confirm_password']) ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base">
+                                <?php if (isset($validationAccountErrors['confirm_password'])): ?>
+                                    <p class="error-message text-red-500 text-xs sm:text-sm"><?= $validationAccountErrors['confirm_password'] ?></p>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
-                    <div class="info-container mb-2 flex flex-col">
-                        <h4 class="font-medium mb-1">Confirm Password <span class="text-red-500">*</span></h4>
-                        <?php $validationAccountErrors = session('validation_account_errors') ?? []; ?>
-                        <input type="password" name="confirm_password" placeholder="Confirm Password" data-required="true" value="<?= old('confirm_password') !== null ? old('confirm_password') : (isset($account_data['confirm_password']) ? esc($account_data['confirm_password']) : '') ?>" class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400 <?= isset($validationAccountErrors['confirm_password']) ? 'border-red-500' : 'border-gray-300' ?>">
-                        <?php if (isset($validationAccountErrors['confirm_password'])): ?>
-                            <p class="text-red-500 text-xs mt-1"><?= $validationAccountErrors['confirm_password'] ?></p>
-                        <?php endif; ?>
-                    </div>
-                    <div class="info-container mb-2 flex flex-col">
-                        <h4 class="font-medium mb-1 flex items-center gap-2">1x1 Profile Picture (White Background) <span class="text-red-500">*</span>
-                            <button type="button" id="showSamplePicBtn" class="ml-2 text-blue-600 underline text-xs hover:text-blue-800">Sample</button>
-                        </h4>
-                        <?php 
-                        $profile_picture_file = old('profile_picture') ?? ($account_data['profile_picture'] ?? ''); 
-                        $has_profile_pic_error = isset(session('file_errors')['profile_picture']) && session('file_errors')['profile_picture'];
-                        ?>
+                    <!-- Profile Picture Section -->
+                    <div class="form-section rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 mx-2 sm:mx-0">
+                        <h3 class="text-base sm:text-lg md:text-xl font-semibold text-slate-800 mb-3 sm:mb-4 md:mb-6 flex items-center">
+                            <div class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
+                                <svg class="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+                            <span class="text-sm sm:text-base md:text-lg lg:text-xl">Profile Picture</span>
+                        </h3>
                         
-                        <div class="file-upload-container" data-has-existing-file="<?= ($profile_picture_file && !$has_profile_pic_error) ? 'true' : 'false' ?>">
-                            <input type="file" name="profile_picture" accept=".jpg,.jpeg,.png,.webp" 
-                                   class="file-upload-input" id="profile_picture_input" 
-                                   <?= (!$profile_picture_file || $has_profile_pic_error) ? 'data-required="true"' : '' ?>>
-                            <div class="file-upload-button <?= $profile_picture_file && !$has_profile_pic_error ? 'has-file' : '' ?> <?= $has_profile_pic_error ? 'error' : '' ?>" 
-                                 id="profile_picture_button">
-                                <div class="file-upload-text">
-                                    <svg class="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                    </svg>
-                                    <span class="text-sm font-medium text-gray-700" id="profile_picture_text">
-                                        <?php if ($profile_picture_file && !$has_profile_pic_error): ?>
-                                            <strong>Photo uploaded:</strong><br>
-                                            <span class="text-green-600 file-upload-filename" title="<?= esc($profile_picture_file) ?>"><?= esc($profile_picture_file) ?></span><br>
-                                            <span class="text-xs text-blue-500">Click to replace</span>
-                                        <?php elseif ($has_profile_pic_error): ?>
-                                            <strong>Photo needs to be re-uploaded</strong><br>
-                                            <span class="text-red-500">Previous photo had errors</span>
-                                        <?php else: ?>
-                                            Click to upload your 1x1 photo<br>
-                                            <span class="text-xs text-gray-500">JPG, PNG, WEBP up to 5MB</span>
-                                        <?php endif; ?>
-                                    </span>
+                        <div class="space-y-1 sm:space-y-2">
+                            <label class="block text-xs sm:text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+                                1x1 Profile Picture (White Background) <span class="text-red-500">*</span>
+                                <button type="button" id="showSamplePicBtn" class="text-blue-600 underline text-xs hover:text-blue-800 transition-colors">Sample</button>
+                            </label>
+                            
+                            <?php 
+                            $profile_picture_file = old('profile_picture') ?? ($account_data['profile_picture'] ?? ''); 
+                            $has_profile_pic_error = isset(session('file_errors')['profile_picture']) && session('file_errors')['profile_picture'];
+                            ?>
+                            
+                            <div class="file-upload-container" data-has-existing-file="<?= ($profile_picture_file && !$has_profile_pic_error) ? 'true' : 'false' ?>">
+                                <input type="file" name="profile_picture" accept=".jpg,.jpeg,.png,.webp" 
+                                       class="file-upload-input" id="profile_picture_input" 
+                                       <?= (!$profile_picture_file || $has_profile_pic_error) ? 'data-required="true"' : '' ?>>
+                                <div class="file-upload-button <?= $profile_picture_file && !$has_profile_pic_error ? 'has-file' : '' ?> <?= $has_profile_pic_error ? 'error' : '' ?>" 
+                                     id="profile_picture_button">
+                                    <div class="file-upload-text">
+                                        <svg class="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                        </svg>
+                                        <span class="text-sm font-medium text-gray-700" id="profile_picture_text">
+                                            <?php if ($profile_picture_file && !$has_profile_pic_error): ?>
+                                                <strong>Photo uploaded:</strong><br>
+                                                <span class="text-green-600 file-upload-filename" title="<?= esc($profile_picture_file) ?>"><?= esc($profile_picture_file) ?></span><br>
+                                                <span class="text-xs text-blue-500">Click to replace</span>
+                                            <?php elseif ($has_profile_pic_error): ?>
+                                                <strong>Photo needs to be re-uploaded</strong><br>
+                                                <span class="text-red-500">Previous photo had errors</span>
+                                            <?php else: ?>
+                                                Click to upload your 1x1 photo<br>
+                                                <span class="text-xs text-gray-500">JPG, PNG, WEBP up to 5MB</span>
+                                            <?php endif; ?>
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
+                            
+                            <?php if ($has_profile_pic_error): ?>
+                                <div class="validation-message error show" style="color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem; padding: 0.5rem; background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 0.375rem;">
+                                    <?= session('file_errors')['profile_picture'] ?>
+                                </div>
+                            <?php endif; ?>
                         </div>
-                        
-                        <?php if ($has_profile_pic_error): ?>
-                            <div class="validation-message error show" style="color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem; padding: 0.5rem; background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 0.375rem;">
-                                <?= session('file_errors')['profile_picture'] ?>
-                            </div>
-                        <?php endif; ?>
                     </div>
-                </div>
-                <div class="flex justify-between mt-8">
-                    <button type="submit" formaction="<?= base_url('profiling/backToStep3') ?>" formmethod="post" class="btn-secondary bg-slate-300 text-slate-700 font-semibold py-3 px-6 rounded-xl hover:bg-slate-400 transition-all duration-200 flex items-center space-x-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"></path>
-                        </svg>
-                        <span>Back</span>
-                    </button>
-                    <button type="submit" class="btn-primary text-white font-semibold py-3 px-8 rounded-xl transition-all duration-200 flex items-center space-x-2 hover:shadow-lg transform hover:scale-105">
-                        <span>Continue</span>
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
-                        </svg>
-                    </button>
-                </div>
-            </form>
+                    <!-- Form Actions -->
+                    <div class="flex flex-col sm:flex-row justify-between items-center pt-4 sm:pt-6 space-y-3 sm:space-y-0">
+                        <button type="submit" formaction="<?= base_url('profiling/backToStep3') ?>" formmethod="post" class="btn-secondary bg-slate-300 text-slate-700 text-sm sm:text-base font-semibold py-2 sm:py-3 px-4 sm:px-6 rounded-lg sm:rounded-xl hover:bg-slate-400 transition-all duration-200 flex items-center space-x-2 w-full sm:w-auto justify-center">
+                            <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"></path>
+                            </svg>
+                            <span>Back</span>
+                        </button>
+                        <button type="submit" class="btn-primary text-white text-sm sm:text-base font-semibold py-2 sm:py-3 px-6 sm:px-8 rounded-lg sm:rounded-xl transition-all duration-200 flex items-center space-x-2 hover:shadow-lg transform hover:scale-105 w-full sm:w-auto justify-center">
+                            <span>Continue</span>
+                            <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
         <!-- Sample Profile Picture Modal -->
         <div id="samplePicModal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
@@ -1811,6 +1977,25 @@
                                 <span class="text-slate-800"><?= isset($profile_data['sex']) ? ($profile_data['sex'] == '1' ? 'Male' : ($profile_data['sex'] == '2' ? 'Female' : '')) : '' ?></span>
                             </div>
                             <div class="flex justify-between py-2 border-b border-slate-100">
+                                <span class="text-slate-600 font-medium">Gender:</span>
+                                <span class="text-slate-800">
+                                    <?php 
+                                    if (isset($profile_data['gender']) && $profile_data['gender'] !== '') {
+                                        switch($profile_data['gender']) {
+                                            case '1': echo 'Male'; break;
+                                            case '2': echo 'Female'; break;
+                                            case '3': echo 'Non-binary'; break;
+                                            case '4': echo 'Prefer not to say'; break;
+                                            case '5': echo 'Other'; break;
+                                            default: echo 'Not specified';
+                                        }
+                                    } else {
+                                        echo 'Not specified';
+                                    }
+                                    ?>
+                                </span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-slate-100">
                                 <span class="text-slate-600 font-medium">Date of Birth:</span>
                                 <span class="text-slate-800"><?= esc($profile_data['birthdate'] ?? '') ?></span>
                             </div>
@@ -1846,7 +2031,7 @@
                                 <span class="text-slate-800"><?= esc($profile_data['province'] ?? '') ?></span>
                             </div>
                             <div class="flex justify-between py-2 border-b border-slate-100">
-                                <span class="text-slate-600 font-medium">Municipality:</span>
+                                <span class="text-slate-600 font-medium">City:</span>
                                 <span class="text-slate-800"><?= esc($profile_data['municipality'] ?? '') ?></span>
                             </div>
                             <div class="flex justify-between py-2 border-b border-slate-100">
@@ -4599,7 +4784,13 @@
             document.addEventListener('DOMContentLoaded', function() {
                 initializeCountdowns();
                 initializePasswordValidation();
+                initializeGenderDropdown();
             });
+        }
+        
+        // Initialize gender dropdown functionality
+        function initializeGenderDropdown() {
+            // Gender dropdown functionality removed - no longer needed
         }
     </script>
 </body>

@@ -82,7 +82,7 @@
                             <span class="text-sm font-medium text-gray-600">Type:</span>
                             <select id="userTypeFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 <option value="">All Types</option>
-                                <option value="1">SK Chairman</option>
+                                <option value="1">SK Chairperson</option>
                                 <option value="2">SK Kagawad</option>
                                 <option value="3">Secretary</option>
                                 <option value="4">Treasurer</option>
@@ -719,11 +719,10 @@ function setupFilterHandlers() {
         const table = $('#usersTable').DataTable();
         if (positionValue) {
             const positionMap = {
-                '1': 'Chairman',
-                '2': 'Vice Chairman', 
-                '3': 'Secretary',
-                '4': 'Treasurer',
-                '5': 'Member'
+                '1': 'Chairperson',
+                '2': 'Secretary',
+                '3': 'Treasurer',
+                '4': 'Member'
             };
             const searchText = positionMap[positionValue] || '';
             table.column(5).search(searchText).draw();
@@ -968,7 +967,7 @@ function setYesNo(selector, val) {
 }
 
 function positionText(p) {
-    const map = { 1:'SK Chairman',2:'SK Kagawad',3:'Secretary',4:'Treasurer',5:'KK Member' };
+    const map = { 1:'SK Chairperson',2:'SK Kagawad',3:'Secretary',4:'Treasurer',5:'KK Member' };
     return map[String(p)] || 'KK Member';
 }
 
@@ -1107,7 +1106,7 @@ function scanUser(userId) {
 // Utility functions
 function getPositionText(position) {
     const positions = {
-        1: 'SK Chairman',
+        1: 'SK Chairperson',
         2: 'SK Kagawad',
         3: 'Secretary', 
         4: 'Treasurer',

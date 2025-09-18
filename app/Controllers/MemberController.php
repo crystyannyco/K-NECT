@@ -47,7 +47,15 @@ class MemberController extends BaseController
             return $this->response->setStatusCode(400)->setJSON(['success' => false, 'message' => 'Missing user_id or user_type']);
         }
         $userModel = new UserModel();
+        // Accept either numeric DB ID or permanent user_id string
         $user = $userModel->find($userId);
+        if (!$user) {
+            $user = $userModel->where('user.user_id', $userId)->first();
+            // If found by user_id, switch to DB id for updates
+            if ($user) {
+                $userId = $user['id'];
+            }
+        }
         if (!$user) {
             return $this->response->setStatusCode(404)->setJSON(['success' => false, 'message' => 'User not found']);
         }
@@ -107,6 +115,14 @@ class MemberController extends BaseController
                 $updateData['sk_username'] = UserHelper::generateSKUsername($user['first_name'], $user['last_name']);
                 $updateData['sk_password'] = UserHelper::generatePassword(8);
             }
+            // Set position to 1 (Chairperson) for SK officials
+            $updateData['position'] = 1;
+
+            // If downgrading from PED -> SK, clear PED credentials
+            if (isset($user['user_type']) && (int)$user['user_type'] === 3) {
+                $updateData['ped_username'] = null;
+                $updateData['ped_password'] = null;
+            }
         } elseif ($userType == 3) { // Pederasyon Officer
             $wasSK = isset($user['user_type']) && (int)$user['user_type'] === 2;
 
@@ -124,6 +140,19 @@ class MemberController extends BaseController
                 }
                 $updateData['position'] = 1; // Promote to SK Chairperson to align with Pederasyon composition
             }
+        } elseif ($userType == 1) { // KK Member
+            // Downgrades to KK should nullify credentials accordingly
+            if (isset($user['user_type'])) {
+                if ((int)$user['user_type'] === 3) { // PED -> KK: clear both SK and PED creds
+                    $updateData['ped_username'] = null;
+                    $updateData['ped_password'] = null;
+                    $updateData['sk_username'] = null;
+                    $updateData['sk_password'] = null;
+                } elseif ((int)$user['user_type'] === 2) { // SK -> KK: clear SK creds
+                    $updateData['sk_username'] = null;
+                    $updateData['sk_password'] = null;
+                }
+            }
         }
         // If KK Member (userType == 1), do not change username/password
 
@@ -131,7 +160,12 @@ class MemberController extends BaseController
         if ($result) {
             return $this->response->setJSON(['success' => true, 'message' => 'User type updated successfully']);
         } else {
-            return $this->response->setStatusCode(500)->setJSON(['success' => false, 'message' => 'Failed to update user type']);
+            $errors = method_exists($userModel, 'errors') ? $userModel->errors() : [];
+            $msg = 'Failed to update user type';
+            if (!empty($errors)) {
+                $msg .= ': ' . implode('; ', array_filter(array_values($errors)));
+            }
+            return $this->response->setStatusCode(500)->setJSON(['success' => false, 'message' => $msg, 'errors' => $errors]);
         }
     }
 
@@ -157,23 +191,23 @@ class MemberController extends BaseController
             return $this->response->setStatusCode(404)->setJSON(['success' => false, 'message' => 'User not found']);
         }
 
-        // Check restrictions: current user or SK Chairman (position 1)
+        // Check restrictions: current user or SK Chairperson (position 1)
         $isCurrentUser = ($user['id'] == $currentUserId);
-        $isChairman = ($user['position'] == 1);
+        $isChairperson = ($user['position'] == 1);
         
         if ($isCurrentUser) {
             return $this->response->setStatusCode(403)->setJSON(['success' => false, 'message' => 'You cannot change your own position']);
         }
         
-        if ($isChairman) {
-            return $this->response->setStatusCode(403)->setJSON(['success' => false, 'message' => 'SK Chairman position cannot be changed']);
+        if ($isChairperson) {
+            return $this->response->setStatusCode(403)->setJSON(['success' => false, 'message' => 'SK Chairperson position cannot be changed']);
         }
 
         $updateData = ['position' => $position];
 
         // Update user_type based on position
-        if ($position == 1) { // SK Chairman
-            $updateData['user_type'] = 2; // SK Chairman is considered SK Official
+        if ($position == 1) { // SK Chairperson
+            $updateData['user_type'] = 2; // SK Chairperson is considered SK Official
             
             // Generate SK credentials if missing
             if (empty($user['sk_username']) || empty($user['sk_password'])) {
@@ -305,6 +339,11 @@ class MemberController extends BaseController
                     $updateData['sk_username'] = UserHelper::generateSKUsername($user['first_name'], $user['last_name']);
                     $updateData['sk_password'] = UserHelper::generatePassword(8);
                 }
+                // If downgrading from PED -> SK, clear PED credentials
+                if (isset($user['user_type']) && (int)$user['user_type'] === 3) {
+                    $updateData['ped_username'] = null;
+                    $updateData['ped_password'] = null;
+                }
             } elseif ((int)$userType === 3) { // Pederasyon Officer
                 $wasSK = isset($user['user_type']) && (int)$user['user_type'] === 2;
                 // Ensure PED credentials exist
@@ -319,6 +358,21 @@ class MemberController extends BaseController
                         $updateData['sk_password'] = UserHelper::generatePassword(8);
                     }
                     $updateData['position'] = 1;
+                }
+            }
+
+            // Handle KK downgrades nullification
+            if ((int)$userType === 1) {
+                if (isset($user['user_type'])) {
+                    if ((int)$user['user_type'] === 3) { // PED -> KK: clear both SK and PED creds
+                        $updateData['ped_username'] = null;
+                        $updateData['ped_password'] = null;
+                        $updateData['sk_username'] = null;
+                        $updateData['sk_password'] = null;
+                    } elseif ((int)$user['user_type'] === 2) { // SK -> KK
+                        $updateData['sk_username'] = null;
+                        $updateData['sk_password'] = null;
+                    }
                 }
             }
 
@@ -341,9 +395,9 @@ class MemberController extends BaseController
             return $this->response->setStatusCode(400)->setJSON(['success' => false, 'message' => 'Missing user_ids or position']);
         }
         
-        // Prevent bulk assignment of SK Chairman position
+        // Prevent bulk assignment of SK Chairperson position
         if ($position == 1) {
-            return $this->response->setStatusCode(400)->setJSON(['success' => false, 'message' => 'SK Chairman position cannot be assigned in bulk']);
+            return $this->response->setStatusCode(400)->setJSON(['success' => false, 'message' => 'SK Chairperson position cannot be assigned in bulk']);
         }
         
         // Get current user's database ID from session
@@ -360,12 +414,12 @@ class MemberController extends BaseController
             $user = $userModel->find($id);
             
             if ($user) {
-                // Check restrictions: current user or SK Chairman (position 1)
+                // Check restrictions: current user or SK Chairperson (position 1)
                 $isCurrentUser = ($user['id'] == $currentUserId);
-                $isChairman = ($user['position'] == 1);
+                $isChairperson = ($user['position'] == 1);
                 
-                if ($isCurrentUser || $isChairman) {
-                    $reason = $isCurrentUser ? 'current user' : 'SK Chairman';
+                if ($isCurrentUser || $isChairperson) {
+                    $reason = $isCurrentUser ? 'current user' : 'SK Chairperson';
                     $restricted[] = $user['first_name'] . ' ' . $user['last_name'] . ' (' . $reason . ')';
                     continue;
                 }

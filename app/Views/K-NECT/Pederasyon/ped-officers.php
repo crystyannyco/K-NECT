@@ -138,7 +138,6 @@
                                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
                                 </svg>
                                 <span class="text-sm font-medium text-gray-600">Pederasyon Officers</span>
-                                <span class="text-sm font-medium text-gray-600">Pederasyon Officers</span>
                             </div>
                         </li>
                     </ol>
@@ -284,7 +283,7 @@
                                                                 echo 'Sergeant at Arms';
                                                                 break;
                                                             default:
-                                                                echo 'Officer';
+                                                                echo 'SK Pederasyon Member';
                                                                 break;
                                                         }
                                                     ?>
@@ -312,8 +311,6 @@
                                                     </svg>
                                                     <h3 class="text-lg font-medium text-gray-900 mb-2">No Pederasyon Officers found</h3>
                                                     <p class="text-gray-500">There are no Pederasyon Officers in the database yet.</p>
-                                                    <h3 class="text-lg font-medium text-gray-900 mb-2">No Pederasyon Officers found</h3>
-                                                    <p class="text-gray-500">There are no Pederasyon Officers in the database yet.</p>
                                                 </div>
                                             </td>
                                         </tr>
@@ -328,22 +325,32 @@
     </div>
 
     <!-- Bulk Change Button (hidden by default) -->
-    <button id="bulkChangeBtn" class="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold rounded-full shadow-lg transition-all duration-200 hidden">
-        Change Position for Selected
+    <button id="bulkChangeBtn" class="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-base font-medium rounded-lg shadow-lg transition-all duration-200 flex items-center gap-2 hidden">
+        <span>Change Position for Selected</span>
     </button>
 
     <!-- Bulk Change Modal -->
-    <div id="bulkChangeModal" class="fixed inset-0 z-[99999] hidden bg-black bg-opacity-40 flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-8 relative">
-            <button id="closeBulkChangeModal" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 focus:outline-none">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-            <h3 class="text-xl font-bold text-gray-900 mb-4 text-center">Bulk Change Officer Position</h3>
-            <div class="mb-6">
+    <div id="bulkChangeModal" class="fixed inset-0 z-[99999] hidden bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl relative overflow-hidden flex flex-col">
+            <!-- Modal Header -->
+            <div class="bg-white border-b border-gray-200 px-6 py-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">Bulk Change Officer Position</h3>
+                        <p class="text-sm text-gray-500 mt-1">Apply a new position to all selected officers.</p>
+                    </div>
+                    <button id="closeBulkChangeModal" class="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors p-1">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="px-6 py-5">
                 <label for="bulkNewPosition" class="block text-sm font-medium text-gray-700 mb-2">Select New Position</label>
-                <select id="bulkNewPosition" class="w-full border border-gray-300 rounded-md px-2 py-2 text-base focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                <select id="bulkNewPosition" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     <option value="1">President</option>
                     <option value="2">Vice President</option>
                     <option value="3">Secretary</option>
@@ -351,11 +358,20 @@
                     <option value="5">Auditor</option>
                     <option value="6">Public Information Officer</option>
                     <option value="7">Sergeant at Arms</option>
+                    <option value="NULL">SK Pederasyon Member</option>
                 </select>
             </div>
-            <div class="flex justify-center gap-4">
-                <button id="confirmBulkChangeBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200">Confirm</button>
-                <button id="cancelBulkChangeBtn" class="bg-gray-400 hover:bg-gray-500 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200">Cancel</button>
+
+            <!-- Modal Footer -->
+            <div class="bg-gray-50 border-t border-gray-200 px-6 py-4">
+                <div class="flex justify-end gap-3">
+                    <button id="cancelBulkChangeBtn" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200">
+                        Cancel
+                    </button>
+                    <button id="confirmBulkChangeBtn" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 shadow-sm">
+                        Confirm
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -385,7 +401,6 @@
             <!-- Modal Header -->
             <div class="bg-white border-b border-gray-200 px-6 py-4">
                 <div class="flex justify-between items-center">
-                    <h3 class="text-lg font-semibold text-gray-900">Pederasyon Officer Profile</h3>
                     <h3 class="text-lg font-semibold text-gray-900">Pederasyon Officer Profile</h3>
                     <button id="closeUserDetailModal" class="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors p-1">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -427,6 +442,7 @@
                             <option value="5">Auditor</option>
                             <option value="6">Public Information Officer</option>
                             <option value="7">Sergeant at Arms</option>
+                            <option value="NULL">SK Pederasyon Member</option>
                         </select>
                         <button id="saveOfficerPositionBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm">
                             Update Position
@@ -1281,16 +1297,17 @@
         function displayOfficialList(officials) {
             const tbody = document.getElementById('officialListTableBody');
             tbody.innerHTML = '';
-            officials.forEach(official => {
+            officials.forEach((official, index) => {
                 const row = document.createElement('tr');
+                row.className = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
                 row.innerHTML = `
-                    <td class="border border-black text-center" style="font-size: 8px; padding: 1px;">${official.userId}</td>
-                    <td class="border border-black text-center" style="font-size: 8px; padding: 1px;">${official.barangay}</td>
-                    <td class="border border-black text-center" style="font-size: 8px; padding: 1px;">${official.name}</td>
-                    <td class="border border-black text-center" style="font-size: 8px; padding: 1px;">${official.age}</td>
-                    <td class="border border-black text-center" style="font-size: 8px; padding: 1px;">${official.birthday}</td>
-                    <td class="border border-black text-center" style="font-size: 8px; padding: 1px;">${official.sex}</td>
-                    <td class="border border-black text-center" style="font-size: 8px; padding: 1px;">${official.position}</td>`;
+                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${official.userId}</td>
+                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${official.barangay}</td>
+                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${official.name}</td>
+                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${official.age}</td>
+                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${official.birthday}</td>
+                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${official.sex}</td>
+                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${official.position}</td>`;
                 tbody.appendChild(row);
             });
             loadBarangayLogo();
@@ -1330,7 +1347,10 @@
                     @page { size: A4 landscape; margin: 0.5in; }
                     body { font-family: Arial, sans-serif !important; margin:0; padding:20px; -webkit-print-color-adjust: exact; color-adjust: exact; }
                     table { width:100% !important; border-collapse: collapse !important; font-size: 8px !important; }
-                    th, td { border: 1px solid black !important; padding: 1px !important; text-align: center !important; font-size: 8px !important; }
+                    th, td { border: 1px solid #d1d5db !important; padding: 4px !important; text-align: center !important; font-size: 8px !important; }
+                    th { background-color: #f9fafb !important; font-weight: 600 !important; }
+                    tbody tr:nth-child(even) { background-color: #f9fafb !important; }
+                    tbody tr:nth-child(odd) { background-color: #ffffff !important; }
                     .hidden { display: none !important; }
                 </style>`;
             document.body.innerHTML = styles + printContent.outerHTML;
@@ -1442,31 +1462,34 @@
         $('#officialListModal').on('click', function(e) { if (e.target === this) { closeOfficialListModal(); } });
     </script>
 
-    <!-- Official List Modal (moved from youthlist) -->
-    <div id="officialListModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden">
-        <div class="relative top-5 mx-auto p-5 border w-11/12 max-w-7xl shadow-lg rounded-md bg-white max-h-[90vh] overflow-y-auto">
-            <div class="mt-3">
-                <!-- Modal Header -->
-                <div class="flex items-center justify-between pb-2 border-b">
+    <!-- Official List Modal - Unified Design -->
+    <div id="officialListModal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-7xl max-h-[90vh] relative overflow-hidden flex flex-col">
+            <!-- Modal Header -->
+            <div class="bg-white border-b border-gray-200 px-6 py-4">
+                <div class="flex justify-between items-center">
                     <div>
-                        <h3 class="text-lg font-semibold text-gray-900">SK PEDERASYON OFFICIAL LIST</h3>
-                        <p class="text-xs text-gray-600 mt-0.5">Panglungod na Pederasyon ng mga Sanggunian Kabataan Officials</p>
+                        <h3 class="text-xl font-bold text-gray-900">SK Pederasyon Official List</h3>
+                        <p class="text-sm text-gray-600 mt-1">Panlungsod na Pederasyon ng mga Sangguniang Kabataan Officials</p>
                     </div>
-                    <button onclick="closeOfficialListModal()" class="text-gray-400 hover:text-gray-600">
+                    <button onclick="closeOfficialListModal()" class="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors p-1">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                         </svg>
                     </button>
                 </div>
+            </div>
 
-                <!-- Modal Content -->
-                <div class="mt-6">
-                    <div id="officialListLoading" class="text-center py-8">
-                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                        <p class="mt-2 text-gray-600">Loading official list...</p>
-                    </div>
-                    
-                    <div id="officialListContent" class="hidden">
+            <!-- Modal Content -->
+            <div class="flex-1 overflow-y-auto p-6">
+                <div id="officialListLoading" class="text-center py-12">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <p class="mt-3 text-gray-600 font-medium">Loading official list...</p>
+                </div>
+                
+                <div id="officialListContent" class="hidden">
+                    <!-- Document Preview Container -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                         <!-- Download Format Content -->
                         <div id="downloadOfficialContent" class="bg-white">
                             <!-- Header Section -->
@@ -1509,20 +1532,22 @@
 
                             <!-- Table -->
                             <div class="overflow-x-auto">
-                                <table class="w-full border-collapse border border-black" style="font-size: 8px;">
-                                    <thead>
-                                        <tr class="bg-gray-100">
-                                            <th class="border border-black text-center font-bold" style="width: 10%; padding: 1px;">User ID</th>
-                                            <th class="border border-black text-center font-bold" style="width: 20%; padding: 1px;">Barangay</th>
-                                            <th class="border border-black text-center font-bold" style="width: 25%; padding: 1px;">Name</th>
-                                            <th class="border border-black text-center font-bold" style="width: 8%; padding: 1px;">Age</th>
-                                            <th class="border border-black text-center font-bold" style="width: 12%; padding: 1px;">Birthday</th>
-                                            <th class="border border-black text-center font-bold" style="width: 8%; padding: 1px;">Sex</th>
-                                            <th class="border border-black text-center font-bold" style="width: 17%; padding: 1px;">Position</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="officialListTableBody"></tbody>
-                                </table>
+                                <div class="border-2 border-gray-400 rounded-lg overflow-hidden">
+                                    <table class="w-full border border-gray-300 rounded-lg overflow-hidden">
+                                        <thead>
+                                            <tr class="bg-gray-50">
+                                                <th class="border border-gray-300 text-center font-bold py-3 px-3 text-gray-700 text-xs">User ID</th>
+                                                <th class="border border-gray-300 text-center font-bold py-3 px-3 text-gray-700 text-xs">Barangay</th>
+                                                <th class="border border-gray-300 text-center font-bold py-3 px-3 text-gray-700 text-xs">Name</th>
+                                                <th class="border border-gray-300 text-center font-bold py-3 px-3 text-gray-700 text-xs">Age</th>
+                                                <th class="border border-gray-300 text-center font-bold py-3 px-3 text-gray-700 text-xs">Birthday</th>
+                                                <th class="border border-gray-300 text-center font-bold py-3 px-3 text-gray-700 text-xs">Sex</th>
+                                                <th class="border border-gray-300 text-center font-bold py-3 px-3 text-gray-700 text-xs">Position</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="officialListTableBody"></tbody>
+                                    </table>
+                                </div>
                             </div>
 
                             <!-- Signature Section -->
@@ -1545,24 +1570,52 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <div id="noOfficials" class="text-center py-8 hidden">
-                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div id="noOfficials" class="text-center py-12 hidden">
+                        <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2M4 13h2m13-8l-4 4-4-4m0 0V3"></path>
                             </svg>
-                            <h3 class="mt-2 text-sm font-medium text-gray-900">No Officials Found</h3>
-                            <p class="mt-1 text-sm text-gray-500">No officials are currently registered in the system.</p>
                         </div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">No Officials Found</h3>
+                        <p class="text-sm text-gray-500">No officials are currently registered in the system.</p>
+                    </div>
+                </div>
+            </div>
 
-                        <!-- Modal Footer -->
-                        <div class="mt-6 pt-4 border-t flex justify-end gap-3">
-                            <div id="officialListCount" class="text-sm font-medium text-gray-700 mr-auto"></div>
-                            <button onclick="closeOfficialListModal()" class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg font-medium transition-colors">Close</button>
-                            <button onclick="printOfficialList()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">Print</button>
-                            <button onclick="downloadOfficialListPDF()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors">Download PDF</button>
-                            <button onclick="downloadOfficialListWord()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">Download Word</button>
-                            <button onclick="downloadOfficialListExcel()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors">Download Excel</button>
-                        </div>
+            <!-- Modal Footer -->
+            <div class="bg-gray-50 border-t border-gray-200 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div id="officialListCount" class="text-sm font-medium text-gray-700"></div>
+                    <div class="flex gap-3">
+                        <button onclick="closeOfficialListModal()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200">
+                            Close
+                        </button>
+                        <button onclick="printOfficialList()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 shadow-sm">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                            </svg>
+                            Print
+                        </button>
+                        <button onclick="downloadOfficialListPDF()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors duration-200 shadow-sm">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            PDF
+                        </button>
+                        <button onclick="downloadOfficialListWord()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 shadow-sm">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Word
+                        </button>
+                        <button onclick="downloadOfficialListExcel()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 shadow-sm">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Excel
+                        </button>
                     </div>
                 </div>
             </div>

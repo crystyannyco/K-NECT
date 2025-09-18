@@ -68,11 +68,11 @@ class UserHelper
             $actualUserType = 1;
         } elseif ($userType === 'sk' || $user['sk_username'] === $username) {
             $userType = 'sk';
-            $userTypeText = 'SK Official';
+            $userTypeText = 'SK';
             $actualUserType = 2;
         } elseif ($userType === 'pederasyon' || $user['ped_username'] === $username) {
             $userType = 'pederasyon';
-            $userTypeText = 'Pederasyon Officer';
+            $userTypeText = 'Pederasyon';
             $actualUserType = 3;
         }
         
@@ -92,11 +92,10 @@ class UserHelper
         if ($userType === 'sk') {
             // SK Official positions
             $positions = [
-                1 => 'Chairman',
-                2 => 'Vice Chairman', 
-                3 => 'Secretary',
-                4 => 'Treasurer',
-                5 => 'Member'
+                1 => 'Chairperson',
+                2 => 'Secretary',
+                3 => 'Treasurer',
+                4 => 'Member'
             ];
             $positionText = $positions[$user['position']] ?? 'Member';
         } elseif ($userType === 'pederasyon') {
@@ -189,17 +188,50 @@ class UserHelper
 
     public static function generateSKUsername($firstName, $lastName)
     {
-        return 'SK_' . ucfirst(str_replace(' ', '', $firstName)) . ucfirst(str_replace(' ', '', $lastName));
+        $userModel = new UserModel();
+        $baseUsername = 'SK_' . ucfirst(str_replace(' ', '', $firstName)) . ucfirst(str_replace(' ', '', $lastName));
+        
+        // Ensure uniqueness
+        $counter = 1;
+        $username = $baseUsername;
+        while ($userModel->where('sk_username', $username)->first()) {
+            $username = $baseUsername . $counter;
+            $counter++;
+        }
+        
+        return $username;
     }
     
     public static function generateSecretaryUsername($firstName, $lastName)
     {
-        return 'SEC_' . ucfirst(str_replace(' ', '', $firstName)) . ucfirst(str_replace(' ', '', $lastName));
+        $userModel = new UserModel();
+        $baseUsername = 'SEC_' . ucfirst(str_replace(' ', '', $firstName)) . ucfirst(str_replace(' ', '', $lastName));
+        
+        // Ensure uniqueness
+        $counter = 1;
+        $username = $baseUsername;
+        while ($userModel->where('sk_username', $username)->first()) {
+            $username = $baseUsername . $counter;
+            $counter++;
+        }
+        
+        return $username;
     }
     
     public static function generatePEDUsername($firstName, $lastName)
     {
-        return 'PED_' . ucfirst(str_replace(' ', '', $firstName)) . ucfirst(str_replace(' ', '', $lastName));
+        $userModel = new UserModel();
+        $baseUsername = 'PED_' . ucfirst(str_replace(' ', '', $firstName)) . ucfirst(str_replace(' ', '', $lastName));
+        
+        // Ensure uniqueness
+        $counter = 1;
+        $username = $baseUsername;
+        while ($userModel->where('ped_username', $username)->first()) {
+            $username = $baseUsername . $counter;
+            $counter++;
+        }
+        
+        return $username;
     }
 
     public static function generatePassword($length = 8)

@@ -85,7 +85,7 @@
                                 <button class="status-tab active px-4 py-2 rounded-lg text-sm font-medium transition-all" data-status="all">
                                     All
                                 </button>
-                                <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all" data-status="chairman">
+                                <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all" data-status="chairperson">
                                     SK Chairperson
                                 </button>
                                 <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all" data-status="councilor">
@@ -117,7 +117,7 @@
                 <div class="mb-4 flex justify-center" style="display: none;">
                   <div class="inline-flex space-x-2 border border-gray-200 rounded-xl bg-gray-50 p-1">
                     <button id="tabAll" class="px-6 py-2 text-sm font-medium rounded-lg focus:outline-none text-gray-700 bg-transparent transition active-tab">All</button>
-                    <button id="tabChairman" class="px-6 py-2 text-sm font-medium rounded-lg focus:outline-none text-gray-700 bg-transparent transition">SK Chairman</button>
+                    <button id="tabChairperson" class="px-6 py-2 text-sm font-medium rounded-lg focus:outline-none text-gray-700 bg-transparent transition">SK Chairperson</button>
                     <button id="tabSK" class="px-6 py-2 text-sm font-medium rounded-lg focus:outline-none text-gray-700 bg-transparent transition">SK Kagawad</button>
                     <button id="tabPederasyon" class="px-6 py-2 text-sm font-medium rounded-lg focus:outline-none text-gray-700 bg-transparent transition">Appointed Officials</button>
                   </div>
@@ -195,7 +195,7 @@
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     <?php
                                                         $position = isset($user['position']) ? (int)$user['position'] : 5;
-                                                        echo $position == 1 ? 'SK Chairman' : ($position == 2 ? 'SK Kagawad' : ($position == 3 ? 'Secretary' : ($position == 4 ? 'Treasurer' : 'KK Member')));
+                                                        echo $position == 1 ? 'SK Chairperson' : ($position == 2 ? 'SK Kagawad' : ($position == 3 ? 'Secretary' : ($position == 4 ? 'Treasurer' : 'KK Member')));
                                                     ?>
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap">
@@ -252,7 +252,7 @@
             <div class="mb-6">
                 <label for="bulkNewPosition" class="block text-sm font-medium text-gray-700 mb-2">Select New Position</label>
                 <select id="bulkNewPosition" class="w-full border border-gray-300 rounded-md px-2 py-2 text-base focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
-                    <option value="1" disabled style="color: #888;">SK Chairman (Cannot be assigned in bulk)</option>
+                    <option value="1" disabled style="color: #888;">SK Chairperson (Cannot be assigned in bulk)</option>
                     <option value="2" selected>SK Kagawad</option>
                     <option value="3">Secretary</option>
                     <option value="4">Treasurer</option>
@@ -325,7 +325,7 @@
                             <label class="text-sm font-semibold text-gray-700">Position</label>
                         </div>
                         <select id="modalUserType" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-3">
-                            <option value="1">SK Chairman</option>
+                            <option value="1">SK Chairperson</option>
                             <option value="2">SK Kagawad</option>
                             <option value="3">Secretary</option>
                             <option value="4">Treasurer</option>
@@ -617,11 +617,11 @@
                     var userId = $(this).data('user_id');
                     var position = $(this).data('position');
                     var isCurrentUser = (userId == currentUserId);
-                    var isChairman = (position == 1);
+                    var isChairperson = (position == 1);
                     
-                    if (isCurrentUser || isChairman) {
+                    if (isCurrentUser || isChairperson) {
                         $(this).addClass('restricted-checkbox')
-                               .attr('title', isCurrentUser ? 'You cannot change your own position' : 'SK Chairman position cannot be changed');
+                               .attr('title', isCurrentUser ? 'You cannot change your own position' : 'SK Chairperson position cannot be changed');
                         $(this).closest('tr').addClass('restricted-row');
                     }
                 });
@@ -648,10 +648,10 @@
                 const status = $(this).data('status');
                 if (status === 'all') {
                     $('#myTable tbody tr').show();
-                } else if (status === 'chairman') {
+                } else if (status === 'chairperson') {
                     $('#myTable tbody tr').each(function() {
                         var userType = $(this).find('td').eq(8).text().trim();
-                        if (userType === 'SK Chairman') {
+                        if (userType === 'SK Chairperson') {
                             $(this).show();
                         } else {
                             $(this).hide();
@@ -745,7 +745,7 @@
             populateBarangayFilter();
             
             function setActiveTab(tab) {
-                $('#tabAll, #tabChairman, #tabSK, #tabPederasyon, #tabKK')
+                $('#tabAll, #tabChairperson, #tabSK, #tabPederasyon, #tabKK')
                   .removeClass('bg-white border font-semibold shadow text-gray-900 active-tab')
                   .addClass('bg-transparent text-gray-700 font-normal border-0');
                 tab
@@ -758,17 +758,17 @@
                 $('#myTable tbody tr').show();
                 localStorage.setItem('kkTab', 'tabAll');
             });
-            $('#tabChairman').on('click', function() {
+            $('#tabChairperson').on('click', function() {
                 setActiveTab($(this));
                 $('#myTable tbody tr').each(function() {
                     var userType = $(this).find('td').eq(8).text().trim();
-                    if (userType === 'SK Chairman') {
+                    if (userType === 'SK Chairperson') {
                         $(this).show();
                     } else {
                         $(this).hide();
                     }
                 });
-                localStorage.setItem('kkTab', 'tabChairman');
+                localStorage.setItem('kkTab', 'tabChairperson');
             });
             $('#tabSK').on('click', function() {
                 setActiveTab($(this));
@@ -840,7 +840,7 @@
                     $(this).prop('checked', false);
                     var errorMsg = isCurrentUser ? 
                         'You cannot select your own record for bulk changes.' : 
-                        'SK Chairman position cannot be changed.';
+                        'SK Chairperson position cannot be changed.';
                     showNotification(errorMsg, 'error');
                     return;
                 }
@@ -887,7 +887,7 @@
                 });
                 
                 if (invalidSelections.length > 0) {
-                    showNotification('Some selected users cannot be changed (current user or SK Chairman). Please unselect them.', 'error');
+                    showNotification('Some selected users cannot be changed (current user or SK Chairperson). Please unselect them.', 'error');
                     return;
                 }
                 
@@ -898,9 +898,9 @@
                 
                 var newType = $('#bulkNewPosition').val();
                 
-                // Prevent selecting SK Chairman in bulk update
+                // Prevent selecting SK Chairperson in bulk update
                 if (newType == '1') {
-                    showNotification('SK Chairman position cannot be assigned in bulk. Please select a different position.', 'error');
+                    showNotification('SK Chairperson position cannot be assigned in bulk. Please select a different position.', 'error');
                     return;
                 }
                 
@@ -984,7 +984,7 @@
                                     if (isCurrentUser) {
                                         $('#saveUserTypeBtn').attr('title', 'You cannot change your own position');
                                     } else if (isChairman) {
-                                        $('#saveUserTypeBtn').attr('title', 'SK Chairman position cannot be changed');
+                                        $('#saveUserTypeBtn').attr('title', 'SK Chairperson position cannot be changed');
                                     }
                                 } else {
                                     $('#modalUserType').prop('disabled', false);
@@ -1025,7 +1025,7 @@
                                     .removeClass()
                                     .addClass('inline-flex px-2 py-1 rounded-full text-sm font-medium ' + statusClass);
                                 $('#modalUserZone').text(u.zone_purok || '');
-                                // Address formatting with default region/province/municipality
+                                // Address formatting with default region/province/city
                                 var addressParts = [];
                                 if (u.zone_purok) addressParts.push(u.zone_purok);
                                 if (barangayStr) addressParts.push(barangayStr);

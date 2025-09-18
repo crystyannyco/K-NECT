@@ -286,7 +286,7 @@ class ProfileController extends BaseController
                         $u['position_text'] = 'Pederasyon Board Member';
                         break;
                     default:
-                        $u['position_text'] = 'Pederasyon Officer';
+                        $u['position_text'] = 'Pederasyon Officer | SK Chairperson';
                 }
             } else {
                 $u['position_text'] = 'KK Member';

@@ -223,7 +223,7 @@
                                     <p class="text-xs text-gray-500">
                                         <?php if ($currentUser): ?>
                                             <?php if (!empty($currentUser['position_text'])): ?>
-                                                <?= esc($currentUser['user_type_text']) ?> - <?= esc($currentUser['position_text']) ?>
+                                                <?= esc($currentUser['user_type_text']) ?> <?= esc($currentUser['position_text']) ?>
                                             <?php else: ?>
                                                 <?= esc($currentUser['user_type_text']) ?>
                                             <?php endif; ?>
@@ -265,7 +265,7 @@
                                         </p>
                                         <?php if ($currentUser && !empty($currentUser['barangay_name'])): ?>
                                             <p class="text-xs text-gray-500">
-                                                <?= esc($currentUser['barangay_name']) ?>
+                                                Barangay <?= esc($currentUser['barangay_name']) ?>
                                             </p>
                                         <?php endif; ?>
                                     </div>

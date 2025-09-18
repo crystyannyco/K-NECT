@@ -10,7 +10,7 @@ class UserModel extends Model
     protected $primaryKey = 'id';
     protected $useAutoIncrement = true;
     protected $returnType     = 'array';
-    protected $allowedFields = ['last_name','first_name','middle_name','sex', 'suffix','birthdate','email','phone_number', 'username','status','user_type','position','is_active','password','sk_username','sk_password','ped_username','ped_password','ped_position','created_at','updated_at', 'user_id', 'last_login', 'rfid_code'];
+    protected $allowedFields = ['last_name','first_name','middle_name','sex','gender', 'suffix','birthdate','email','phone_number', 'username','status','user_type','position','is_active','password','sk_username','sk_password','ped_username','ped_password','ped_position','created_at','updated_at', 'user_id', 'last_login', 'rfid_code'];
     protected $useTimestamps = true;
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
@@ -22,6 +22,7 @@ class UserModel extends Model
         'first_name' => 'required|alpha_space|min_length[2]',
         'middle_name' => 'permit_empty|alpha_space',
         'sex' => 'required|in_list[1,2]',
+        'gender' => 'permit_empty|in_list[1,2,3,4,5]',
         'birthdate' => 'required|valid_date',
         'email' => 'required|valid_email|is_unique[user.email]',
         'phone_number' => 'required|numeric|min_length[7]',
@@ -47,6 +48,9 @@ class UserModel extends Model
         'sex' => [
             'required' => 'Sex is required.',
             'in_list' => 'Please select a valid sex.'
+        ],
+        'gender' => [
+            'in_list' => 'Please select a valid gender.'
         ],
         'birthdate' => [
             'required' => 'Birthdate is required.',

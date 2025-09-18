@@ -156,7 +156,7 @@
                             <p class="text-sm text-gray-900"><?= esc($address['zone_purok']) ?: 'Not specified' ?></p>
                         </div>
                         <div>
-                            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Municipality</p>
+                            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">City</p>
                             <p class="text-sm text-gray-900">Iriga City</p>
                         </div>
                         <div>

@@ -425,7 +425,7 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
                     </svg>
-                    <span>Start Attendance</span>
+                    <span>Save & Start Attendance</span>
                 </button>
             </div>
         </div>
@@ -713,6 +713,7 @@ function toggleSession(session) {
 // Function to validate the attendance form and enable/disable start button
 function validateAttendanceForm() {
     const startBtn = document.getElementById('startAttendanceBtn');
+    const saveBtn = document.getElementById('saveAttendanceBtn');
     const morningEnabled = document.getElementById('enableMorningSession').checked;
     const afternoonEnabled = document.getElementById('enableAfternoonSession').checked;
     
@@ -775,18 +776,24 @@ function validateAttendanceForm() {
         isValid = morningValid && afternoonValid;
     }
     
-    // Enable/disable the start attendance button
-    if (isValid) {
-        startBtn.disabled = false;
-        startBtn.title = 'Start attendance for this event';
-    } else {
-        startBtn.disabled = true;
-        if (validationErrors.length > 0) {
-            startBtn.title = validationErrors.join('. ');
-        } else {
-            startBtn.title = 'Please configure at least one session with valid times before starting attendance';
-        }
+    // Enable/disable both save and start attendance buttons
+    const buttonTitle = isValid 
+        ? 'Ready to save or start attendance' 
+        : (validationErrors.length > 0 
+            ? validationErrors.join('. ') 
+            : 'Please configure at least one session with valid times');
+    
+    if (startBtn) {
+        startBtn.disabled = !isValid;
+        startBtn.title = buttonTitle;
     }
+    
+    if (saveBtn) {
+        saveBtn.disabled = !isValid;
+        saveBtn.title = buttonTitle;
+    }
+    
+    return isValid;
 }
 
 function saveAttendanceSettings() {
@@ -795,17 +802,34 @@ function saveAttendanceSettings() {
         return;
     }
     
+    // Check if at least one session is enabled
+    const morningEnabled = document.getElementById('enableMorningSession').checked;
+    const afternoonEnabled = document.getElementById('enableAfternoonSession').checked;
+    
+    if (!morningEnabled && !afternoonEnabled) {
+        showNotification('Please enable at least one session', 'error');
+        return;
+    }
+
+    // Show loading state for save button
+    const saveBtn = document.getElementById('saveAttendanceBtn');
+    const originalSaveHTML = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Saving...';
+    saveBtn.disabled = true;
+    
     const formData = new FormData();
     formData.append('event_id', currentEventId);
     
     // Check if morning session is enabled
-    const morningEnabled = document.getElementById('enableMorningSession').checked;
     if (morningEnabled) {
         const startAM = document.getElementById('startAttendanceAM').value;
         const endAM = document.getElementById('endAttendanceAM').value;
         
         if (!startAM || !endAM) {
             showNotification('Please fill in both start and end times for morning session', 'error');
+            // Reset button state
+            saveBtn.innerHTML = originalSaveHTML;
+            saveBtn.disabled = false;
             return;
         }
         
@@ -816,9 +840,15 @@ function saveAttendanceSettings() {
         
         if (diffMinutes < 30) {
             showNotification('Morning session must be at least 30 minutes long', 'error');
+            // Reset button state
+            saveBtn.innerHTML = originalSaveHTML;
+            saveBtn.disabled = false;
             return;
         } else if (diffMinutes < 0) {
             showNotification('Morning session end time must be after start time', 'error');
+            // Reset button state
+            saveBtn.innerHTML = originalSaveHTML;
+            saveBtn.disabled = false;
             return;
         }
         
@@ -830,13 +860,15 @@ function saveAttendanceSettings() {
     }
     
     // Check if afternoon session is enabled
-    const afternoonEnabled = document.getElementById('enableAfternoonSession').checked;
     if (afternoonEnabled) {
         const startPM = document.getElementById('startAttendancePM').value;
         const endPM = document.getElementById('endAttendancePM').value;
         
         if (!startPM || !endPM) {
             showNotification('Please fill in both start and end times for afternoon session', 'error');
+            // Reset button state
+            saveBtn.innerHTML = originalSaveHTML;
+            saveBtn.disabled = false;
             return;
         }
         
@@ -847,9 +879,15 @@ function saveAttendanceSettings() {
         
         if (diffMinutes < 30) {
             showNotification('Afternoon session must be at least 30 minutes long', 'error');
+            // Reset button state
+            saveBtn.innerHTML = originalSaveHTML;
+            saveBtn.disabled = false;
             return;
         } else if (diffMinutes < 0) {
             showNotification('Afternoon session end time must be after start time', 'error');
+            // Reset button state
+            saveBtn.innerHTML = originalSaveHTML;
+            saveBtn.disabled = false;
             return;
         }
         
@@ -860,12 +898,6 @@ function saveAttendanceSettings() {
         formData.append('end_attendance_pm', '');
     }
     
-    // Check if at least one session is enabled
-    if (!morningEnabled && !afternoonEnabled) {
-        showNotification('Please enable at least one session', 'error');
-        return;
-    }
-    
     fetch('<?= base_url('pederasyon/saveEventAttendanceSettings') ?>', {
         method: 'POST',
         body: formData
@@ -873,7 +905,7 @@ function saveAttendanceSettings() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showNotification(data.message, 'success');
+            showNotification('Attendance settings saved successfully!', 'success');
             
             // Broadcast session update to attendance display windows
             broadcastSessionUpdate(currentEventId);
@@ -884,6 +916,12 @@ function saveAttendanceSettings() {
     .catch(error => {
         console.error('Error saving attendance settings:', error);
         showNotification('Error saving attendance settings', 'error');
+    })
+    .finally(() => {
+        // Reset button state
+        saveBtn.innerHTML = originalSaveHTML;
+        saveBtn.disabled = false;
+        validateAttendanceForm(); // Re-validate to set proper disabled state
     });
 }
 
@@ -938,7 +976,7 @@ function broadcastSessionUpdate(eventId) {
 // Track opened attendance display windows
 window.attendanceDisplayWindows = window.attendanceDisplayWindows || {};
 
-// Enhanced startAttendance function to track windows
+// Enhanced startAttendance function to save settings first, then track windows
 function startAttendanceEnhanced() {
     if (!currentEventId) {
         showNotification('No event selected', 'error');
@@ -964,6 +1002,19 @@ function startAttendanceEnhanced() {
             showNotification('Please fill in both start and end times for morning session', 'error');
             return;
         }
+        
+        // Validate 30 minutes minimum duration for morning session
+        const startTime = new Date(`2000-01-01 ${startAM}`);
+        const endTime = new Date(`2000-01-01 ${endAM}`);
+        const diffMinutes = (endTime - startTime) / (1000 * 60);
+        
+        if (diffMinutes < 30) {
+            showNotification('Morning session must be at least 30 minutes long', 'error');
+            return;
+        } else if (diffMinutes < 0) {
+            showNotification('Morning session end time must be after start time', 'error');
+            return;
+        }
     }
     
     // Validate afternoon session times if enabled
@@ -975,29 +1026,100 @@ function startAttendanceEnhanced() {
             showNotification('Please fill in both start and end times for afternoon session', 'error');
             return;
         }
-    }
-    
-    // Open attendance display in a new tab
-    const attendanceDisplayUrl = `<?= base_url('pederasyon/attendanceDisplay') ?>/${currentEventId}`;
-    const attendanceWindow = window.open(attendanceDisplayUrl, '_blank');
-    
-    // Track the window for direct messaging
-    if (attendanceWindow) {
-        window.attendanceDisplayWindows[currentEventId] = attendanceWindow;
         
-        // Clean up when window is closed
-        const checkClosed = setInterval(() => {
-            if (attendanceWindow.closed) {
-                delete window.attendanceDisplayWindows[currentEventId];
-                clearInterval(checkClosed);
-            }
-        }, 1000);
+        // Validate 30 minutes minimum duration for afternoon session
+        const startTime = new Date(`2000-01-01 ${startPM}`);
+        const endTime = new Date(`2000-01-01 ${endPM}`);
+        const diffMinutes = (endTime - startTime) / (1000 * 60);
+        
+        if (diffMinutes < 30) {
+            showNotification('Afternoon session must be at least 30 minutes long', 'error');
+            return;
+        } else if (diffMinutes < 0) {
+            showNotification('Afternoon session end time must be after start time', 'error');
+            return;
+        }
+    }
+
+    // Show loading state
+    const startBtn = document.getElementById('startAttendanceBtn');
+    const originalHTML = startBtn.innerHTML;
+    startBtn.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Saving & Starting...';
+    startBtn.disabled = true;
+
+    // First save the attendance settings
+    const formData = new FormData();
+    formData.append('event_id', currentEventId);
+    
+    // Add morning session data if enabled
+    if (morningEnabled) {
+        formData.append('start_attendance_am', document.getElementById('startAttendanceAM').value);
+        formData.append('end_attendance_am', document.getElementById('endAttendanceAM').value);
+    } else {
+        formData.append('start_attendance_am', '');
+        formData.append('end_attendance_am', '');
     }
     
-    // Close the modal
-    closeAttendanceModal();
+    // Add afternoon session data if enabled
+    if (afternoonEnabled) {
+        formData.append('start_attendance_pm', document.getElementById('startAttendancePM').value);
+        formData.append('end_attendance_pm', document.getElementById('endAttendancePM').value);
+    } else {
+        formData.append('start_attendance_pm', '');
+        formData.append('end_attendance_pm', '');
+    }
     
-    showNotification('Attendance display opened in new tab', 'success');
+    // Save settings first, then open attendance display
+    fetch('<?= base_url('pederasyon/saveEventAttendanceSettings') ?>', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Settings saved successfully!', 'success');
+            
+            // Broadcast session update to attendance display windows
+            broadcastSessionUpdate(currentEventId);
+            
+            // Wait a moment, then open attendance display
+            setTimeout(() => {
+                const attendanceDisplayUrl = `<?= base_url('pederasyon/attendanceDisplay') ?>/${currentEventId}`;
+                const attendanceWindow = window.open(attendanceDisplayUrl, '_blank');
+                
+                // Track the window for direct messaging
+                if (attendanceWindow) {
+                    window.attendanceDisplayWindows[currentEventId] = attendanceWindow;
+                    
+                    // Clean up when window is closed
+                    const checkClosed = setInterval(() => {
+                        if (attendanceWindow.closed) {
+                            delete window.attendanceDisplayWindows[currentEventId];
+                            clearInterval(checkClosed);
+                        }
+                    }, 1000);
+                }
+                
+                // Close the modal
+                closeAttendanceModal();
+                
+                showNotification('Attendance display opened in new tab', 'success');
+            }, 500);
+            
+        } else {
+            showNotification(data.message || 'Failed to save settings', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving attendance settings:', error);
+        showNotification('Error saving attendance settings', 'error');
+    })
+    .finally(() => {
+        // Reset button state
+        startBtn.innerHTML = originalHTML;
+        startBtn.disabled = false;
+        validateAttendanceForm(); // Re-validate to set proper disabled state
+    });
 }
 
 // Close modal when clicking outside

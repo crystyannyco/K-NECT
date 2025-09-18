@@ -346,10 +346,10 @@ $isSuperAdmin = $userRole === 'super_admin';
                     </label>
                     <div class="individual-roles-group ml-4 space-y-1">
                         <label class="flex items-center">
-                            <input type="checkbox" name="sms_recipient_roles[]" value="chairman" 
-                                   <?= (isset($event['sms_recipient_roles']) && in_array('chairman', json_decode($event['sms_recipient_roles'], true) ?? [])) ? 'checked' : '' ?>
+                            <input type="checkbox" name="sms_recipient_roles[]" value="chairperson" 
+                                   <?= (isset($event['sms_recipient_roles']) && in_array('chairperson', json_decode($event['sms_recipient_roles'], true) ?? [])) ? 'checked' : '' ?>
                                    class="mr-2 individual-role-checkbox">
-                            <span class="text-sm text-gray-700">SK Chairman</span>
+                            <span class="text-sm text-gray-700">SK Chairperson</span>
                         </label>
                         <label class="flex items-center">
                             <input type="checkbox" name="sms_recipient_roles[]" value="secretary" 

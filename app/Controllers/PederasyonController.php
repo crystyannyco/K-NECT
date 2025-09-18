@@ -681,7 +681,7 @@ class PederasyonController extends BaseController
                             case 5: $position = 'Pederasyon Auditor'; break;
                             case 6: $position = 'Pederasyon Public Information Officer'; break;
                             case 7: $position = 'Pederasyon Sergeant at Arms'; break;
-                            default: $position = 'Pederasyon Officer'; break;
+                            default: $position = 'Pederasyon Officer | SK Chairperson'; break;
                         }
                     } else if ($userType === 2) { // SK Chairperson
                         $userPosition = isset($official['position']) ? (int)$official['position'] : 0;
@@ -865,11 +865,11 @@ class PederasyonController extends BaseController
             $users = $profileController->getAllUsersWithExtendedInfo();
             $users = $profileController->processUsersForMemberListing($users, 'pederasyon');
             
-            // Filter only officials (SK Chairman and Pederasyon Officers with Accepted status)
+            // Filter only officials (SK Chairperson and Pederasyon Officers with Accepted status)
             $officials = array_filter($users, function($user) {
                 $userType = isset($user['user_type']) ? (int)$user['user_type'] : 1;
                 $status = isset($user['status']) ? (int)$user['status'] : 1;
-                return ($userType === 2 || $userType === 3) && $status === 2; // SK Chairman or Pederasyon Officer, Accepted
+                return ($userType === 2 || $userType === 3) && $status === 2; // SK Chairperson or Pederasyon Officer, Accepted
             });
 
             if (empty($officials)) {
@@ -1041,7 +1041,7 @@ class PederasyonController extends BaseController
                             case 5: $position = 'Pederasyon Auditor'; break;
                             case 6: $position = 'Pederasyon Public Information Officer'; break;
                             case 7: $position = 'Pederasyon Sergeant at Arms'; break;
-                            default: $position = 'Pederasyon Officer'; break;
+                            default: $position = 'Pederasyon Officer | SK Chairperson'; break;
                         }
                     } else if ($userType === 2) { // SK Chairperson
                         $userPosition = isset($official['position']) ? (int)$official['position'] : 0;
@@ -1204,11 +1204,11 @@ class PederasyonController extends BaseController
             $users = $profileController->getAllUsersWithExtendedInfo();
             $users = $profileController->processUsersForMemberListing($users, 'pederasyon');
             
-            // Filter only officials (SK Chairman and Pederasyon Officers with Accepted status)
+            // Filter only officials (SK Chairperson and Pederasyon Officers with Accepted status)
             $officials = array_filter($users, function($user) {
                 $userType = isset($user['user_type']) ? (int)$user['user_type'] : 1;
                 $status = isset($user['status']) ? (int)$user['status'] : 1;
-                return ($userType === 2 || $userType === 3) && $status === 2; // SK Chairman or Pederasyon Officer, Accepted
+                return ($userType === 2 || $userType === 3) && $status === 2; // SK Chairperson or Pederasyon Officer, Accepted
             });
 
             if (empty($officials)) {
@@ -1386,7 +1386,7 @@ class PederasyonController extends BaseController
                             case 5: $position = 'Pederasyon Auditor'; break;
                             case 6: $position = 'Pederasyon Public Information Officer'; break;
                             case 7: $position = 'Pederasyon Sergeant at Arms'; break;
-                            default: $position = 'Pederasyon Officer'; break;
+                            default: $position = 'Pederasyon Officer | SK Chairperson'; break;
                         }
                     } else if ($userType === 2) { // SK Chairperson
                         $userPosition = isset($official['position']) ? (int)$official['position'] : 0;
@@ -1476,11 +1476,11 @@ class PederasyonController extends BaseController
             $users = $profileController->getAllUsersWithExtendedInfo();
             $users = $profileController->processUsersForMemberListing($users, 'pederasyon');
             
-            // Filter only officials (SK Chairman and Pederasyon Officers with Accepted status)
+            // Filter only officials (SK Chairperson and Pederasyon Officers with Accepted status)
             $officials = array_filter($users, function($user) {
                 $userType = isset($user['user_type']) ? (int)$user['user_type'] : 1;
                 $status = isset($user['status']) ? (int)$user['status'] : 1;
-                return ($userType === 2 || $userType === 3) && $status === 2; // SK Chairman or Pederasyon Officer, Accepted
+                return ($userType === 2 || $userType === 3) && $status === 2; // SK Chairperson or Pederasyon Officer, Accepted
             });
 
             $skCredentials = [];
@@ -1499,7 +1499,7 @@ class PederasyonController extends BaseController
                     $fullName .= ' ' . esc($official['middle_name']);
                 }
 
-                // SK Credentials (both SK Chairman and Pederasyon Officers get SK credentials)
+                // SK Credentials (both SK Chairperson and Pederasyon Officers get SK credentials)
                 $skUsername = $official['sk_username'] ?? '';
                 $skPassword = $official['sk_password'] ?? '';
                 
@@ -1521,7 +1521,7 @@ class PederasyonController extends BaseController
                     
                     if ($pedUsername && $pedPassword) {
                         // Determine specific position
-                        $position = 'Pederasyon Officer';
+                        $position = 'Pederasyon Officer | SK Chairperson';
                         $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : 0;
                         switch($pedPosition) {
                             case 1: $position = 'Pederasyon President'; break;
@@ -1580,11 +1580,11 @@ class PederasyonController extends BaseController
             $users = $profileController->getAllUsersWithExtendedInfo();
             $users = $profileController->processUsersForMemberListing($users, 'pederasyon');
             
-            // Filter only officials (SK Chairman and Pederasyon Officers with Accepted status)
+            // Filter only officials (SK Chairperson and Pederasyon Officers with Accepted status)
             $officials = array_filter($users, function($user) {
                 $userType = isset($user['user_type']) ? (int)$user['user_type'] : 1;
                 $status = isset($user['status']) ? (int)$user['status'] : 1;
-                return ($userType === 2 || $userType === 3) && $status === 2; // SK Chairman or Pederasyon Officer, Accepted
+                return ($userType === 2 || $userType === 3) && $status === 2; // SK Chairperson or Pederasyon Officer, Accepted
             });
 
             if (empty($officials)) {
@@ -1879,7 +1879,7 @@ class PederasyonController extends BaseController
                     $barangay = BarangayHelper::getBarangayName($official['barangay']);
                     
                     $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : 0;
-                    $position = 'Pederasyon Officer';
+                    $position = 'Pederasyon Officer | SK Chairperson';
                     switch($pedPosition) {
                         case 1: $position = 'Pederasyon President'; break;
                         case 2: $position = 'Pederasyon Vice President'; break;
@@ -2220,7 +2220,7 @@ class PederasyonController extends BaseController
                     $barangay = BarangayHelper::getBarangayName($official['barangay']);
                     
                     $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : 0;
-                    $position = 'Pederasyon Officer';
+                    $position = 'Pederasyon Officer | SK Chairperson';
                     switch($pedPosition) {
                         case 1: $position = 'Pederasyon President'; break;
                         case 2: $position = 'Pederasyon Vice President'; break;
@@ -2522,7 +2522,7 @@ class PederasyonController extends BaseController
                     $barangay = BarangayHelper::getBarangayName($official['barangay']);
                     
                     $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : 0;
-                    $position = 'Pederasyon Officer';
+                    $position = 'Pederasyon Officer | SK Chairperson';
                     switch($pedPosition) {
                         case 1: $position = 'Pederasyon President'; break;
                         case 2: $position = 'Pederasyon Vice President'; break;
@@ -3264,7 +3264,7 @@ class PederasyonController extends BaseController
                         
                         if ($userAddress) {
                             // Check if there's already an SK Chairperson in this barangay (excluding current user)
-                            $existingChairman = $userModel
+                            $existingChairperson = $userModel
                                 ->select('user.id')
                                 ->join('address', 'address.user_id = user.id', 'left')
                                 ->where('user.user_type', 2) // SK Chairperson
@@ -3273,7 +3273,7 @@ class PederasyonController extends BaseController
                                 ->where('user.id !=', $userId) // Exclude current user
                                 ->first();
                                 
-                            if ($existingChairman) {
+                            if ($existingChairperson) {
                                 $errors[] = "Cannot assign SK Chairperson to user ID $userId: This barangay already has an SK Chairperson";
                                 continue;
                             }
@@ -3301,6 +3301,53 @@ class PederasyonController extends BaseController
                                 continue;
                             }
                             $updateData['user_id'] = $newId;
+                        }
+                    }
+
+                    // Generate credentials based on user type
+                    if ($newUserType === 2) { // SK Chairperson
+                        // Only generate SK credentials if missing
+                        if (empty($user['sk_username']) || empty($user['sk_password'])) {
+                            $updateData['sk_username'] = UserHelper::generateSKUsername($user['first_name'], $user['last_name']);
+                            $updateData['sk_password'] = UserHelper::generatePassword(8);
+                        }
+                        $updateData['position'] = 1; // Set position to Chairperson
+                        // If downgrading from PED -> SK, clear PED credentials
+                        if (isset($user['user_type']) && (int)$user['user_type'] === 3) {
+                            $updateData['ped_username'] = null;
+                            $updateData['ped_password'] = null;
+                        }
+                    } elseif ($newUserType === 3) { // Pederasyon Officer
+                        $wasSK = isset($user['user_type']) && (int)$user['user_type'] === 2;
+
+                        // Ensure PED credentials exist
+                        if (empty($user['ped_username']) || empty($user['ped_password'])) {
+                            $updateData['ped_username'] = UserHelper::generatePEDUsername($user['first_name'], $user['last_name']);
+                            $updateData['ped_password'] = UserHelper::generatePassword(8);
+                        }
+
+                        // If the user was not SK before, ensure SK credentials and set position = 1 (Chairperson)
+                        if (!$wasSK) {
+                            if (empty($user['sk_username']) || empty($user['sk_password'])) {
+                                $updateData['sk_username'] = UserHelper::generateSKUsername($user['first_name'], $user['last_name']);
+                                $updateData['sk_password'] = UserHelper::generatePassword(8);
+                            }
+                            $updateData['position'] = 1; // Promote to SK Chairperson to align with Pederasyon composition
+                        }
+                    }
+
+                    // If downgrading to KK, clear credentials accordingly
+                    if ($newUserType === 1) {
+                        if (isset($user['user_type'])) {
+                            if ((int)$user['user_type'] === 3) { // PED -> KK
+                                $updateData['ped_username'] = null;
+                                $updateData['ped_password'] = null;
+                                $updateData['sk_username'] = null;
+                                $updateData['sk_password'] = null;
+                            } elseif ((int)$user['user_type'] === 2) { // SK -> KK
+                                $updateData['sk_username'] = null;
+                                $updateData['sk_password'] = null;
+                            }
                         }
                     }
 
@@ -3354,7 +3401,7 @@ class PederasyonController extends BaseController
         }
     }
 
-    public function checkSKChairmanByBarangay()
+    public function checkSKChairpersonByBarangay()
     {
         try {
             $barangayId = $this->request->getPost('barangay_id');
@@ -3380,28 +3427,28 @@ class PederasyonController extends BaseController
                 $query->where('user.id !=', $currentUserId);
             }
 
-            $existingChairman = $query->first();
+            $existingChairperson = $query->first();
 
-            if ($existingChairman) {
+            if ($existingChairperson) {
                 return $this->response->setJSON([
                     'success' => true,
-                    'hasChairman' => true,
-                    'chairman' => [
-                        'id' => $existingChairman['id'],
-                        'user_id' => $existingChairman['user_id'],
-                        'name' => $existingChairman['first_name'] . ' ' . $existingChairman['last_name']
+                    'hasChairperson' => true,
+                    'chairperson' => [
+                        'id' => $existingChairperson['id'],
+                        'user_id' => $existingChairperson['user_id'],
+                        'name' => $existingChairperson['first_name'] . ' ' . $existingChairperson['last_name']
                     ]
                 ]);
             } else {
                 return $this->response->setJSON([
                     'success' => true,
-                    'hasChairman' => false
+                    'hasChairperson' => false
                 ]);
             }
 
         } catch (\Exception $e) {
-            log_message('error', 'Error in checkSKChairmanByBarangay: ' . $e->getMessage());
-            return $this->response->setJSON(['success' => false, 'message' => 'An error occurred while checking SK Chairman']);
+            log_message('error', 'Error in checkSKChairpersonByBarangay: ' . $e->getMessage());
+            return $this->response->setJSON(['success' => false, 'message' => 'An error occurred while checking SK Chairperson']);
         }
     }
 

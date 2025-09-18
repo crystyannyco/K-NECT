@@ -212,8 +212,7 @@
                                     <p class="text-xs text-gray-500">
                                         <?php if ($currentUser): ?>
                                             <?= esc($currentUser['user_type_text']) ?>
-                                            <?php if (!empty($currentUser['position_text'])): ?>
-                                                - <?= esc($currentUser['position_text']) ?>
+                                            <?php if (!empty($currentUser['position_text'])): ?> <?= esc($currentUser['position_text']) ?>
                                             <?php endif; ?>
                                         <?php endif; ?>
                                     </p>
@@ -250,11 +249,9 @@
                                                 <?php endif; ?>
                                             <?php endif; ?>
                                         </p>
-                                        <?php if ($currentUser && !empty($currentUser['barangay_name'])): ?>
-                                            <p class="text-xs text-gray-500">
-                                                <?= esc($currentUser['barangay_name']) ?>
-                                            </p>
-                                        <?php endif; ?>
+                                        <p class="text-xs text-gray-500">
+                                            Iriga City
+                                        </p>
                                     </div>
                                 </div>
                             </div>

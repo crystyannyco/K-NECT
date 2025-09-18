@@ -824,15 +824,15 @@ class SKController extends BaseController
             }
             unset($u);
 
-            // Extract secretary and chairman names
+            // Extract secretary and chairperson names
             $secretaryName = '';
-            $chairmanName = '';
+            $chairpersonName = '';
             foreach ($users as $user) {
                 if (isset($user['position']) && (int)$user['position'] === 3) {
                     $secretaryName = trim($user['first_name'] . ' ' . $user['middle_name'] . ' ' . $user['last_name']);
                 }
                 if (isset($user['position']) && (int)$user['position'] === 1) {
-                    $chairmanName = trim($user['first_name'] . ' ' . $user['middle_name'] . ' ' . $user['last_name']);
+                    $chairpersonName = trim($user['first_name'] . ' ' . $user['middle_name'] . ' ' . $user['last_name']);
                 }
             }
 
@@ -841,7 +841,7 @@ class SKController extends BaseController
                 'users' => $users,
                 'count' => count($users),
                 'secretary_name' => $secretaryName,
-                'chairman_name' => $chairmanName,
+                'chairman_name' => $chairpersonName,
                 'filters' => [
                     'status' => $statusFilter,
                     'zone' => $zoneFilter,
@@ -955,18 +955,17 @@ class SKController extends BaseController
             $userTypes = [
                 1 => 'KK Member',
                 2 => 'SK Official', 
-                3 => 'Pederasyon Officer'
+                3 => 'Pederasyon Officer | SK Chairperson'
             ];
             $u['user_type_text'] = $userTypes[$u['user_type']] ?? 'Unknown';
 
             // Get position text for SK/Pederasyon users
             if ($u['user_type'] == 2 && !empty($u['position'])) {
                 $skPositions = [
-                    1 => 'Chairman',
-                    2 => 'Vice Chairman',
-                    3 => 'Secretary',
-                    4 => 'Treasurer',
-                    5 => 'Member'
+                    1 => 'Chairperson',
+                    2 => 'Secretary',
+                    3 => 'Treasurer',
+                    4 => 'Member'
                 ];
                 $u['position_text'] = $skPositions[$u['position']] ?? 'Member';
             } else {
@@ -1499,15 +1498,15 @@ class SKController extends BaseController
 
     private function generateKKListHTML($users, $barangayName, $logos = [])
     {
-        // Extract secretary and chairman names
+        // Extract secretary and chairperson names
         $secretaryName = '';
-        $chairmanName = '';
+        $chairpersonName = '';
         foreach ($users as $user) {
             if (isset($user['position']) && (int)$user['position'] === 3) {
                 $secretaryName = esc($user['first_name'] . ' ' . $user['middle_name'] . ' ' . $user['last_name']);
             }
             if (isset($user['position']) && (int)$user['position'] === 1) {
-                $chairmanName = esc($user['first_name'] . ' ' . $user['middle_name'] . ' ' . $user['last_name']);
+                $chairpersonName = esc($user['first_name'] . ' ' . $user['middle_name'] . ' ' . $user['last_name']);
             }
         }
         
@@ -1698,7 +1697,7 @@ class SKController extends BaseController
             <tr>
                 <th style="width: 3%">REGION</th>
                 <th style="width: 4%">PROVINCE</th>
-                <th style="width: 6%">CITY/<br>MUNICIPALITY</th>
+                <th style="width: 6%">CITY</th>
                 <th style="width: 6%">BARANGAY</th>
                 <th style="width: 8%">NAME</th>
                 <th style="width: 3%">AGE</th>
@@ -1803,7 +1802,7 @@ class SKController extends BaseController
             <div class="signature-box">
                 <div class="signature-text">Approved by:</div>
                 <div class="signature-line"></div>
-                <div class="signature-text">' . ($chairmanName ?: '________________') . '</div>
+                <div class="signature-text">' . ($chairpersonName ?: '________________') . '</div>
                 <div class="signature-text signature-title">SK Chairperson</div>
             </div>
         </div>
@@ -1957,7 +1956,7 @@ class SKController extends BaseController
     $table->addRow();
     $table->addCell(600, $cellVAlignCenter)->addText('REGION', $tableHeaderStyle, $paraCenter);
     $table->addCell(800, $cellVAlignCenter)->addText('PROVINCE', $tableHeaderStyle, $paraCenter);
-    $table->addCell(1000, $cellVAlignCenter)->addText('CITY/MUNICIPALITY', $tableHeaderStyle, $paraCenter);
+    $table->addCell(1000, $cellVAlignCenter)->addText('CITY', $tableHeaderStyle, $paraCenter);
     $table->addCell(800, $cellVAlignCenter)->addText('BARANGAY', $tableHeaderStyle, $paraCenter);
     $table->addCell(1500, $cellVAlignCenter)->addText('FAMILY NAME, FIRST NAME, MIDDLE NAME', $tableHeaderStyle, $paraCenter);
     $table->addCell(400, $cellVAlignCenter)->addText('AGE', $tableHeaderStyle, $paraCenter);
@@ -2041,13 +2040,13 @@ class SKController extends BaseController
         
         // Add signature section
         $secretaryName = '';
-        $chairmanName = '';
+        $chairpersonName = '';
         foreach ($users as $user) {
             if (isset($user['position']) && (int)$user['position'] === 3) {
                 $secretaryName = $user['first_name'] . ' ' . $user['middle_name'] . ' ' . $user['last_name'];
             }
             if (isset($user['position']) && (int)$user['position'] === 1) {
-                $chairmanName = $user['first_name'] . ' ' . $user['middle_name'] . ' ' . $user['last_name'];
+                $chairpersonName = $user['first_name'] . ' ' . $user['middle_name'] . ' ' . $user['last_name'];
             }
         }
         $section->addTextBreak(2);
@@ -2070,7 +2069,7 @@ class SKController extends BaseController
         $cell1->addText('_________________________', ['size' => 8], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
         $cell2->addText('_________________________', ['size' => 8], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
         $cell1->addText($secretaryName ?: '________________', ['bold' => true, 'size' => 8], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-        $cell2->addText($chairmanName ?: '________________', ['bold' => true, 'size' => 8], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+        $cell2->addText($chairpersonName ?: '________________', ['bold' => true, 'size' => 8], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
         $cell1->addText('SK Secretary', ['size' => 8], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
         $cell2->addText('SK Chairperson', ['size' => 8], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
 
@@ -2178,7 +2177,7 @@ class SKController extends BaseController
             $headers = [
                 'A' => 'REGION',
                 'B' => 'PROVINCE',
-                'C' => 'CITY/MUNICIPALITY',
+                'C' => 'CITY',
                 'D' => 'BARANGAY',
                 'E' => 'NAME',
                 'F' => 'AGE',
@@ -2210,7 +2209,7 @@ class SKController extends BaseController
 
             // Add user data
             foreach ($users as $user) {
-                // Set static values for region, province, city/municipality
+                // Set static values for region, province, city
                 $region = 'V';
                 $province = 'Camarines Sur';
                 $city = 'Iriga City';
@@ -2270,16 +2269,16 @@ class SKController extends BaseController
             }
 
 
-            // Add signature section (secretary and chairman close together)
+            // Add signature section (secretary and chairperson close together)
             $currentRow += 2;
             $secretaryName = '';
-            $chairmanName = '';
+            $chairpersonName = '';
             foreach ($users as $user) {
                 if (isset($user['position']) && (int)$user['position'] === 3) {
                     $secretaryName = $user['first_name'] . ' ' . $user['middle_name'] . ' ' . $user['last_name'];
                 }
                 if (isset($user['position']) && (int)$user['position'] === 1) {
-                    $chairmanName = $user['first_name'] . ' ' . $user['middle_name'] . ' ' . $user['last_name'];
+                    $chairpersonName = $user['first_name'] . ' ' . $user['middle_name'] . ' ' . $user['last_name'];
                 }
             }
 
@@ -2291,11 +2290,11 @@ class SKController extends BaseController
             $sheet->setCellValue('K16', 'SK Secretary');
             $sheet->getStyle('K16')->getFont()->setBold(true);
 
-            // Chairman signature at M (currentRow)
+            // Chairperson signature at M (currentRow)
             $sheet->setCellValue('M' . $currentRow, 'Noted by:');
             $sheet->getStyle('M' . $currentRow)->getFont()->setBold(true);
             $currentRow++;
-            $sheet->setCellValue('M' . $currentRow, $chairmanName ?: '_______________________');
+            $sheet->setCellValue('M' . $currentRow, $chairpersonName ?: '_______________________');
             $sheet->getStyle('M' . $currentRow)->getFont()->setBold(true);
             $currentRow++;
             $sheet->setCellValue('M' . $currentRow, 'SK Chairperson');
@@ -2456,13 +2455,13 @@ class SKController extends BaseController
 
             // Signatures
             $secretaryName = '';
-            $chairmanName = '';
+            $chairpersonName = '';
             foreach ($users as $user) {
                 if (isset($user['position']) && (int)$user['position'] === 3) {
                     $secretaryName = trim($user['first_name'] . ' ' . $user['middle_name'] . ' ' . $user['last_name']);
                 }
                 if (isset($user['position']) && (int)$user['position'] === 1) {
-                    $chairmanName = trim($user['first_name'] . ' ' . $user['middle_name'] . ' ' . $user['last_name']);
+                    $chairpersonName = trim($user['first_name'] . ' ' . $user['middle_name'] . ' ' . $user['last_name']);
                 }
             }
 
@@ -2476,7 +2475,7 @@ class SKController extends BaseController
                 <div class="signature-box">
                     <div style="margin-bottom: 5px; font-weight: bold;">Approved by:</div>
                     <div class="signature-line"></div>
-                    <div style="font-weight: bold;">' . ($chairmanName ?: '_______________________') . '</div>
+                    <div style="font-weight: bold;">' . ($chairpersonName ?: '_______________________') . '</div>
                     <div>SK Chairperson</div>
                 </div>
             </div>';

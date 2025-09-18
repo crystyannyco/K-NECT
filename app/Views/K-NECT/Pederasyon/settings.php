@@ -59,7 +59,7 @@
                     <!-- Card Content -->
                     <div class="space-y-3 mb-4">
                         <div class="flex justify-between items-center text-sm">
-                            <span class="text-gray-600">Municipality Logo</span>
+                            <span class="text-gray-600">City Logo</span>
                             <span id="iriga-logo-status" class="inline-flex items-center">
                                 <span class="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
                                 <span class="font-medium text-gray-900">Not uploaded</span>
@@ -73,7 +73,7 @@
                             </span>
                         </div>
                         <div class="flex justify-between items-center text-sm">
-                            <span class="text-gray-600">Municipality Management</span>
+                            <span class="text-gray-600">City Management</span>
                             <span class="inline-flex items-center">
                                 <span class="w-2 h-2 bg-blue-400 rounded-full mr-2"></span>
                                 <span class="font-medium text-gray-900">Available</span>
@@ -111,20 +111,20 @@
 
         <!-- Modal Content -->
         <div class="p-6">
-            <!-- Pederasyon-specific layout - Two columns for Municipality and Pederasyon Logos -->
+            <!-- Pederasyon-specific layout - Two columns for City and Pederasyon Logos -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 
-                <!-- Municipality Logo (Pederasyon Only - Municipality Management) -->
+                <!-- City Logo (Pederasyon Only - City Management) -->
                 <div class="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg p-6">
                     <div class="text-center mb-6">
-                        <h4 class="text-xl font-semibold text-gray-900 mb-2">Municipality Logo</h4>
-                        <p class="text-sm text-blue-600 mb-1">Municipality Management</p>
+                        <h4 class="text-xl font-semibold text-gray-900 mb-2">City Logo</h4>
+                        <p class="text-sm text-blue-600 mb-1">City Management</p>
                         <p class="text-xs text-gray-500">This logo will be used across all barangays</p>
                     </div>
                     
                     <!-- Current Logo Preview -->
                     <div class="mb-6">
-                        <p class="text-sm font-medium text-gray-700 mb-3 text-center">Current Municipality Logo:</p>
+                        <p class="text-sm font-medium text-gray-700 mb-3 text-center">Current City Logo:</p>
                         <div id="current-iriga-logo" class="w-32 h-32 mx-auto bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden flex items-center justify-center">
                             <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
@@ -145,7 +145,7 @@
                     </div>
                     <div class="mt-3">
                         <button onclick="uploadSingleLogo('iriga')" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg text-sm font-medium transition-colors duration-200">
-                            Upload Municipality Logo
+                            Upload City Logo
                         </button>
                     </div>
                 </div>
@@ -192,7 +192,7 @@
         <!-- Modal Footer -->
         <div class="flex items-center justify-between p-4 border-t">
             <div class="text-xs text-gray-500">
-                Upload Municipality logo (Municipality) and Pederasyon organization logo individually or use "Upload All" to process both files.
+                Upload City logo and Pederasyon organization logo individually or use "Upload All" to process both files.
             </div>
             <div class="flex space-x-2">
                 <button onclick="closeLogoManagerModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-4 rounded transition-colors duration-200">
@@ -243,7 +243,7 @@
                             <h4 class="text-xs font-medium text-gray-700">PANLUNGSOD NA PEDERASYON NG MGA </h4>
                              <h4 class="text-xs font-medium text-gray-700">SANGGUNIANG KABATAAN NG IRIGA</h4>
                         </div>
-                        <!-- Municipality Logo -->
+                        <!-- City Logo -->
                         <div class="text-center">
                             <div id="preview-iriga-logo" class="w-20 h-20 mx-auto mb-2 rounded flex items-center justify-center">
                                 <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -280,7 +280,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                         </svg>
                     </div>
-                    <h5 class="font-medium text-gray-900">Municipality Logo</h5>
+                    <h5 class="font-medium text-gray-900">City Logo</h5>
                     <p id="preview-iriga-status" class="text-sm text-red-600">Not uploaded</p>
                     <p class="text-xs text-gray-500 mt-1">Applied to all barangay documents</p>
                 </div>
@@ -479,7 +479,7 @@ function uploadSingleLogo(logoType) {
 function uploadAllLogos() {
     const uploads = [];
     
-    // Check for Municipality logo
+    // Check for City logo
     const irigaFile = document.getElementById('irigaLogo').files[0];
     if (irigaFile) uploads.push(uploadLogo(irigaFile, 'iriga'));
     
@@ -529,7 +529,7 @@ function updateLogoStatus() {
             if (data.success) {
                 const logos = data.data;
                 
-                // Update Municipality logo status
+                // Update City logo status
                 const irigaLogo = logos.iriga_city;
                 const irigaStatusElement = document.getElementById('iriga-logo-status');
                 if (irigaLogo && irigaStatusElement) {
@@ -572,7 +572,7 @@ function loadLogoPreview() {
 }
 
 function updatePreviewModal(logos) {
-    // Update Municipality logo
+    // Update City logo
     const irigaLogo = logos.iriga_city;
     
     // Update document header preview - Iriga logo
@@ -647,7 +647,7 @@ function loadExistingLogos() {
 }
 
 function updateCurrentLogoDisplays(logos) {
-    // Update Municipality logo display
+    // Update City logo display
     const irigaLogo = logos.iriga_city;
     const currentIrigaContainer = document.getElementById('current-iriga-logo');
     

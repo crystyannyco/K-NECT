@@ -125,14 +125,16 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->get('pederasyon/attendanceDisplay/(:num)', 'AttendanceController::pederasyonAttendanceDisplay/$1');
     $routes->post('pederasyon/getAttendanceData', 'AttendanceController::getAttendanceData');
     $routes->post('pederasyon/processAttendance', 'AttendanceController::processAttendance');
+    $routes->get('pederasyon/getAttendanceStatus/(:num)', 'AttendanceController::getAttendanceStatus/$1');
+    $routes->get('pederasyon/getSessionStatus/(:num)', 'AttendanceController::getSessionStatus/$1');
+    $routes->post('pederasyon/autoMarkTimeouts', 'AttendanceController::autoMarkTimeouts');
+    $routes->post('pederasyon/autoTimeoutSession', 'AttendanceController::autoTimeoutSession');
+    $routes->get('pederasyon/checkAttendanceSettings', 'AttendanceController::checkAttendanceSettings');
+    // Reports & Live view
     $routes->get('pederasyon/attendanceReport/(:num)', 'AttendanceController::attendanceReport/$1');
     $routes->post('pederasyon/attendance-report-excel/(:num)', 'PederasyonController::generateAttendanceReportExcel/$1');
     $routes->post('pederasyon/attendance-report-word/(:num)', 'PederasyonController::generateAttendanceReportWord/$1');
     $routes->get('pederasyon/liveAttendance/(:num)', 'PederasyonController::liveAttendance/$1');
-    $routes->post('pederasyon/autoMarkTimeouts', 'AttendanceController::autoMarkTimeouts');
-    $routes->get('pederasyon/getAttendanceStatus/(:num)', 'AttendanceController::getAttendanceStatus/$1');
-    $routes->get('pederasyon/getSessionStatus/(:num)', 'AttendanceController::getSessionStatus/$1');
-    $routes->post('pederasyon/autoTimeoutSession', 'AttendanceController::autoTimeoutSession');
     // Module: Pederasyon AJAX
     $routes->post('updateOfficerPosition', 'PederasyonController::updateOfficerPosition');
     $routes->post('bulkUpdateOfficerPosition', 'PederasyonController::bulkUpdateOfficerPosition');
@@ -148,7 +150,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('getUserInfo', 'MemberController::getUserInfo');
     $routes->post('updateUserType', 'MemberController::updateUserType');
     $routes->post('bulkUpdateUserType', 'PederasyonController::bulkUpdateUserType');
-    $routes->post('checkSKChairmanByBarangay', 'PederasyonController::checkSKChairmanByBarangay');
+    $routes->post('checkSKChairpersonByBarangay', 'PederasyonController::checkSKChairpersonByBarangay');
     $routes->post('updateUserPosition', 'MemberController::updateUserPosition');
     $routes->post('bulkUpdateUserPosition', 'MemberController::bulkUpdateUserPosition');
 

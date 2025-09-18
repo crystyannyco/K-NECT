@@ -219,7 +219,7 @@
                 <!-- Data Table -->
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200">
                     <div class="p-6">
-                        <div class="overflow-x-auto">
+                        <div class="overflow-x-auto ">
                             <table id="kkTable" class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
@@ -634,26 +634,28 @@
         </main>
     </div>
 
-    <!-- Download KK List Modal -->
-    <div id="downloadModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden">
-        <div class="relative top-5 mx-auto p-5 border w-11/12 max-w-7xl shadow-lg rounded-md bg-white max-h-[90vh] overflow-y-auto">
-            <div class="mt-3">
-                <!-- Modal Header -->
-                <div class="flex items-center justify-between pb-3 border-b">
+    <!-- Download KK List Modal - Unified Design -->
+    <div id="downloadModal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-[95vw] max-h-[90vh] relative overflow-hidden flex flex-col">
+            <!-- Modal Header -->
+            <div class="bg-white border-b border-gray-200 px-6 py-4">
+                <div class="flex justify-between items-center">
                     <div>
-                        <h3 class="text-xl font-semibold text-gray-900">KATIPUNAN NG KABATAAN YOUTH PROFILE</h3>
-                        <p class="text-sm text-gray-600 mt-1">Barangay <span class="font-semibold"><?= esc($barangay_name ?? '') ?></span></p>
-                        <p class="text-xs text-blue-700 mt-1">Note: Only verified (Accepted) KK members are included in this list.</p>
+                        <h3 class="text-xl font-bold text-gray-900">KATIPUNAN NG KABATAAN YOUTH PROFILE</h3>
+                        <p class="text-sm text-gray-600 mt-1">Barangay <span class="font-semibold"><?= esc($barangay_name ?? '') ?></span> - Only verified (Accepted) KK members included</p>
                     </div>
-                    <button onclick="closeDownloadModal()" class="text-gray-400 hover:text-gray-600">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button onclick="closeDownloadModal()" class="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors p-1">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                         </svg>
                     </button>
                 </div>
+            </div>
 
-                <!-- Modal Content -->
-                <div class="mt-6">
+            <!-- Modal Content -->
+            <div class="flex-1 overflow-y-auto p-6">
+                <!-- Document Preview Container -->
+                <div class="bg-white rounded-xl shadow-sm border-2 border-gray-300 p-6">
                     <!-- Download Format Content -->
                     <div id="downloadContent" class="bg-white">
                         <!-- Header Section -->
@@ -695,30 +697,30 @@
                         </div>
 
                         <!-- Table -->
-                        <div class="overflow-x-auto">
-                            <table class="w-full border-collapse border border-black" style="font-size: 6px;">
+                        <div class="overflow-x-auto border border-gray-400 rounded-lg">
+                            <table class="w-full border-collapse border border-gray-300 rounded-lg overflow-hidden" style="font-size: 6px;">
                                 <thead>
-                                    <tr class="bg-gray-100">
-                                        <th class="border border-black px-1 py-2 text-center font-bold" style="width: 3%">REGION</th>
-                                        <th class="border border-black px-1 py-2 text-center font-bold" style="width: 4%">PROVINCE</th>
-                                        <th class="border border-black px-1 py-2 text-center font-bold" style="width: 6%">CITY/<br>MUNICIPALITY</th>
-                                        <th class="border border-black px-1 py-2 text-center font-bold" style="width: 6%">BARANGAY</th>
-                                        <th class="border border-black px-1 py-2 text-center font-bold" style="width: 8%">NAME</th>
-                                        <th class="border border-black px-1 py-2 text-center font-bold" style="width: 3%">AGE</th>
-                                        <th class="border border-black px-1 py-2 text-center font-bold" style="width: 6%">BIRTHDAY</th>
-                                        <th class="border border-black px-1 py-2 text-center font-bold" style="width: 4%">SEX<br>M/F</th>
-                                        <th class="border border-black px-1 py-2 text-center font-bold" style="width: 6%">CIVIL<br>STATUS</th>
-                                        <th class="border border-black px-1 py-2 text-center font-bold" style="width: 6%">YOUTH<br>CLASSIFICATION/<br>IN/OUT/KATIPUNAN</th>
-                                        <th class="border border-black px-1 py-2 text-center font-bold" style="width: 6%">YOUTH<br>AGE<br>GROUP</th>
-                                        <th class="border border-black px-1 py-2 text-center font-bold" style="width: 5%">EMAIL<br>ADDRESS</th>
-                                        <th class="border border-black px-1 py-2 text-center font-bold" style="width: 5%">CONTACT<br>NUMBER</th>
-                                        <th class="border border-black px-1 py-2 text-center font-bold" style="width: 6%">HOME ADDRESS</th>
-                                        <th class="border border-black px-1 py-2 text-center font-bold" style="width: 6%">HIGHEST<br>EDUCATIONAL<br>ATTAINMENT</th>
-                                        <th class="border border-black px-1 py-2 text-center font-bold" style="width: 5%">WORK<br>STATUS</th>
-                                        <th class="border border-black px-1 py-2 text-center font-bold" style="width: 6%">Registered<br>SK<br>Voter</th>
-                                        <th class="border border-black px-1 py-2 text-center font-bold" style="width: 6%">Voted Last<br>SK<br>Election?</th>
-                                        <th class="border border-black px-1 py-2 text-center font-bold" style="width: 6%">Attended a KK<br>assembly? Y/N</th>
-                                        <th class="border border-black px-1 py-2 text-center font-bold" style="width: 5%">If yes, how<br>many<br>times?</th>
+                                    <tr class="bg-gray-50">
+                                        <th class="border border-gray-300 px-1 py-2 text-center font-bold text-gray-700 text-xs" style="width: 3%">REGION</th>
+                                        <th class="border border-gray-300 px-1 py-2 text-center font-bold text-gray-700 text-xs" style="width: 4%">PROVINCE</th>
+                                        <th class="border border-gray-300 px-1 py-2 text-center font-bold text-gray-700 text-xs" style="width: 6%">CITY</th>
+                                        <th class="border border-gray-300 px-1 py-2 text-center font-bold text-gray-700 text-xs" style="width: 6%">BARANGAY</th>
+                                        <th class="border border-gray-300 px-1 py-2 text-center font-bold text-gray-700 text-xs" style="width: 8%">NAME</th>
+                                        <th class="border border-gray-300 px-1 py-2 text-center font-bold text-gray-700 text-xs" style="width: 3%">AGE</th>
+                                        <th class="border border-gray-300 px-1 py-2 text-center font-bold text-gray-700 text-xs" style="width: 6%">BIRTHDAY</th>
+                                        <th class="border border-gray-300 px-1 py-2 text-center font-bold text-gray-700 text-xs" style="width: 4%">SEX<br>M/F</th>
+                                        <th class="border border-gray-300 px-1 py-2 text-center font-bold text-gray-700 text-xs" style="width: 6%">CIVIL<br>STATUS</th>
+                                        <th class="border border-gray-300 px-1 py-2 text-center font-bold text-gray-700 text-xs" style="width: 6%">YOUTH<br>CLASSIFICATION/<br>IN/OUT/KATIPUNAN</th>
+                                        <th class="border border-gray-300 px-1 py-2 text-center font-bold text-gray-700 text-xs" style="width: 6%">YOUTH<br>AGE<br>GROUP</th>
+                                        <th class="border border-gray-300 px-1 py-2 text-center font-bold text-gray-700 text-xs" style="width: 5%">EMAIL<br>ADDRESS</th>
+                                        <th class="border border-gray-300 px-1 py-2 text-center font-bold text-gray-700 text-xs" style="width: 5%">CONTACT<br>NUMBER</th>
+                                        <th class="border border-gray-300 px-1 py-2 text-center font-bold text-gray-700 text-xs" style="width: 6%">HOME ADDRESS</th>
+                                        <th class="border border-gray-300 px-1 py-2 text-center font-bold text-gray-700 text-xs" style="width: 6%">HIGHEST<br>EDUCATIONAL<br>ATTAINMENT</th>
+                                        <th class="border border-gray-300 px-1 py-2 text-center font-bold text-gray-700 text-xs" style="width: 5%">WORK<br>STATUS</th>
+                                        <th class="border border-gray-300 px-1 py-2 text-center font-bold text-gray-700 text-xs" style="width: 6%">Registered<br>SK<br>Voter</th>
+                                        <th class="border border-gray-300 px-1 py-2 text-center font-bold text-gray-700 text-xs" style="width: 6%">Voted Last<br>SK<br>Election?</th>
+                                        <th class="border border-gray-300 px-1 py-2 text-center font-bold text-gray-700 text-xs" style="width: 6%">Attended a KK<br>assembly? Y/N</th>
+                                        <th class="border border-gray-300 px-1 py-2 text-center font-bold text-gray-700 text-xs" style="width: 5%">If yes, how<br>many<br>times?</th>
                                     </tr>
                                 </thead>
                                 <tbody id="downloadTableBody">
@@ -747,22 +749,39 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- Modal Footer -->
-                    <div class="mt-6 pt-4 border-t flex justify-end gap-3">
-                        <button onclick="closeDownloadModal()" class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg font-medium transition-colors">
+            <!-- Modal Footer -->
+            <div class="bg-gray-50 border-t border-gray-200 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="text-sm font-medium text-gray-700">KK Youth Profile Export</div>
+                    <div class="flex gap-3">
+                        <button onclick="closeDownloadModal()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200">
                             Close
                         </button>
-                        <button onclick="printKKList()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
+                        <button onclick="printKKList()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 shadow-sm">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                            </svg>
                             Print
                         </button>
-                        <button onclick="downloadKKListPDF()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors">
+                        <button onclick="downloadKKListPDF()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors duration-200 shadow-sm">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
                             Download PDF
                         </button>
-                        <button onclick="downloadKKListWord()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
+                        <button onclick="downloadKKListWord()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 shadow-sm">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
                             Download Word
                         </button>
-                        <button onclick="downloadKKListExcel()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors">
+                        <button onclick="downloadKKListExcel()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 shadow-sm">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path>
+                            </svg>
                             Download Excel
                         </button>
                     </div>
@@ -997,7 +1016,7 @@
                     var userTypeMap = {
                         1: 'KK Member',
                         2: 'SK Official', 
-                        3: 'Pederasyon Officer'
+                        3: 'Pederasyon Officer | SK Chairperson'
                     };
                     var userTypeStr = userTypeMap[u.user_type] || 'Unknown';
                     $('#modalUserFullName').text(fullName);
@@ -1751,7 +1770,7 @@
                     var userTypeMap = {
                         1: 'KK Member',
                         2: 'SK Official', 
-                        3: 'Pederasyon Officer'
+                        3: 'Pederasyon Officer | SK Chairperson'
                     };
                     var userTypeStr = userTypeMap[u.user_type] || 'Unknown';
                     $('#modalUserFullName').text(fullName);
@@ -2159,28 +2178,29 @@
     let html = '';
     const timesMap = { '1': '1-2 times', '2': '3-4 times', '3': '5 or more times' };
         users.forEach((user, index) => {
+            const rowClass = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
             html += `
-                <tr>
-                    <td class="border border-black px-1 py-1 text-center text-xs">V</td>
-                    <td class="border border-black px-1 py-1 text-center text-xs">Camarines Sur</td>
-                    <td class="border border-black px-1 py-1 text-center text-xs">Iriga City</td>
-                    <td class="border border-black px-1 py-1 text-center text-xs">${user.barangay_name || ''}</td>
-                    <td class="border border-black px-1 py-1 text-xs">${user.full_name || ''}</td>
-                    <td class="border border-black px-1 py-1 text-center text-xs">${user.age || ''}</td>
-                    <td class="border border-black px-1 py-1 text-center text-xs">${user.birthdate || ''}</td>
-                    <td class="border border-black px-1 py-1 text-center text-xs">${user.sex === '1' ? 'M' : user.sex === '2' ? 'F' : ''}</td>
-                    <td class="border border-black px-1 py-1 text-center text-xs">${getCivilStatusText(user.civil_status)}</td>
-                    <td class="border border-black px-1 py-1 text-center text-xs">${getYouthClassificationText(user.youth_classification)}</td>
-                    <td class="border border-black px-1 py-1 text-center text-xs">${getAgeGroupText(user.age_group)}</td>
-                    <td class="border border-black px-1 py-1 text-xs">${user.email || ''}</td>
-                    <td class="border border-black px-1 py-1 text-center text-xs">${user.phone_number || ''}</td>
-                    <td class="border border-black px-1 py-1 text-center text-xs">${getFullAddress(user)}</td>
-                    <td class="border border-black px-1 py-1 text-center text-xs">${getEducationText(user.educational_background)}</td>
-                    <td class="border border-black px-1 py-1 text-center text-xs">${getWorkStatusText(user.work_status)}</td>
-                    <td class="border border-black px-1 py-1 text-center text-xs">${user.sk_voter == 1 ? 'Yes' : user.sk_voter == 0 ? 'No' : ''}</td>
-                    <td class="border border-black px-1 py-1 text-center text-xs">${user.sk_election == 1 ? 'Yes' : user.sk_election == 0 ? 'No' : ''}</td>
-                    <td class="border border-black px-1 py-1 text-center text-xs">${user.kk_assembly == 1 ? 'Yes' : user.kk_assembly == 0 ? 'No' : ''}</td>
-                    <td class="border border-black px-1 py-1 text-center text-xs">${user.kk_assembly == 1 ? (timesMap[String(user.how_many_times)] || '') : ''}</td>
+                <tr class="${rowClass}">
+                    <td class="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">V</td>
+                    <td class="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">Camarines Sur</td>
+                    <td class="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">Iriga City</td>
+                    <td class="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">${user.barangay_name || ''}</td>
+                    <td class="border border-gray-300 px-1 py-1 text-xs text-gray-900">${user.full_name || ''}</td>
+                    <td class="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">${user.age || ''}</td>
+                    <td class="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">${user.birthdate || ''}</td>
+                    <td class="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">${user.sex === '1' ? 'M' : user.sex === '2' ? 'F' : ''}</td>
+                    <td class="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">${getCivilStatusText(user.civil_status)}</td>
+                    <td class="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">${getYouthClassificationText(user.youth_classification)}</td>
+                    <td class="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">${getAgeGroupText(user.age_group)}</td>
+                    <td class="border border-gray-300 px-1 py-1 text-xs text-gray-900">${user.email || ''}</td>
+                    <td class="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">${user.phone_number || ''}</td>
+                    <td class="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">${getFullAddress(user)}</td>
+                    <td class="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">${getEducationText(user.educational_background)}</td>
+                    <td class="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">${getWorkStatusText(user.work_status)}</td>
+                    <td class="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">${user.sk_voter == 1 ? 'Yes' : user.sk_voter == 0 ? 'No' : ''}</td>
+                    <td class="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">${user.sk_election == 1 ? 'Yes' : user.sk_election == 0 ? 'No' : ''}</td>
+                    <td class="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">${user.kk_assembly == 1 ? 'Yes' : user.kk_assembly == 0 ? 'No' : ''}</td>
+                    <td class="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">${user.kk_assembly == 1 ? (timesMap[String(user.how_many_times)] || '') : ''}</td>
                 </tr>
             `;
         });
@@ -2428,7 +2448,7 @@
             const headers = [
                 'REGION',
                 'PROVINCE',
-                'CITY/MUNICIPALITY',
+                'CITY',
                 'BARANGAY',
                 'FAMILY NAME, FIRST NAME, MIDDLE NAME',
                 'AGE',
@@ -2556,7 +2576,7 @@
                 columnStyles: {
                     0: { cellWidth: 11.7 }, // REGION (600)
                     1: { cellWidth: 15.6 }, // PROVINCE (800)
-                    2: { cellWidth: 19.5 }, // CITY/MUNICIPALITY (1000)
+                    2: { cellWidth: 19.5 }, // CITY (1000)
                     3: { cellWidth: 15.6 }, // BARANGAY (800)
                     4: { cellWidth: 29.3, halign: 'left' }, // NAME (1500)
                     5: { cellWidth: 7.8 },  // AGE (400)

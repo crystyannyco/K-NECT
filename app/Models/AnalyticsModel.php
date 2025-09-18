@@ -24,7 +24,7 @@ class AnalyticsModel extends Model
                 CASE WHEN sex = 1 THEN 'Male' ELSE 'Female' END AS gender,
                 COUNT(*) AS total
             FROM user
-            WHERE is_active = 1
+            WHERE is_active = 1 AND status = 2
             GROUP BY gender
         ");
         
@@ -36,7 +36,7 @@ class AnalyticsModel extends Model
      */
     public function getGenderDistributionPerBarangay($barangayId = null)
     {
-        $whereClause = "WHERE u.is_active = 1";
+        $whereClause = "WHERE u.is_active = 1 AND u.status = 2";
         if ($barangayId !== null && $barangayId > 0) {
             $whereClause .= " AND a.barangay = " . (int)$barangayId;
         }
@@ -62,7 +62,7 @@ class AnalyticsModel extends Model
      */
     public function getAgeGroupDistribution($barangayId = null)
     {
-        $whereClause = "WHERE u.is_active = 1";
+        $whereClause = "WHERE u.is_active = 1 AND u.status = 2";
         if ($barangayId !== null && $barangayId > 0) {
             $whereClause .= " AND a.barangay = " . (int)$barangayId;
         }
@@ -98,7 +98,7 @@ class AnalyticsModel extends Model
     public function getYouthClassificationDistribution($barangayId = null)
     {
         $joinClause = "LEFT JOIN address a ON u.id = a.user_id";
-        $whereClause = "WHERE u.is_active = 1 AND uei.sk_voter IS NOT NULL";
+        $whereClause = "WHERE u.is_active = 1 AND u.status = 2 AND uei.sk_voter IS NOT NULL";
         
         if ($barangayId !== null && $barangayId > 0) {
             $whereClause .= " AND a.barangay = " . (int)$barangayId;
@@ -129,7 +129,7 @@ class AnalyticsModel extends Model
      */
     public function getTotalUsersCount($barangayId = null)
     {
-        $whereClause = "WHERE u.is_active = 1";
+        $whereClause = "WHERE u.is_active = 1 AND u.status = 2";
         $joinClause = "";
         
         if ($barangayId !== null && $barangayId > 0) {
@@ -184,7 +184,7 @@ class AnalyticsModel extends Model
     public function getCivilStatusDistribution($barangayId = null)
     {
         $joinClause = "LEFT JOIN address a ON u.id = a.user_id";
-        $whereClause = "WHERE u.is_active = 1 AND uei.civil_status IS NOT NULL";
+        $whereClause = "WHERE u.is_active = 1 AND u.status = 2 AND uei.civil_status IS NOT NULL";
         
         if ($barangayId !== null && $barangayId > 0) {
             $whereClause .= " AND a.barangay = " . (int)$barangayId;
@@ -218,7 +218,7 @@ class AnalyticsModel extends Model
     public function getWorkStatusDistribution($barangayId = null)
     {
         $joinClause = "LEFT JOIN address a ON u.id = a.user_id";
-        $whereClause = "WHERE u.is_active = 1 AND uei.work_status IS NOT NULL";
+        $whereClause = "WHERE u.is_active = 1 AND u.status = 2 AND uei.work_status IS NOT NULL";
         
         if ($barangayId !== null && $barangayId > 0) {
             $whereClause .= " AND a.barangay = " . (int)$barangayId;
@@ -252,7 +252,7 @@ class AnalyticsModel extends Model
     public function getEducationalBackgroundDistribution($barangayId = null)
     {
         $joinClause = "LEFT JOIN address a ON u.id = a.user_id";
-        $whereClause = "WHERE u.is_active = 1 AND uei.educational_background IS NOT NULL";
+        $whereClause = "WHERE u.is_active = 1 AND u.status = 2 AND uei.educational_background IS NOT NULL";
         
         if ($barangayId !== null && $barangayId > 0) {
             $whereClause .= " AND a.barangay = " . (int)$barangayId;
@@ -424,7 +424,84 @@ class AnalyticsModel extends Model
             LEFT JOIN barangay b ON addr.barangay = b.barangay_id
             {$joinClause}
             {$whereClause}
-            AND u.is_active = 1
+            AND u.is_active = 1 AND u.status = 2
+            GROUP BY u.id, u.first_name, u.last_name, b.name
+            ORDER BY events_attended DESC, total_attendances DESC
+            LIMIT {$limit}
+        ");
+        
+        return $query->getResultArray();
+    }
+
+    /**
+     * Get top active SK officials (leaderboard)
+     */
+    public function getTopActiveSKOfficials($barangayId = null, $limit = 20)
+    {
+        $whereClause = "WHERE a.event_id IS NOT NULL";
+        $joinClause = "LEFT JOIN event e ON a.event_id = e.event_id";
+        
+        if ($barangayId !== null && $barangayId > 0) {
+            $whereClause .= " AND e.barangay_id = " . (int)$barangayId;
+        }
+        
+        $query = $this->db->query("
+            SELECT 
+                CONCAT(u.first_name, ' ', u.last_name) as name,
+                b.name as barangay,
+                COALESCE(p.name, 
+                    CASE 
+                        WHEN u.position = 1 THEN 'SK Chairman'
+                        WHEN u.position = 2 THEN 'SK Kagawad'
+                        WHEN u.position = 3 THEN 'Secretary'
+                        WHEN u.position = 4 THEN 'Treasurer'
+                        WHEN u.position = 5 THEN 'KK Member'
+                        ELSE 'SK Kagawad'
+                    END
+                ) as position,
+                COUNT(DISTINCT a.event_id) as events_attended,
+                COUNT(a.attendance_id) as total_attendances
+            FROM attendance a
+            JOIN user u ON a.user_id = u.user_id
+            LEFT JOIN address addr ON u.id = addr.user_id
+            LEFT JOIN barangay b ON addr.barangay = b.barangay_id
+            LEFT JOIN position p ON u.position = p.position_id
+            {$joinClause}
+            {$whereClause}
+            AND u.is_active = 1 AND u.status = 2 AND u.user_type = 2
+            GROUP BY u.id, u.first_name, u.last_name, b.name, position
+            ORDER BY events_attended DESC, total_attendances DESC
+            LIMIT {$limit}
+        ");
+        
+        return $query->getResultArray();
+    }
+
+    /**
+     * Get top active KK members (leaderboard)
+     */
+    public function getTopActiveKKMembers($barangayId = null, $limit = 20)
+    {
+        $whereClause = "WHERE a.event_id IS NOT NULL";
+        $joinClause = "LEFT JOIN event e ON a.event_id = e.event_id";
+        
+        if ($barangayId !== null && $barangayId > 0) {
+            $whereClause .= " AND e.barangay_id = " . (int)$barangayId;
+        }
+        
+        $query = $this->db->query("
+            SELECT 
+                CONCAT(u.first_name, ' ', u.last_name) as name,
+                b.name as barangay,
+                COUNT(DISTINCT a.event_id) as events_attended,
+                COUNT(a.attendance_id) as total_attendances
+            FROM attendance a
+            JOIN user u ON a.user_id = u.user_id
+            LEFT JOIN address addr ON u.id = addr.user_id
+            LEFT JOIN barangay b ON addr.barangay = b.barangay_id
+            {$joinClause}
+            {$whereClause}
+            AND u.is_active = 1 AND u.status = 2 AND u.user_type = 1
             GROUP BY u.id, u.first_name, u.last_name, b.name
             ORDER BY events_attended DESC, total_attendances DESC
             LIMIT {$limit}
@@ -531,7 +608,7 @@ class AnalyticsModel extends Model
             LEFT JOIN attendance a ON e.event_id = a.event_id
             LEFT JOIN user u ON a.user_id = u.user_id
             {$whereClause}
-            AND a.user_id IS NOT NULL
+            AND a.user_id IS NOT NULL AND u.is_active = 1 AND u.status = 2
             GROUP BY e.event_id, e.title, e.category, gender
             ORDER BY e.start_datetime DESC
             LIMIT {$limit}
@@ -545,8 +622,16 @@ class AnalyticsModel extends Model
     /**
      * Get most accessed document categories
      */
-    public function getMostAccessedDocumentCategories()
+    public function getMostAccessedDocumentCategories($barangayId = null)
     {
+        $whereClause = "WHERE d.approval_status = 'approved'";
+        $joinClause = "";
+        
+        if ($barangayId !== null && $barangayId > 0) {
+            $joinClause = "JOIN user u ON (d.uploaded_by = u.sk_username OR d.uploaded_by = u.ped_username) JOIN address a ON u.id = a.user_id";
+            $whereClause .= " AND a.barangay = " . (int)$barangayId . " AND u.is_active = 1 AND u.status = 2";
+        }
+        
         $query = $this->db->query("
             SELECT 
                 c.name as category,
@@ -555,8 +640,9 @@ class AnalyticsModel extends Model
             FROM categories c
             JOIN document_category dc ON c.id = dc.category_id
             JOIN documents d ON dc.document_id = d.id
+            {$joinClause}
             LEFT JOIN audit_logs al ON d.id = al.document_id AND al.action = 'download'
-            WHERE d.approval_status = 'approved'
+            {$whereClause}
             GROUP BY c.id, c.name
             ORDER BY total_downloads DESC
         ");
@@ -567,16 +653,23 @@ class AnalyticsModel extends Model
     /**
      * Get document approval time
      */
-    public function getDocumentApprovalTime()
+    public function getDocumentApprovalTime($barangayId = null)
     {
+        $whereClause = "WHERE d.approval_status = 'approved' AND d.approval_at IS NOT NULL AND d.uploaded_at IS NOT NULL";
+        $joinClause = "";
+        
+        if ($barangayId !== null && $barangayId > 0) {
+            $joinClause = "JOIN user u ON (d.uploaded_by = u.sk_username OR d.uploaded_by = u.ped_username) JOIN address a ON u.id = a.user_id";
+            $whereClause .= " AND a.barangay = " . (int)$barangayId . " AND u.is_active = 1 AND u.status = 2";
+        }
+        
         $query = $this->db->query("
             SELECT 
                 DATEDIFF(d.approval_at, d.uploaded_at) as approval_days,
                 COUNT(*) as document_count
             FROM documents d
-            WHERE d.approval_status = 'approved' 
-            AND d.approval_at IS NOT NULL 
-            AND d.uploaded_at IS NOT NULL
+            {$joinClause}
+            {$whereClause}
             GROUP BY approval_days
             ORDER BY approval_days ASC
         ");
@@ -614,38 +707,83 @@ class AnalyticsModel extends Model
     /**
      * Get barangay performance score
      */
-    public function getBarangayPerformanceScore($barangayId = null)
+    public function getBarangayPerformanceScore($barangayId = null, $viewType = 'sk')
     {
-        $whereClause = $barangayId ? "WHERE b.barangay_id = " . (int)$barangayId : "WHERE b.barangay_id > 0";
-        
-        $query = $this->db->query("
-            SELECT 
-                b.name as barangay,
-                -- Event participation score (0-100)
-                COALESCE(ROUND(
-                    (COUNT(DISTINCT a.user_id) / NULLIF(COUNT(DISTINCT e.event_id), 0)) * 100, 2
-                ), 0) as event_participation_score,
-                -- Document activity score (0-100)
-                COALESCE(ROUND(
-                    (COUNT(DISTINCT doc_uploads.id) / 12) * 100, 2  -- Normalized to 12 documents per year
-                ), 0) as document_activity_score,
-                -- Attendance consistency score (0-100)
-                COALESCE(ROUND(
-                    (COUNT(a.attendance_id) / NULLIF(COUNT(DISTINCT e.event_id), 0) / 
-                     NULLIF((SELECT COUNT(*) FROM user u2 
-                             JOIN address addr2 ON u2.id = addr2.user_id 
-                             WHERE addr2.barangay = b.barangay_id AND u2.is_active = 1), 0)) * 100, 2
-                ), 0) as attendance_consistency_score
-            FROM barangay b
-            LEFT JOIN event e ON b.barangay_id = e.barangay_id AND e.status = 'Published'
-            LEFT JOIN attendance a ON e.event_id = a.event_id
-            LEFT JOIN documents doc_uploads ON doc_uploads.uploaded_at >= DATE_SUB(NOW(), INTERVAL 1 YEAR)
-            {$whereClause}
-            GROUP BY b.barangay_id, b.name
-            ORDER BY b.name
-        ");
-        
-        return $query->getResultArray();
+        try {
+            // Build WHERE clause for specific barangay or all barangays
+            $whereClause = $barangayId ? "AND b.barangay_id = " . (int)$barangayId : "";
+            
+            // For citywide view, show all barangays. For SK view, only show barangays with data
+            $havingClause = ($viewType === 'citywide') ? "" : 
+                "HAVING (COUNT(DISTINCT e.event_id) > 0 OR total_documents > 0)";
+            
+            $query = $this->db->query("
+                SELECT 
+                    b.name as barangay,
+                    -- Event participation score (0-100) - percentage of published events that have attendance
+                    COALESCE(ROUND(
+                        CASE 
+                            WHEN COUNT(DISTINCT e.event_id) > 0 THEN
+                                (COUNT(DISTINCT CASE WHEN a.attendance_id IS NOT NULL THEN e.event_id END) * 100.0 / COUNT(DISTINCT e.event_id))
+                            ELSE 0
+                        END, 2
+                    ), 0) as event_participation_score,
+                    
+                    -- Document activity score (0-100) - documents uploaded in past year, capped at 100
+                    COALESCE(LEAST(100, ROUND(
+                        (SELECT COUNT(DISTINCT d.id) 
+                         FROM documents d 
+                         JOIN user u ON d.uploaded_by = u.id 
+                         JOIN address addr ON u.id = addr.user_id 
+                         WHERE addr.barangay = b.barangay_id 
+                         AND d.uploaded_at >= DATE_SUB(NOW(), INTERVAL 1 YEAR)) * 8.33, 2
+                    )), 0) as document_activity_score,
+                    
+                    -- Attendance consistency score (0-100) - average attendees per event
+                    COALESCE(ROUND(
+                        CASE 
+                            WHEN COUNT(DISTINCT e.event_id) > 0 THEN
+                                LEAST(100, (COUNT(a.attendance_id) * 10.0 / COUNT(DISTINCT e.event_id)))
+                            ELSE 0
+                        END, 2
+                    ), 0) as attendance_consistency_score,
+                    
+                    -- Debug counts
+                    COUNT(DISTINCT e.event_id) as total_events,
+                    COUNT(a.attendance_id) as total_attendances,
+                    (SELECT COUNT(DISTINCT d.id) 
+                     FROM documents d 
+                     JOIN user u ON d.uploaded_by = u.id 
+                     JOIN address addr ON u.id = addr.user_id 
+                     WHERE addr.barangay = b.barangay_id 
+                     AND d.uploaded_at >= DATE_SUB(NOW(), INTERVAL 1 YEAR)) as total_documents
+                     
+                FROM barangay b
+                LEFT JOIN event e ON b.barangay_id = e.barangay_id 
+                    AND e.status = 'Published' 
+                    AND e.start_datetime >= DATE_SUB(NOW(), INTERVAL 1 YEAR)
+                LEFT JOIN attendance a ON e.event_id = a.event_id
+                WHERE b.name != 'City-wide' AND b.name IS NOT NULL {$whereClause}
+                GROUP BY b.barangay_id, b.name
+                {$havingClause}
+                ORDER BY b.name
+            ");
+            
+            $result = $query->getResultArray();
+            
+            // Log the query result for debugging
+            log_message('info', "Performance score query returned: " . count($result) . " barangays for view type: {$viewType}");
+            foreach ($result as $row) {
+                log_message('info', "Barangay: {$row['barangay']}, Events: {$row['total_events']}, Attendances: {$row['total_attendances']}, Documents: {$row['total_documents']}");
+            }
+            
+            return $result;
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error in getBarangayPerformanceScore query: ' . $e->getMessage());
+            log_message('error', 'SQL Error: ' . $this->db->error());
+            return [];
+        }
     }
 
     /**
@@ -653,7 +791,7 @@ class AnalyticsModel extends Model
      */
     public function getInactiveMembers($barangayId = null, $inactiveDays = 90)
     {
-        $whereClause = "WHERE u.is_active = 1";
+        $whereClause = "WHERE u.is_active = 1 AND u.status = 2";
         $joinClause = "";
         
         if ($barangayId !== null && $barangayId > 0) {
@@ -692,15 +830,15 @@ class AnalyticsModel extends Model
     {
         $whereClause = "WHERE 1=1";
         
-        if ($barangayId !== null && $barangayId > 0) {
+        if ($barangayId !== null && $barangayId >= 0) {
             $whereClause .= " AND e.barangay_id = " . (int)$barangayId;
         }
         
         $query = $this->db->query("
             SELECT 
-                COUNT(CASE WHEN e.status = 'Published' THEN 1 END) as total_published_events,
-                COUNT(CASE WHEN e.status = 'Draft' THEN 1 END) as total_draft_events,
-                COUNT(CASE WHEN e.status = 'Scheduled' THEN 1 END) as total_scheduled_events,
+                COUNT(DISTINCT CASE WHEN e.status = 'Published' THEN e.event_id END) as total_published_events,
+                COUNT(DISTINCT CASE WHEN e.status = 'Draft' THEN e.event_id END) as total_draft_events,
+                COUNT(DISTINCT CASE WHEN e.status = 'Scheduled' THEN e.event_id END) as total_scheduled_events,
                 COUNT(DISTINCT a.user_id) as total_unique_participants,
                 COUNT(a.attendance_id) as total_attendances,
                 ROUND(AVG(
@@ -715,13 +853,70 @@ class AnalyticsModel extends Model
             {$whereClause}
         ");
         
-        return $query->getRow('array');
+        return $query->getRowArray();
+    }
+
+    /**
+     * Get event summary statistics for all barangays (excluding city-wide/superadmin)
+     */
+    public function getEventSummaryAllBarangays()
+    {
+        $query = $this->db->query("
+            SELECT 
+                COUNT(DISTINCT CASE WHEN e.status = 'Published' THEN e.event_id END) as total_published_events,
+                COUNT(DISTINCT CASE WHEN e.status = 'Draft' THEN e.event_id END) as total_draft_events,
+                COUNT(DISTINCT CASE WHEN e.status = 'Scheduled' THEN e.event_id END) as total_scheduled_events,
+                COUNT(DISTINCT a.user_id) as total_unique_participants,
+                COUNT(a.attendance_id) as total_attendances,
+                ROUND(AVG(
+                    CASE WHEN a.`time-out_am` IS NOT NULL 
+                    THEN TIMESTAMPDIFF(MINUTE, a.`time-in_am`, a.`time-out_am`) 
+                    WHEN a.`time-out_pm` IS NOT NULL 
+                    THEN TIMESTAMPDIFF(MINUTE, a.`time-in_pm`, a.`time-out_pm`)
+                    END
+                ), 2) as avg_attendance_duration
+            FROM event e
+            LEFT JOIN attendance a ON e.event_id = a.event_id
+            WHERE e.barangay_id > 0
+        ");
+        
+        return $query->getRowArray();
     }
 
     /**
      * Get document summary statistics
      */
-    public function getDocumentSummary()
+    public function getDocumentSummary($barangayId = null)
+    {
+        $whereClause = "WHERE 1=1";
+        $joinClause = "";
+        
+        if ($barangayId !== null && $barangayId >= 0) {
+            $joinClause = "JOIN user u ON (d.uploaded_by = u.sk_username OR d.uploaded_by = u.ped_username) JOIN address a ON u.id = a.user_id";
+            $whereClause .= " AND a.barangay = " . (int)$barangayId . " AND u.is_active = 1 AND u.status = 2";
+        }
+        
+        $query = $this->db->query("
+            SELECT 
+                COUNT(CASE WHEN d.approval_status = 'approved' THEN 1 END) as total_approved_documents,
+                COUNT(CASE WHEN d.approval_status = 'pending' THEN 1 END) as total_pending_documents,
+                COUNT(CASE WHEN d.approval_status = 'rejected' THEN 1 END) as total_rejected_documents,
+                COUNT(DISTINCT al.document_id) as total_downloaded_documents,
+                COUNT(al.id) as total_downloads,
+                ROUND(AVG(DATEDIFF(d.approval_at, d.uploaded_at)), 2) as avg_approval_time_days
+            FROM documents d
+            {$joinClause}
+            LEFT JOIN audit_logs al ON d.id = al.document_id AND al.action = 'download'
+            {$whereClause}
+        ");
+        
+        return $query->getRowArray();
+    }
+
+    /**
+     * Get document summary statistics for all barangays (excluding city-wide/superadmin)
+     */
+    public function getDocumentSummaryAllBarangays()
     {
         $query = $this->db->query("
             SELECT 
@@ -732,9 +927,12 @@ class AnalyticsModel extends Model
                 COUNT(al.id) as total_downloads,
                 ROUND(AVG(DATEDIFF(d.approval_at, d.uploaded_at)), 2) as avg_approval_time_days
             FROM documents d
+            JOIN user u ON (d.uploaded_by = u.sk_username OR d.uploaded_by = u.ped_username)
+            JOIN address a ON u.id = a.user_id
             LEFT JOIN audit_logs al ON d.id = al.document_id AND al.action = 'download'
+            WHERE a.barangay > 0 AND u.is_active = 1 AND u.status = 2
         ");
         
-        return $query->getRow('array');
+        return $query->getRowArray();
     }
 }

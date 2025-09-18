@@ -17,26 +17,6 @@ use App\Libraries\DemographicsHelper;
 
 class SKController extends BaseController
 {
-    public function checkEmail()
-    {
-        $email = trim((string)$this->request->getGet('email'));
-        $isValid = filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
-        if (!$isValid) {
-            return $this->response->setJSON(['available' => false, 'reason' => 'invalid']);
-        }
-        $session = session();
-        $permanentUserId = $session->get('user_id');
-        $currentId = null;
-        if ($permanentUserId) {
-            $um = new \App\Models\UserModel();
-            $me = $um->where('user_id', $permanentUserId)->first();
-            $currentId = $me['id'] ?? null;
-        }
-        $um = isset($um) ? $um : new \App\Models\UserModel();
-        $row = $um->where('email', $email)->first();
-        $available = !$row || ((int)($row['id'] ?? 0) === (int)($currentId ?? -1));
-        return $this->response->setJSON(['available' => (bool)$available]);
-    }
 
     public function accountSettings()
     {
@@ -248,12 +228,37 @@ class SKController extends BaseController
         $session = session();
         $skBarangay = $session->get('sk_barangay');
         $barangayName = BarangayHelper::getBarangayName($skBarangay);
+        $username = $session->get('username');
+        
+        // Get document statistics for the current user
+        $db = \Config\Database::connect();
+        
+        // Total documents uploaded by this user
+        $totalDocuments = $db->query("SELECT COUNT(*) as count FROM documents WHERE uploaded_by = ?", [$username])->getRowArray()['count'];
+        
+        // Documents pending approval
+        $pendingApproval = $db->query("SELECT COUNT(*) as count FROM documents WHERE uploaded_by = ? AND approval_status = 'pending'", [$username])->getRowArray()['count'];
+        
+        // Approved documents
+        $approvedDocuments = $db->query("SELECT COUNT(*) as count FROM documents WHERE uploaded_by = ? AND approval_status = 'approved'", [$username])->getRowArray()['count'];
+        
+        // Shared documents (documents shared with this user)
+        $sharedDocuments = $db->query("
+            SELECT COUNT(DISTINCT ds.document_id) as count 
+            FROM document_shares ds 
+            JOIN user u ON ds.shared_with_user_id = u.id 
+            WHERE u.username = ?
+        ", [$username])->getRowArray()['count'];
         
         $data = [
             'user_id' => $session->get('user_id'),
-            'username' => $session->get('username'),
+            'username' => $username,
             'sk_barangay' => $skBarangay,
-            'barangay_name' => $barangayName
+            'barangay_name' => $barangayName,
+            'totalDocuments' => $totalDocuments,
+            'pendingApproval' => $pendingApproval,
+            'approvedDocuments' => $approvedDocuments,
+            'sharedDocuments' => $sharedDocuments
         ];
 
         return 

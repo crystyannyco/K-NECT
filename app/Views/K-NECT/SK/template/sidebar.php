@@ -47,10 +47,10 @@
                                         Demographics
                                     </a>
                                     <a href="<?= base_url('/sk/event-analytics') ?>" class="block px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg <?= (uri_string() == 'sk/event-analytics') ? 'bg-gray-100 text-gray-900' : '' ?>">
-                                        Event Analytics
+                                        Event
                                     </a>
                                     <a href="<?= base_url('/sk/document-analytics') ?>" class="block px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg <?= (uri_string() == 'sk/document-analytics') ? 'bg-gray-100 text-gray-900' : '' ?>">
-                                        Document Analytics
+                                        Document
                                     </a>
                                     <a href="<?= base_url('/sk/performance-analytics') ?>" class="block px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg <?= (uri_string() == 'sk/performance-analytics') ? 'bg-gray-100 text-gray-900' : '' ?>">
                                         Performance

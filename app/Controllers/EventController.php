@@ -57,6 +57,9 @@ class EventController extends BaseController
         if ($userType === 'sk' || $role === 'admin') {
             // SK Officials should see their barangay-specific events
             return $this->barangayEvents();
+        } else if ($userType === 'kk') {
+            // KK members should see their barangay-specific events (view-only)
+            return $this->kkEvents();
         } else if ($userType === 'pederasyon' || $role === 'super_admin') {
             // Pederasyon should see city-wide events
             return $this->cityEvents();
@@ -192,8 +195,81 @@ class EventController extends BaseController
     return $this->loadView('K-NECT/events/barangay_list', $data);
     }
 
+    /**
+     * Barangay-specific events view for KK Members (Read-only)
+     */
+    public function kkEvents()
+    {
+        $session = session();
+        $barangayId = $session->get('barangay_id');
+        $userId = $session->get('user_id');
+        $username = $session->get('username');
+        
+        $eventModel = new EventModel();
+        $barangayModel = new \App\Models\BarangayModel();
+        
+        // Get barangay name
+        $barangayName = '';
+        if ($barangayId) {
+            $barangay = $barangayModel->find($barangayId);
+            $barangayName = $barangay ? $barangay['name'] : 'Unknown Barangay';
+        }
+        
+        // Get only published events for this barangay - ordered by created_at desc (newest first)
+        $events = $eventModel->where('barangay_id', $barangayId)
+                             ->where('status', 'Published')
+                             ->orderBy('created_at', 'DESC')
+                             ->findAll();
+        
+        // Get predefined categories (same as in the form)
+        $categories = [
+            'health',
+            'education',
+            'economic empowerment',
+            'social inclusion and equity',
+            'peace building and security',
+            'governance',
+            'active citizenship',
+            'environment',
+            'global mobility',
+            'others'
+        ];
+        
+        // Get Google Calendar ID for this barangay
+        $calendarId = null;
+        if ($barangayId) {
+            $barangay = $barangayModel->find($barangayId);
+            if ($barangay && !empty($barangay['google_calendar_id'])) {
+                $calendarId = $barangay['google_calendar_id'];
+            }
+        }
+        
+        $data = [
+            'events' => $events,
+            'categories' => $categories,
+            'calendar_id' => $calendarId,
+            'calendar_tabs' => [], // No tabs for barangay-specific view
+            'calendar_role' => 'member', // Different role for KK members
+            'user_id' => $userId,
+            'username' => $username,
+            'barangay_id' => $barangayId,
+            'barangay_name' => $barangayName,
+            'barangays' => [], // KK members only see their own barangay
+            'user_type' => 'kk' // Add user type for view logic
+        ];
+        
+    return $this->loadView('K-NECT/events/kk_list', $data);
+    }
+
     public function create()
     {
+        // Access control: Only SK officials and Pederasyon can create events
+        $session = session();
+        $userType = $session->get('user_type');
+        if ($userType === 'kk') {
+            return redirect()->to('/events')->with('error', 'You do not have permission to create events.');
+        }
+        
         // Check if this is an AJAX request for modal
         if ($this->request->isAJAX()) {
             return view('K-NECT/events/_form');
@@ -204,6 +280,13 @@ class EventController extends BaseController
 
     public function store()
     {
+        // Access control: Only SK officials and Pederasyon can create events
+        $session = session();
+        $userType = $session->get('user_type');
+        if ($userType === 'kk') {
+            return redirect()->to('/events')->with('error', 'You do not have permission to create events.');
+        }
+        
         try {
         $eventModel = new EventModel();
         $createdBy = session('user_id') ?: 1;
@@ -280,16 +363,6 @@ class EventController extends BaseController
             $recipientRoles = $this->request->getPost('sms_recipient_roles');
             if (empty($recipientRoles)) {
                 return redirect()->back()->withInput()->with('error', 'Please select at least one recipient role for SMS notifications.');
-            }
-            
-            // Validate that if "All SK Officials" is selected, individual roles are not selected
-            if (in_array('all_officials', $recipientRoles)) {
-                $individualRoles = ['chairman', 'secretary', 'treasurer'];
-                foreach ($individualRoles as $role) {
-                    if (in_array($role, $recipientRoles)) {
-                        return redirect()->back()->withInput()->with('error', 'Cannot select "All SK Officials" and individual SK roles at the same time.');
-                    }
-                }
             }
             
             $data['sms_recipient_roles'] = json_encode($recipientRoles);
@@ -426,6 +499,7 @@ class EventController extends BaseController
         }
 
         // Handle immediate publishing (not drafts, not scheduled)
+        $googleCalendarSync = true; // Initialize to true, will be set to false if sync fails
         if ($data['status'] === 'Published') {
             // Google Calendar sync
             if ($event['barangay_id'] == 0) {
@@ -459,9 +533,11 @@ class EventController extends BaseController
             if ($googleEventId) {
                 $eventModel->update($eventId, ['google_event_id' => $googleEventId]);
                 log_message('error', '[GCAL SYNC] Success! Google Event ID: ' . $googleEventId);
+                $googleCalendarSync = true;
             } else {
                 log_message('error', '[GCAL SYNC] FAILED to sync event to Google Calendar. CalendarID: ' . $calendarId . ' | EventData: ' . json_encode($googleEventData));
-                return $this->handleErrorResponse('Event was saved locally, but failed to sync to Google Calendar. Please check calendar sharing and logs.');
+                $googleCalendarSync = false;
+                // Continue with event save even if Google Calendar sync fails
             }
             
             // Send SMS notifications if enabled
@@ -489,15 +565,26 @@ class EventController extends BaseController
             $successMessage = 'Event saved as draft successfully.';
         } elseif ($data['status'] === 'Scheduled') {
             $successMessage = 'Event scheduled successfully. It will be published at the scheduled time.';
+        } elseif ($data['status'] === 'Published' && !$googleCalendarSync) {
+            $successMessage = 'Event published successfully, but failed to sync with Google Calendar. Please check calendar permissions.';
         }
 
         // Check if this is an AJAX request
         if ($this->request->isAJAX()) {
-            return $this->response->setJSON([
+            $response = [
                 'success' => true,
                 'message' => $successMessage,
-                'event' => $event
-            ]);
+                'event' => $event,
+                'google_calendar_sync' => $googleCalendarSync
+            ];
+            
+            // If Google Calendar sync failed for published events, return as warning
+            if ($data['status'] === 'Published' && !$googleCalendarSync) {
+                $response['success'] = true; // Still successful (event was saved)
+                $response['message'] = 'Event published successfully, but failed to sync with Google Calendar. Please check calendar permissions and network connectivity.';
+            }
+            
+            return $this->response->setJSON($response);
         }
 
         // Redirect to appropriate page based on event type
@@ -525,6 +612,13 @@ class EventController extends BaseController
 
     public function edit($event_id)
     {
+        // Access control: Only SK officials and Pederasyon can edit events
+        $session = session();
+        $userType = $session->get('user_type');
+        if ($userType === 'kk') {
+            return redirect()->to('/events')->with('error', 'You do not have permission to edit events.');
+        }
+        
         $eventModel = new EventModel();
         $event = $eventModel->find($event_id);
         $role = session('role');
@@ -544,6 +638,13 @@ class EventController extends BaseController
 
     public function update($event_id)
     {
+        // Access control: Only SK officials and Pederasyon can update events
+        $session = session();
+        $userType = $session->get('user_type');
+        if ($userType === 'kk') {
+            return redirect()->to('/events')->with('error', 'You do not have permission to update events.');
+        }
+        
         log_message('error', 'FILES in update: ' . print_r($_FILES, true));
         log_message('error', 'POST data in update: ' . print_r($_POST, true));
         $eventModel = new EventModel();
@@ -617,16 +718,6 @@ class EventController extends BaseController
             $recipientRoles = $this->request->getPost('sms_recipient_roles');
             if (empty($recipientRoles)) {
                 return $this->handleErrorResponse('Please select at least one recipient role for SMS notifications.');
-            }
-            
-            // Validate that if "All SK Officials" is selected, individual roles are not selected
-            if (in_array('all_officials', $recipientRoles)) {
-                $individualRoles = ['chairman', 'secretary', 'treasurer'];
-                foreach ($individualRoles as $role) {
-                    if (in_array($role, $recipientRoles)) {
-                        return $this->handleErrorResponse('Cannot select "All SK Officials" and individual SK roles at the same time.');
-                    }
-                }
             }
             
             $data['sms_recipient_roles'] = json_encode($recipientRoles);
@@ -784,6 +875,7 @@ class EventController extends BaseController
         }
 
         // Handle immediate publishing (not drafts, not scheduled)
+        $googleCalendarSync = true; // Initialize to true, will be set to false if sync fails
         if ($updatedEvent['status'] === 'Published') {
             // Google Calendar sync
             if ($updatedEvent['barangay_id'] == 0) {
@@ -816,18 +908,23 @@ class EventController extends BaseController
                 $updateSuccess = $googleCalendar->updateGoogleCalendarEvent($calendarId, $updatedEvent['google_event_id'], $googleEventData);
                 if ($updateSuccess) {
                     log_message('error', '[GCAL SYNC] Successfully updated event in Google Calendar. Google Event ID: ' . $updatedEvent['google_event_id']);
+                    $googleCalendarSync = true;
                 } else {
                     log_message('error', '[GCAL SYNC] FAILED to update event in Google Calendar. CalendarID: ' . $calendarId . ' | GoogleEventID: ' . $updatedEvent['google_event_id'] . ' | EventData: ' . json_encode($googleEventData));
-                    return $this->handleErrorResponse('Event was updated locally, but failed to sync to Google Calendar. Please check calendar sharing and logs.');
+                    $googleCalendarSync = false;
+                    // Continue with event update even if Google Calendar sync fails
                 }
             } else {
-                log_message('error', '[GCAL SYNC] No Google Event ID found for event ' . $event_id . '. Cannot update Google Calendar.');
+                log_message('error', '[GCAL SYNC] No Google Event ID found for event ' . $event_id . '. Attempting to create new Google Calendar event.');
                 $googleEventId = $googleCalendar->addEventToGoogleCalendar($calendarId, $googleEventData);
                 if ($googleEventId) {
                     $eventModel->update($event_id, ['google_event_id' => $googleEventId]);
                     log_message('error', '[GCAL SYNC] Success! Google Event ID: ' . $googleEventId);
+                    $googleCalendarSync = true;
                 } else {
                     log_message('error', '[GCAL SYNC] FAILED to sync event to Google Calendar. CalendarID: ' . $calendarId . ' | EventData: ' . json_encode($googleEventData));
+                    $googleCalendarSync = false;
+                    // Continue with event update even if Google Calendar sync fails
                 }
             }
             
@@ -843,15 +940,26 @@ class EventController extends BaseController
             $successMessage = 'Event saved as draft successfully.';
         } elseif ($updatedEvent['status'] === 'Scheduled') {
             $successMessage = 'Event scheduled successfully. It will be published at the scheduled time.';
+        } elseif ($updatedEvent['status'] === 'Published' && !$googleCalendarSync) {
+            $successMessage = 'Event updated successfully, but failed to sync with Google Calendar. Please check calendar permissions.';
         }
 
         // Check if this is an AJAX request
         if ($this->request->isAJAX()) {
-            return $this->response->setJSON([
+            $response = [
                 'success' => true,
                 'message' => $successMessage,
-                'event' => $updatedEvent
-            ]);
+                'event' => $updatedEvent,
+                'google_calendar_sync' => $googleCalendarSync
+            ];
+            
+            // If Google Calendar sync failed for published events, return as warning
+            if ($updatedEvent['status'] === 'Published' && !$googleCalendarSync) {
+                $response['success'] = true; // Still successful (event was saved)
+                $response['message'] = 'Event updated successfully, but failed to sync with Google Calendar. Please check calendar permissions and network connectivity.';
+            }
+            
+            return $this->response->setJSON($response);
         }
 
         // Redirect to appropriate page based on event type
@@ -863,6 +971,18 @@ class EventController extends BaseController
 
     public function delete($event_id)
     {
+        // Access control: Only SK officials and Pederasyon can delete events
+        $session = session();
+        $userType = $session->get('user_type');
+        if ($userType === 'kk') {
+            // Check if this is an AJAX request
+            $isAjax = $this->request->isAJAX();
+            if ($isAjax) {
+                return $this->response->setJSON(['success' => false, 'message' => 'You do not have permission to delete events.']);
+            }
+            return redirect()->to('/events')->with('error', 'You do not have permission to delete events.');
+        }
+        
         log_message('error', 'Delete method called with event_id: ' . $event_id);
         
         // Check if this is an AJAX request
@@ -1128,6 +1248,15 @@ class EventController extends BaseController
             $roleConditions = [];
             foreach ($recipientRoles as $role) {
                 switch ($role) {
+                    case 'all_pederasyon_officials':
+                        $roleConditions[] = "user.position LIKE '%Pederasyon%'";
+                        break;
+                    case 'pederasyon_officers':
+                        $roleConditions[] = "(user.position LIKE '%Pederasyon President%' OR user.position LIKE '%Pederasyon Vice President%' OR user.position LIKE '%Pederasyon Secretary%' OR user.position LIKE '%Pederasyon Treasurer%' OR user.position LIKE '%Pederasyon Auditor%' OR user.position LIKE '%Pederasyon Public Information Officer%' OR user.position LIKE '%Pederasyon Sergeant at Arms%')";
+                        break;
+                    case 'pederasyon_members':
+                        $roleConditions[] = "(user.position LIKE '%Pederasyon%' AND user.position NOT LIKE '%Pederasyon President%' AND user.position NOT LIKE '%Pederasyon Vice President%' AND user.position NOT LIKE '%Pederasyon Secretary%' AND user.position NOT LIKE '%Pederasyon Treasurer%' AND user.position NOT LIKE '%Pederasyon Auditor%' AND user.position NOT LIKE '%Pederasyon Public Information Officer%' AND user.position NOT LIKE '%Pederasyon Sergeant at Arms%')";
+                        break;
                     case 'all_officials':
                         $roleConditions[] = "user.position LIKE '%SK%'";
                         break;
@@ -1292,6 +1421,17 @@ class EventController extends BaseController
     public function bulkDelete() {
         try {
             log_message('info', 'Bulk delete request received');
+            
+            // Access control: Only SK officials and Pederasyon can bulk delete events
+            $session = session();
+            $userType = $session->get('user_type');
+            if ($userType === 'kk') {
+                log_message('warning', 'Unauthorized bulk delete attempt by KK user');
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'You do not have permission to delete events.'
+                ]);
+            }
             
             // Check if user is authorized (super admin or admin)
             $role = session('role');

@@ -380,6 +380,9 @@ function openEventModal(mode, eventId = null) {
         // Initialize toggle functionality after modal content is loaded
         initializeToggleFunctionality();
 
+        // Initialize date/time restrictions for dynamically loaded form
+        initializeDateTimeRestrictions();
+
         // Initialize file upload handlers (runs in the parent because injected scripts may not execute)
         if (typeof initializeEventFormUpload === 'function') {
             initializeEventFormUpload();
@@ -509,41 +512,66 @@ function handleFormSubmit(e) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Show success notification based on submit action
-            let successMessage = '';
-            switch(submitAction) {
-                case 'draft':
-                    successMessage = 'Event saved as draft successfully!';
-                    break;
-                case 'schedule':
-                    successMessage = 'Event scheduled successfully!';
-                    break;
-                case 'publish':
-                    successMessage = 'Event published successfully!';
-                    break;
-                default:
-                    successMessage = 'Event saved successfully!';
-            }
-            showNotification(successMessage, 'success');
-            
-            // Close modal and refresh page after a short delay
-            closeEventModal();
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
-        } else {
-            // If server returned a file-specific error, display it inline in the form
-            const fileErrorEl = document.getElementById('file-error');
-            if (fileErrorEl && data.message) {
-                fileErrorEl.textContent = data.message;
-                fileErrorEl.classList.remove('hidden');
-                const input = document.getElementById('event_banner');
-                if (input) {
-                    input.classList.add('border-red-500');
-                    input.classList.remove('border-gray-300');
-                }
+            // Check Google Calendar sync status for published events
+            if (submitAction === 'publish' && data.google_calendar_sync === false) {
+                showNotification('Event published successfully, but failed to sync with Google Calendar. Please check calendar permissions.', 'warning');
             } else {
-                showNotification('Error: ' + (data.message || 'Unknown error occurred'), 'error');
+                // Show success notification based on submit action
+                let successMessage = '';
+                switch(submitAction) {
+                    case 'draft':
+                        successMessage = 'Event saved as draft successfully!';
+                        break;
+                    case 'schedule':
+                        successMessage = 'Event scheduled successfully!';
+                        break;
+                    case 'publish':
+                        successMessage = 'Event published successfully!';
+                        break;
+                    default:
+                        successMessage = 'Event saved successfully!';
+                }
+                showNotification(successMessage, 'success');
+            }
+            
+            // Close modal
+            closeEventModal();
+            
+            // For publish actions, wait a bit longer to ensure Google Calendar sync completes
+            if (submitAction === 'publish') {
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2500); // Give more time for Google Calendar sync
+            } else {
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            }
+        } else {
+            // Handle various types of errors
+            if (data.message && data.message.includes('Google Calendar')) {
+                // Google Calendar sync failed - show warning but don't prevent use
+                showNotification('Event was saved but Google Calendar sync failed: ' + data.message, 'warning');
+                
+                // Still close modal and refresh after showing the warning
+                closeEventModal();
+                setTimeout(() => {
+                    window.location.reload();
+                }, 3000);
+            } else {
+                // Other errors - handle as before
+                const fileErrorEl = document.getElementById('file-error');
+                if (fileErrorEl && data.message) {
+                    fileErrorEl.textContent = data.message;
+                    fileErrorEl.classList.remove('hidden');
+                    const input = document.getElementById('event_banner');
+                    if (input) {
+                        input.classList.add('border-red-500');
+                        input.classList.remove('border-gray-300');
+                    }
+                } else {
+                    showNotification('Error: ' + (data.message || 'Unknown error occurred'), 'error');
+                }
             }
         }
     })
@@ -687,6 +715,52 @@ function validateFields(form, submitAction) {
     return { isValid, firstErrorField };
 }
 
+// ===== DATE/TIME PICKER RESTRICTIONS FOR DYNAMIC FORMS =====
+function initializeDateTimeRestrictions() {
+    console.log('Initializing date/time restrictions for dynamically loaded form');
+    
+    // Function to get current date and time in local timezone
+    function getCurrentDateTime() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+
+    const currentDateTime = getCurrentDateTime();
+    
+    // Set minimum for event start datetime
+    const startDatetimeInput = document.getElementById('start_datetime');
+    if (startDatetimeInput) {
+        startDatetimeInput.min = currentDateTime;
+        
+        // Update end datetime minimum when start changes (without showing alerts)
+        startDatetimeInput.addEventListener('change', function() {
+            const endDatetimeInput = document.getElementById('end_datetime');
+            if (endDatetimeInput && this.value) {
+                endDatetimeInput.min = this.value;
+            }
+        });
+    }
+    
+    // Set minimum for event end datetime
+    const endDatetimeInput = document.getElementById('end_datetime');
+    if (endDatetimeInput) {
+        endDatetimeInput.min = currentDateTime;
+    }
+    
+    // Set minimum for scheduled publish datetime
+    const scheduledDatetimeInput = document.getElementById('scheduled_publish_datetime');
+    if (scheduledDatetimeInput) {
+        scheduledDatetimeInput.min = currentDateTime;
+    }
+    
+    console.log('Date/time restrictions initialized');
+}
+
 // Initialize toggle functionality for modal forms
 function initializeToggleFunctionality() {
     console.log('Initializing toggle functionality...');
@@ -758,19 +832,83 @@ function initializeToggleFunctionality() {
     }
 
     // Recipient roles mutual exclusivity
+    const allPederasyonOfficialsCheckbox = document.querySelector('.all-pederasyon-officials-checkbox');
+    const pederasyonRoleCheckboxes = document.querySelectorAll('.pederasyon-role-checkbox');
     const allOfficialsCheckbox = document.querySelector('.all-officials-checkbox');
     const individualRoleCheckboxes = document.querySelectorAll('.individual-role-checkbox');
     
+    console.log('All Pederasyon officials checkbox element:', allPederasyonOfficialsCheckbox);
+    console.log('Pederasyon role checkboxes found:', pederasyonRoleCheckboxes.length);
     console.log('All officials checkbox element:', allOfficialsCheckbox);
     console.log('Individual role checkboxes found:', individualRoleCheckboxes.length);
+
+    // Handle "All Pederasyon Officials" checkbox logic
+    if (allPederasyonOfficialsCheckbox) {
+        allPederasyonOfficialsCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                // When "All Pederasyon Officials" is checked, check all Pederasyon suboptions and uncheck other role options
+                pederasyonRoleCheckboxes.forEach(checkbox => {
+                    checkbox.checked = true;
+                });
+                if (allOfficialsCheckbox) allOfficialsCheckbox.checked = false;
+                individualRoleCheckboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+                console.log('All Pederasyon role checkboxes checked, other roles unchecked');
+            } else {
+                // When "All Pederasyon Officials" is unchecked, uncheck all Pederasyon suboptions
+                pederasyonRoleCheckboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+                console.log('All Pederasyon role checkboxes unchecked');
+            }
+        });
+    }
+
+    // Handle Pederasyon suboption checkboxes
+    pederasyonRoleCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                // When any Pederasyon suboption is checked, uncheck other role groups
+                if (allOfficialsCheckbox) allOfficialsCheckbox.checked = false;
+                individualRoleCheckboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+            }
+            // If any Pederasyon suboption is unchecked, uncheck "All Pederasyon Officials"
+            if (!this.checked && allPederasyonOfficialsCheckbox) {
+                allPederasyonOfficialsCheckbox.checked = false;
+                console.log('All Pederasyon Officials checkbox unchecked');
+            }
+            // If all Pederasyon suboptions are checked, check "All Pederasyon Officials"
+            else if (this.checked && allPederasyonOfficialsCheckbox) {
+                const allPederasyonChecked = Array.from(pederasyonRoleCheckboxes).every(cb => cb.checked);
+                if (allPederasyonChecked) {
+                    allPederasyonOfficialsCheckbox.checked = true;
+                    console.log('All Pederasyon Officials checkbox checked (all suboptions selected)');
+                }
+            }
+        });
+    });
 
     if (allOfficialsCheckbox) {
         allOfficialsCheckbox.addEventListener('change', function() {
             if (this.checked) {
-                // Uncheck all individual role checkboxes
+                // When "All SK Officials" is checked, uncheck Pederasyon options and check all individual SK role checkboxes
+                if (allPederasyonOfficialsCheckbox) allPederasyonOfficialsCheckbox.checked = false;
+                pederasyonRoleCheckboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+                individualRoleCheckboxes.forEach(checkbox => {
+                    checkbox.checked = true;
+                });
+                console.log('All individual role checkboxes checked, Pederasyon options unchecked');
+            } else {
+                // When "All SK Officials" is unchecked, uncheck all individual SK role checkboxes
                 individualRoleCheckboxes.forEach(checkbox => {
                     checkbox.checked = false;
                 });
+                console.log('All individual role checkboxes unchecked');
             }
         });
     }
@@ -779,9 +917,23 @@ function initializeToggleFunctionality() {
     individualRoleCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', function() {
             if (this.checked) {
-                // Uncheck "All SK Officials" checkbox
-                if (allOfficialsCheckbox) {
-                    allOfficialsCheckbox.checked = false;
+                // When any individual SK role is checked, uncheck Pederasyon options
+                if (allPederasyonOfficialsCheckbox) allPederasyonOfficialsCheckbox.checked = false;
+                pederasyonRoleCheckboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+            }
+            // If any individual role is unchecked, uncheck "All SK Officials"
+            if (!this.checked && allOfficialsCheckbox) {
+                allOfficialsCheckbox.checked = false;
+                console.log('All SK Officials checkbox unchecked');
+            }
+            // If all individual roles are checked, check "All SK Officials"
+            else if (this.checked && allOfficialsCheckbox) {
+                const allIndividualChecked = Array.from(individualRoleCheckboxes).every(cb => cb.checked);
+                if (allIndividualChecked) {
+                    allOfficialsCheckbox.checked = true;
+                    console.log('All SK Officials checkbox checked (all individual roles selected)');
                 }
             }
         });
@@ -1076,6 +1228,9 @@ function showNotification(message, type = 'info') {
             break;
         case 'error':
             notification.className += ' bg-red-500 text-white';
+            break;
+        case 'warning':
+            notification.className += ' bg-yellow-500 text-white';
             break;
         default:
             notification.className += ' bg-blue-500 text-white';

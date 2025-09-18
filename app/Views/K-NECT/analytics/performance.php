@@ -18,10 +18,10 @@
                     </svg>
                     Filters
                 </h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <label for="barangayFilter" class="block text-sm font-medium text-gray-700 mb-2">Filter by Barangay</label>
-                        <select id="barangayFilter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="refreshCharts()">
+                <div class="flex flex-wrap items-end gap-4">
+                    <div class="flex-1 min-w-64">
+                        <label for="barangayFilter" class="block text-sm font-medium text-gray-700 mb-2">Filter by Barangay:</label>
+                        <select id="barangayFilter" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="all">All Barangays</option>
                             <?php if (isset($barangays)): ?>
                                 <?php foreach ($barangays as $barangay): ?>
@@ -30,15 +30,23 @@
                             <?php endif; ?>
                         </select>
                     </div>
-                    <div>
-                        <label for="inactiveDaysFilter" class="block text-sm font-medium text-gray-700 mb-2">Inactive Period (Days)</label>
-                        <select id="inactiveDaysFilter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="refreshCharts()">
+                    <div class="flex-1 min-w-48">
+                        <label for="inactiveDaysFilter" class="block text-sm font-medium text-gray-700 mb-2">Inactive Period (Days):</label>
+                        <select id="inactiveDaysFilter" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="30">30 days</option>
                             <option value="60">60 days</option>
                             <option value="90" selected>90 days</option>
                             <option value="120">120 days</option>
                             <option value="180">180 days</option>
                         </select>
+                    </div>
+                    <div>
+                        <button type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md transition-colors" onclick="refreshCharts()">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                            </svg>
+                            Apply Filter
+                        </button>
                     </div>
                 </div>
             </div>
@@ -80,6 +88,7 @@
             </div>
         </div>
 
+        <?php if ($view_type !== 'citywide'): ?>
         <!-- Inactive Members Table -->
         <div class="bg-white rounded-lg shadow-sm">
             <div class="p-6 border-b border-gray-200">
@@ -97,6 +106,7 @@
                 </div>
             </div>
         </div>
+        <?php endif; ?>
 
     </main>
 </div>
@@ -144,21 +154,56 @@
 
         $.get(`${baseApiUrl}/barangay-performance-score?${params.toString()}`)
             .done(function(data) {
+                console.log('Performance score data received:', data);
+                
+                // Check if data is valid
+                if (!data || !Array.isArray(data)) {
+                    console.error('Invalid data format received:', data);
+                    $('#performanceScoreChart').html('<div class="text-center text-gray-500">No performance data available</div>');
+                    return;
+                }
+                
+                // Check if any data returned
+                if (data.length === 0) {
+                    const emptyMessage = viewType === 'citywide' 
+                        ? 'No barangays found in the system.'
+                        : 'No performance data available for this barangay.';
+                    const emptyDetail = viewType === 'citywide'
+                        ? 'Please add barangays to the system first.'
+                        : 'Data appears when this barangay has published events or uploaded documents.';
+                        
+                    $('#performanceScoreChart').html(`
+                        <div class="text-center text-gray-500 py-8">
+                            <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            <h3 class="text-lg font-medium text-gray-900 mb-2">No Performance Data Available</h3>
+                            <p class="text-gray-600">${emptyMessage}</p>
+                            <p class="text-sm text-gray-500 mt-2">${emptyDetail}</p>
+                        </div>
+                    `);
+                    return;
+                }
+                
                 // Prepare data for radar chart
                 const categories = ['Event Participation', 'Document Activity', 'Attendance Consistency'];
                 const seriesData = [];
                 
                 data.forEach(function(barangay) {
+                    // Ensure values are within 0-100 range and handle null/undefined values
+                    const eventScore = Math.min(100, Math.max(0, parseFloat(barangay.event_participation_score) || 0));
+                    const documentScore = Math.min(100, Math.max(0, parseFloat(barangay.document_activity_score) || 0));
+                    const attendanceScore = Math.min(100, Math.max(0, parseFloat(barangay.attendance_consistency_score) || 0));
+                    
                     seriesData.push({
                         name: barangay.barangay,
-                        data: [
-                            parseFloat(barangay.event_participation_score) || 0,
-                            parseFloat(barangay.document_activity_score) || 0,
-                            parseFloat(barangay.attendance_consistency_score) || 0
-                        ],
-                        pointPlacement: 'on'
+                        data: [eventScore, documentScore, attendanceScore],
+                        pointPlacement: 'on',
+                        connectNulls: true
                     });
                 });
+                
+                console.log('Series data prepared:', seriesData);
 
                 performanceScoreChart = Highcharts.chart('performanceScoreChart', {
                     chart: {
@@ -169,7 +214,8 @@
                         text: null
                     },
                     pane: {
-                        size: '80%'
+                        size: '80%',
+                        startAngle: 0
                     },
                     xAxis: {
                         categories: categories,
@@ -180,7 +226,24 @@
                         gridLineInterpolation: 'polygon',
                         lineWidth: 0,
                         min: 0,
-                        max: 100
+                        max: 100,
+                        tickInterval: 20,
+                        labels: {
+                            formatter: function() {
+                                return this.value + '%';
+                            }
+                        }
+                    },
+                    plotOptions: {
+                        series: {
+                            connectNulls: true,
+                            lineWidth: 2,
+                            pointPlacement: 'on',
+                            marker: {
+                                enabled: true,
+                                radius: 4
+                            }
+                        }
                     },
                     tooltip: {
                         shared: true,
@@ -189,7 +252,11 @@
                     legend: {
                         align: 'right',
                         verticalAlign: 'middle',
-                        layout: 'vertical'
+                        layout: 'vertical',
+                        maxHeight: 200,
+                        navigation: {
+                            enabled: true
+                        }
                     },
                     series: seriesData,
                     responsive: {
@@ -214,8 +281,14 @@
                     }
                 });
             })
-            .fail(function() {
-                $('#performanceScoreChart').html('<div class="text-center text-gray-500">Error loading performance score data</div>');
+            .fail(function(xhr, status, error) {
+                console.error('Failed to load performance score data:', {
+                    status: status,
+                    error: error,
+                    response: xhr.responseText,
+                    url: `${baseApiUrl}/barangay-performance-score?${params.toString()}`
+                });
+                $('#performanceScoreChart').html('<div class="text-center text-gray-500">Error loading performance score data. Please check browser console for details.</div>');
             });
     }
 
@@ -325,6 +398,7 @@
             });
     }
 
+    <?php if ($view_type !== 'citywide'): ?>
     // Load Inactive Members Table
     function loadInactiveMembersTable() {
         const params = new URLSearchParams({
@@ -418,4 +492,5 @@
                 $('#inactiveMembersTable').html('<div class="text-center text-gray-500">Error loading inactive members data</div>');
             });
     }
+    <?php endif; ?>
 </script>

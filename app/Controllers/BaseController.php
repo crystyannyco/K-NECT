@@ -75,12 +75,20 @@ abstract class BaseController extends Controller
         $userType = $session->get('user_type');
         $barangayId = $session->get('barangay_id') ?: $session->get('sk_barangay');
         
-        if ($userType && in_array($userType, ['sk', 'pederasyon'])) {
+        if ($userType && in_array($userType, ['sk', 'kk', 'pederasyon'])) {
             $eventModel = new \App\Models\EventModel();
             
-            if ($userType === 'sk' && $barangayId) {
-                // SK Officials see their barangay events
-                $eventCount = $eventModel->where('barangay_id', $barangayId)->countAllResults();
+            if (($userType === 'sk' || $userType === 'kk') && $barangayId) {
+                // SK Officials and KK members see their barangay events
+                if ($userType === 'kk') {
+                    // KK members only see published events
+                    $eventCount = $eventModel->where('barangay_id', $barangayId)
+                                           ->where('status', 'Published')
+                                           ->countAllResults();
+                } else {
+                    // SK Officials see all events in their barangay
+                    $eventCount = $eventModel->where('barangay_id', $barangayId)->countAllResults();
+                }
             } else if ($userType === 'pederasyon') {
                 // Pederasyon sees all events
                 $eventCount = $eventModel->countAllResults();

@@ -286,6 +286,35 @@ $isSuperAdmin = $userRole === 'super_admin';
             <p class="text-sm text-gray-600 mb-4">Adjust your SMS notification settings to control who will receive SMS notifications about this event.</p>
             
             <?php if ($isSuperAdmin): ?>
+            <!-- Pederasyon Officials (City Level) -->
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">City-Level Officials</label>
+                    <div class="space-y-2">
+                        <label class="flex items-center">
+                            <input type="checkbox" name="sms_recipient_roles[]" value="all_pederasyon_officials" 
+                                   <?= (isset($event['sms_recipient_roles']) && in_array('all_pederasyon_officials', json_decode($event['sms_recipient_roles'], true) ?? [])) ? 'checked' : '' ?>
+                                   class="mr-2 all-pederasyon-officials-checkbox">
+                            <span class="text-sm text-gray-700">All Pederasyon Officials</span>
+                        </label>
+                        <div class="pederasyon-roles-group ml-4 space-y-1">
+                            <label class="flex items-center">
+                                <input type="checkbox" name="sms_recipient_roles[]" value="pederasyon_officers" 
+                                       <?= (isset($event['sms_recipient_roles']) && in_array('pederasyon_officers', json_decode($event['sms_recipient_roles'], true) ?? [])) ? 'checked' : '' ?>
+                                       class="mr-2 pederasyon-role-checkbox">
+                                <span class="text-sm text-gray-700">Pederasyon Officers</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" name="sms_recipient_roles[]" value="pederasyon_members" 
+                                       <?= (isset($event['sms_recipient_roles']) && in_array('pederasyon_members', json_decode($event['sms_recipient_roles'], true) ?? [])) ? 'checked' : '' ?>
+                                       class="mr-2 pederasyon-role-checkbox">
+                                <span class="text-sm text-gray-700">Pederasyon Members</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Superadmin SMS Recipient Options -->
             <div class="space-y-4">
                 <div>
@@ -362,6 +391,12 @@ $isSuperAdmin = $userRole === 'super_admin';
                                    <?= (isset($event['sms_recipient_roles']) && in_array('treasurer', json_decode($event['sms_recipient_roles'], true) ?? [])) ? 'checked' : '' ?>
                                    class="mr-2 individual-role-checkbox">
                             <span class="text-sm text-gray-700">SK Treasurer</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" name="sms_recipient_roles[]" value="sk_members" 
+                                   <?= (isset($event['sms_recipient_roles']) && in_array('sk_members', json_decode($event['sms_recipient_roles'], true) ?? [])) ? 'checked' : '' ?>
+                                   class="mr-2 individual-role-checkbox">
+                            <span class="text-sm text-gray-700">SK Members</span>
                         </label>
                     </div>
                     <label class="flex items-center">
@@ -694,20 +729,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Add real-time validation for scheduled datetime
-    const scheduledDatetimeInput = document.getElementById('scheduled_publish_datetime');
-    if (scheduledDatetimeInput) {
-        scheduledDatetimeInput.addEventListener('change', function(e) {
-            clearInlineSchedulingError(); // Clear errors when user changes the field
-            validateScheduledDateTime(this);
-        });
-        
-        scheduledDatetimeInput.addEventListener('input', function(e) {
-            clearInlineSchedulingError(); // Clear errors when user starts typing
-        });
-    }
-    
-    // Function to validate scheduled datetime
+    // Function to validate scheduled datetime (used only during form submission)
     function validateScheduledDateTime(input) {
         if (!input.value) return true;
         
@@ -794,13 +816,71 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Handle "All SK Officials" checkbox logic
+    // Handle checkbox logic
+    const allPederasyonOfficialsCheckbox = document.querySelector('.all-pederasyon-officials-checkbox');
+    const pederasyonRoleCheckboxes = document.querySelectorAll('.pederasyon-role-checkbox');
     const allOfficialsCheckbox = document.querySelector('.all-officials-checkbox');
     const individualRoleCheckboxes = document.querySelectorAll('.individual-role-checkbox');
     
+    // Handle "All Pederasyon Officials" checkbox logic
+    if (allPederasyonOfficialsCheckbox) {
+        allPederasyonOfficialsCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                // When "All Pederasyon Officials" is checked, check all Pederasyon suboptions and uncheck other role options
+                pederasyonRoleCheckboxes.forEach(function(checkbox) {
+                    checkbox.checked = true;
+                });
+                if (allOfficialsCheckbox) allOfficialsCheckbox.checked = false;
+                individualRoleCheckboxes.forEach(function(checkbox) {
+                    checkbox.checked = false;
+                });
+            } else {
+                // When "All Pederasyon Officials" is unchecked, uncheck all Pederasyon suboptions
+                pederasyonRoleCheckboxes.forEach(function(checkbox) {
+                    checkbox.checked = false;
+                });
+            }
+        });
+    }
+
+    // Handle Pederasyon suboption checkboxes
+    pederasyonRoleCheckboxes.forEach(function(checkbox) {
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                // When any Pederasyon suboption is checked, uncheck other role groups
+                if (allOfficialsCheckbox) allOfficialsCheckbox.checked = false;
+                individualRoleCheckboxes.forEach(function(checkbox) {
+                    checkbox.checked = false;
+                });
+            }
+            // If any Pederasyon suboption is unchecked, uncheck "All Pederasyon Officials"
+            if (!this.checked && allPederasyonOfficialsCheckbox) {
+                allPederasyonOfficialsCheckbox.checked = false;
+            }
+            // If all Pederasyon suboptions are checked, check "All Pederasyon Officials"
+            else if (this.checked && allPederasyonOfficialsCheckbox) {
+                const allPederasyonChecked = Array.from(pederasyonRoleCheckboxes).every(cb => cb.checked);
+                if (allPederasyonChecked) {
+                    allPederasyonOfficialsCheckbox.checked = true;
+                }
+            }
+        });
+    });
+
+    // Handle "All SK Officials" checkbox logic
     if (allOfficialsCheckbox) {
         allOfficialsCheckbox.addEventListener('change', function() {
             if (this.checked) {
+                // When "All SK Officials" is checked, uncheck Pederasyon options and check all individual SK role checkboxes
+                if (allPederasyonOfficialsCheckbox) allPederasyonOfficialsCheckbox.checked = false;
+                pederasyonRoleCheckboxes.forEach(function(checkbox) {
+                    checkbox.checked = false;
+                });
+                individualRoleCheckboxes.forEach(function(checkbox) {
+                    checkbox.checked = true;
+                });
+            } else {
+                // When "All SK Officials" is unchecked, uncheck all individual SK role checkboxes
                 individualRoleCheckboxes.forEach(function(checkbox) {
                     checkbox.checked = false;
                 });
@@ -810,10 +890,90 @@ document.addEventListener('DOMContentLoaded', function() {
     
     individualRoleCheckboxes.forEach(function(checkbox) {
         checkbox.addEventListener('change', function() {
-            if (this.checked && allOfficialsCheckbox) {
+            if (this.checked) {
+                // When any individual SK role is checked, uncheck Pederasyon options
+                if (allPederasyonOfficialsCheckbox) allPederasyonOfficialsCheckbox.checked = false;
+                pederasyonRoleCheckboxes.forEach(function(checkbox) {
+                    checkbox.checked = false;
+                });
+            }
+            // If any individual role is unchecked, uncheck "All SK Officials"
+            if (!this.checked && allOfficialsCheckbox) {
                 allOfficialsCheckbox.checked = false;
+            }
+            // If all individual roles are checked, check "All SK Officials"
+            else if (this.checked && allOfficialsCheckbox) {
+                const allIndividualChecked = Array.from(individualRoleCheckboxes).every(cb => cb.checked);
+                if (allIndividualChecked) {
+                    allOfficialsCheckbox.checked = true;
+                }
             }
         });
     });
+
+    // ===== DATE/TIME PICKER RESTRICTIONS =====
+    // Function to get current date and time in local timezone
+    function getCurrentDateTime() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+
+    // Function to set minimum datetime for inputs
+    function setMinimumDateTime() {
+        const currentDateTime = getCurrentDateTime();
+        
+        // Set minimum for event start datetime
+        const startDatetimeInput = document.getElementById('start_datetime');
+        if (startDatetimeInput) {
+            startDatetimeInput.min = currentDateTime;
+            
+            // Update end datetime minimum when start changes (without showing alerts)
+            startDatetimeInput.addEventListener('change', function() {
+                const endDatetimeInput = document.getElementById('end_datetime');
+                if (endDatetimeInput && this.value) {
+                    endDatetimeInput.min = this.value;
+                }
+            });
+        }
+        
+        // Set minimum for event end datetime
+        const endDatetimeInput = document.getElementById('end_datetime');
+        if (endDatetimeInput) {
+            endDatetimeInput.min = currentDateTime;
+        }
+        
+        // Set minimum for scheduled publish datetime
+        const scheduledDatetimeInput = document.getElementById('scheduled_publish_datetime');
+        if (scheduledDatetimeInput) {
+            scheduledDatetimeInput.min = currentDateTime;
+        }
+    }
+
+    // Initialize restrictions when form loads
+    setMinimumDateTime();
+    
+    // Update minimum times every minute to keep them current
+    setInterval(function() {
+        const currentDateTime = getCurrentDateTime();
+        
+        const startInput = document.getElementById('start_datetime');
+        const endInput = document.getElementById('end_datetime');
+        const scheduledInput = document.getElementById('scheduled_publish_datetime');
+        
+        if (startInput && !startInput.value) {
+            startInput.min = currentDateTime;
+        }
+        if (endInput && !endInput.value) {
+            endInput.min = currentDateTime;
+        }
+        if (scheduledInput && !scheduledInput.value) {
+            scheduledInput.min = currentDateTime;
+        }
+    }, 60000); // Update every minute
 });
 </script>

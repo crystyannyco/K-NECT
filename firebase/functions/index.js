@@ -333,7 +333,41 @@ async function getSmsRecipients(event) {
     // Handle recipient roles
     if (event.sms_recipient_roles) {
       const roles = JSON.parse(event.sms_recipient_roles);
-      // Add role-based filtering logic here
+      if (roles.length > 0) {
+        const roleConditions = [];
+        roles.forEach(role => {
+          switch (role) {
+            case 'all_pederasyon_officials':
+              roleConditions.push("u.position LIKE '%Pederasyon%'");
+              break;
+            case 'pederasyon_officers':
+              roleConditions.push("(u.position LIKE '%Pederasyon President%' OR u.position LIKE '%Pederasyon Vice President%' OR u.position LIKE '%Pederasyon Secretary%' OR u.position LIKE '%Pederasyon Treasurer%' OR u.position LIKE '%Pederasyon Auditor%' OR u.position LIKE '%Pederasyon Public Information Officer%' OR u.position LIKE '%Pederasyon Sergeant at Arms%')");
+              break;
+            case 'pederasyon_members':
+              roleConditions.push("(u.position LIKE '%Pederasyon%' AND u.position NOT LIKE '%Pederasyon President%' AND u.position NOT LIKE '%Pederasyon Vice President%' AND u.position NOT LIKE '%Pederasyon Secretary%' AND u.position NOT LIKE '%Pederasyon Treasurer%' AND u.position NOT LIKE '%Pederasyon Auditor%' AND u.position NOT LIKE '%Pederasyon Public Information Officer%' AND u.position NOT LIKE '%Pederasyon Sergeant at Arms%')");
+              break;
+            case 'all_officials':
+              roleConditions.push("u.position LIKE '%SK%'");
+              break;
+            case 'chairman':
+              roleConditions.push("u.position LIKE '%Chairman%'");
+              break;
+            case 'secretary':
+              roleConditions.push("u.position LIKE '%Secretary%'");
+              break;
+            case 'treasurer':
+              roleConditions.push("u.position LIKE '%Treasurer%'");
+              break;
+            case 'kk_members':
+              roleConditions.push("(u.position LIKE '%KK%' OR u.position LIKE '%Katipunan%')");
+              break;
+          }
+        });
+        
+        if (roleConditions.length > 0) {
+          query += ` AND (${roleConditions.join(' OR ')})`;
+        }
+      }
     }
     
     const [rows] = await connection.execute(query, params);

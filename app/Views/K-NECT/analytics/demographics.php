@@ -43,7 +43,7 @@
 
         <!-- Summary Cards -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white rounded-lg p-6 shadow-sm">
+            <div class="bg-white rounded-lg p-6 shadow-sm summary-card" data-metric="total_users">
                 <div class="flex items-center">
                     <div class="p-3 bg-blue-100 rounded-lg">
                         <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,13 +51,13 @@
                         </svg>
                     </div>
                     <div class="ml-4">
-                        <p class="text-sm text-gray-600">Total Youth Members</p>
-                        <p class="text-2xl font-bold text-gray-900"><?= number_format($summary['total_users']) ?></p>
+                        <p class="text-sm text-gray-600 metric-label">Total Youth Members</p>
+                        <p class="text-2xl font-bold text-gray-900 metric-value"><?= number_format($summary['total_users']) ?></p>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg p-6 shadow-sm">
+            <div class="bg-white rounded-lg p-6 shadow-sm summary-card" data-metric="male_count">
                 <div class="flex items-center">
                     <div class="p-3 bg-blue-100 rounded-lg">
                         <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -65,13 +65,13 @@
                         </svg>
                     </div>
                     <div class="ml-4">
-                        <p class="text-sm text-gray-600">Male (<?= $summary['male_percentage'] ?>%)</p>
-                        <p class="text-2xl font-bold text-gray-900"><?= number_format($summary['male_count']) ?></p>
+                        <p class="text-sm text-gray-600 metric-label">Male (<?= $summary['male_percentage'] ?>%)</p>
+                        <p class="text-2xl font-bold text-gray-900 metric-value"><?= number_format($summary['male_count']) ?></p>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg p-6 shadow-sm">
+            <div class="bg-white rounded-lg p-6 shadow-sm summary-card" data-metric="female_count">
                 <div class="flex items-center">
                     <div class="p-3 bg-pink-100 rounded-lg">
                         <svg class="w-6 h-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -79,13 +79,13 @@
                         </svg>
                     </div>
                     <div class="ml-4">
-                        <p class="text-sm text-gray-600">Female (<?= $summary['female_percentage'] ?>%)</p>
-                        <p class="text-2xl font-bold text-gray-900"><?= number_format($summary['female_count']) ?></p>
+                        <p class="text-sm text-gray-600 metric-label">Female (<?= $summary['female_percentage'] ?>%)</p>
+                        <p class="text-2xl font-bold text-gray-900 metric-value"><?= number_format($summary['female_count']) ?></p>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg p-6 shadow-sm">
+            <div class="bg-white rounded-lg p-6 shadow-sm summary-card" data-metric="largest_age_group">
                 <div class="flex items-center">
                     <div class="p-3 bg-green-100 rounded-lg">
                         <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -93,9 +93,9 @@
                         </svg>
                     </div>
                     <div class="ml-4">
-                        <p class="text-sm text-gray-600">Largest Age Group</p>
-                        <p class="text-2xl font-bold text-gray-900"><?= $summary['largest_age_group'] ?></p>
-                        <p class="text-xs text-gray-500"><?= number_format($summary['largest_age_group_count']) ?> members</p>
+                        <p class="text-sm text-gray-600 metric-label">Largest Age Group</p>
+                        <p class="text-2xl font-bold text-gray-900 metric-value"><?= $summary['largest_age_group'] ?></p>
+                        <p class="text-xs text-gray-500 metric-sublabel"><?= number_format($summary['largest_age_group_count']) ?> members</p>
                     </div>
                 </div>
             </div>
@@ -192,24 +192,24 @@
                     <div id="educationalBackgroundChart" style="height: 300px;"></div>
                 </div>
             </div>
-
-            <!-- Gender by Barangay Chart (Only for City-wide) -->
-            <?php if ($view_type === 'citywide'): ?>
-            <div class="bg-white rounded-lg shadow-sm">
-                <div class="p-6 border-b border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-900 flex items-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                        </svg>
-                        Gender Distribution by Barangay
-                    </h3>
-                </div>
-                <div class="p-6">
-                    <div id="genderByBarangayChart" style="height: 300px;"></div>
-                </div>
-            </div>
-            <?php endif; ?>
         </div>
+
+        <!-- Gender by Barangay Chart - Full Width (Only for City-wide) -->
+        <?php if ($view_type === 'citywide'): ?>
+        <div id="genderByBarangayContainer" class="bg-white rounded-lg shadow-sm mb-8" style="display: none;">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                    Gender Distribution by Barangay
+                </h3>
+            </div>
+            <div class="p-6">
+                <div id="genderByBarangayChart" style="height: 400px;"></div>
+            </div>
+        </div>
+        <?php endif; ?>
 
     </main>
 </div>
@@ -229,6 +229,8 @@
 
     // Initialize charts when document is ready
     $(document).ready(function() {
+        // Load initial data
+        loadSummaryCards();
         loadGenderChart();
         loadAgeChart();
         loadYouthClassificationChart();
@@ -237,18 +239,87 @@
         loadEducationalBackgroundChart();
         
         <?php if ($view_type === 'citywide'): ?>
-        loadGenderByBarangayChart();
+        // Initial load - only show Gender by Barangay chart if "All Barangays" is selected
+        const initialBarangayId = $('#barangayFilter').val();
+        if (initialBarangayId === 'all') {
+            $('#genderByBarangayContainer').show();
+            loadGenderByBarangayChart();
+        } else {
+            $('#genderByBarangayContainer').hide();
+        }
         <?php endif; ?>
+        
+        // If there's a pre-selected filter, apply it immediately
+        setTimeout(function() {
+            const selectedBarangay = $('#barangayFilter').val();
+            if (selectedBarangay && selectedBarangay !== 'all') {
+                console.log('Applying pre-selected filter:', selectedBarangay);
+                refreshCharts();
+            }
+        }, 100);
     });
 
     // Function to refresh all charts (for filter changes)
     function refreshCharts() {
+        loadSummaryCards();
         loadGenderChart();
         loadAgeChart();
         loadYouthClassificationChart();
         loadCivilStatusChart();
         loadWorkStatusChart();
         loadEducationalBackgroundChart();
+        
+        // Also refresh gender by barangay chart if in citywide view
+        <?php if ($view_type === 'citywide'): ?>
+        // Handle Gender by Barangay chart visibility
+        const barangayId = $('#barangayFilter').val();
+        if (barangayId === 'all') {
+            // Show and load the chart when "All Barangays" is selected
+            $('#genderByBarangayContainer').show();
+            loadGenderByBarangayChart();
+        } else {
+            // Hide the chart when a specific barangay is selected
+            $('#genderByBarangayContainer').hide();
+        }
+        <?php endif; ?>
+    }
+
+    // Load summary cards with dynamic data
+    function loadSummaryCards() {
+        const params = new URLSearchParams({
+            view_type: viewType
+        });
+        
+        if (viewType === 'citywide') {
+            const barangayId = $('#barangayFilter').val();
+            console.log('Loading summary cards with barangay filter:', barangayId);
+            if (barangayId && barangayId !== 'all') {
+                params.append('barangay_id', barangayId);
+            }
+        }
+
+        console.log('Summary cards API call:', `${baseApiUrl}/demographics-summary?${params.toString()}`);
+        $.get(`${baseApiUrl}/demographics-summary?${params.toString()}`)
+            .done(function(data) {
+                console.log('Summary data received:', data);
+                // Update Total Youth Members
+                $('.summary-card[data-metric="total_users"] .metric-value').text(data.total_users ? data.total_users.toLocaleString() : '0');
+                
+                // Update Male count and percentage
+                $('.summary-card[data-metric="male_count"] .metric-value').text(data.male_count ? data.male_count.toLocaleString() : '0');
+                $('.summary-card[data-metric="male_count"] .metric-label').text(`Male (${data.male_percentage || 0}%)`);
+                
+                // Update Female count and percentage
+                $('.summary-card[data-metric="female_count"] .metric-value').text(data.female_count ? data.female_count.toLocaleString() : '0');
+                $('.summary-card[data-metric="female_count"] .metric-label').text(`Female (${data.female_percentage || 0}%)`);
+                
+                // Update Largest Age Group
+                $('.summary-card[data-metric="largest_age_group"] .metric-value').text(data.largest_age_group || 'N/A');
+                $('.summary-card[data-metric="largest_age_group"] .metric-sublabel').text(data.largest_age_group_count ? `${data.largest_age_group_count.toLocaleString()} members` : '0 members');
+            })
+            .fail(function() {
+                console.error('Failed to load summary data');
+            });
     }
 
     // Load Gender Distribution Chart
@@ -259,13 +330,26 @@
         
         if (viewType === 'citywide') {
             const barangayId = $('#barangayFilter').val();
-            if (barangayId) {
+            console.log('Loading gender chart with barangay filter:', barangayId);
+            if (barangayId && barangayId !== 'all') {
                 params.append('barangay_id', barangayId);
             }
         }
 
+        console.log('Gender chart API call:', `${baseApiUrl}/gender-distribution?${params.toString()}`);
         $.get(`${baseApiUrl}/gender-distribution?${params.toString()}`)
             .done(function(data) {
+                console.log('Gender distribution data received:', data);
+                // Map colors specifically - Female: pink, Male: blue
+                const mappedData = data.map(item => {
+                    if (item.name === 'Female') {
+                        return { ...item, color: '#E91E63' }; // Pink for Female
+                    } else if (item.name === 'Male') {
+                        return { ...item, color: '#2196F3' }; // Blue for Male
+                    }
+                    return item;
+                });
+
                 genderChart = Highcharts.chart('genderChart', {
                     chart: {
                         type: 'pie'
@@ -292,11 +376,10 @@
                             showInLegend: true
                         }
                     },
-                    colors: ['#4A90E2', '#E24A90'],
                     series: [{
                         name: 'Count',
                         colorByPoint: true,
-                        data: data
+                        data: mappedData
                     }],
                     exporting: {
                         enabled: true
@@ -630,6 +713,16 @@
     function loadGenderByBarangayChart() {
         $.get('/analytics/pederasyon/gender-by-barangay')
             .done(function(data) {
+                // Map colors specifically for gender series
+                const enhancedSeries = data.series.map(series => {
+                    if (series.name === 'Female') {
+                        return { ...series, color: '#E91E63' }; // Pink for Female
+                    } else if (series.name === 'Male') {
+                        return { ...series, color: '#2196F3' }; // Blue for Male
+                    }
+                    return series;
+                });
+
                 genderByBarangayChart = Highcharts.chart('genderByBarangayChart', {
                     chart: {
                         type: 'column'
@@ -685,7 +778,7 @@
                             }
                         }
                     },
-                    series: data.series,
+                    series: enhancedSeries,
                     exporting: {
                         enabled: true
                     }

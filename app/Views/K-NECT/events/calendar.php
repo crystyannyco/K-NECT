@@ -150,11 +150,55 @@
         function openModal() {
             document.getElementById('eventModal').classList.remove('hidden');
             document.getElementById('addEventForm').reset();
+            // Set minimum datetime for inputs when modal opens
+            setMinimumDateTime();
         }
         
         function closeModal() {
             document.getElementById('eventModal').classList.add('hidden');
         }
+
+        // ===== DATE/TIME PICKER RESTRICTIONS =====
+        // Function to get current date and time in local timezone
+        function getCurrentDateTime() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        // Function to set minimum datetime for inputs
+        function setMinimumDateTime() {
+            const currentDateTime = getCurrentDateTime();
+            
+            // Set minimum for event start datetime
+            const startDatetimeInput = document.querySelector('input[name="start_datetime"]');
+            if (startDatetimeInput) {
+                startDatetimeInput.min = currentDateTime;
+                
+                // Update end datetime minimum when start changes (without showing notifications)
+                startDatetimeInput.addEventListener('change', function() {
+                    const endDatetimeInput = document.querySelector('input[name="end_datetime"]');
+                    if (endDatetimeInput && this.value) {
+                        endDatetimeInput.min = this.value;
+                    }
+                });
+            }
+            
+            // Set minimum for event end datetime
+            const endDatetimeInput = document.querySelector('input[name="end_datetime"]');
+            if (endDatetimeInput) {
+                endDatetimeInput.min = currentDateTime;
+            }
+        }
+
+        // Initialize restrictions when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            setMinimumDateTime();
+        });
 
         // RFC3339 conversion for Google Calendar
         function toRFC3339(localDateTime) {

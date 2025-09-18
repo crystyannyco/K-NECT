@@ -7,6 +7,7 @@ use App\Models\UserExtInfoModel;
 use App\Models\AddressModel;
 use App\Models\AttendanceModel;
 use App\Models\EventModel;
+use App\Models\BulletinModel;
 use App\Libraries\BarangayHelper;
 // Note: NotificationSettingsModel and PrivacySettingsModel are optional and not required for basic settings
 
@@ -38,7 +39,34 @@ class KKController extends BaseController
         $userId = $session->get('user_id');
         $username = $session->get('username');
         $userType = $session->get('user_type') ?: 'KK';
-        $barangayId = $session->get('sk_barangay') ?? $session->get('kk_barangay');
+        // Prefer kk_barangay for KK; fallback to sk_barangay only if kk is not set
+    $kk = $session->get('kk_barangay');
+    $sk = $session->get('sk_barangay');
+    $gen = $session->get('barangay_id');
+    $kk = ($kk === '' || $kk === '0' || $kk === 0) ? null : $kk;
+    $sk = ($sk === '' || $sk === '0' || $sk === 0) ? null : $sk;
+    $gen = ($gen === '' || $gen === '0' || $gen === 0) ? null : $gen;
+        $barangayId = $kk ?? $gen ?? $sk;
+        // If still missing, try to resolve from user's address and persist in session
+        if (empty($barangayId)) {
+            try {
+                $permanentUserId = $session->get('user_id');
+                if ($permanentUserId) {
+                    $um = new UserModel();
+                    $me = $um->where('user_id', $permanentUserId)->first();
+                    if ($me && !empty($me['id'])) {
+                        $addrModel = new AddressModel();
+                        $addr = $addrModel->where('user_id', $me['id'])->first();
+                        if ($addr && !empty($addr['barangay'])) {
+                            $barangayId = $addr['barangay'];
+                            $session->set('barangay_id', $barangayId);
+                        }
+                    }
+                }
+            } catch (\Throwable $t) {
+                log_message('error', 'KK dashboard barangay resolve fallback error: ' . $t->getMessage());
+            }
+        }
 
         // Gather bulletin data for embedding
         $bulletin = [
@@ -56,16 +84,17 @@ class KKController extends BaseController
 
         try {
             $bm = new BulletinModel();
-            $bulletin['posts'] = $bm->getVisiblePosts($userType, $barangayId, 10, 0);
-            $bulletin['featured_posts'] = $bm->getFeaturedPosts(3, $userType, $barangayId);
-            $bulletin['urgent_posts'] = $bm->getUrgentPosts(3, $userType, $barangayId);
-            $bulletin['categories'] = $bm->getCategoriesWithCounts($userType, $barangayId);
-            $recentEvents = $bm->getRecentEvents(5, $userType, $barangayId);
+            $role = strtolower((string)$userType);
+            $bulletin['posts'] = $bm->getVisiblePosts($role, $barangayId, 10, 0);
+            $bulletin['featured_posts'] = $bm->getFeaturedPosts(3, $role, $barangayId);
+            $bulletin['urgent_posts'] = $bm->getUrgentPosts(3, $role, $barangayId);
+            $bulletin['categories'] = $bm->getCategoriesWithCounts($role, $barangayId);
+            $recentEvents = $bm->getRecentEvents(5, $role, $barangayId);
             if (empty($recentEvents)) {
-                $recentEvents = $bm->getRecentEventsAnyDate(5, $userType, $barangayId);
+                $recentEvents = $bm->getRecentEventsAnyDate(5, $role, $barangayId);
             }
             $bulletin['recent_events'] = $recentEvents;
-            $bulletin['recent_documents'] = $bm->getRecentDocuments(5, $userType, $barangayId);
+            $bulletin['recent_documents'] = $bm->getRecentDocuments(5, $role, $barangayId);
         } catch (\Throwable $t) {
             log_message('error', 'KK Dashboard bulletin embed error: ' . $t->getMessage());
         }

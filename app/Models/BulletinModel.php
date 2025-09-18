@@ -103,6 +103,8 @@ class BulletinModel extends Model
      */
     public function getVisiblePosts($userType, $barangayId = null, $limit = null, $offset = 0, $filters = [])
     {
+        // Normalize role casing to avoid case-sensitive mismatches (e.g., 'KK' vs 'kk')
+        $role = strtolower((string) $userType);
         $builder = $this->builder()
             ->select('bp.*, u.first_name, u.last_name, u.username, bc.name as category_name, bc.color as category_color, b.name as barangay_name')
             ->from('bulletin_posts bp')
@@ -113,7 +115,7 @@ class BulletinModel extends Model
             ->groupBy('bp.id');
 
         // Role-based visibility
-        switch ($userType) {
+        switch ($role) {
             case 'kk':
                 $builder->groupStart()
                     ->where('bp.visibility', 'public')
@@ -234,6 +236,8 @@ class BulletinModel extends Model
      */
     public function getCategoriesWithCounts($userType = null, $barangayId = null)
     {
+        // Normalize role casing
+        $role = strtolower((string) $userType);
         $builder = $this->db->table('bulletin_categories bc')
             ->select('bc.*, COUNT(bp.id) as post_count')
             ->join('bulletin_posts bp', 'bp.category_id = bc.id AND bp.status = "published"', 'left')
@@ -242,7 +246,7 @@ class BulletinModel extends Model
             ->orderBy('bc.name', 'ASC');
 
         // Apply role-based filtering for post counts
-        if ($userType && $userType !== 'pederasyon') {
+        if ($role && $role !== 'pederasyon') {
             if ($barangayId) {
                 $builder->groupStart()
                     ->where('bp.visibility', 'public')
@@ -396,7 +400,8 @@ class BulletinModel extends Model
             return false;
         }
 
-        switch ($userType) {
+        $role = strtolower((string) $userType);
+        switch ($role) {
             case 'kk':
             case 'sk':
                 if ($post['visibility'] === 'public') return true;
@@ -415,8 +420,9 @@ class BulletinModel extends Model
      */
     public function canUserEditPost($post, $userType, $userId)
     {
-        if ($userType === 'pederasyon') return true;
-        if ($userType === 'sk' && $post['author_id'] == $userId) return true;
+        $role = strtolower((string) $userType);
+        if ($role === 'pederasyon') return true;
+        if ($role === 'sk' && $post['author_id'] == $userId) return true;
         return false;
     }
 

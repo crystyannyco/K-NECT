@@ -1,20 +1,71 @@
 <?= $this->include('K-NECT/SK/Template/header') ?>
 <?= $this->include('K-NECT/SK/Template/sidebar') ?>
+<?= $this->include('K-NECT/includes/bulletin-assets') ?>
 
 <div class="flex-1 flex flex-col min-h-0 ml-0 lg:ml-64 pt-16">
     <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
-        <!-- Hero Header (blue, minimal) -->
-        <section class="bg-blue-600 text-white">
-            <div class="container mx-auto px-6 py-6 md:py-8">
-                <div class="flex items-center justify-between gap-4">
-                    <div>
-                        <h1 class="text-2xl md:text-3xl font-bold animate-slide-up">Bulletin Board</h1>
-                        <p class="mt-1 text-white/90 text-sm md:text-base animate-fade-in-delay">Stay updated with the latest announcements and information</p>
+        <div class="px-0 py-6 bulletin-wrap">
+            <!-- Sleek Header Panel (unified) -->
+            <div class="mx-auto">
+                <div class="p-4 md:p-5 rounded-2xl shadow-md border border-gray-200 bg-white flex flex-col gap-3 animate-fade-in bulletin-header">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-1">
+                        <div class="min-w-0">
+                            <?php $welcomeName = $currentUser['first_name'] ?? session('first_name') ?? ($currentUser['full_name'] ?? session('full_name') ?? 'User'); ?>
+                            <div class="text-[1.4rem] md:text-[1.6rem] font-extrabold text-gray-900 leading-tight tracking-tight animate-slide-up truncate">
+                                Welcome, <span class="text-blue-700 drop-shadow-[0_1px_0_rgba(59,130,246,0.25)]"><?= esc($welcomeName) ?></span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <a href="<?= base_url('/bulletin/create') ?>" class="inline-flex items-center justify-center gap-2 text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:ring-offset-1 focus:ring-offset-white px-3.5 py-2 rounded-lg text-sm font-semibold shadow-sm">
+                                <i class="fa-solid fa-plus"></i>
+                                <span class="whitespace-nowrap">Create Post</span>
+                            </a>
+                            <button type="button" onclick="window.location.reload()" class="inline-flex items-center justify-center gap-2 text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:ring-offset-1 focus:ring-offset-white px-3.5 py-2 rounded-lg text-sm font-semibold shadow-sm">
+                                <i class="fa-solid fa-rotate"></i>
+                                <span class="whitespace-nowrap">Refresh</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <form id="headerSearchForm" class="controls flex flex-col sm:flex-row gap-2.5 w-full items-center bg-gradient-to-r from-blue-50 to-indigo-50/70 rounded-2xl shadow-sm p-3.5 md:p-4 border border-blue-100 transition-all duration-300 hover:shadow-md animate-fade-in-more">
+                        <div class="relative flex-1 w-full">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fa-solid fa-magnifying-glass text-gray-400"></i>
+                            </div>
+                            <input type="text" id="header-search" placeholder="Search posts..." class="block w-full pl-10 pr-3 h-10 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500 bg-white text-gray-900 placeholder-gray-400 text-sm shadow-sm" />
+                        </div>
+
+                        <select id="header-category" class="w-full sm:w-auto h-10 border border-gray-200 rounded-lg px-3.5 text-sm focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500 bg-white text-gray-900 shadow-sm">
+                            <option value="">All Categories</option>
+                            <?php foreach (($categories ?? []) as $cat): ?>
+                                <option value="<?= $cat['id'] ?>"><?= esc($cat['name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+
+                        <select id="header-status" class="w-full sm:w-auto h-10 border border-gray-200 rounded-lg px-3.5 text-sm focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500 bg-white text-gray-900 shadow-sm">
+                            <option value="all">All Status</option>
+                            <option value="featured">Featured</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+
+                        <button id="header-search-btn" type="submit" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-10 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 rounded-lg text-sm font-semibold shadow-sm hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:ring-offset-1 focus:ring-offset-white transition">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <span>Search</span>
+                        </button>
+
+                        <button id="header-clear-btn" type="button" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-10 bg-white text-gray-700 px-4 rounded-lg text-sm font-semibold shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:ring-offset-1 focus:ring-offset-white border border-gray-200">
+                            <i class="fa-regular fa-circle-xmark"></i>
+                            <span>Clear</span>
+                        </button>
+                    </form>
+
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button type="button" class="chip bg-white text-gray-700 border border-gray-200 hover:border-blue-200 hover:bg-blue-50/60" data-kk-chip="all">All</button>
+                        <button type="button" class="chip bg-yellow-50 text-yellow-800 border border-yellow-200 hover:bg-yellow-50" data-kk-chip="featured">Featured</button>
+                        <button type="button" class="chip bg-red-50 text-red-700 border border-red-200 hover:bg-red-50" data-kk-chip="urgent">Urgent</button>
                     </div>
                 </div>
             </div>
-        </section>
-        <div class="container mx-auto px-6 py-8">
             <!-- Flash Messages -->
             <?php if (session()->getFlashdata('success')): ?>
                 <div class="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
@@ -34,20 +85,9 @@
                 </div>
             <?php endif; ?>
 
-            <!-- Actions toolbar -->
-            <div class="mb-6 flex items-center justify-end gap-3">
-                <?php if (($user_type ?? '') === 'sk'): ?>
-                <a href="<?= base_url('/bulletin/create') ?>" class="inline-flex items-center px-4 py-2 rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                    </svg>
-                    Create Post
-                </a>
-                <?php endif; ?>
-                <!-- Export removed for SK -->
-            </div>
+            <!-- Actions toolbar removed (Create moved to header) -->
 
-            <div class="grid grid-cols-1 gap-8">
+            <div class="grid grid-cols-1 gap-6 bulletin-section">
                 <!-- Main Content -->
                 <div class="w-full space-y-6">
                     
@@ -95,11 +135,8 @@
 
                     <!-- Featured Posts (mosaic) -->
                     <?php if (!empty($featured_posts)): ?>
-                    <div class="mb-2">
-                        <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                            <svg class="w-5 h-5 text-blue-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                            Featured Posts
-                        </h2>
+                    <div class="mb-8 bulletin-section">
+                        <!-- Featured Posts heading removed per request -->
                         <?php $primary = $featured_posts[0]; $others = array_slice($featured_posts, 1, 4); ?>
                         <div class="grid grid-cols-1 lg:grid-cols-3 lg:auto-rows-[220px] gap-5">
                             <!-- Primary featured -->
@@ -157,7 +194,7 @@
 
                     <!-- Upcoming Events Preview -->
                     <?php if (!empty($recent_events)): ?>
-                    <div class="mb-2">
+                    <div class="mb-8 bulletin-section">
                         <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center"><i class="fa-regular fa-calendar-days text-blue-600 mr-2"></i>Upcoming Events</h2>
                         <div class="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                             <?php foreach ($recent_events as $event): ?>
@@ -448,7 +485,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const title = post.title || 'Untitled';
                         const hasImg = !!post.featured_image;
                         const categoryChip = post.category_name ? `<span class=\"chip\" style=\"background-color:${post.category_color}20;color:${post.category_color}\">${post.category_name}</span>` : '';
-                        const featChip = post.is_featured ? `<span class=\"chip bg-blue-100 text-blue-700\">Featured</span>` : '';
+                        const featChip = post.is_featured ? `<span class=\"chip bg-yellow-100 text-yellow-700\">Featured</span>` : '';
                         const urgentChip = post.is_urgent ? `<span class=\"chip bg-red-100 text-red-700\">Urgent</span>` : '';
                         const visChip = `<span class=\"chip bg-gray-100 text-gray-700\">${(post.visibility||'public')[0].toUpperCase()+(post.visibility||'public').slice(1)}</span>`;
                         const statusChip = (post.status && post.status !== 'published') ? `<span class=\"chip bg-gray-200 text-gray-700\">${post.status[0].toUpperCase()+post.status.slice(1)}</span>` : '';

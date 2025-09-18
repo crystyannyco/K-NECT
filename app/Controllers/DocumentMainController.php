@@ -71,84 +71,79 @@ class DocumentMainController extends BaseController
      */
     protected function canAccessDocument($doc, $action = 'preview')
     {
-        $role = session('role');
-        $user = strtolower(trim(session('username')));
-        $isApproved = ($doc['approval_status'] ?? null) === 'approved';
-        $isDownloadable = isset($doc['downloadable']) ? (bool)$doc['downloadable'] : true;
-        $isShared = isset($doc['is_shared']) ? (bool)$doc['is_shared'] : false;
-        $uploader = strtolower(trim($doc['uploaded_by'] ?? ''));
-        $docVisibility = $doc['visibility'] ?? 'SK';
-        
-        // Check for document sharing - if specifically shared with this user
+        // Normalize inputs
+        $role = strtolower((string) session('role'));
+        $user = strtolower(trim((string) (session('username') ?? '')));
+        $uploader = strtolower(trim((string) ($doc['uploaded_by'] ?? '')));
+        $docVisibility = (string) ($doc['visibility'] ?? 'SK');
+        $isApproved = (($doc['approval_status'] ?? null) === 'approved');
+        $isDownloadable = isset($doc['downloadable']) ? (bool) $doc['downloadable'] : true;
+
+        if (empty($doc) || empty($doc['id'])) {
+            return false;
+        }
+
         $model = new DocumentModel();
-        $isSharedWithUser = $model->isDocumentSharedWithUser($doc['id'] ?? 0, $user);
-        
-        // Fetch uploader role
+
+        // Share permissions
+        $hasViewShare = $model->hasPermission((int) $doc['id'], $user, 'view');
+        $hasDownloadShare = $model->hasPermission((int) $doc['id'], $user, 'download');
+
+        // Fetch uploader role (optional; used for policy clarity)
         $uploaderRole = null;
         if ($uploader) {
             $uploaderUser = $model->getUserByUsername($uploader);
-            if ($uploaderUser) {
-                $uploaderRole = $uploaderUser['role'];
-            }
+            $uploaderRole = $uploaderUser['role'] ?? null;
         }
-        
-        // Super admin: all access
+
+        // Super admin: unrestricted
         if ($role === 'super_admin') {
             return true;
         }
-        
-        // Document owner always has access to their own documents
+
+        // Owner: full access (preview/download)
         if ($uploader === $user) {
             return true;
         }
-        
-        // If document is specifically shared with this user, allow access
-        if ($isSharedWithUser) {
-            return $action === 'preview' || ($action === 'download' && $isDownloadable);
+
+        // Explicit share overrides normal visibility/approval checks
+        if ($hasViewShare || $hasDownloadShare) {
+            if ($action === 'preview') {
+                return true;
+            }
+            if ($action === 'download') {
+                // Download allowed if shared with download permission OR file is generally downloadable
+                return $hasDownloadShare || $isDownloadable;
+            }
         }
-        
-        // SK admin
+
+        // Role-based default policy
         if ($role === 'admin') {
-            // Only allow access to documents with SK visibility
+            // SK can access approved SK-visible docs
             if ($docVisibility !== 'SK') {
                 return false;
             }
-            
             if ($action === 'preview') {
-                // Can preview documents from super_admin or other admins if approved
-                return in_array($uploaderRole, ['admin', 'super_admin']) && $isApproved;
-            } elseif ($action === 'download') {
-                // Can download if approved and downloadable
-                return in_array($uploaderRole, ['admin', 'super_admin']) && $isApproved && $isDownloadable;
+                return $isApproved;
+            }
+            if ($action === 'download') {
+                return $isApproved && $isDownloadable;
             }
         }
-        
-        // KK/User
-        if ($role === 'user') {
-            // Only allow access to documents with KK visibility
+
+        if ($role === 'user' || $role === 'viewer') {
+            // KK/Viewer can access approved KK-visible docs
             if ($docVisibility !== 'KK') {
                 return false;
             }
-            
-            // Can preview/download docs uploaded by SK or super_admin if approved and downloadable
-            return in_array($uploaderRole, ['admin', 'super_admin']) && 
-                   ($isApproved || $isSharedWithUser) && 
-                   ($action === 'preview' || ($action === 'download' && $isDownloadable));
-        }
-        
-        // Viewer
-        if ($role === 'viewer') {
-            // Only allow access to documents with KK visibility
-            if ($docVisibility !== 'KK') {
-                return false;
+            if ($action === 'preview') {
+                return $isApproved;
             }
-            
-            // Can preview/download docs uploaded by SK or super_admin if approved and downloadable
-            return in_array($uploaderRole, ['admin', 'super_admin']) && 
-                   $isApproved && 
-                   ($action === 'preview' || ($action === 'download' && $isDownloadable));
+            if ($action === 'download') {
+                return $isApproved && $isDownloadable;
+            }
         }
-        
+
         return false;
     }
 
@@ -202,41 +197,55 @@ class DocumentMainController extends BaseController
                 $userRoles[strtolower(trim($u['username']))] = $u['role'];
             }
         }
-        $role = session('role');
-        $user = strtolower(trim(session('username')));
+        // Normalize role with fallback to user_type mapping
+        $role = strtolower((string) (session('role') ?? ''));
+        $userType = strtolower((string) (session('user_type') ?? ''));
+        if ($role === '' && $userType !== '') {
+            switch ($userType) {
+                case 'kk':
+                    $role = 'user';
+                    break;
+                case 'sk':
+                    $role = 'admin';
+                    break;
+                case 'pederasyon':
+                    $role = 'super_admin';
+                    break;
+            }
+        }
+        $user = strtolower(trim((string) session('username')));
         $filteredDocuments = array_filter($allDocuments, function($doc) use ($role, $user, $userRoles) {
             $uploadedBy = strtolower(trim($doc['uploaded_by'] ?? ''));
             $uploaderRole = $userRoles[$uploadedBy] ?? null;
             $docVisibility = $doc['visibility'] ?? 'SK';
             $docApprovalStatus = $doc['approval_status'] ?? null;
             $docDownloadable = $doc['downloadable'] ?? 1;
-            
+
             // Super admin can see everything
             if ($role === 'super_admin') {
                 return true;
             }
-            
+
             // SK Admin logic
             if ($role === 'admin') {
-                // Can see documents with SK visibility that are:
-                // 1. Their own documents (regardless of approval status)
-                // 2. Documents from super_admin or other admins that are approved and downloadable
+                // Always show own uploads regardless of visibility/approval
+                if ($uploadedBy === $user) {
+                    return true;
+                }
+                // Show other approved SK-visible documents (regardless of uploader role)
                 if ($docVisibility === 'SK') {
-                    return $uploadedBy === $user || 
-                           (($uploaderRole === 'admin' || $uploaderRole === 'super_admin') && 
-                            $docApprovalStatus === 'approved' && $docDownloadable);
+                    return $docApprovalStatus === 'approved';
                 }
                 return false;
             }
-            
+
             // KK/Viewer logic
             if ($role === 'user' || $role === 'viewer') {
-                // Can only see documents with KK visibility from super_admin or admin that are approved and downloadable
-                return $docVisibility === 'KK' && 
-                       ($uploaderRole === 'admin' || $uploaderRole === 'super_admin') && 
-                       $docApprovalStatus === 'approved' && $docDownloadable;
+                // Show approved KK-visible documents (regardless of uploader role)
+                return $docVisibility === 'KK'
+                    && $docApprovalStatus === 'approved';
             }
-            
+
             return false;
         });
         // Manual pagination after filtering (consistent for SK and KK)

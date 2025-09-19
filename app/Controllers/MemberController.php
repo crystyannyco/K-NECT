@@ -60,7 +60,39 @@ class MemberController extends BaseController
             return $this->response->setStatusCode(404)->setJSON(['success' => false, 'message' => 'User not found']);
         }
 
+        // System validation: must always keep at least one Pederasyon (user_type = 3)
+        $newTypeInt = (int) $userType;
+        $currentTypeInt = (int) ($user['user_type'] ?? 1);
+        if ($currentTypeInt === 3 && $newTypeInt !== 3) {
+            $pedCount = (int) $userModel->where('user_type', 3)->countAllResults();
+            if ($pedCount <= 1) {
+                return $this->response->setStatusCode(409)->setJSON([
+                    'success' => false,
+                    'message' => 'Cannot remove the last Pederasyon user. The system must always have at least one Pederasyon user.'
+                ]);
+            }
+        }
+
         $updateData = ['user_type' => (int)$userType];
+
+        // Position handling rules based on user type transitions
+        $oldType = (int) ($user['user_type'] ?? 1);
+        $newType = (int) $userType;
+        
+        if ($oldType === 3 && $newType === 2) {
+            // From Pederasyon → SK: ped_position must be updated to NULL
+            $updateData['ped_position'] = null;
+        } elseif (($oldType === 3 || $oldType === 2) && $newType === 1) {
+            // From Pederasyon or SK → KK: Both position and ped_position must be updated to NULL
+            $updateData['position'] = null;
+            $updateData['ped_position'] = null;
+        } elseif ($oldType === 1 && $newType === 2) {
+            // From KK → SK: position must be updated to 1
+            $updateData['position'] = 1;
+        } elseif ($oldType === 1 && $newType === 3) {
+            // From KK → Pederasyon: position must be updated to 1
+            $updateData['position'] = 1;
+        }
 
         // Enforce single SK Chairperson per barangay when setting to SK (type 2)
         if ((int)$userType === 2) {
@@ -83,8 +115,7 @@ class MemberController extends BaseController
                     ]);
                 }
             }
-            // Ensure position aligns to Chairperson
-            $updateData['position'] = 1;
+            // Ensure position aligns to Chairperson (handled by position rules above)
         }
 
         // Auto-accept pending users and generate USER_ID when promoting to SK/Pederasyon
@@ -158,6 +189,27 @@ class MemberController extends BaseController
 
         $result = $userModel->update($userId, $updateData);
         if ($result) {
+            // If the currently logged-in user changed between SK (2) and Pederasyon (3), set session flags to require credentials download
+            try {
+                $session = session();
+                $permanentUserId = $session->get('user_id'); // permanent public user_id string
+                if ($permanentUserId) {
+                    $me = $userModel->where('user_id', $permanentUserId)->first();
+                    if ($me && (int)($me['id'] ?? 0) === (int)$userId) {
+                        $oldType = $currentTypeInt;
+                        $newType = $newTypeInt;
+                        if ((in_array($oldType, [2,3], true)) && (in_array($newType, [2,3], true)) && $oldType !== $newType) {
+                            $session->set('require_credentials_download', true);
+                            // Reset both flags so user must download at least one SK and one Pederasyon credentials
+                            $session->set('downloaded_sk_credentials', false);
+                            $session->set('downloaded_ped_credentials', false);
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Non-fatal if session flagging fails
+                log_message('warning', 'Failed setting credential download flags: ' . $e->getMessage());
+            }
             return $this->response->setJSON(['success' => true, 'message' => 'User type updated successfully']);
         } else {
             $errors = method_exists($userModel, 'errors') ? $userModel->errors() : [];
@@ -286,11 +338,42 @@ class MemberController extends BaseController
         $userModel = new UserModel();
         $updated = 0;
         $errors = [];
+
+        // System validation guard for last Pederasyon in bulk: ensure at least one remains
+        $newTypeInt = (int)$userType;
+        $remainingPedCount = (int) $userModel->where('user_type', 3)->countAllResults();
+
         foreach ($userIds as $id) {
             $user = $userModel->find($id);
             if (!$user) { continue; }
 
+            // If converting a Pederasyon to a non-Pederasyon and it would be the last one, skip and record error
+            if ((int)($user['user_type'] ?? 1) === 3 && $newTypeInt !== 3) {
+                if ($remainingPedCount <= 1) {
+                    $errors[] = "Cannot remove the last Pederasyon user (ID {$id}). At least one must remain.";
+                    continue;
+                }
+            }
+
             $updateData = ['user_type' => (int)$userType];
+
+            // Apply position handling rules based on user type transitions
+            $currentUserType = (int)($user['user_type'] ?? 1);
+            
+            if ($currentUserType == 3 && $newTypeInt == 2) {
+                // From Pederasyon → SK: ped_position must be updated to NULL
+                $updateData['ped_position'] = null;
+            } elseif (($currentUserType == 3 || $currentUserType == 2) && $newTypeInt == 1) {
+                // From Pederasyon or SK → KK: Both position and ped_position must be updated to NULL
+                $updateData['position'] = null;
+                $updateData['ped_position'] = null;
+            } elseif ($currentUserType == 1 && $newTypeInt == 2) {
+                // From KK → SK: position must be updated to 1
+                $updateData['position'] = 1;
+            } elseif ($currentUserType == 1 && $newTypeInt == 3) {
+                // From KK → Pederasyon: position must be updated to 1
+                $updateData['position'] = 1;
+            }
 
             // Enforce single SK Chairperson per barangay
             if ((int)$userType === 2) {
@@ -311,7 +394,7 @@ class MemberController extends BaseController
                         continue;
                     }
                 }
-                $updateData['position'] = 1;
+                // Position is handled by position transition rules above
             }
 
             // Auto-accept pending users and generate USER_ID when promoting to SK/PED
@@ -377,6 +460,10 @@ class MemberController extends BaseController
             }
 
             if ($userModel->update($id, $updateData)) {
+                // Decrement remaining count if we converted a Pederasyon to non-Pederasyon
+                if ((int)($user['user_type'] ?? 1) === 3 && $newTypeInt !== 3) {
+                    $remainingPedCount = max(0, $remainingPedCount - 1);
+                }
                 $updated++;
             }
         }

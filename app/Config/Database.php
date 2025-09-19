@@ -29,7 +29,7 @@ class Database extends Config
         'hostname'     => 'localhost',
         'username'     => 'root',
         'password'     => '',
-        'database'     => 'k-nect2',
+        'database'     => 'k-nect',
         'DBDriver'     => 'MySQLi',
         'DBPrefix'     => '',
         'pConnect'     => false,

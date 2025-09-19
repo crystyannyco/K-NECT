@@ -438,15 +438,55 @@ class AuthController extends BaseController
     public function logout()
     {
         $session = session();
-        
+
+        // Server-side enforcement: block logout if credential downloads are required
+        $require = (bool) $session->get('require_credentials_download');
+        $skDone = (bool) $session->get('downloaded_sk_credentials');
+        $pedDone = (bool) $session->get('downloaded_ped_credentials');
+
+        if ($require && (!($skDone) || !($pedDone))) {
+            $message = 'Logout blocked: please download both SK and Pederasyon credentials first.';
+
+            // If AJAX request, return JSON error
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'require' => true,
+                    'sk' => $skDone,
+                    'pederasyon' => $pedDone,
+                    'message' => $message,
+                ])->setStatusCode(409);
+            }
+
+            // Keep session alive and redirect back with error
+            // Also set a short-lived flag the UI can use to auto-open the modal
+            $session->setTempdata('show_credentials_modal', true, 60);
+
+            // Prefer redirect back; if not available, redirect to a safe landing page
+            $referer = $this->request->getServer('HTTP_REFERER');
+            if (!empty($referer)) {
+                return redirect()->back()->with('error', $message);
+            }
+
+            // Choose landing based on current role (still present because we did not destroy session)
+            $role = $session->get('user_type'); // values: 'kk', 'sk', 'pederasyon'
+            if ($role === 'pederasyon') {
+                return redirect()->to('pederasyon/youthlist')->with('error', $message);
+            } elseif ($role === 'sk') {
+                return redirect()->to('sk/dashboard')->with('error', $message);
+            } else {
+                return redirect()->to('/')->with('error', $message);
+            }
+        }
+
         // Destroy the session completely
         $session->destroy();
-        
+
         // Set response headers to prevent caching
         $this->response->setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         $this->response->setHeader('Pragma', 'no-cache');
         $this->response->setHeader('Expires', '0');
-        
+
         // Redirect to login with success message
         return redirect()->to('login')->with('success', 'You have been logged out successfully.');
     }

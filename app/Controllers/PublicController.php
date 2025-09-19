@@ -7,15 +7,10 @@ class PublicController extends BaseController
     {
         $session = session();
         $userType = $session->get('user_type');
-        if ($userType) {
-            // Redirect authenticated users to their role dashboard
-            switch ($userType) {
-                case 'kk': return redirect()->to('/kk/dashboard');
-                case 'sk': return redirect()->to('/sk/dashboard');
-                case 'pederasyon': return redirect()->to('/pederasyon/dashboard');
-            }
-        }
-
+        
+        // Note: Public website is accessible to everyone (logged in or not)
+        // We don't redirect authenticated users away from the public page
+        
         // Pull a curated set of public/city bulletin posts
         $posts = [];
         $events = [];

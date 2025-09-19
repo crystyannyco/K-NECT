@@ -54,6 +54,15 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('kk/profile/upload-photo', 'KKController::uploadProfilePhoto');
     $routes->get('kk/settings/check-email', 'KKController::checkEmail');
 
+    // Module: User Analytics (KK)
+    $routes->get('user-analytics/dashboard', 'UserAnalyticsController::dashboard');
+    $routes->get('user-analytics/attendance-trend', 'UserAnalyticsController::getAttendanceTrend');
+    $routes->get('user-analytics/favorite-categories', 'UserAnalyticsController::getFavoriteCategories');
+    $routes->get('user-analytics/profile-completeness', 'UserAnalyticsController::getProfileCompleteness');
+    $routes->get('user-analytics/summary-stats', 'UserAnalyticsController::getUserSummaryStats');
+    $routes->get('user-analytics/recent-activity', 'UserAnalyticsController::getRecentActivity');
+    $routes->get('user-analytics/recent-attendance', 'UserAnalyticsController::getRecentAttendance');
+
     // ================= USER TYPE: SK ================= //
     // Module: SK
     $routes->get('sk/dashboard', 'AnalyticsController::skDashboard');
@@ -220,6 +229,9 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->get('pederasyon/analytics', 'AnalyticsController::pederasyonDashboard');
     $routes->get('analytics/pederasyon/demographics-summary', 'AnalyticsController::getFilteredDemographicsSummary');
     $routes->get('analytics/pederasyon/gender-distribution', 'AnalyticsController::getGenderDistribution');
+    $routes->get('analytics/pederasyon/gender-identity-distribution', 'AnalyticsController::getGenderIdentityDistribution');
+    $routes->get('analytics/pederasyon/combined-gender-analytics', 'AnalyticsController::getCombinedGenderAnalytics');
+    $routes->get('analytics/pederasyon/participation-by-gender-identity', 'AnalyticsController::getParticipationByGenderIdentity');
     $routes->get('analytics/pederasyon/age-distribution', 'AnalyticsController::getAgeGroupDistribution');
     $routes->get('analytics/pederasyon/youth-classification', 'AnalyticsController::getYouthClassificationDistribution');
     $routes->get('analytics/pederasyon/civil-status', 'AnalyticsController::getCivilStatusDistribution');
@@ -256,6 +268,9 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->get('sk/analytics', 'AnalyticsController::skDashboard');
     $routes->get('analytics/sk/demographics-summary', 'AnalyticsController::getFilteredDemographicsSummary');
     $routes->get('analytics/sk/gender-distribution', 'AnalyticsController::getGenderDistribution');
+    $routes->get('analytics/sk/gender-identity-distribution', 'AnalyticsController::getGenderIdentityDistribution');
+    $routes->get('analytics/sk/combined-gender-analytics', 'AnalyticsController::getCombinedGenderAnalytics');
+    $routes->get('analytics/sk/participation-by-gender-identity', 'AnalyticsController::getParticipationByGenderIdentity');
     $routes->get('analytics/sk/age-distribution', 'AnalyticsController::getAgeGroupDistribution');
     $routes->get('analytics/sk/youth-classification', 'AnalyticsController::getYouthClassificationDistribution');
     $routes->get('analytics/sk/civil-status', 'AnalyticsController::getCivilStatusDistribution');

@@ -9,7 +9,7 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         .login-bg {
-            background-image: url('/assets/images/bg.png');
+            background-image: url('/assets/images/background.png');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;

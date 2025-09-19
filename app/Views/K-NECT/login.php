@@ -18,7 +18,7 @@
         }
         .login-bg {
             /* background-image: url('https://iriga.gov.ph/wp-content/uploads/2014/09/facts-banner.jpg'); */
-            background-image: url('/assets/images/bg.png');
+            background-image: url('/assets/images/background.png');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;

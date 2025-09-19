@@ -636,13 +636,31 @@ class EventController extends BaseController
         if ($role !== 'super_admin' && $event['barangay_id'] != $barangayId) {
             return redirect()->to('/events')->with('error', 'Unauthorized');
         }
+
+        // Check if event can be edited based on temporal status
+        if (!$eventModel->canEventBeEdited($event)) {
+            $temporalStatus = $eventModel->getEventTemporalStatus($event);
+            if ($temporalStatus === 'completed') {
+                return redirect()->to('/events')->with('error', 'This event has already been completed and cannot be edited.');
+            }
+        }
+        
+        // Get editable fields for the event
+        $editableFields = $eventModel->getEditableFields($event);
+        $temporalStatus = $eventModel->getEventTemporalStatus($event);
         
         // Check if this is an AJAX request for modal
         if ($this->request->isAJAX()) {
-            return view('K-NECT/events/_form', ['event' => $event]);
+            return view('K-NECT/events/_form', [
+                'event' => $event,
+                'editableFields' => $editableFields,
+                'temporalStatus' => $temporalStatus
+            ]);
         }
         
         $data['event'] = $event;
+        $data['editableFields'] = $editableFields;
+        $data['temporalStatus'] = $temporalStatus;
         return $this->loadView('K-NECT/events/form', $data);
     }
 
@@ -664,6 +682,18 @@ class EventController extends BaseController
         if ($role !== 'super_admin' && $event['barangay_id'] != $barangayId) {
             return redirect()->to('/events')->with('error', 'Unauthorized');
         }
+
+        // Check if event can be edited based on temporal status
+        if (!$eventModel->canEventBeEdited($event)) {
+            $temporalStatus = $eventModel->getEventTemporalStatus($event);
+            if ($temporalStatus === 'completed') {
+                return redirect()->to('/events')->with('error', 'This event has already been completed and cannot be edited.');
+            }
+        }
+
+        // Get editable fields for the event
+        $editableFields = $eventModel->getEditableFields($event);
+        $temporalStatus = $eventModel->getEventTemporalStatus($event);
         
         $action = $this->request->getPost('submit_action');
         $isDraft = ($action === 'draft');
@@ -676,6 +706,15 @@ class EventController extends BaseController
             'location' => $this->request->getPost('location') ?: '',
             'category' => $this->request->getPost('category') ?: '',
         ];
+
+        // For ongoing published events, prevent updating start_datetime
+        if ($temporalStatus === 'ongoing' && !in_array('start_datetime', $editableFields)) {
+            // Remove start_datetime from the update data and use the existing value
+            $data['start_datetime'] = $event['start_datetime'];
+            
+            // Add a warning message about start datetime restriction
+            session()->setFlashdata('warning', 'Note: Start date and time cannot be modified for ongoing events.');
+        }
 
         // Handle scheduling options
         $schedulingEnabled = $this->request->getPost('scheduling_enabled') ? 1 : 0;

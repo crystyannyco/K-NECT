@@ -28,14 +28,6 @@
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div>
-                        <button type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md transition-colors" onclick="refreshCharts()">
-                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                            </svg>
-                            Apply Filter
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>
@@ -43,59 +35,61 @@
 
         <!-- Summary Cards -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white rounded-lg p-6 shadow-sm summary-card" data-metric="total_users">
+            <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 summary-card" data-metric="total_users">
                 <div class="flex items-center">
-                    <div class="p-3 bg-blue-100 rounded-lg">
-                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="p-3 bg-gradient-to-br from-blue-900 to-blue-800 rounded-xl shadow-sm">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
                         </svg>
                     </div>
                     <div class="ml-4">
-                        <p class="text-sm text-gray-600 metric-label">Total Youth Members</p>
-                        <p class="text-2xl font-bold text-gray-900 metric-value"><?= number_format($summary['total_users']) ?></p>
+                        <p class="text-sm text-gray-500 font-medium metric-label">Total Youth Members</p>
+                        <p class="text-2xl font-bold text-gray-800 metric-value"><?= number_format($summary['total_users']) ?></p>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg p-6 shadow-sm summary-card" data-metric="male_count">
+            <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 summary-card" data-metric="male_count">
                 <div class="flex items-center">
-                    <div class="p-3 bg-blue-100 rounded-lg">
-                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="p-3 bg-gradient-to-br from-gray-700 to-gray-600 rounded-xl shadow-sm">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                         </svg>
                     </div>
                     <div class="ml-4">
-                        <p class="text-sm text-gray-600 metric-label">Male (<?= $summary['male_percentage'] ?>%)</p>
-                        <p class="text-2xl font-bold text-gray-900 metric-value"><?= number_format($summary['male_count']) ?></p>
+                        <p class="text-sm text-gray-500 font-medium metric-label">Male (<?= $summary['male_percentage'] ?>%)</p>
+                        <p class="text-2xl font-bold text-gray-800 metric-value"><?= number_format($summary['male_count']) ?></p>
+                        <p class="text-xs text-gray-400 font-medium metric-sublabel">Sex assigned at birth</p>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg p-6 shadow-sm summary-card" data-metric="female_count">
+            <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 summary-card" data-metric="female_count">
                 <div class="flex items-center">
-                    <div class="p-3 bg-pink-100 rounded-lg">
-                        <svg class="w-6 h-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="p-3 bg-gradient-to-br from-gray-600 to-gray-500 rounded-xl shadow-sm">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                         </svg>
                     </div>
                     <div class="ml-4">
-                        <p class="text-sm text-gray-600 metric-label">Female (<?= $summary['female_percentage'] ?>%)</p>
-                        <p class="text-2xl font-bold text-gray-900 metric-value"><?= number_format($summary['female_count']) ?></p>
+                        <p class="text-sm text-gray-500 font-medium metric-label">Female (<?= $summary['female_percentage'] ?>%)</p>
+                        <p class="text-2xl font-bold text-gray-800 metric-value"><?= number_format($summary['female_count']) ?></p>
+                        <p class="text-xs text-gray-400 font-medium metric-sublabel">Sex assigned at birth</p>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg p-6 shadow-sm summary-card" data-metric="largest_age_group">
+            <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 summary-card" data-metric="largest_age_group">
                 <div class="flex items-center">
-                    <div class="p-3 bg-green-100 rounded-lg">
-                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="p-3 bg-gradient-to-br from-slate-700 to-slate-600 rounded-xl shadow-sm">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
                     </div>
                     <div class="ml-4">
-                        <p class="text-sm text-gray-600 metric-label">Largest Age Group</p>
-                        <p class="text-2xl font-bold text-gray-900 metric-value"><?= $summary['largest_age_group'] ?></p>
-                        <p class="text-xs text-gray-500 metric-sublabel"><?= number_format($summary['largest_age_group_count']) ?> members</p>
+                        <p class="text-sm text-gray-500 font-medium metric-label">Largest Age Group</p>
+                        <p class="text-2xl font-bold text-gray-800 metric-value"><?= $summary['largest_age_group'] ?></p>
+                        <p class="text-xs text-gray-400 font-medium metric-sublabel"><?= number_format($summary['largest_age_group_count']) ?> members</p>
                     </div>
                 </div>
             </div>
@@ -103,18 +97,33 @@
 
         <!-- Charts Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <!-- Gender Distribution Chart -->
+            <!-- Sex Assigned at Birth Distribution Chart -->
             <div class="bg-white rounded-lg shadow-sm">
                 <div class="p-6 border-b border-gray-200">
                     <h3 class="text-lg font-semibold text-gray-900 flex items-center">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                         </svg>
-                        Gender Distribution
+                        Sex Assigned at Birth
                     </h3>
                 </div>
                 <div class="p-6">
                     <div id="genderChart" style="height: 300px;"></div>
+                </div>
+            </div>
+
+            <!-- Gender Identity Distribution Chart -->
+            <div class="bg-white rounded-lg shadow-sm">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Gender Identity
+                    </h3>
+                </div>
+                <div class="p-6">
+                    <div id="genderIdentityChart" style="height: 300px;"></div>
                 </div>
             </div>
 
@@ -232,6 +241,7 @@
         // Load initial data
         loadSummaryCards();
         loadGenderChart();
+        loadGenderIdentityChart();
         loadAgeChart();
         loadYouthClassificationChart();
         loadCivilStatusChart();
@@ -247,6 +257,12 @@
         } else {
             $('#genderByBarangayContainer').hide();
         }
+        
+        // Add change event listener for automatic filtering
+        $('#barangayFilter').on('change', function() {
+            console.log('Barangay filter changed to:', $(this).val());
+            refreshCharts();
+        });
         <?php endif; ?>
         
         // If there's a pre-selected filter, apply it immediately
@@ -263,6 +279,7 @@
     function refreshCharts() {
         loadSummaryCards();
         loadGenderChart();
+        loadGenderIdentityChart();
         loadAgeChart();
         loadYouthClassificationChart();
         loadCivilStatusChart();
@@ -385,9 +402,8 @@
                             // Prevent artificial separation in single-slice pies
                             slicedOffset: data.length === 1 ? 0 : 10,
                             // Disable border for single-slice scenarios
-                            borderWidth: data.length === 1 ? 0 : 1,
-                            // Ensure proper spacing
-                            innerSize: data.length === 1 ? '0%' : '20%'
+                            borderWidth: data.length === 1 ? 0 : 1
+                            // Removed innerSize property to create solid pie chart (no empty space in middle)
                         }
                     },
                     series: [{
@@ -404,6 +420,87 @@
             })
             .fail(function() {
                 $('#genderChart').html('<div class="text-center text-gray-500">Error loading gender distribution data</div>');
+            });
+    }
+
+    // Load Gender Identity Distribution Chart
+    function loadGenderIdentityChart() {
+        const params = new URLSearchParams({
+            view_type: viewType
+        });
+        
+        if (viewType === 'citywide') {
+            const barangayId = $('#barangayFilter').val();
+            console.log('Loading gender identity chart with barangay filter:', barangayId);
+            if (barangayId && barangayId !== 'all') {
+                params.append('barangay_id', barangayId);
+            }
+        }
+
+        console.log('Gender identity chart API call:', `${baseApiUrl}/gender-identity-distribution?${params.toString()}`);
+        $.get(`${baseApiUrl}/gender-identity-distribution?${params.toString()}`)
+            .done(function(data) {
+                console.log('Gender identity distribution data received:', data);
+                
+                // Handle empty data
+                if (!data || data.length === 0) {
+                    $('#genderIdentityChart').html('<div class="text-center text-gray-500 py-8">No gender identity data available</div>');
+                    return;
+                }
+                
+                // Prepare data for chart
+                const chartData = data.map((item, index) => {
+                    // Define colors for gender identities
+                    const colors = ['#9C27B0', '#673AB7', '#E91E63', '#FF5722', '#795548', '#607D8B'];
+                    const color = colors[index % colors.length];
+                    
+                    return {
+                        name: item.gender_identity || item.name,
+                        y: parseInt(item.total || item.y || 0),
+                        color: color
+                    };
+                });
+
+                // Configure chart options
+                const chartOptions = {
+                    chart: {
+                        type: 'pie'
+                    },
+                    title: {
+                        text: null
+                    },
+                    tooltip: {
+                        pointFormat: '{series.name}: <b>{point.y}</b> ({point.percentage:.1f}%)'
+                    },
+                    accessibility: {
+                        point: {
+                            valueSuffix: '%'
+                        }
+                    },
+                    plotOptions: {
+                        pie: {
+                            allowPointSelect: true,
+                            cursor: 'pointer',
+                            dataLabels: {
+                                enabled: true,
+                                format: '<b>{point.name}</b>: {point.percentage:.1f} %'
+                            }
+                        }
+                    },
+                    series: [{
+                        name: 'Gender Identity',
+                        colorByPoint: true,
+                        data: chartData
+                    }],
+                    exporting: {
+                        enabled: true
+                    }
+                };
+
+                genderIdentityChart = Highcharts.chart('genderIdentityChart', chartOptions);
+            })
+            .fail(function() {
+                $('#genderIdentityChart').html('<div class="text-center text-gray-500">Error loading gender identity distribution data</div>');
             });
     }
 

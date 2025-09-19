@@ -8,6 +8,27 @@ if (isset($event) && isset($event['barangay_id'])) {
     $isCityWide = true;
 }
 
+// Check temporal status for existing events
+$temporalStatus = null;
+$isStartDateDisabled = false;
+$startDateDisabledMessage = '';
+
+if (isset($event) && $event['status'] === 'Published') {
+    $currentDateTime = new DateTime('now', new DateTimeZone('Asia/Manila'));
+    $startDateTime = new DateTime($event['start_datetime'], new DateTimeZone('Asia/Manila'));
+    $endDateTime = new DateTime($event['end_datetime'], new DateTimeZone('Asia/Manila'));
+    
+    if ($currentDateTime < $startDateTime) {
+        $temporalStatus = 'upcoming';
+    } elseif ($currentDateTime >= $startDateTime && $currentDateTime <= $endDateTime) {
+        $temporalStatus = 'ongoing';
+        $isStartDateDisabled = true;
+        $startDateDisabledMessage = 'Start date and time cannot be modified for ongoing events.';
+    } else {
+        $temporalStatus = 'completed';
+    }
+}
+
 // Get user role for SMS notification options
 $userRole = session('role');
 $isSuperAdmin = $userRole === 'super_admin';
@@ -98,8 +119,17 @@ $isSuperAdmin = $userRole === 'super_admin';
                 id="start_datetime" 
                 name="start_datetime" 
                 value="<?= isset($event) ? date('Y-m-d\TH:i', strtotime($event['start_datetime'])) : '' ?>" 
-                class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent <?= $isStartDateDisabled ? 'bg-gray-100 cursor-not-allowed' : '' ?>"
+                <?= $isStartDateDisabled ? 'disabled readonly' : '' ?>
             >
+            <?php if ($isStartDateDisabled): ?>
+                <p class="text-amber-600 text-xs sm:text-sm mt-1 flex items-center">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <?= $startDateDisabledMessage ?>
+                </p>
+            <?php endif; ?>
             <p id="start_datetime-error" class="text-red-500 text-xs sm:text-sm mt-1" style="display: none;"></p>
         </div>
 

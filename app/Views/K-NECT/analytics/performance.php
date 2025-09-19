@@ -40,14 +40,6 @@
                             <option value="180">180 days</option>
                         </select>
                     </div>
-                    <div>
-                        <button type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md transition-colors" onclick="refreshCharts()">
-                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                            </svg>
-                            Apply Filter
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>
@@ -125,18 +117,83 @@
     // Chart instances
     let performanceScoreChart, participationForecastChart;
 
+    // Barangay Color Palette Generator
+    function getBarangayColorPalette() {
+        return [
+            '#1f77b4', // Blue
+            '#ff7f0e', // Orange
+            '#2ca02c', // Green
+            '#d62728', // Red
+            '#9467bd', // Purple
+            '#8c564b', // Brown
+            '#e377c2', // Pink
+            '#7f7f7f', // Gray
+            '#bcbd22', // Olive
+            '#17becf', // Cyan
+            '#aec7e8', // Light Blue
+            '#ffbb78', // Light Orange
+            '#98df8a', // Light Green
+            '#ff9896', // Light Red
+            '#c5b0d5', // Light Purple
+            '#c49c94', // Light Brown
+            '#f7b6d3', // Light Pink
+            '#c7c7c7', // Light Gray
+            '#dbdb8d', // Light Olive
+            '#9edae5', // Light Cyan
+            '#393b79', // Dark Blue
+            '#637939', // Dark Green
+            '#8c6d31', // Dark Brown
+            '#843c39', // Dark Red
+            '#7b4173', // Dark Purple
+            '#5254a3', // Steel Blue
+            '#6b6ecf', // Medium Blue
+            '#9c9ede', // Light Steel Blue
+            '#bd9e39', // Gold
+            '#e7ba52'  // Light Gold
+        ];
+    }
+
+    // Get consistent color for a barangay name
+    function getBarangayColor(barangayName, index = 0) {
+        const colors = getBarangayColorPalette();
+        if (typeof barangayName === 'string') {
+            // Generate a consistent color based on barangay name hash
+            let hash = 0;
+            for (let i = 0; i < barangayName.length; i++) {
+                hash = barangayName.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            return colors[Math.abs(hash) % colors.length];
+        }
+        // Fallback to index-based color
+        return colors[index % colors.length];
+    }
+
     // Initialize charts when document is ready
     $(document).ready(function() {
         loadPerformanceScoreChart();
         loadParticipationForecastChart();
         loadInactiveMembersTable();
+        
+        <?php if ($view_type === 'citywide'): ?>
+        // Add event listener for barangay filter changes
+        $('#barangayFilter').on('change', function() {
+            console.log('Barangay filter changed to:', $(this).val());
+            refreshCharts(); // Automatically refresh charts when filter changes
+        });
+        
+        // Add event listener for inactive days filter changes
+        $('#inactiveDaysFilter').on('change', function() {
+            console.log('Inactive days filter changed to:', $(this).val());
+            refreshCharts(); // Automatically refresh charts when filter changes
+        });
+        <?php endif; ?>
     });
 
     // Function to refresh all charts (for filter changes)
     function refreshCharts() {
         loadPerformanceScoreChart();
+        loadParticipationForecastChart(); // Include participation forecast in refresh
         loadInactiveMembersTable();
-        // Participation forecast doesn't change with barangay filter in citywide view
     }
 
     // Load Barangay Performance Score Chart
@@ -189,7 +246,7 @@
                 const categories = ['Event Participation', 'Document Activity', 'Attendance Consistency'];
                 const seriesData = [];
                 
-                data.forEach(function(barangay) {
+                data.forEach(function(barangay, index) {
                     // Ensure values are within 0-100 range and handle null/undefined values
                     const eventScore = Math.min(100, Math.max(0, parseFloat(barangay.event_participation_score) || 0));
                     const documentScore = Math.min(100, Math.max(0, parseFloat(barangay.document_activity_score) || 0));
@@ -199,7 +256,8 @@
                         name: barangay.barangay,
                         data: [eventScore, documentScore, attendanceScore],
                         pointPlacement: 'on',
-                        connectNulls: true
+                        connectNulls: true,
+                        color: getBarangayColor(barangay.barangay, index) // Assign unique color for each barangay
                     });
                 });
                 
@@ -294,8 +352,21 @@
 
     // Load Participation Forecast Chart
     function loadParticipationForecastChart() {
+        // Build parameters for API call with barangay filtering support
+        const params = new URLSearchParams({
+            view_type: viewType,
+            months: 24
+        });
+        
+        if (viewType === 'citywide') {
+            const barangayId = $('#barangayFilter').val();
+            if (barangayId && barangayId !== 'all') {
+                params.append('barangay_id', barangayId);
+            }
+        }
+
         // First get historical data for trend calculation
-        $.get(`${baseApiUrl}/event-participation-trend?view_type=${viewType}&months=24`)
+        $.get(`${baseApiUrl}/event-participation-trend?${params.toString()}`)
             .done(function(data) {
                 const historicalData = data.series[0] || [];
                 const categories = data.categories || [];
@@ -398,8 +469,7 @@
             });
     }
 
-    <?php if ($view_type !== 'citywide'): ?>
-    // Load Inactive Members Table
+    // Load Inactive Members Table (available for all view types)
     function loadInactiveMembersTable() {
         const params = new URLSearchParams({
             view_type: viewType
@@ -492,5 +562,4 @@
                 $('#inactiveMembersTable').html('<div class="text-center text-gray-500">Error loading inactive members data</div>');
             });
     }
-    <?php endif; ?>
 </script>

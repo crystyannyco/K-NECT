@@ -315,9 +315,10 @@ class AnalyticsModel extends Model
     {
         $totalUsers = $this->getTotalUsersCount($barangayId);
         $genderData = $barangayId ? $this->getGenderDistributionPerBarangay($barangayId) : $this->getGenderDistributionCitywide();
+        $genderIdentityData = $barangayId ? $this->getGenderIdentityDistributionPerBarangay($barangayId) : $this->getGenderIdentityDistributionCitywide();
         $ageData = $this->getAgeGroupDistribution($barangayId);
         
-        // Calculate gender percentages
+        // Calculate sex-based percentages (assigned at birth)
         $maleCount = 0;
         $femaleCount = 0;
         
@@ -344,6 +345,34 @@ class AnalyticsModel extends Model
         $malePercentage = $totalUsers > 0 ? round(($maleCount / $totalUsers) * 100, 1) : 0;
         $femalePercentage = $totalUsers > 0 ? round(($femaleCount / $totalUsers) * 100, 1) : 0;
         
+        // Calculate gender identity distribution
+        $genderIdentityCounts = [];
+        $genderIdentityPercentages = [];
+        
+        if ($barangayId) {
+            // For barangay-specific data, sum up the totals by gender identity
+            $genderTotals = [];
+            foreach ($genderIdentityData as $item) {
+                $identity = $item['gender_identity'];
+                if (!isset($genderTotals[$identity])) {
+                    $genderTotals[$identity] = 0;
+                }
+                $genderTotals[$identity] += $item['total'];
+            }
+            $genderIdentityCounts = $genderTotals;
+        } else {
+            // For city-wide data
+            foreach ($genderIdentityData as $item) {
+                $identity = $item['gender_identity'];
+                $genderIdentityCounts[$identity] = $item['total'];
+            }
+        }
+        
+        // Calculate percentages for gender identities
+        foreach ($genderIdentityCounts as $identity => $count) {
+            $genderIdentityPercentages[$identity] = $totalUsers > 0 ? round(($count / $totalUsers) * 100, 1) : 0;
+        }
+        
         // Get most populous age group
         $largestAgeGroup = '';
         $largestCount = 0;
@@ -356,10 +385,15 @@ class AnalyticsModel extends Model
         
         return [
             'total_users' => $totalUsers,
+            // Sex-based data (assigned at birth)
             'male_count' => $maleCount,
             'female_count' => $femaleCount,
             'male_percentage' => $malePercentage,
             'female_percentage' => $femalePercentage,
+            // Gender identity data
+            'gender_identity_counts' => $genderIdentityCounts,
+            'gender_identity_percentages' => $genderIdentityPercentages,
+            // Age data
             'largest_age_group' => $largestAgeGroup,
             'largest_age_group_count' => $largestCount
         ];
@@ -952,5 +986,128 @@ class AnalyticsModel extends Model
         ");
         
         return $query->getRowArray();
+    }
+
+    /**
+     * Get gender identity distribution city-wide
+     */
+    public function getGenderIdentityDistributionCitywide()
+    {
+        $query = $this->db->query("
+            SELECT 
+                CASE 
+                    WHEN gender IS NULL OR gender = '' THEN 'Not Specified'
+                    ELSE gender
+                END AS gender_identity,
+                COUNT(*) AS total
+            FROM user
+            WHERE is_active = 1 AND status = 2
+            GROUP BY 
+                CASE 
+                    WHEN gender IS NULL OR gender = '' THEN 'Not Specified'
+                    ELSE gender
+                END
+            ORDER BY total DESC
+        ");
+        
+        return $query->getResultArray();
+    }
+
+    /**
+     * Get gender identity distribution per barangay
+     */
+    public function getGenderIdentityDistributionPerBarangay($barangayId = null)
+    {
+        $whereClause = "WHERE u.is_active = 1 AND u.status = 2";
+        if ($barangayId !== null && $barangayId > 0) {
+            $whereClause .= " AND a.barangay = " . (int)$barangayId;
+        }
+        
+        $query = $this->db->query("
+            SELECT 
+                b.name AS barangay,
+                CASE 
+                    WHEN u.gender IS NULL OR u.gender = '' THEN 'Not Specified'
+                    ELSE u.gender
+                END AS gender_identity,
+                COUNT(*) AS total
+            FROM user u
+            JOIN address a ON u.id = a.user_id
+            JOIN barangay b ON a.barangay = b.barangay_id
+            {$whereClause}
+            GROUP BY b.name, 
+                CASE 
+                    WHEN u.gender IS NULL OR u.gender = '' THEN 'Not Specified'
+                    ELSE u.gender
+                END
+            ORDER BY b.name, total DESC
+        ");
+        
+        return $query->getResultArray();
+    }
+
+    /**
+     * Get combined sex and gender analytics for comprehensive demographics
+     */
+    public function getCombinedGenderAnalytics($barangayId = null)
+    {
+        $whereClause = "WHERE u.is_active = 1 AND u.status = 2";
+        if ($barangayId !== null && $barangayId > 0) {
+            $whereClause .= " AND a.barangay = " . (int)$barangayId;
+        }
+        
+        $query = $this->db->query("
+            SELECT 
+                CASE 
+                    WHEN u.sex = 1 THEN 'Male' 
+                    WHEN u.sex = 0 THEN 'Female'
+                    ELSE 'Female' 
+                END AS sex_assigned,
+                CASE 
+                    WHEN u.gender IS NULL OR u.gender = '' THEN 'Not Specified'
+                    ELSE u.gender
+                END AS gender_identity,
+                COUNT(*) AS total
+            FROM user u
+            LEFT JOIN address a ON u.id = a.user_id
+            {$whereClause}
+            GROUP BY sex_assigned, gender_identity
+            ORDER BY sex_assigned, total DESC
+        ");
+        
+        return $query->getResultArray();
+    }
+
+    /**
+     * Get participation by gender identity per event
+     */
+    public function getParticipationByGenderIdentityPerEvent($barangayId = null, $limit = 10)
+    {
+        $whereClause = "WHERE u.is_active = 1 AND u.status = 2";
+        if ($barangayId !== null && $barangayId > 0) {
+            $whereClause .= " AND a.barangay = " . (int)$barangayId;
+        }
+        
+        $query = $this->db->query("
+            SELECT 
+                e.event_id,
+                e.title,
+                e.category,
+                CASE 
+                    WHEN u.gender IS NULL OR u.gender = '' THEN 'Not Specified'
+                    ELSE u.gender
+                END as gender_identity,
+                COUNT(DISTINCT att.user_id) as participant_count
+            FROM events e
+            JOIN attendance att ON e.event_id = att.event_id
+            JOIN user u ON att.user_id = u.user_id
+            LEFT JOIN address a ON u.id = a.user_id
+            {$whereClause}
+            GROUP BY e.event_id, e.title, e.category, gender_identity
+            ORDER BY e.event_id DESC, participant_count DESC
+            LIMIT {$limit}
+        ");
+        
+        return $query->getResultArray();
     }
 }

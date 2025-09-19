@@ -31,11 +31,13 @@ cd K-NECT
 
 ### 2. Run Setup Script
 
-**For Windows:**
+**For Windows (cmd.exe):**
 
 ```cmd
 setup.bat
 ```
+
+If deploying to IIS on Windows Server, also ensure URL Rewrite is installed and that `public/web.config` exists (included in repo).
 
 **For Linux/Mac:**
 
@@ -48,18 +50,19 @@ chmod +x setup.sh
 
 Edit the `.env` file with your specific settings:
 
-```bash
+```ini
 # Required settings
 CI_ENVIRONMENT = production  # Change to production for live sites
 app.baseURL = 'https://yourdomain.com/'  # Your actual domain
+app.appTimezone = 'Asia/Manila'           # Optional: set your desired timezone
 
-# Database settings
+; Database settings
 database.default.hostname = your-db-host
 database.default.database = your-db-name
 database.default.username = your-db-user
 database.default.password = your-db-password
 
-# Generate a secure encryption key (32 characters)
+; Generate a secure encryption key (32 characters)
 encryption.key = your-32-character-secret-key-here
 ```
 
@@ -67,8 +70,8 @@ encryption.key = your-32-character-secret-key-here
 
 1. Create a new MySQL database
 2. Import the schema:
-   ```bash
-   mysql -u your-username -p your-database-name < DATABASE/k-nect.sql
+   ```cmd
+   mysql -u your-username -p your-database-name < DATABASE\k-nect.sql
    ```
 
 ### 5. Configure Web Server
@@ -102,7 +105,7 @@ server {
 
 **For Development:**
 
-```bash
+```cmd
 php spark serve
 ```
 
@@ -112,15 +115,15 @@ If you prefer manual setup or the script doesn't work:
 
 ### 1. Install Dependencies
 
-```bash
+```cmd
 composer install --no-dev --optimize-autoloader
 ```
 
 ### 2. Environment Setup
 
-```bash
-cp .env.example .env
-# Edit .env file with your settings
+```cmd
+copy .env.example .env
+REM Edit .env file with your settings
 ```
 
 ### 3. Directory Permissions (Linux/Mac)
@@ -134,9 +137,9 @@ chown -R nginx:nginx writable/        # For Nginx
 
 ### 4. Database Migration
 
-```bash
-# Import the database schema
-mysql -u username -p database_name < DATABASE/k-nect.sql
+```cmd
+REM Import the database schema
+mysql -u username -p database_name < DATABASE\k-nect.sql
 ```
 
 ## Production Deployment Checklist
@@ -156,8 +159,24 @@ mysql -u username -p database_name < DATABASE/k-nect.sql
 
 To update dependencies on an existing installation:
 
-```bash
+```cmd
 composer update
+```
+
+## Windows IIS Configuration
+
+For Windows Server with IIS:
+
+1. Install the "URL Rewrite" module for IIS.
+2. Create a site pointing Document Root to `public/` directory of the project.
+3. Ensure PHP is installed and configured with FastCGI.
+4. The provided `public/web.config` enables front-controller routing to `index.php`.
+5. Set appropriate permissions for the `writable/` directory for the IIS App Pool identity.
+
+Example App Pool permission (PowerShell):
+
+```powershell
+icacls C:\path\to\K-NECT\writable /grant "IIS AppPool\\YourAppPoolName":(OI)(CI)M /T
 ```
 
 ## Troubleshooting
@@ -214,3 +233,29 @@ K-NECT/
 ```
 
 This structure ensures proper security and functionality across all environments.
+
+## Deploying to Railway
+
+Railway supports Docker out of the box. This repository includes a `Dockerfile` that runs Apache + PHP and serves the `public/` directory.
+
+Steps:
+
+1. Create a new Railway project and select "Deploy from GitHub" linking this repository.
+2. Ensure the service detects Docker automatically (it will use the `Dockerfile`).
+3. Set the following Environment Variables in Railway:
+   - `CI_ENVIRONMENT=production`
+   - `app.baseURL=https://your-railway-domain/` (update after first deploy if needed)
+   - `database.default.hostname`
+   - `database.default.database`
+   - `database.default.username`
+   - `database.default.password`
+   - `encryption.key` (32 characters)
+   - Optionally: `app.appTimezone=Asia/Manila`
+4. If your database is also on Railway, use its provided connection vars.
+5. Redeploy. Railway will build the image via the `Dockerfile` and run Apache on port 80 (mapped automatically).
+
+Notes:
+
+- The image installs required PHP extensions (intl, mbstring, mysqli/pdo_mysql, gd, zip) and enables `mod_rewrite`.
+- The Apache DocumentRoot is set to `public/`.
+- `writable/` subdirectories are created with proper permissions at build time.

@@ -1,0 +1,27 @@
+# Docker ignore to keep image small and builds fast
+.git
+.gitignore
+.vscode
+node_modules
+firebase/functions/node_modules
+vendor
+writable/cache/*
+writable/logs/*
+writable/session/*
+writable/debugbar/*
+DATABASE/*.sql
+*.md
+*.MD
+*.log
+*.zip
+*.tar
+*.tar.gz
+*.tar.bz2
+
+# Composer cache
+composer.phar
+composer.lock
+
+# OS junk
+.DS_Store
+Thumbs.db

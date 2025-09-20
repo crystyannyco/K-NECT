@@ -17,6 +17,7 @@
         "ext-intl": "*",
         "ext-iconv": "*",
         "ext-json": "*",
+        "ext-mysqli": "*",
         "ext-dom": "*",
         "ext-xml": "*",
         "ext-simplexml": "*",

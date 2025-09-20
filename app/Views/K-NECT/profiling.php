@@ -547,7 +547,7 @@
                 <?php endif; ?>
 
                 <div class="text-center flex flex-col items-center">
-                    <img src="<?= base_url('assets/images/K-Nect-Logo.png') ?>" alt="K-NECT Logo" class="w-48 sm:w-56 mx-auto" />
+                    <img src="<?= base_url('/previewDocument/logos/K-Nect-Logo.png') ?>" alt="K-NECT Logo" class="w-48 sm:w-56 mx-auto" onerror="this.src='<?= base_url('assets/images/K-Nect-Logo.png') ?>'" />
                 </div>
 
                 <?php if ($hasIrigaLogo): ?>

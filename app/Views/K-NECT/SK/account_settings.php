@@ -28,14 +28,18 @@
 									<?php if (!empty($userExtInfo['profile_picture'])): ?>
 										<?php 
 											$pp = (string)($userExtInfo['profile_picture'] ?? '');
-											$imageData = safe_image_url($pp, 'avatar');
+											// Use same logic as working logos
+                                            if (strpos($pp, '/') !== false) {
+                                                $ppSrc = base_url('/previewDocument/profile_pictures/' . basename($pp));
+                                            } else {
+                                                $ppSrc = base_url('/previewDocument/profile_pictures/' . $pp);
+                                            }
 										?>
 										<img id="profile-image" 
-											 src="<?= esc($imageData['src']) ?>" 
+											 src="<?= esc($ppSrc) ?>" 
 											 alt="Profile Picture" 
 											 class="w-32 h-32 object-cover border-4 border-white shadow-lg rounded-full"
-											 data-type="avatar"
-											 data-fallback="<?= esc($imageData['fallback']) ?>">
+											 onerror="this.src='<?= base_url('assets/images/default-avatar.svg') ?>'">
 									<?php else: ?>
 										<div id="profile-placeholder" class="w-32 h-32 bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg border-4 border-white rounded-full">
 											<span class="text-white text-3xl font-bold">

@@ -290,13 +290,21 @@
                             <div class="flex items-center space-x-3">
                                 <?php
                                     $profilePic = $currentUser['profile_picture'] ?? '';
-                                    $imageData = safe_image_url($profilePic, 'avatar');
+                                    // Use same logic as working logos
+                                    if (!empty($profilePic)) {
+                                        if (strpos($profilePic, '/') !== false) {
+                                            $ppSrc = base_url('/previewDocument/profile_pictures/' . basename($profilePic));
+                                        } else {
+                                            $ppSrc = base_url('/previewDocument/profile_pictures/' . $profilePic);
+                                        }
+                                    } else {
+                                        $ppSrc = base_url('assets/images/default-avatar.svg');
+                                    }
                                 ?>
                                 <img class="h-8 w-8 rounded-full object-cover" 
-                                     src="<?= esc($imageData['src']) ?>" 
+                                     src="<?= esc($ppSrc) ?>" 
                                      alt="Profile"
-                                     data-type="avatar"
-                                     data-fallback="<?= esc($imageData['fallback']) ?>">
+                                     onerror="this.src='<?= base_url('assets/images/default-avatar.svg') ?>'">>
                                 <div class="text-left hidden sm:block">
                                     <p class="text-sm font-medium text-gray-900">
                                         <?= $currentUser ? esc($currentUser['full_name']) : 'User' ?>
@@ -324,12 +332,21 @@
                                 <div class="flex items-center space-x-3">
                                     <?php
                                         $profilePic = $currentUser['profile_picture'] ?? '';
-                                        $imageData = safe_image_url($profilePic, 'avatar');
+                                        // Use same logic as working logos
+                                        if (!empty($profilePic)) {
+                                            if (strpos($profilePic, '/') !== false) {
+                                                $ppSrc = base_url('/previewDocument/profile_pictures/' . basename($profilePic));
+                                            } else {
+                                                $ppSrc = base_url('/previewDocument/profile_pictures/' . $profilePic);
+                                            }
+                                        } else {
+                                            $ppSrc = base_url('assets/images/default-avatar.svg');
+                                        }
                                     ?>
                                     <img class="h-12 w-12 rounded-full object-cover" 
-                                         src="<?= esc($imageData['src']) ?>" 
+                                         src="<?= esc($ppSrc) ?>" 
                                          alt="Profile"
-                                         data-type="avatar"
+                                         onerror="this.src='<?= base_url('assets/images/default-avatar.svg') ?>'">
                                          data-fallback="<?= esc($imageData['fallback']) ?>">
                                     <div class="flex-1">
                                         <h4 class="text-sm font-medium text-gray-900">

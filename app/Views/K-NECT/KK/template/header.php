@@ -226,13 +226,17 @@
 								<?php if ($currentUser && !empty($currentUser['profile_picture'])): ?>
 									<?php
 										$pp = (string)($currentUser['profile_picture'] ?? '');
-										$imageData = safe_image_url($pp, 'avatar');
+										// Use same logic as working logos
+                                        if (strpos($pp, '/') !== false) {
+                                            $ppSrc = base_url('/previewDocument/profile_pictures/' . basename($pp));
+                                        } else {
+                                            $ppSrc = base_url('/previewDocument/profile_pictures/' . $pp);
+                                        }
 									?>
 									<img class="h-8 w-8 rounded-full object-cover" 
-										 src="<?= esc($imageData['src']) ?>" 
+										 src="<?= esc($ppSrc) ?>" 
 										 alt="Profile"
-										 data-type="avatar"
-										 data-fallback="<?= esc($imageData['fallback']) ?>">
+										 onerror="this.src='<?= base_url('assets/images/default-avatar.svg') ?>'">
 								<?php else: ?>
 									<div class="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
 										<span class="text-white text-sm font-medium">
@@ -267,13 +271,17 @@
 									<?php if ($currentUser && !empty($currentUser['profile_picture'])): ?>
 										<?php
 											$pp = (string)($currentUser['profile_picture'] ?? '');
-											$imageData = safe_image_url($pp, 'avatar');
+											// Use same logic as working logos
+                                            if (strpos($pp, '/') !== false) {
+                                                $ppSrc = base_url('/previewDocument/profile_pictures/' . basename($pp));
+                                            } else {
+                                                $ppSrc = base_url('/previewDocument/profile_pictures/' . $pp);
+                                            }
 										?>
 										<img class="h-12 w-12 rounded-full object-cover" 
-											 src="<?= esc($imageData['src']) ?>" 
+											 src="<?= esc($ppSrc) ?>" 
 											 alt="Profile"
-											 data-type="avatar"
-											 data-fallback="<?= esc($imageData['fallback']) ?>">
+											 onerror="this.src='<?= base_url('assets/images/default-avatar.svg') ?>'">
 									<?php else: ?>
 										<div class="h-12 w-12 rounded-full bg-blue-600 flex items-center justify-center">
 											<span class="text-white text-lg font-medium">

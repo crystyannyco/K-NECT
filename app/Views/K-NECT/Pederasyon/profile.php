@@ -29,13 +29,21 @@
                     <div class="flex-shrink-0">
                         <?php
                             $ppUrl = trim($profile_picture_url ?? '');
-                            $imageData = safe_image_url($ppUrl, 'avatar');
+                            // Use same logic as working logos
+                            if (!empty($ppUrl)) {
+                                if (strpos($ppUrl, '/') !== false) {
+                                    $ppSrc = base_url('/previewDocument/profile_pictures/' . basename($ppUrl));
+                                } else {
+                                    $ppSrc = base_url('/previewDocument/profile_pictures/' . $ppUrl);
+                                }
+                            } else {
+                                $ppSrc = base_url('assets/images/default-avatar.svg');
+                            }
                         ?>
-                        <img src="<?= esc($imageData['src']) ?>"
+                        <img src="<?= esc($ppSrc) ?>"
                              alt="Profile Picture"
                              class="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-white shadow-md"
-                             data-type="avatar"
-                             data-fallback="<?= esc($imageData['fallback']) ?>">
+                             onerror="this.src='<?= base_url('assets/images/default-avatar.svg') ?>'">
                     </div>
                     
                     <!-- Basic Info -->

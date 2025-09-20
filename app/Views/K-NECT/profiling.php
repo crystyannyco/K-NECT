@@ -444,38 +444,7 @@
         <div class=" rounded-lg sm:rounded-2xl lg:rounded-3xl mt-2 sm:mt-4 md:mt-6 lg:mt-8 overflow-hidden animate-fade-in">
             <div class="p-4 sm:p-6 md:p-8 lg:p-10 xl:p-12">
         <!-- Logos Header (matches login layout) -->
-        <div class="flex flex-col items-center mb-4">
-            <?php
-                // Determine if logos are available and files actually exist to avoid broken images
-                $pederasyonPath = isset($logos['pederasyon']['file_path']) ? trim($logos['pederasyon']['file_path']) : '';
-                $irigaPath      = isset($logos['iriga_city']['file_path']) ? trim($logos['iriga_city']['file_path']) : '';
-
-                // Normalize relative paths and check existence under public/ (FCPATH)
-                $pederasyonRel = $pederasyonPath ? ltrim($pederasyonPath, '/') : '';
-                $irigaRel      = $irigaPath ? ltrim($irigaPath, '/') : '';
-
-                $hasPederasyonLogo = $pederasyonRel && file_exists(FCPATH . $pederasyonRel);
-                $hasIrigaLogo      = $irigaRel && file_exists(FCPATH . $irigaRel);
-            ?>
-            <!-- Inline row: Pederasyon | K-NECT | Iriga -->
-            <div class="flex items-center justify-center gap-3 sm:gap-4 mb-2">
-                <?php if ($hasPederasyonLogo): ?>
-                    <div class="w-16 h-16 sm:w-16 sm:h-16 flex-shrink-0">
-                        <img src="<?= base_url($logos['pederasyon']['file_path']) ?>" alt="SK Pederasyon Logo" class="w-full h-full object-contain" onerror="this.style.display='none'">
-                    </div>
-                <?php endif; ?>
-
-                <div class="text-center flex flex-col items-center">
-                    <img src="<?= base_url('/assets/images/K-Nect-Logo.png') ?>" alt="K-NECT Logo" class="w-48 sm:w-56 mx-auto" />
-                </div>
-
-                <?php if ($hasIrigaLogo): ?>
-                    <div class="w-16 h-16 sm:w-16 sm:h-16 flex-shrink-0">
-                        <img src="<?= base_url($logos['iriga_city']['file_path']) ?>" alt="Iriga City Logo" class="w-full h-full object-contain" onerror="this.style.display='none'">
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
+        
 
         <!-- Header -->
         <div class="text-center mb-6 sm:mb-8 md:mb-10 lg:mb-12">

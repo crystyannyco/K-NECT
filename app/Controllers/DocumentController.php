@@ -23,7 +23,7 @@ class DocumentController extends BaseController
         }
 
         // Define allowed document types for security
-        $allowedTypes = ['certificate', 'id', 'profile_pictures'];
+        $allowedTypes = ['certificate', 'id', 'profile_pictures', 'bulletin', 'event', 'logos'];
         
         if (!in_array($type, $allowedTypes)) {
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();

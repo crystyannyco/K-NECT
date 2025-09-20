@@ -499,7 +499,7 @@
         // Check if user has profile picture
         if (user.profile_picture && user.profile_picture.trim() !== '') {
             // Construct the profile picture URL
-            var profilePictureUrl = '<?= base_url('uploads/profile_pictures/') ?>' + user.profile_picture;
+            var profilePictureUrl = '<?= base_url('/previewDocument/profile_pictures/') ?>' + user.profile_picture;
             
             // Create a new image to test if it loads successfully
             var img = new Image();

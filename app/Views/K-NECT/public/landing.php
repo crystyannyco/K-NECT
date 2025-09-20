@@ -119,6 +119,87 @@
         .copyright{text-align:center;margin-top:2.4rem;font-size:.65rem;letter-spacing:.5px;}
     @media(max-width:900px){.hero-split{grid-template-columns:1fr;}.hero-left{grid-column:span 12;}.hero-media{grid-column:span 12;height:clamp(var(--hero-h-min-sm),var(--hero-h-fluid-sm),var(--hero-h-max-sm));} .layout{margin-top:1.5rem;}}
     </style>
+    
+    <!-- K-NECT Image URL Fix for Railway Hosting -->
+    <script>
+        // Global image URL fixer for Railway hosting
+        window.fixImageUrl = function(url) {
+            if (!url || typeof url !== 'string') return url;
+            
+            // If it's already a proper URL (http/https) or data URL, return as-is
+            if (/^https?:\/\//.test(url) || /^data:/.test(url)) return url;
+            
+            // If it already uses previewDocument route, return as-is
+            if (url.includes('/previewDocument/')) return url;
+            
+            const baseUrl = '<?= base_url() ?>';
+            let path = url.replace(baseUrl, '').replace(/^\/+/, '');
+            
+            // Map different upload directories to preview routes
+            const mappings = {
+                'uploads/profile_pictures/': '/previewDocument/profile_pictures/',
+                'uploads/profile/': '/previewDocument/profile_pictures/', // legacy
+                'uploads/bulletin/': '/previewDocument/bulletin/',
+                'uploads/event/': '/previewDocument/event/',
+                'uploads/logos/': '/previewDocument/logos/',
+                'uploads/certificate/': '/previewDocument/certificate/',
+                'uploads/id/': '/previewDocument/id/'
+            };
+            
+            for (const [oldPath, newRoute] of Object.entries(mappings)) {
+                if (path.startsWith(oldPath)) {
+                    const filename = path.replace(oldPath, '');
+                    return baseUrl + newRoute + filename;
+                }
+            }
+            
+            return url;
+        };
+        
+        // Auto-fix image URLs on page load and mutations
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fix all existing img src attributes
+            const fixImages = function() {
+                const images = document.querySelectorAll('img[src]');
+                images.forEach(img => {
+                    const originalSrc = img.getAttribute('src');
+                    const fixedSrc = window.fixImageUrl(originalSrc);
+                    if (fixedSrc !== originalSrc) {
+                        img.setAttribute('src', fixedSrc);
+                    }
+                });
+            };
+            
+            // Fix images on initial load
+            fixImages();
+            
+            // Fix images when new content is added dynamically
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'childList') {
+                        mutation.addedNodes.forEach(function(node) {
+                            if (node.nodeType === Node.ELEMENT_NODE) {
+                                // Fix images in newly added content
+                                const images = node.querySelectorAll ? node.querySelectorAll('img[src]') : [];
+                                if (node.tagName === 'IMG' && node.src) {
+                                    node.src = window.fixImageUrl(node.src);
+                                }
+                                images.forEach(img => {
+                                    const originalSrc = img.getAttribute('src');
+                                    const fixedSrc = window.fixImageUrl(originalSrc);
+                                    if (fixedSrc !== originalSrc) {
+                                        img.setAttribute('src', fixedSrc);
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+            
+            observer.observe(document.body, { childList: true, subtree: true });
+        });
+    </script>
 </head>
 <body>
     <header>

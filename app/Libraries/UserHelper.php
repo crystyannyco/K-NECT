@@ -153,6 +153,7 @@ class UserHelper
 
                 if ($pathCandidate !== null) {
                     $profilePicture = base_url($pathCandidate);
+                    $profilePicture = fix_image_url($profilePicture);
                 }
             }
         }

@@ -437,6 +437,87 @@
             cursor: not-allowed !important;
         }
     </style>
+    
+    <!-- K-NECT Image URL Fix for Railway Hosting -->
+    <script>
+        // Global image URL fixer for Railway hosting
+        window.fixImageUrl = function(url) {
+            if (!url || typeof url !== 'string') return url;
+            
+            // If it's already a proper URL (http/https) or data URL, return as-is
+            if (/^https?:\/\//.test(url) || /^data:/.test(url)) return url;
+            
+            // If it already uses previewDocument route, return as-is
+            if (url.includes('/previewDocument/')) return url;
+            
+            const baseUrl = '<?= base_url() ?>';
+            let path = url.replace(baseUrl, '').replace(/^\/+/, '');
+            
+            // Map different upload directories to preview routes
+            const mappings = {
+                'uploads/profile_pictures/': '/previewDocument/profile_pictures/',
+                'uploads/profile/': '/previewDocument/profile_pictures/', // legacy
+                'uploads/bulletin/': '/previewDocument/bulletin/',
+                'uploads/event/': '/previewDocument/event/',
+                'uploads/logos/': '/previewDocument/logos/',
+                'uploads/certificate/': '/previewDocument/certificate/',
+                'uploads/id/': '/previewDocument/id/'
+            };
+            
+            for (const [oldPath, newRoute] of Object.entries(mappings)) {
+                if (path.startsWith(oldPath)) {
+                    const filename = path.replace(oldPath, '');
+                    return baseUrl + newRoute + filename;
+                }
+            }
+            
+            return url;
+        };
+        
+        // Auto-fix image URLs on page load and mutations
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fix all existing img src attributes
+            const fixImages = function() {
+                const images = document.querySelectorAll('img[src]');
+                images.forEach(img => {
+                    const originalSrc = img.getAttribute('src');
+                    const fixedSrc = window.fixImageUrl(originalSrc);
+                    if (fixedSrc !== originalSrc) {
+                        img.setAttribute('src', fixedSrc);
+                    }
+                });
+            };
+            
+            // Fix images on initial load
+            fixImages();
+            
+            // Fix images when new content is added dynamically
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'childList') {
+                        mutation.addedNodes.forEach(function(node) {
+                            if (node.nodeType === Node.ELEMENT_NODE) {
+                                // Fix images in newly added content
+                                const images = node.querySelectorAll ? node.querySelectorAll('img[src]') : [];
+                                if (node.tagName === 'IMG' && node.src) {
+                                    node.src = window.fixImageUrl(node.src);
+                                }
+                                images.forEach(img => {
+                                    const originalSrc = img.getAttribute('src');
+                                    const fixedSrc = window.fixImageUrl(originalSrc);
+                                    if (fixedSrc !== originalSrc) {
+                                        img.setAttribute('src', fixedSrc);
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+            
+            observer.observe(document.body, { childList: true, subtree: true });
+        });
+    </script>
 </head>
 <body class="min-h-screen font-sans">
     <!-- Main Container -->
@@ -2016,7 +2097,7 @@
                                      class="w-full h-full object-cover">
                             </div>
                             <button type="button" 
-                                    onclick="previewDocument('<?= base_url('uploads/profile_pictures/' . $account_data['profile_picture']) ?>', '<?= esc($account_data['profile_picture']) ?>', 'Profile Picture')"
+                                    onclick="previewDocument('<?= base_url('/previewDocument/profile_pictures/' . $account_data['profile_picture']) ?>', '<?= esc($account_data['profile_picture']) ?>', 'Profile Picture')"
                                     class="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition-colors duration-200">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
@@ -2271,7 +2352,7 @@
                                 </div>
                                 <div class="mt-2">
                                     <button type="button" 
-                                            onclick="previewDocument('<?= base_url('uploads/certificate/' . $demographic_data['birth_certificate']) ?>', '<?= esc($demographic_data['birth_certificate']) ?>', 'Birth Certificate')"
+                                            onclick="previewDocument('<?= base_url('/previewDocument/certificate/' . $demographic_data['birth_certificate']) ?>', '<?= esc($demographic_data['birth_certificate']) ?>', 'Birth Certificate')"
                                             class="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition-colors duration-200">
                                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -2307,7 +2388,7 @@
                                 </div>
                                 <div class="mt-2">
                                     <button type="button" 
-                                            onclick="previewDocument('<?= base_url('uploads/id/' . $demographic_data['upload_id']) ?>', '<?= esc($demographic_data['upload_id']) ?>', 'Valid ID')"
+                                            onclick="previewDocument('<?= base_url('/previewDocument/id/' . $demographic_data['upload_id']) ?>', '<?= esc($demographic_data['upload_id']) ?>', 'Valid ID')"
                                             class="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition-colors duration-200">
                                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -2319,7 +2400,7 @@
                                     <?php if (isset($demographic_data['upload_id-back']) && $demographic_data['upload_id-back']): ?>
                                         <div class="mt-3">
                                             <button type="button" 
-                                                    onclick="previewDocument('<?= base_url('uploads/id/' . $demographic_data['upload_id-back']) ?>', '<?= esc($demographic_data['upload_id-back']) ?>', 'Valid ID (Back)')"
+                                                    onclick="previewDocument('<?= base_url('/previewDocument/id/' . $demographic_data['upload_id-back']) ?>', '<?= esc($demographic_data['upload_id-back']) ?>', 'Valid ID (Back)')"
                                                     class="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition-colors duration-200">
                                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>

@@ -355,7 +355,7 @@ class ProfileController extends BaseController
                 'user_id' => $userId,
                 'profile_picture' => $profilePicture,
                 'has_profile_picture' => $hasProfilePicture,
-                'profile_picture_url' => $hasProfilePicture ? base_url(ltrim($profilePicture, '/')) : null,
+                'profile_picture_url' => $hasProfilePicture ? fix_image_url(base_url(ltrim($profilePicture, '/'))) : null,
                 'full_name' => trim($user['first_name'] . ' ' . $user['last_name'])
             ]
         ]);

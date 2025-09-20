@@ -128,15 +128,73 @@ if (!function_exists('safe_image_url')) {
         if (strpos($image_path, 'http') === 0 || strpos($image_path, 'data:') === 0) {
             $src = $image_path;
         } elseif (strpos($image_path, '/') !== false) {
+            // Convert to proper URL first, then fix if needed
             $src = base_url(ltrim($image_path, '/'));
+            $src = fix_image_url($src);
         } else {
-            // Assume it's just a filename in uploads directory
-            $src = base_url('uploads/' . $image_path);
+            // Assume it's just a filename - determine type based on fallback_type
+            if ($fallback_type === 'avatar' || $fallback_type === 'profile') {
+                $src = base_url("/previewDocument/profile_pictures/{$image_path}");
+            } else {
+                $src = base_url('uploads/' . $image_path);
+                $src = fix_image_url($src);
+            }
         }
         
         return [
             'src' => $src,
             'fallback' => $fallback
         ];
+    }
+}
+
+if (!function_exists('fix_image_url')) {
+    /**
+     * Convert direct file system URLs to proper preview routes for Railway hosting
+     * 
+     * @param string $url The original image URL
+     * @return string The fixed URL using preview route
+     */
+    function fix_image_url($url)
+    {
+        if (empty($url)) {
+            return $url;
+        }
+        
+        // If it's already a proper URL (http/https) or data URL, return as-is
+        if (strpos($url, 'http') === 0 || strpos($url, 'data:') === 0) {
+            return $url;
+        }
+        
+        // If it already uses previewDocument route, return as-is
+        if (strpos($url, '/previewDocument/') !== false) {
+            return $url;
+        }
+        
+        // Extract base URL and path
+        $baseUrl = base_url();
+        $path = str_replace($baseUrl, '', $url);
+        $path = ltrim($path, '/');
+        
+        // Map different upload directories to preview routes
+        $mappings = [
+            'uploads/profile_pictures/' => '/previewDocument/profile_pictures/',
+            'uploads/profile/' => '/previewDocument/profile_pictures/', // legacy path
+            'uploads/bulletin/' => '/previewDocument/bulletin/',
+            'uploads/event/' => '/previewDocument/event/',
+            'uploads/logos/' => '/previewDocument/logos/',
+            'uploads/certificate/' => '/previewDocument/certificate/',
+            'uploads/id/' => '/previewDocument/id/',
+        ];
+        
+        foreach ($mappings as $oldPath => $newRoute) {
+            if (strpos($path, $oldPath) === 0) {
+                $filename = str_replace($oldPath, '', $path);
+                return base_url($newRoute . $filename);
+            }
+        }
+        
+        // If no mapping found, return original
+        return $url;
     }
 }

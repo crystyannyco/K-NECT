@@ -199,5 +199,36 @@ class Database extends Config
         if (ENVIRONMENT === 'testing') {
             $this->defaultGroup = 'tests';
         }
+
+        // Override default DB settings from environment variables (e.g., Railway)
+        // Supports both CodeIgniter-style and common cloud env names
+        $driver = getenv('DB_CONNECTION') ?: getenv('database.default.DBDriver') ?: $this->default['DBDriver'];
+        $host   = getenv('DB_HOST') ?: getenv('database.default.hostname') ?: $this->default['hostname'];
+        $port   = getenv('DB_PORT') ?: getenv('database.default.port') ?: $this->default['port'];
+        $name   = getenv('DB_DATABASE') ?: getenv('database.default.database') ?: $this->default['database'];
+        $user   = getenv('DB_USERNAME') ?: getenv('database.default.username') ?: $this->default['username'];
+        $pass   = getenv('DB_PASSWORD') ?: getenv('database.default.password') ?: $this->default['password'];
+
+        // Map common values for driver
+        $driverMap = [
+            'mysql'  => 'MySQLi',
+            'mysqli' => 'MySQLi',
+            'pgsql'  => 'Postgre',
+            'postgres' => 'Postgre',
+        ];
+        $driver = strtolower((string) $driver);
+        $resolvedDriver = $driverMap[$driver] ?? ($driver ? ucfirst($driver) : $this->default['DBDriver']);
+
+        $this->default['hostname'] = $host;
+        $this->default['port']     = is_numeric($port) ? (int) $port : $this->default['port'];
+        $this->default['database'] = $name;
+        $this->default['username'] = $user;
+        $this->default['password'] = $pass;
+        $this->default['DBDriver'] = $resolvedDriver;
+
+        // Enable production-safe DB debugging
+        if (ENVIRONMENT === 'production') {
+            $this->default['DBDebug'] = false;
+        }
     }
 }

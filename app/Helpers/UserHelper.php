@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Libraries;
+namespace App\Helpers;
 
 use App\Models\UserModel;
 use App\Models\UserExtInfoModel;

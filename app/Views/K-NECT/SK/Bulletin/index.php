@@ -1,5 +1,5 @@
-<?= $this->include('K-NECT/SK/Template/header') ?>
-<?= $this->include('K-NECT/SK/Template/sidebar') ?>
+<?= $this->include('K-NECT/SK/template/header') ?>
+<?= $this->include('K-NECT/SK/template/sidebar') ?>
 <?= $this->include('K-NECT/includes/bulletin-assets') ?>
 
 <div class="flex-1 flex flex-col min-h-0 ml-0 lg:ml-64 pt-16">
@@ -141,7 +141,7 @@
                         <div class="grid grid-cols-1 lg:grid-cols-3 lg:auto-rows-[220px] gap-5">
                             <!-- Primary featured -->
                             <article class="relative overflow-hidden rounded-xl border border-gray-200 shadow-sm lg:col-span-2 lg:row-span-2">
-                                <?php $pImg = !empty($primary['featured_image']) ? base_url('/uploads/bulletin/' . $primary['featured_image']) : null; ?>
+                                <?php $pImg = !empty($primary['featured_image']) ? base_url('uploads/bulletin/' . $primary['featured_image']) : null; ?>
                                 <div class="relative w-full h-64 md:h-72 lg:h-full">
                                     <?php if ($pImg): ?>
                                         <img src="<?= $pImg ?>" alt="<?= esc($primary['title']) ?>" class="w-full h-full object-cover">
@@ -167,7 +167,7 @@
                             <!-- Secondary featured -->
                             <?php foreach ($others as $item): ?>
                             <article class="relative overflow-hidden rounded-xl border border-gray-200 shadow-sm h-52 lg:h-auto">
-                                <?php $sImg = !empty($item['featured_image']) ? base_url('/uploads/bulletin/' . $item['featured_image']) : null; ?>
+                                <?php $sImg = !empty($item['featured_image']) ? base_url('uploads/bulletin/' . $item['featured_image']) : null; ?>
                                 <div class="relative w-full h-full">
                                     <?php if ($sImg): ?>
                                         <img src="<?= $sImg ?>" alt="<?= esc($item['title']) ?>" class="w-full h-full object-cover">
@@ -428,7 +428,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </div>
                             </div>
                         </div>
-                        ${post.featured_image ? `<div class="ml-6 flex-shrink-0"><img src="<?= base_url('/uploads/bulletin/') ?>${post.featured_image}" alt="${postTitle}" class="w-24 h-24 object-cover rounded-lg shadow-sm"></div>` : ''}
+                        ${post.featured_image ? `<div class="ml-6 flex-shrink-0"><img src="<?= base_url('uploads/bulletin/') ?>${post.featured_image}" alt="${postTitle}" class="w-24 h-24 object-cover rounded-lg shadow-sm"></div>` : ''}
                     </div>
                 </div>
             `;
@@ -459,7 +459,7 @@ document.addEventListener('DOMContentLoaded', function() {
     filterPosts();
     const baseViewUrl = '<?= base_url('/bulletin/view/') ?>';
     const baseEditUrl = '<?= base_url('/bulletin/edit/') ?>';
-    const baseImgUrl = '<?= base_url('/uploads/bulletin/') ?>';
+    const baseImgUrl = '<?= base_url('uploads/bulletin/') ?>';
 
         function showSkeleton(count=4){
                 postsContainer.innerHTML = Array.from({length:count}).map(()=>`
@@ -613,4 +613,4 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 </script>
 
-<?= $this->include('K-NECT/SK/Template/footer') ?>
+<?= $this->include('K-NECT/SK/template/footer') ?>

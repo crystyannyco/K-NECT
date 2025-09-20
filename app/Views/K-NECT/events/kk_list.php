@@ -95,7 +95,7 @@ $barangay_name = isset($barangay_name) ? $barangay_name : 'Unknown Barangay';
                                                 $shortDesc = mb_strlen($desc) > 120 ? mb_substr($desc, 0, 120) . '...' : $desc;
                                                 $modalId = 'eventModal_' . $event['event_id'];
                                                 $status = isset($event['status']) ? $event['status'] : 'Published';
-                                                $banner = !empty($event['event_banner']) ? "/uploads/event/" . esc($event['event_banner']) : "/assets/images/default-event-banner.svg";
+                                                $banner = !empty($event['event_banner']) ? base_url('uploads/event/' . esc($event['event_banner'])) : base_url('assets/images/default-event-banner.svg');
                                                 $category = isset($event['category']) ? $event['category'] : '';
                                             ?>
                                             <div class="flex items-center w-full event-row" data-status="<?= $status ?>" data-category="<?= esc($category) ?>">

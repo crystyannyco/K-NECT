@@ -159,14 +159,14 @@
                         if (!empty($posts)) {
                             foreach ($posts as $hp) {
                                 if (!empty($hp['featured_image'])) {
-                                    $heroImages[] = base_url('/uploads/bulletin/'.$hp['featured_image']);
+                                    $heroImages[] = base_url('uploads/bulletin/'.$hp['featured_image']);
                                 }
                                 if (count($heroImages) >= 5) break;
                             }
                         }
                         if (empty($heroImages)) {
                             $heroImages[] = !empty($heroPost['featured_image']) 
-                                ? base_url('/uploads/bulletin/'.$heroPost['featured_image']) 
+                                ? base_url('uploads/bulletin/'.$heroPost['featured_image']) 
                                 : 'https://via.placeholder.com/1200x700?text=K-NECT+Platform';
                         }
                     ?>
@@ -254,7 +254,7 @@
                     <?php foreach (($posts ?? []) as $p): ?>
                         <article class="post">
                             <figure>
-                                <img src="<?= !empty($p['featured_image']) ? base_url('/uploads/bulletin/'.$p['featured_image']) : 'https://via.placeholder.com/800x600?text=Post' ?>" alt="<?= esc($p['title']) ?>">
+                                <img src="<?= !empty($p['featured_image']) ? base_url('uploads/bulletin/'.$p['featured_image']) : 'https://via.placeholder.com/800x600?text=Post' ?>" alt="<?= esc($p['title']) ?>">
                                 <div class="chips">
                                     <?php if(!empty($p['category_name'])): ?><span class="chip" style="background:<?= esc($p['category_color'] ?? '#f1f5f9') ?>;color:#111827;"><?= esc(strtoupper($p['category_name'])) ?></span><?php endif; ?>
                                     <?php if(!empty($p['is_featured'])): ?><span class="chip yellow">FEATURED</span><?php endif; ?>
@@ -280,7 +280,7 @@
                 <h3>Featured Highlight</h3>
                 <?php if($heroPost): ?>
                     <div class="mini-post" style="padding:0;border:0;flex-direction:column;align-items:stretch;">
-                        <img src="<?= !empty($heroPost['featured_image']) ? base_url('/uploads/bulletin/'.$heroPost['featured_image']) : 'https://via.placeholder.com/600x400?text=Highlight' ?>" alt="Highlight" style="height:180px;width:100%;object-fit:cover;">
+                        <img src="<?= !empty($heroPost['featured_image']) ? base_url('uploads/bulletin/'.$heroPost['featured_image']) : 'https://via.placeholder.com/600x400?text=Highlight' ?>" alt="Highlight" style="height:180px;width:100%;object-fit:cover;">
                         <h4 style="font-size:.8rem;margin-top:.8rem;"><?= esc($heroPost['title']) ?></h4>
                         <span><?= !empty($heroPost['published_at']) ? date('M j, Y', strtotime($heroPost['published_at'])) : '' ?></span>
                     </div>
@@ -299,7 +299,7 @@
                 <?php foreach ($recent as $mp): ?>
                     <a class="list-item" href="#">
                         <div class="list-thumb">
-                            <img src="<?= !empty($mp['featured_image']) ? base_url('/uploads/bulletin/'.$mp['featured_image']) : 'https://via.placeholder.com/160x120?text=Post' ?>" alt="<?= esc($mp['title']) ?>">
+                            <img src="<?= !empty($mp['featured_image']) ? base_url('uploads/bulletin/'.$mp['featured_image']) : 'https://via.placeholder.com/160x120?text=Post' ?>" alt="<?= esc($mp['title']) ?>">
                         </div>
                         <div class="list-body">
                             <p class="list-title"><?= esc($mp['title']) ?></p>

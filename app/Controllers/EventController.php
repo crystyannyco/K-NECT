@@ -25,20 +25,20 @@ class EventController extends BaseController
         switch($userType) {
             case 'sk':
                 return 
-                    parent::loadView('K-NECT/SK/Template/Header', $data) .
-                    parent::loadView('K-NECT/SK/Template/Sidebar', $data) .
+                    parent::loadView('K-NECT/SK/template/header', $data) .
+                    parent::loadView('K-NECT/SK/template/sidebar', $data) .
                     parent::loadView($view, $data);
                     
             case 'kk':
                 return 
-                    parent::loadView('K-NECT/KK/Template/Header', $data) .
-                    parent::loadView('K-NECT/KK/Template/Sidebar', $data) .
+                    parent::loadView('K-NECT/KK/template/header', $data) .
+                    parent::loadView('K-NECT/KK/template/sidebar', $data) .
                     parent::loadView($view, $data);
                     
             case 'pederasyon':
                 return 
-                    parent::loadView('K-NECT/Pederasyon/Template/Header', $data) .
-                    parent::loadView('K-NECT/Pederasyon/Template/Sidebar', $data) .
+                    parent::loadView('K-NECT/Pederasyon/template/header', $data) .
+                    parent::loadView('K-NECT/Pederasyon/template/sidebar', $data) .
                     parent::loadView($view, $data);
                     
             default:

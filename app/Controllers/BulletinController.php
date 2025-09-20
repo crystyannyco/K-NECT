@@ -934,7 +934,7 @@ class BulletinController extends BaseController
         try {
             // Map user type to canonical folder name (fix case sensitivity across environments)
             $folder = $this->resolveUserFolder($userType);
-            $templatePath = "K-NECT/{$folder}/Template/";
+            $templatePath = "K-NECT/{$folder}/template/";
             // Normalize the provided view path to use the canonical folder
             $viewPath = $view;
             if (strpos($view, 'K-NECT/') === 0) {

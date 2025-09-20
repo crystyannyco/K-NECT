@@ -47,8 +47,8 @@ class SKController extends BaseController
         ]);
 
         return
-            $this->loadView('K-NECT/SK/Template/Header') .
-            $this->loadView('K-NECT/SK/Template/Sidebar') .
+            $this->loadView('K-NECT/SK/template/header') .
+            $this->loadView('K-NECT/SK/template/sidebar') .
             $this->loadView('K-NECT/SK/account_settings', $data);
     }
 
@@ -262,8 +262,8 @@ class SKController extends BaseController
         ];
 
         return 
-            $this->loadView('K-NECT/SK/Template/Header') .
-            $this->loadView('K-NECT/SK/Template/Sidebar') .
+            $this->loadView('K-NECT/SK/template/header') .
+            $this->loadView('K-NECT/SK/template/sidebar') .
             $this->loadView('K-NECT/SK/dashboard', $data);
     }
 
@@ -302,8 +302,8 @@ class SKController extends BaseController
         ]);
 
         return 
-            $this->loadView('K-NECT/SK/Template/Header') .
-            $this->loadView('K-NECT/SK/Template/Sidebar') .
+            $this->loadView('K-NECT/SK/template/header') .
+            $this->loadView('K-NECT/SK/template/sidebar') .
             $this->loadView('K-NECT/SK/profile', $data);
     }
 
@@ -440,10 +440,10 @@ class SKController extends BaseController
     $data['field_mappings'] = DemographicsHelper::allMapsForJs();
 
         return 
-            $this->loadView('K-NECT/SK/Template/Header') .
-            $this->loadView('K-NECT/SK/Template/Sidebar') .
+            $this->loadView('K-NECT/SK/template/header') .
+            $this->loadView('K-NECT/SK/template/sidebar') .
             $this->loadView('K-NECT/SK/youth_profile', $data) .
-            $this->loadView('K-NECT/SK/Template/Footer');
+            $this->loadView('K-NECT/SK/template/footer');
     }
 
     public function rfidAssignment()
@@ -510,10 +510,10 @@ class SKController extends BaseController
         $data['unassigned_count'] = $data['total_users'] - $data['assigned_count'];
 
         return 
-            $this->loadView('K-NECT/SK/Template/Header') .
-            $this->loadView('K-NECT/SK/Template/Sidebar') .
+            $this->loadView('K-NECT/SK/template/header') .
+            $this->loadView('K-NECT/SK/template/sidebar') .
             $this->loadView('K-NECT/SK/rfid_assignment', $data) .
-            $this->loadView('K-NECT/SK/Template/Footer');
+            $this->loadView('K-NECT/SK/template/footer');
     }
 
 
@@ -716,8 +716,8 @@ class SKController extends BaseController
     $data['field_mappings'] = DemographicsHelper::allMapsForJs();
         
         return 
-            $this->loadView('K-NECT/SK/Template/Header') .
-            $this->loadView('K-NECT/SK/Template/Sidebar') .
+            $this->loadView('K-NECT/SK/template/header') .
+            $this->loadView('K-NECT/SK/template/sidebar') .
             $this->loadView('K-NECT/SK/sk_official', $data);
     }
 
@@ -878,8 +878,8 @@ class SKController extends BaseController
         ];
 
         return
-            $this->loadView('K-NECT/SK/Template/Header') .
-            $this->loadView('K-NECT/SK/Template/Sidebar') .
+            $this->loadView('K-NECT/SK/template/header') .
+            $this->loadView('K-NECT/SK/template/sidebar') .
             $this->loadView('K-NECT/SK/settings', $data);
     }
 
@@ -1118,8 +1118,8 @@ class SKController extends BaseController
         ];
 
         return
-            $this->loadView('K-NECT/SK/Template/Header') .
-            $this->loadView('K-NECT/SK/Template/Sidebar') .
+            $this->loadView('K-NECT/SK/template/header') .
+            $this->loadView('K-NECT/SK/template/sidebar') .
             $this->loadView('K-NECT/SK/user_management', $data);
     }
 
@@ -2921,7 +2921,7 @@ class SKController extends BaseController
             $sheet->getColumnDimension('G')->setWidth(12);
 
             // Save the document
-            $outputDir = WRITEPATH . 'temp/';
+            $outputDir = FCPATH . 'uploads/temp/';
             if (!is_dir($outputDir)) {
                 mkdir($outputDir, 0755, true);
             }
@@ -3165,7 +3165,7 @@ class SKController extends BaseController
             $dompdf->render();
 
             // Save PDF file
-            $outputDir = WRITEPATH . 'temp/';
+            $outputDir = FCPATH . 'uploads/temp/';
             if (!is_dir($outputDir)) {
                 mkdir($outputDir, 0755, true);
             }
@@ -3428,7 +3428,7 @@ class SKController extends BaseController
             $approvedCell->addText('SK Chairperson', ['name' => 'Arial', 'size' => 9, 'bold' => true], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             
             // Save the document
-            $outputDir = WRITEPATH . 'temp/';
+            $outputDir = FCPATH . 'uploads/temp/';
             if (!is_dir($outputDir)) {
                 mkdir($outputDir, 0755, true);
             }

@@ -158,8 +158,24 @@ function createDocumentPreview(doc) {
     const container = document.createElement('div');
     container.className = 'document-preview';
     
+    // Resolve thumbnail URL safely:
+    // - If thumbnail_path is an absolute URL (http/https/data), use as-is
+    // - If thumbnail_path already contains a path (e.g., 'uploads/thumbnails/...'), prefix only baseUrl
+    // - If it's just a filename, build URL under 'uploads/thumbnails/'
+    let thumbUrl = null;
+    if (doc && doc.thumbnail_path) {
+        const p = String(doc.thumbnail_path);
+        if (/^(https?:|data:)/i.test(p)) {
+            thumbUrl = p;
+        } else if (p.includes('/')) {
+            thumbUrl = `${window.baseUrl}${p.replace(/^\/+/, '')}`;
+        } else {
+            thumbUrl = `${window.baseUrl}uploads/thumbnails/${p}`;
+        }
+    }
+
     const img = createSafeImage(
-        doc.thumbnail_path ? `${window.baseUrl}uploads/thumbnails/${doc.thumbnail_path}` : null,
+        thumbUrl,
         `${doc.title || doc.filename} preview`,
         'document',
         { 

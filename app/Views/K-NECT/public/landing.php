@@ -9,7 +9,7 @@
     <meta property="og:title" content="K-NECT Youth Engagement" />
     <meta property="og:description" content="Announcements, events and resources empowering youth leadership." />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="<?= base_url('/uploads/logos/logo.png') ?>" />
+    <meta property="og:image" content="<?= base_url('assets/images/K-Nect-Logo.png') ?>" />
     <meta property="og:url" content="<?= current_url() ?>" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -123,7 +123,7 @@
 <body>
     <header>
         <div class="nav">
-            <div class="brand"><img src="<?= base_url('/uploads/logos/logo.png') ?>" alt="K-NECT logo"></div>
+            <div class="brand"><img src="<?= base_url('assets/images/K-Nect-Logo.png') ?>" alt="K-NECT logo"></div>
             <nav class="nav-links">
                 <a href="#services">Services</a>
                 <a href="#resources">Resources</a>

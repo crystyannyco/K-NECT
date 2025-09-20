@@ -16,7 +16,7 @@ class App extends BaseConfig
      *
      * E.g., http://example.com/
      */
-    public string $baseURL = 'http://localhost:8080/';
+    public string $baseURL = '';
 
     /**
      * Allowed Hostnames in the Site URL other than the hostname in the baseURL.
@@ -199,4 +199,65 @@ class App extends BaseConfig
      * @see http://www.w3.org/TR/CSP/
      */
     public bool $CSPEnabled = false;
+
+    /**
+     * Dynamically determine baseURL in containerized deployments (e.g., Railway)
+     * Allows override via env var APP_BASE_URL or RAILWAY_* variables.
+     */
+    public function __construct()
+    {
+        parent::__construct();
+
+        // If baseURL is not set (or left as default), try to detect from env/headers.
+        if ($this->baseURL === '' || $this->baseURL === 'http://localhost:8080/') {
+            // Prefer explicit environment variable if provided (set this in Railway Variables)
+            // Support both APP_BASE_URL and app.baseURL (Railway's suggested var)
+            $envBase = getenv('APP_BASE_URL')
+                ?: getenv('app.baseURL')
+                ?: getenv('RAILWAY_PUBLIC_DOMAIN')
+                ?: getenv('RAILWAY_URL')
+                ?: '';
+
+            if (is_string($envBase) && $envBase !== '') {
+                $url = preg_match('~^https?://~i', $envBase) ? $envBase : 'https://' . $envBase;
+                $normalized = rtrim($url, '/') . '/';
+                $isLocal = (bool) preg_match('~^https?://(localhost|127\.0\.0\.1)(:|/)~i', $normalized);
+
+                // If env points to localhost but we are behind a proxy (Railway), prefer header-based detection
+                $hasProxyHeaders = !empty($_SERVER['HTTP_X_FORWARDED_HOST']) || !empty($_SERVER['HTTP_X_FORWARDED_PROTO']);
+                if ($isLocal && PHP_SAPI !== 'cli' && $hasProxyHeaders) {
+                    // fall through to header detection below
+                } else {
+                    $this->baseURL = $normalized;
+                    return; // done
+                }
+            }
+
+            if (PHP_SAPI !== 'cli') {
+                // Best-effort autodetection for web requests behind proxies
+                $scheme = 'http';
+                if (!empty($_SERVER['HTTP_X_FORWARDED_PROTO'])) {
+                    $scheme = explode(',', (string) $_SERVER['HTTP_X_FORWARDED_PROTO'])[0];
+                } elseif (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+                    $scheme = 'https';
+                }
+
+                $host = $_SERVER['HTTP_X_FORWARDED_HOST']
+                    ?? $_SERVER['HTTP_HOST']
+                    ?? ($_SERVER['SERVER_NAME'] ?? 'localhost');
+
+                // Include port only if non-standard and not already present in host
+                $port = $_SERVER['HTTP_X_FORWARDED_PORT'] ?? $_SERVER['SERVER_PORT'] ?? null;
+                $portPart = '';
+                if ($port && strpos((string) $host, ':') === false) {
+                    $p = (int) $port;
+                    if (!in_array($p, [80, 443], true)) {
+                        $portPart = ':' . $p;
+                    }
+                }
+
+                $this->baseURL = rtrim($scheme . '://' . $host . $portPart, '/') . '/';
+            }
+        }
+    }
 }

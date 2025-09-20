@@ -140,7 +140,7 @@
                                 <!-- SK Pederasyon Logo -->
                                 <?php if ($hasPederasyonLogo): ?>
                                     <div class="w-12 h-12 flex-shrink-0">
-                                        <img src="<?= base_url($logos['pederasyon']['file_path']) ?>" 
+                                        <img src="<?= base_url('/previewDocument/logos/' . basename($logos['pederasyon']['file_path'])) ?>" 
                                              alt="SK Pederasyon Logo" 
                                              class="w-full h-full object-contain" onerror="this.style.display='none'">
                                     </div>
@@ -149,7 +149,7 @@
                                 <!-- Iriga City Logo -->
                                 <?php if ($hasIrigaLogo): ?>
                                     <div class="w-12 h-12 flex-shrink-0">
-                                        <img src="<?= base_url($logos['iriga_city']['file_path']) ?>" 
+                                        <img src="<?= base_url('/previewDocument/logos/' . basename($logos['iriga_city']['file_path'])) ?>" 
                                              alt="Iriga City Logo" 
                                              class="w-full h-full object-contain" onerror="this.style.display='none'">
                                     </div>

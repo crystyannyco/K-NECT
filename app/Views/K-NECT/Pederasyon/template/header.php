@@ -278,7 +278,15 @@
                         <button id="userDropdownBtn" class="flex items-center space-x-3 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg p-2">
                             <div class="flex items-center space-x-3">
                                 <?php if ($currentUser && !empty($currentUser['profile_picture'])): ?>
-                                    <img class="h-8 w-8 rounded-full object-cover" src="<?= esc($currentUser['profile_picture']) ?>" alt="Profile">
+                                    <?php
+                                        $pp = (string)($currentUser['profile_picture'] ?? '');
+                                        $imageData = safe_image_url($pp, 'avatar');
+                                    ?>
+                                    <img class="h-8 w-8 rounded-full object-cover" 
+                                         src="<?= esc($imageData['src']) ?>" 
+                                         alt="Profile"
+                                         data-type="avatar"
+                                         data-fallback="<?= esc($imageData['fallback']) ?>">
                                 <?php else: ?>
                                     <div class="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
                                         <span class="text-white text-sm font-medium">
@@ -310,7 +318,15 @@
                             <div class="p-4 border-b border-gray-200">
                                 <div class="flex items-center space-x-3">
                                     <?php if ($currentUser && !empty($currentUser['profile_picture'])): ?>
-                                        <img class="h-12 w-12 rounded-full object-cover" src="<?= esc($currentUser['profile_picture']) ?>" alt="Profile">
+                                        <?php
+                                            $pp = (string)($currentUser['profile_picture'] ?? '');
+                                            $imageData = safe_image_url($pp, 'avatar');
+                                        ?>
+                                        <img class="h-12 w-12 rounded-full object-cover" 
+                                             src="<?= esc($imageData['src']) ?>" 
+                                             alt="Profile"
+                                             data-type="avatar"
+                                             data-fallback="<?= esc($imageData['fallback']) ?>">
                                     <?php else: ?>
                                         <div class="h-12 w-12 rounded-full bg-blue-600 flex items-center justify-center">
                                             <span class="text-white text-lg font-medium">

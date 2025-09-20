@@ -542,7 +542,7 @@
             <div class="flex items-center justify-center gap-3 sm:gap-4 mb-2">
                 <?php if ($hasPederasyonLogo): ?>
                     <div class="w-16 h-16 sm:w-16 sm:h-16 flex-shrink-0">
-                        <img src="<?= base_url(ltrim($logos['pederasyon']['file_path'], '/')) ?>" alt="SK Pederasyon Logo" class="w-full h-full object-contain" onerror="this.style.display='none'">
+                        <img src="<?= base_url('/previewDocument/logos/' . basename($logos['pederasyon']['file_path'])) ?>" alt="SK Pederasyon Logo" class="w-full h-full object-contain" onerror="this.style.display='none'">
                     </div>
                 <?php endif; ?>
 
@@ -552,7 +552,7 @@
 
                 <?php if ($hasIrigaLogo): ?>
                     <div class="w-16 h-16 sm:w-16 sm:h-16 flex-shrink-0">
-                        <img src="<?= base_url(ltrim($logos['iriga_city']['file_path'], '/')) ?>" alt="Iriga City Logo" class="w-full h-full object-contain" onerror="this.style.display='none'">
+                        <img src="<?= base_url('/previewDocument/logos/' . basename($logos['iriga_city']['file_path'])) ?>" alt="Iriga City Logo" class="w-full h-full object-contain" onerror="this.style.display='none'">
                     </div>
                 <?php endif; ?>
             </div>
@@ -2092,7 +2092,7 @@
                         </h3>
                         <div class="flex flex-col items-center space-y-4">
                             <div class="w-48 h-48 rounded-lg overflow-hidden border-2 border-slate-200 shadow-sm">
-                                <img src="<?= base_url('uploads/profile_pictures/' . $account_data['profile_picture']) ?>" 
+                                <img src="<?= base_url('/previewDocument/profile_pictures/' . $account_data['profile_picture']) ?>" 
                                      alt="Profile Picture" 
                                      class="w-full h-full object-cover">
                             </div>

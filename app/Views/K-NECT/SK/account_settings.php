@@ -27,10 +27,15 @@
 								<div class="relative">
 									<?php if (!empty($userExtInfo['profile_picture'])): ?>
 										<?php 
-											$pp = $userExtInfo['profile_picture'];
-											$ppUrl = (strpos($pp, '/') !== false) ? base_url($pp) : base_url('uploads/profile_pictures/' . $pp);
+											$pp = (string)($userExtInfo['profile_picture'] ?? '');
+											$imageData = safe_image_url($pp, 'avatar');
 										?>
-										<img id="profile-image" src="<?= esc($ppUrl) ?>" alt="Profile Picture" class="w-32 h-32 object-cover border-4 border-white shadow-lg rounded-full">
+										<img id="profile-image" 
+											 src="<?= esc($imageData['src']) ?>" 
+											 alt="Profile Picture" 
+											 class="w-32 h-32 object-cover border-4 border-white shadow-lg rounded-full"
+											 data-type="avatar"
+											 data-fallback="<?= esc($imageData['fallback']) ?>">
 									<?php else: ?>
 										<div id="profile-placeholder" class="w-32 h-32 bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg border-4 border-white rounded-full">
 											<span class="text-white text-3xl font-bold">

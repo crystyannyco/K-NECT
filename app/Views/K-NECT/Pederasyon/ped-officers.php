@@ -1088,7 +1088,7 @@
                                     } else if (pp.includes('/')) {
                                         imgUrl = '<?= rtrim(base_url('/'), '/') ?>/' + pp.replace(/^\/+/, '');
                                     } else {
-                                        imgUrl = '<?= base_url('uploads/profile_pictures/') ?>' + pp;
+                                        imgUrl = '<?= base_url('/previewDocument/profile_pictures/') ?>' + pp;
                                     }
                                 }
                                 const $img = $('#modalUserPhoto');

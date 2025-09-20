@@ -100,9 +100,10 @@
                 <div class="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
                     <?php if (!empty($doc['thumbnail_path']) && file_exists(WRITEPATH . $doc['thumbnail_path'])): ?>
                         <!-- PDF/Document Thumbnail Preview -->
-                        <img src="<?= base_url('uploads/thumbnails/' . basename($doc['thumbnail_path'])) ?>" 
+                        <img src="<?= base_url('/previewDocument/thumbnails/' . basename($doc['thumbnail_path'])) ?>" 
                              alt="Document Preview" 
-                             class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300" />
+                             class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                             onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=&quot;flex flex-col items-center justify-center text-gray-400&quot;><svg class=&quot;w-12 h-12 mb-2&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; viewBox=&quot;0 0 24 24&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z&quot;/></svg><span class=&quot;text-xs&quot;><?= $fileExtension ?></span></div>'" />
                     <?php elseif ($isImage): ?>
                         <!-- Image Preview -->
                         <img src="<?= $previewUrl ?>" 
@@ -485,10 +486,11 @@ function generateModalPreview(doc) {
         previewContainer.innerHTML = `
             <div class="w-full h-full p-6 flex items-center justify-center">
                 <div class="bg-white border-4 border-gray-300 rounded-lg shadow-xl max-w-full max-h-full overflow-hidden">
-                    <img src="<?= base_url('uploads/thumbnails/') ?>${doc.thumbnail_path.split('/').pop()}" 
+                    <img src="<?= base_url('/previewDocument/thumbnails/') ?>${doc.thumbnail_path.split('/').pop()}" 
                          alt="Document Preview" 
                          class="w-full h-full object-contain" 
-                         style="min-height: 500px; max-height: 700px;" />
+                         style="min-height: 500px; max-height: 700px;"
+                         onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=&quot;flex items-center justify-center h-full text-gray-500&quot;><span>Preview not available</span></div>'" />
                 </div>
             </div>
         `;

@@ -347,7 +347,6 @@
                                          src="<?= esc($ppSrc) ?>" 
                                          alt="Profile"
                                          onerror="this.src='<?= base_url('assets/images/default-avatar.svg') ?>'">
-                                         data-fallback="<?= esc($imageData['fallback']) ?>">
                                     <div class="flex-1">
                                         <h4 class="text-sm font-medium text-gray-900">
                                             <?= $currentUser ? esc($currentUser['full_name']) : 'User' ?>

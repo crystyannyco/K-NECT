@@ -97,7 +97,7 @@
                         <div class="mb-4" id="current-image">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Current Image</label>
                             <div class="relative inline-block">
-                                <img src="<?= base_url('uploads/bulletin/' . $post['featured_image']) ?>" 
+                                <img src="<?= base_url('/previewDocument/bulletin/' . $post['featured_image']) ?>" 
                                      alt="Current featured image" 
                                      class="max-h-32 rounded-lg border border-gray-300">
                                 <button type="button" onclick="removeCurrentImage()" 

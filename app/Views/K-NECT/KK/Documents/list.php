@@ -8,13 +8,16 @@
 }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<div class="max-w-6xl mx-auto p-0">
-    <div class="p-6 rounded-2xl shadow-lg border border-gray-200 bg-white flex flex-col gap-4">
+<div class="max-w-7xl mx-auto p-0">
+    <div class="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200">
+        <div class="px-6 py-4 space-y-4 sm:space-y-6">
         <!-- Header Section -->
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-2">
-            <div>
-                <h1 class="text-2xl font-bold text-blue-900 tracking-tight flex items-center gap-2 drop-shadow-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7V3a1 1 0 011-1h8a1 1 0 011 1v4m-2 4h2a2 2 0 012 2v7a2 2 0 01-2 2H7a2 2 0 01-2-2v-7a2 2 0 012-2h2m2 0V3" /></svg>
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-2">
+            <div class="flex-1">
+                <h1 class="text-2xl lg:text-3xl font-bold text-blue-900 tracking-tight flex items-center gap-2 drop-shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 lg:h-7 lg:w-7 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7V3a1 1 0 011-1h8a1 1 0 011 1v4m-2 4h2a2 2 0 012 2v7a2 2 0 01-2 2H7a2 2 0 01-2-2v-7a2 2 0 012-2h2m2 0V3" />
+                    </svg>
                     Document Library
                 </h1>
                 <div class="text-sm text-blue-700 mt-1 font-medium opacity-80">KK Viewer - Browse and search approved documents</div>
@@ -22,41 +25,56 @@
         </div>
 
         <!-- Search and Filter Section -->
-        <form method="GET" action="<?= base_url('documents') ?>" class="flex flex-col sm:flex-row gap-4 w-full items-center bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl shadow-sm p-6 border border-blue-100 transition-all duration-300 hover:shadow-md">
-            <div class="relative flex-1 w-full">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl shadow-sm p-4 lg:p-6 border border-blue-100 transition-all duration-300 hover:shadow-md">
+            <form method="GET" action="<?= base_url('documents') ?>" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Search Input -->
+                    <div class="sm:col-span-2 lg:col-span-1">
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+                            <input type="text" name="search" id="search" value="<?= esc($_GET['search'] ?? '') ?>"
+                                   class="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 placeholder-gray-400 text-sm shadow-sm"
+                                   placeholder="Search documents...">
+                        </div>
+                    </div>
+
+                    <!-- Category Filter -->
+                    <div class="lg:col-span-1">
+                        <select name="category" id="category" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 shadow-sm text-sm">
+                            <option value="">All Categories</option>
+                            <?php foreach (($categories ?? []) as $cat): ?>
+                                <option value="<?= $cat['id'] ?>" <?= (isset($selectedCategory) && $selectedCategory == $cat['id']) ? 'selected' : '' ?>>
+                                    <?= esc($cat['name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <!-- Action Buttons Column -->
+                    <div class="lg:col-span-1 flex flex-col sm:flex-row gap-3">
+                        <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-2.5 rounded-xl font-semibold shadow-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 flex items-center justify-center gap-2 text-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            <span class="whitespace-nowrap">Search</span>
+                        </button>
+
+                        <?php if (!empty($_GET['search']) || !empty($_GET['category'])): ?>
+                        <a href="<?= base_url('documents') ?>" class="w-full bg-gray-100 text-gray-700 px-6 py-2.5 rounded-xl font-semibold shadow-sm hover:bg-gray-200 transition-all duration-200 flex items-center justify-center gap-2 text-sm" title="Show all documents">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            <span class="whitespace-nowrap">Clear</span>
+                        </a>
+                        <?php endif; ?>
+                    </div>
                 </div>
-                <input type="text" name="search" id="search" value="<?= esc($_GET['search'] ?? '') ?>"
-                   class="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 placeholder-gray-400 text-base shadow-sm"
-                   placeholder="Search documents...">
-            </div>
-
-            <select name="category" id="category" class="w-full sm:w-auto border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 shadow-sm">
-                <option value="">All Categories</option>
-                <?php foreach (($categories ?? []) as $cat): ?>
-                    <option value="<?= $cat['id'] ?>" <?= (isset($selectedCategory) && $selectedCategory == $cat['id']) ? 'selected' : '' ?>><?= esc($cat['name']) ?></option>
-                <?php endforeach; ?>
-            </select>
-
-            <button type="submit" class="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 flex items-center justify-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                Search
-            </button>
-
-            <?php if (!empty($_GET['search']) || !empty($_GET['category'])): ?>
-            <a href="<?= base_url('documents') ?>" class="w-full sm:w-auto bg-gray-100 text-gray-700 px-6 py-3 rounded-xl font-semibold shadow-sm hover:bg-gray-200 transition-all duration-200 flex items-center justify-center gap-2" title="Show all documents">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                Clear
-            </a>
-            <?php endif; ?>
-        </form>
+            </form>
+        </div>
 
         <!-- Results Summary -->
         <div class="flex items-center justify-between">
@@ -100,9 +118,10 @@
                 <div class="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
                     <?php if (!empty($doc['thumbnail_path']) && file_exists(WRITEPATH . $doc['thumbnail_path'])): ?>
                         <!-- PDF/Document Thumbnail Preview -->
-                        <img src="<?= base_url('uploads/thumbnails/' . basename($doc['thumbnail_path'])) ?>" 
+                        <img src="<?= base_url('/previewDocument/thumbnails/' . basename($doc['thumbnail_path'])) ?>" 
                              alt="Document Preview" 
-                             class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300" />
+                             class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                             onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=&quot;flex flex-col items-center justify-center text-gray-400&quot;><svg class=&quot;w-12 h-12 mb-2&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; viewBox=&quot;0 0 24 24&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z&quot;/></svg><span class=&quot;text-xs&quot;><?= $fileExtension ?></span></div>'" />
                     <?php elseif ($isImage): ?>
                         <!-- Image Preview -->
                         <img src="<?= $previewUrl ?>" 
@@ -210,7 +229,7 @@
                 <div class="p-6">
                     <h3 class="text-base font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
                         <button onclick="openDocumentModal(<?= $doc['id'] ?>)" class="hover:underline text-left w-full">
-                            <?= esc($doc['title'] ?? ($doc['filename'] ?? 'Untitled document')) ?>
+                            <?= esc($doc['filename'] ?? 'Untitled document') ?>
                         </button>
                     </h3>
                     
@@ -422,7 +441,7 @@ async function fetchDocumentDetails(documentId) {
 // Populate modal with document data
 function populateModal(doc) {
     // Update header
-    document.getElementById('modalTitle').textContent = doc.title || doc.filename || 'Untitled Document';
+    document.getElementById('modalTitle').textContent = doc.filename || 'Untitled Document';
     document.getElementById('modalSubtitle').textContent = `Uploaded on ${new Date(doc.uploaded_at || doc.created_at).toLocaleDateString()}`;
     
     // Update information
@@ -485,10 +504,11 @@ function generateModalPreview(doc) {
         previewContainer.innerHTML = `
             <div class="w-full h-full p-6 flex items-center justify-center">
                 <div class="bg-white border-4 border-gray-300 rounded-lg shadow-xl max-w-full max-h-full overflow-hidden">
-                    <img src="<?= base_url('uploads/thumbnails/') ?>${doc.thumbnail_path.split('/').pop()}" 
+                    <img src="<?= base_url('/previewDocument/thumbnails/') ?>${doc.thumbnail_path.split('/').pop()}" 
                          alt="Document Preview" 
                          class="w-full h-full object-contain" 
-                         style="min-height: 500px; max-height: 700px;" />
+                         style="min-height: 500px; max-height: 700px;"
+                         onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=&quot;flex items-center justify-center h-full text-gray-500&quot;><span>Preview not available</span></div>'" />
                 </div>
             </div>
         `;

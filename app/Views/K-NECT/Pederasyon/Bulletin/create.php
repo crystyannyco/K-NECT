@@ -27,7 +27,7 @@
 
     <!-- Main Form Content -->
     <div class="px-4 sm:px-6 lg:px-8 py-6">
-        <form id="bulletinForm" class="max-w-4xl mx-auto" enctype="multipart/form-data">
+        <form id="bulletinForm" class="max-w-7xl mx-auto" enctype="multipart/form-data">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 <!-- Main Content Column -->
@@ -368,8 +368,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 showMessage('Post created successfully!', 'success');
                 setTimeout(() => {
-                    window.location.href = '<?= base_url('/bulletin') ?>';
-                }, 2000);
+                    window.location.href = '<?= base_url('/bulletin') ?>?toast=created';
+                }, 1200);
             } else {
                 showMessage(data.message || 'An error occurred while creating the post', 'error');
                 if (data.errors) {

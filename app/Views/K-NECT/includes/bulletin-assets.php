@@ -2,7 +2,7 @@
 /* Shared responsive tweaks for Bulletin UIs across roles */
 :root{--bulletin-radius:0.75rem}
 /* Shared container that aligns header with cards */
-.bulletin-wrap{max-width:80rem;margin-left:auto;margin-right:auto;padding-left:1rem;padding-right:1rem}
+.bulletin-wrap{max-width:112rem;margin-left:auto;margin-right:auto;padding-left:1rem;padding-right:1rem}
 @media (min-width:640px){.bulletin-wrap{padding-left:1.5rem;padding-right:1.5rem}}
 @media (min-width:1024px){.bulletin-wrap{padding-left:2rem;padding-right:2rem}}
 
@@ -46,7 +46,7 @@
 }
 
 /* Align section blocks to container width too */
-.bulletin-section{max-width:80rem;margin-left:auto;margin-right:auto}
+.bulletin-section{max-width:112rem;margin-left:auto;margin-right:auto}
 
 /* Document carousel: ensure cards shrink on narrow viewports */
 .doc-carousel .card{width:min(18rem, 80vw)}

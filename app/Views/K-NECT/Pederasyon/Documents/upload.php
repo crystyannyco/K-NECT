@@ -60,16 +60,19 @@
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <!-- Left Column -->
                     <div class="space-y-6">
-                        <!-- Title -->
+                        <!-- Filename -->
                         <div class="bg-white rounded-lg border border-blue-100 shadow-sm p-6">
                             <h3 class="text-lg font-semibold text-blue-900 mb-4 flex items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6M4 6h16"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
-                                Title
+                                Document Name <span class="text-red-500">*</span>
                             </h3>
-                            <input type="text" name="title" class="w-full border border-blue-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-300 focus:border-blue-500 outline-none text-sm bg-white/70" placeholder="Enter a document title (optional)" value="<?= old('title') ?>" />
+                            <input type="text" name="filename" required class="w-full border border-blue-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-300 focus:border-blue-500 outline-none text-sm bg-white/70" placeholder="Enter a name for this document" value="<?= old('filename') ?>" maxlength="255" />
+                            <p id="filenameError" class="mt-2 text-sm text-red-600 hidden"></p>
+                            <p class="text-xs text-blue-600 mt-2">This will be the display name for your document</p>
                         </div>
+                        
                         <!-- Description -->
                         <div class="bg-white rounded-lg border border-blue-100 shadow-sm p-6">
                             <h3 class="text-lg font-semibold text-blue-900 mb-4 flex items-center gap-2">
@@ -285,7 +288,14 @@
                 Swal.fire({ title: 'Success', text: 'Document uploaded successfully!', icon: 'success', confirmButtonColor: '#2563eb' }).then(() => { window.location.href = '<?= base_url('admin/documents') ?>'; });
                 form.reset(); fileName.textContent=''; document.getElementById('progressBar').style.width='0%'; document.getElementById('progressContainer').classList.add('hidden');
             } else {
-                let msg = 'Upload failed. Please try again.'; if (resp && resp.error) msg = resp.error;
+                // Clear previous inline errors
+                const filenameErrorEl = document.getElementById('filenameError');
+                if (filenameErrorEl) { filenameErrorEl.textContent = ''; filenameErrorEl.classList.add('hidden'); }
+                // Inline error for filename if provided
+                if (resp && resp.errors && resp.errors.filename) {
+                    if (filenameErrorEl) { filenameErrorEl.textContent = resp.errors.filename; filenameErrorEl.classList.remove('hidden'); }
+                }
+                let msg = 'Upload failed. Please check the highlighted field(s).'; if (resp && resp.error) msg = resp.error;
                 Swal.fire({ title: 'Error', text: msg, icon: 'error', confirmButtonColor: '#d33' });
             }
         };

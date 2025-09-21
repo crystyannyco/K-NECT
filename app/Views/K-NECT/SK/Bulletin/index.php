@@ -1,5 +1,5 @@
-<?= $this->include('K-NECT/SK/Template/header') ?>
-<?= $this->include('K-NECT/SK/Template/sidebar') ?>
+<?= $this->include('K-NECT/SK/template/header') ?>
+<?= $this->include('K-NECT/SK/template/sidebar') ?>
 <?= $this->include('K-NECT/includes/bulletin-assets') ?>
 
 <div class="flex-1 flex flex-col min-h-0 ml-0 lg:ml-64 pt-16">
@@ -667,4 +667,4 @@ function showToast(message, type='success'){
 }
 </script>
 
-<?= $this->include('K-NECT/SK/Template/footer') ?>
+<?= $this->include('K-NECT/SK/template/footer') ?>

@@ -25,9 +25,9 @@ class CategoryController extends BaseController
             $sidebarTemplate = 'K-NECT/KK/template/sidebar';
             $footerTemplate = 'K-NECT/KK/template/footer';
         } else {
-            $headerTemplate = 'K-NECT/SK/Template/header';
-            $sidebarTemplate = 'K-NECT/SK/Template/sidebar';
-            $footerTemplate = 'K-NECT/SK/Template/footer';
+            $headerTemplate = 'K-NECT/SK/template/header';
+            $sidebarTemplate = 'K-NECT/SK/template/sidebar';
+            $footerTemplate = 'K-NECT/SK/template/footer';
         }
         
         // Merge data with base controller data

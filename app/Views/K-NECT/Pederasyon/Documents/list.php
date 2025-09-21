@@ -292,7 +292,7 @@ function showSuccessToast(message) {
                         <div class="absolute bottom-0 left-0 w-full h-4 bg-white z-10"></div>
                     </div>
                 <?php else: ?>
-                    <img src="<?= base_url('images/file-not-found.png') ?>" alt="No preview available" class="object-contain w-full h-full" />
+                    <img src="<?= base_url('assets/images/file-not-found.svg') ?>" alt="No preview available" class="object-contain w-full h-full" />
                 <?php endif; ?>
             </div>
             
@@ -973,7 +973,7 @@ function generateModalPreview(doc) {
                          alt="Document Preview" 
                          class="w-full h-full object-contain" 
                          style="min-height: 500px; max-height: 700px;"
-                         onerror="this.src='<?= base_url('images/file-not-found.png') ?>'" />
+                         onerror="this.src='<?= base_url('assets/images/file-not-found.svg') ?>'" />
                 </div>
             </div>
         `;
@@ -986,7 +986,7 @@ function generateModalPreview(doc) {
                          alt="Document Preview" 
                          class="w-full h-full object-contain" 
                          style="min-height: 500px; max-height: 700px;"
-                         onerror="this.src='<?= base_url('images/file-not-found.png') ?>'" />
+                         onerror="this.src='<?= base_url('assets/images/file-not-found.svg') ?>'" />
                 </div>
             </div>
         `;

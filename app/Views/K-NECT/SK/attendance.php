@@ -242,7 +242,7 @@
                         <!-- Event Image -->
                         <div class="h-48 bg-blue-500 relative overflow-hidden">
                             <?php if (!empty($event['event_banner'])): ?>
-                                <img src="<?= base_url('uploads/event/' . $event['event_banner']) ?>" 
+                                <img src="<?= base_url('/previewDocument/event/' . $event['event_banner']) ?>" 
                                      alt="<?= esc($event['title']) ?>" 
                                      class="w-full h-full object-cover">
                             <?php else: ?>

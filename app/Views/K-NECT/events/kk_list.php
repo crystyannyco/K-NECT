@@ -7,7 +7,7 @@ $barangay_name = isset($barangay_name) ? $barangay_name : 'Unknown Barangay';
 ?>
 
 <!-- ===== MAIN CONTENT AREA ===== -->
-<div class="flex-1 flex flex-col min-h-0 ml-64 pt-16">
+<div class="flex-1 flex flex-col min-h-0 ml-0 lg:ml-64 pt-16">
     <main class="flex-1 overflow-auto p-6 bg-gray-50">
         
         <div class="max-w-7xl mx-auto">
@@ -19,10 +19,41 @@ $barangay_name = isset($barangay_name) ? $barangay_name : 'Unknown Barangay';
                 </div>
             </div>
 
+            <!-- Mobile Calendar View - Shows only on smaller screens -->
+            <div class="xl:hidden mb-6">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">Calendar View</h2>
+                    <?php if (!empty($calendar_id)): ?>
+                        <div class="calendar-container">
+                            <iframe 
+                                src="https://calendar.google.com/calendar/embed?src=<?= urlencode($calendar_id) ?>&ctz=Asia%2FManila&mode=MONTH&showTitle=0&showPrint=0&showCalendars=0&bgcolor=%23FFFFFF"
+                                style="border: 0; opacity: 0; transition: opacity 0.3s ease;" 
+                                width="100%" 
+                                height="400" 
+                                frameborder="0" 
+                                scrolling="no"
+                                class="rounded-lg shadow-md calendar-iframe"
+                                loading="lazy"
+                                onload="this.style.opacity=1">
+                            </iframe>
+                        </div>
+                    <?php else: ?>
+                        <div class="text-center py-8">
+                            <div class="text-gray-400 mb-4">
+                                <svg class="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+                            <p class="text-gray-500">Google Calendar not configured for this barangay.</p>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
             <!-- Status Filter Tabs - Only Published for KK users -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
                 <div class="p-4 border-b border-gray-200">
-                    <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <!-- Status Filter Tabs - Only Published -->
                         <div class="flex flex-wrap gap-2">
                             <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all bg-blue-600 text-white border border-blue-600" data-status="Published">
@@ -31,30 +62,28 @@ $barangay_name = isset($barangay_name) ? $barangay_name : 'Unknown Barangay';
                         </div>
                         
                         <!-- Category Filter -->
-                        <div class="flex items-center gap-4">
-                            <div class="flex items-center gap-2">
-                                <span class="text-sm font-medium text-gray-600">Category:</span>
-                                <select id="categoryFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                    <option value="">All Categories</option>
-                                    <?php if (!empty($categories)): ?>
-                                        <?php foreach ($categories as $category): ?>
-                                            <option value="<?= esc($category) ?>"><?= esc(ucfirst($category)) ?></option>
-                                        <?php endforeach; ?>
-                                    <?php endif; ?>
-                                </select>
-                                <button id="clearFilters" class="px-3 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors duration-200">
-                                    Clear Filters
-                                </button>
-                            </div>
+                        <div class="flex items-center gap-2 flex-shrink-0">
+                            <span class="text-sm font-medium text-gray-600 whitespace-nowrap">Category:</span>
+                            <select id="categoryFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-0">
+                                <option value="">All Categories</option>
+                                <?php if (!empty($categories)): ?>
+                                    <?php foreach ($categories as $category): ?>
+                                        <option value="<?= esc($category) ?>"><?= esc(ucfirst($category)) ?></option>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </select>
+                            <button id="clearFilters" class="px-3 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors duration-200 whitespace-nowrap">
+                                Clear Filters
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Side-by-side layout: Events Table on left, Calendar on right -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 <!-- Events Table - Takes 2/3 of the space -->
-                <div class="lg:col-span-2">
+                <div class="xl:col-span-2">
                     <div class="space-y-4">
                         <div class="w-full max-w-5xl mx-auto">
                             <div>
@@ -66,7 +95,7 @@ $barangay_name = isset($barangay_name) ? $barangay_name : 'Unknown Barangay';
                                                 $shortDesc = mb_strlen($desc) > 120 ? mb_substr($desc, 0, 120) . '...' : $desc;
                                                 $modalId = 'eventModal_' . $event['event_id'];
                                                 $status = isset($event['status']) ? $event['status'] : 'Published';
-                                                $banner = !empty($event['event_banner']) ? "/uploads/event/" . esc($event['event_banner']) : "/assets/images/default-event-banner.svg";
+                                                $banner = !empty($event['event_banner']) ? base_url('uploads/event/' . esc($event['event_banner'])) : base_url('assets/images/default-event-banner.svg');
                                                 $category = isset($event['category']) ? $event['category'] : '';
                                             ?>
                                             <div class="flex items-center w-full event-row" data-status="<?= $status ?>" data-category="<?= esc($category) ?>">
@@ -88,11 +117,8 @@ $barangay_name = isset($barangay_name) ? $barangay_name : 'Unknown Barangay';
                                                                 <?= esc($status) ?>
                                                             </span>
                                                         </div>
-                                                        <h3 class="text-lg font-semibold text-gray-900 mb-2 line-clamp-2"><?= esc($event['title']) ?></h3>
-                                                        <p class="text-gray-600 text-sm mb-4 line-clamp-3"><?= $shortDesc ?></p>
-                                                    </div>
-                                                    <div class="mt-auto">
-                                                        <!-- Event Meta Information -->
+                                                        <h4 class="text-xl font-bold text-gray-900 group-hover:text-blue-700 mb-2"><?= esc($event['title']) ?></h4>
+                                                        <p class="mt-1 text-sm font-normal text-gray-700 leading-5 mb-2"><?= $shortDesc ?></p>
                                                         <div class="flex flex-col text-xs text-gray-500 mb-2">
                                                             <span><strong>Start:</strong> <?= date('m-d-Y h:i A', strtotime($event['start_datetime'])) ?></span>
                                                             <span><strong>End:</strong> <?= date('m-d-Y h:i A', strtotime($event['end_datetime'])) ?></span>
@@ -105,7 +131,7 @@ $barangay_name = isset($barangay_name) ? $barangay_name : 'Unknown Barangay';
                                             
                                             <!-- Modal for this event -->
                                             <div id="<?= $modalId ?>" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9997] hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; margin: 0; padding: 0;">
-                                                <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 relative max-h-[90vh] overflow-hidden">
+                                                <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 relative max-h-[90vh] overflow-y-auto">
                                                     <!-- Header with image background and close button -->
                                                     <div class="relative">
                                                         <?php if (!empty($event['event_banner'])): ?>
@@ -148,7 +174,7 @@ $barangay_name = isset($barangay_name) ? $barangay_name : 'Unknown Barangay';
                                                     </div>
 
                                                     <!-- Content area -->
-                                                    <div class="p-6 overflow-y-auto max-h-96">
+                                                    <div class="p-6">
                                                         <!-- Single consolidated information box -->
                                                         <div class="border border-gray-200 rounded-lg p-6 bg-gray-50">
                                                             <div class="space-y-6">
@@ -215,8 +241,8 @@ $barangay_name = isset($barangay_name) ? $barangay_name : 'Unknown Barangay';
                     </div>
                 </div>
 
-                <!-- Calendar View - Takes 1/3 of the space -->
-                <div class="lg:col-span-1">
+                <!-- Calendar View - Takes 1/3 of the space - Desktop only -->
+                <div class="hidden xl:block xl:col-span-1">
                     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                         <h2 class="text-xl font-bold text-gray-800 mb-4">Calendar View</h2>
                         <?php if (!empty($calendar_id)): ?>
@@ -332,3 +358,30 @@ document.addEventListener('keydown', function(e) {
     }
 })();
 </script>
+
+<!-- Professional Loading Screen (for future use) -->
+<div id="loadingScreen" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-[100000] hidden flex items-center justify-center">
+    <div class="bg-white rounded-2xl p-8 shadow-2xl max-w-sm w-full mx-4 text-center transform scale-95 opacity-0 transition-all duration-300" id="loadingContent">
+        <!-- Spinner -->
+        <div class="inline-flex items-center justify-center w-16 h-16 mb-4">
+            <div class="relative">
+                <div class="w-16 h-16 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin"></div>
+                <div class="absolute inset-0 w-16 h-16 border-4 border-transparent border-r-blue-400 rounded-full animate-spin" style="animation-direction: reverse; animation-duration: 1.5s;"></div>
+            </div>
+        </div>
+        
+        <!-- Loading Text -->
+        <h3 class="text-lg font-semibold text-gray-800 mb-2" id="loadingTitle">Processing...</h3>
+        <p class="text-sm text-gray-600" id="loadingMessage">Please wait while we process your request.</p>
+        
+        <!-- Progress Dots -->
+        <div class="flex justify-center space-x-1 mt-4">
+            <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
+            <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.1s;"></div>
+            <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.2s;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Sidebar Overlay for Mobile -->
+<div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden hidden"></div>

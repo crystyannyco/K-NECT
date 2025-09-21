@@ -52,7 +52,7 @@
                         <!-- Primary featured (large) -->
                         <article class="relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm lg:col-span-2 lg:row-span-2">
                             <?php 
-                                $pImg = !empty($primary['featured_image']) ? base_url('/uploads/bulletin/' . $primary['featured_image']) : null;
+                                $pImg = !empty($primary['featured_image']) ? base_url('uploads/bulletin/' . $primary['featured_image']) : null;
                             ?>
                             <div class="relative w-full h-64 md:h-72 lg:h-full">
                                 <?php if ($pImg): ?>
@@ -86,7 +86,7 @@
                         <!-- Secondary featured (small grid) -->
                         <?php foreach ($others as $item): ?>
                         <article class="relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm h-52 lg:h-auto">
-                            <?php $sImg = !empty($item['featured_image']) ? base_url('/uploads/bulletin/' . $item['featured_image']) : null; ?>
+                            <?php $sImg = !empty($item['featured_image']) ? base_url('uploads/bulletin/' . $item['featured_image']) : null; ?>
                             <div class="relative w-full h-full">
                                 <?php if ($sImg): ?>
                                     <img src="<?= $sImg ?>" alt="<?= esc($item['title']) ?>" class="w-full h-full object-cover">
@@ -302,7 +302,7 @@
                             <article class="group relative flex flex-col bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition" data-id="<?= $post['id'] ?>">
                                 <div class="relative media w-full overflow-hidden rounded-t-xl">
                                     <?php if ($post['featured_image']): ?>
-                                        <img src="<?= base_url('/uploads/bulletin/' . $post['featured_image']) ?>" alt="<?= esc($post['title']) ?>" class="w-full h-full object-cover duration-500 group-hover:scale-105">
+                                        <img src="<?= base_url('uploads/bulletin/' . $post['featured_image']) ?>" alt="<?= esc($post['title']) ?>" class="w-full h-full object-cover duration-500 group-hover:scale-105">
                                     <?php else: ?>
                                         <div class="absolute inset-0 bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center text-blue-300"><i class="fa-regular fa-image text-3xl"></i></div>
                                     <?php endif; ?>
@@ -393,7 +393,7 @@
                             function ensureAllPostsVisible() { /* no-op, section is visible by default */ }
 
                             const baseViewUrl = '<?= base_url('/bulletin/view/') ?>';
-                            const baseImgUrl = '<?= base_url('/uploads/bulletin/') ?>';
+                            const baseImgUrl = '<?= base_url('uploads/bulletin/') ?>';
 
                             function setActiveChip(key) {
                                 // update quick chips visual state

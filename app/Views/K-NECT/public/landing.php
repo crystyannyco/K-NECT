@@ -9,7 +9,7 @@
     <meta property="og:title" content="K-NECT Youth Engagement" />
     <meta property="og:description" content="Announcements, events and resources empowering youth leadership." />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="<?= base_url('/uploads/logos/logo.png') ?>" />
+    <meta property="og:image" content="<?= base_url('assets/images/K-Nect-Logo.png') ?>" />
     <meta property="og:url" content="<?= current_url() ?>" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -119,11 +119,92 @@
         .copyright{text-align:center;margin-top:2.4rem;font-size:.65rem;letter-spacing:.5px;}
     @media(max-width:900px){.hero-split{grid-template-columns:1fr;}.hero-left{grid-column:span 12;}.hero-media{grid-column:span 12;height:clamp(var(--hero-h-min-sm),var(--hero-h-fluid-sm),var(--hero-h-max-sm));} .layout{margin-top:1.5rem;}}
     </style>
+    
+    <!-- K-NECT Image URL Fix for Railway Hosting -->
+    <script>
+        // Global image URL fixer for Railway hosting
+        window.fixImageUrl = function(url) {
+            if (!url || typeof url !== 'string') return url;
+            
+            // If it's already a proper URL (http/https) or data URL, return as-is
+            if (/^https?:\/\//.test(url) || /^data:/.test(url)) return url;
+            
+            // If it already uses previewDocument route, return as-is
+            if (url.includes('/previewDocument/')) return url;
+            
+            const baseUrl = '<?= base_url() ?>';
+            let path = url.replace(baseUrl, '').replace(/^\/+/, '');
+            
+            // Map different upload directories to preview routes
+            const mappings = {
+                'uploads/profile_pictures/': '/previewDocument/profile_pictures/',
+                'uploads/profile/': '/previewDocument/profile_pictures/', // legacy
+                'uploads/bulletin/': '/previewDocument/bulletin/',
+                'uploads/event/': '/previewDocument/event/',
+                'uploads/logos/': '/previewDocument/logos/',
+                'uploads/certificate/': '/previewDocument/certificate/',
+                'uploads/id/': '/previewDocument/id/'
+            };
+            
+            for (const [oldPath, newRoute] of Object.entries(mappings)) {
+                if (path.startsWith(oldPath)) {
+                    const filename = path.replace(oldPath, '');
+                    return baseUrl + newRoute + filename;
+                }
+            }
+            
+            return url;
+        };
+        
+        // Auto-fix image URLs on page load and mutations
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fix all existing img src attributes
+            const fixImages = function() {
+                const images = document.querySelectorAll('img[src]');
+                images.forEach(img => {
+                    const originalSrc = img.getAttribute('src');
+                    const fixedSrc = window.fixImageUrl(originalSrc);
+                    if (fixedSrc !== originalSrc) {
+                        img.setAttribute('src', fixedSrc);
+                    }
+                });
+            };
+            
+            // Fix images on initial load
+            fixImages();
+            
+            // Fix images when new content is added dynamically
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'childList') {
+                        mutation.addedNodes.forEach(function(node) {
+                            if (node.nodeType === Node.ELEMENT_NODE) {
+                                // Fix images in newly added content
+                                const images = node.querySelectorAll ? node.querySelectorAll('img[src]') : [];
+                                if (node.tagName === 'IMG' && node.src) {
+                                    node.src = window.fixImageUrl(node.src);
+                                }
+                                images.forEach(img => {
+                                    const originalSrc = img.getAttribute('src');
+                                    const fixedSrc = window.fixImageUrl(originalSrc);
+                                    if (fixedSrc !== originalSrc) {
+                                        img.setAttribute('src', fixedSrc);
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+            
+            observer.observe(document.body, { childList: true, subtree: true });
+        });
+    </script>
 </head>
 <body>
     <header>
         <div class="nav">
-            <div class="brand"><img src="<?= base_url('/uploads/logos/logo.png') ?>" alt="K-NECT logo"></div>
+            <div class="brand"><img src="<?= base_url('/previewDocument/logos/K-Nect-Logo.png') ?>" alt="K-NECT logo" onerror="this.src='<?= base_url('assets/images/K-Nect-Logo.png') ?>'"></div>
             <nav class="nav-links">
                 <a href="#services">Services</a>
                 <a href="#resources">Resources</a>
@@ -159,14 +240,14 @@
                         if (!empty($posts)) {
                             foreach ($posts as $hp) {
                                 if (!empty($hp['featured_image'])) {
-                                    $heroImages[] = base_url('/uploads/bulletin/'.$hp['featured_image']);
+                                    $heroImages[] = base_url('/previewDocument/bulletin/'.$hp['featured_image']);
                                 }
                                 if (count($heroImages) >= 5) break;
                             }
                         }
                         if (empty($heroImages)) {
                             $heroImages[] = !empty($heroPost['featured_image']) 
-                                ? base_url('/uploads/bulletin/'.$heroPost['featured_image']) 
+                                ? base_url('/previewDocument/bulletin/'.$heroPost['featured_image']) 
                                 : 'https://via.placeholder.com/1200x700?text=K-NECT+Platform';
                         }
                     ?>
@@ -200,7 +281,7 @@
                     <?php foreach (($events ?? []) as $e): ?>
                         <div class="event-card">
                             <div class="event-banner">
-                                <img loading="lazy" src="<?= !empty($e['event_banner']) ? base_url('uploads/event/'.$e['event_banner']) : 'https://via.placeholder.com/600x400?text=Event' ?>" alt="<?= esc($e['title']) ?>">
+                                <img loading="lazy" src="<?= !empty($e['event_banner']) ? base_url('/previewDocument/event/'.$e['event_banner']) : 'https://via.placeholder.com/600x400?text=Event' ?>" alt="<?= esc($e['title']) ?>">
                                 <div class="event-date"><?= date('M j', strtotime($e['event_date'] ?? $e['created_at'])) ?></div>
                             </div>
                             <div class="event-body">
@@ -254,7 +335,7 @@
                     <?php foreach (($posts ?? []) as $p): ?>
                         <article class="post">
                             <figure>
-                                <img src="<?= !empty($p['featured_image']) ? base_url('/uploads/bulletin/'.$p['featured_image']) : 'https://via.placeholder.com/800x600?text=Post' ?>" alt="<?= esc($p['title']) ?>">
+                                <img src="<?= !empty($p['featured_image']) ? base_url('/previewDocument/bulletin/'.$p['featured_image']) : 'https://via.placeholder.com/800x600?text=Post' ?>" alt="<?= esc($p['title']) ?>">
                                 <div class="chips">
                                     <?php if(!empty($p['category_name'])): ?><span class="chip" style="background:<?= esc($p['category_color'] ?? '#f1f5f9') ?>;color:#111827;"><?= esc(strtoupper($p['category_name'])) ?></span><?php endif; ?>
                                     <?php if(!empty($p['is_featured'])): ?><span class="chip yellow">FEATURED</span><?php endif; ?>
@@ -280,7 +361,7 @@
                 <h3>Featured Highlight</h3>
                 <?php if($heroPost): ?>
                     <div class="mini-post" style="padding:0;border:0;flex-direction:column;align-items:stretch;">
-                        <img src="<?= !empty($heroPost['featured_image']) ? base_url('/uploads/bulletin/'.$heroPost['featured_image']) : 'https://via.placeholder.com/600x400?text=Highlight' ?>" alt="Highlight" style="height:180px;width:100%;object-fit:cover;">
+                        <img src="<?= !empty($heroPost['featured_image']) ? base_url('/previewDocument/bulletin/'.$heroPost['featured_image']) : 'https://via.placeholder.com/600x400?text=Highlight' ?>" alt="Highlight" style="height:180px;width:100%;object-fit:cover;">
                         <h4 style="font-size:.8rem;margin-top:.8rem;"><?= esc($heroPost['title']) ?></h4>
                         <span><?= !empty($heroPost['published_at']) ? date('M j, Y', strtotime($heroPost['published_at'])) : '' ?></span>
                     </div>
@@ -299,7 +380,7 @@
                 <?php foreach ($recent as $mp): ?>
                     <a class="list-item" href="#">
                         <div class="list-thumb">
-                            <img src="<?= !empty($mp['featured_image']) ? base_url('/uploads/bulletin/'.$mp['featured_image']) : 'https://via.placeholder.com/160x120?text=Post' ?>" alt="<?= esc($mp['title']) ?>">
+                            <img src="<?= !empty($mp['featured_image']) ? base_url('/previewDocument/bulletin/'.$mp['featured_image']) : 'https://via.placeholder.com/160x120?text=Post' ?>" alt="<?= esc($mp['title']) ?>">
                         </div>
                         <div class="list-body">
                             <p class="list-title"><?= esc($mp['title']) ?></p>

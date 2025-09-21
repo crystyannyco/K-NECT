@@ -62,6 +62,87 @@
     
     <!-- K-NECT Image Fallback System -->
     <link href="<?= base_url('assets/css/image-fallback.css') ?>" rel="stylesheet" type="text/css" />
+    
+    <!-- K-NECT Image URL Fix for Railway Hosting -->
+    <script>
+        // Global image URL fixer for Railway hosting
+        window.fixImageUrl = function(url) {
+            if (!url || typeof url !== 'string') return url;
+            
+            // If it's already a proper URL (http/https) or data URL, return as-is
+            if (/^https?:\/\//.test(url) || /^data:/.test(url)) return url;
+            
+            // If it already uses previewDocument route, return as-is
+            if (url.includes('/previewDocument/')) return url;
+            
+            const baseUrl = '<?= base_url() ?>';
+            let path = url.replace(baseUrl, '').replace(/^\/+/, '');
+            
+            // Map different upload directories to preview routes
+            const mappings = {
+                'uploads/profile_pictures/': '/previewDocument/profile_pictures/',
+                'uploads/profile/': '/previewDocument/profile_pictures/', // legacy
+                'uploads/bulletin/': '/previewDocument/bulletin/',
+                'uploads/event/': '/previewDocument/event/',
+                'uploads/logos/': '/previewDocument/logos/',
+                'uploads/certificate/': '/previewDocument/certificate/',
+                'uploads/id/': '/previewDocument/id/'
+            };
+            
+            for (const [oldPath, newRoute] of Object.entries(mappings)) {
+                if (path.startsWith(oldPath)) {
+                    const filename = path.replace(oldPath, '');
+                    return baseUrl + newRoute + filename;
+                }
+            }
+            
+            return url;
+        };
+        
+        // Auto-fix image URLs on page load and mutations
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fix all existing img src attributes
+            const fixImages = function() {
+                const images = document.querySelectorAll('img[src]');
+                images.forEach(img => {
+                    const originalSrc = img.getAttribute('src');
+                    const fixedSrc = window.fixImageUrl(originalSrc);
+                    if (fixedSrc !== originalSrc) {
+                        img.setAttribute('src', fixedSrc);
+                    }
+                });
+            };
+            
+            // Fix images on initial load
+            fixImages();
+            
+            // Fix images when new content is added dynamically
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'childList') {
+                        mutation.addedNodes.forEach(function(node) {
+                            if (node.nodeType === Node.ELEMENT_NODE) {
+                                // Fix images in newly added content
+                                const images = node.querySelectorAll ? node.querySelectorAll('img[src]') : [];
+                                if (node.tagName === 'IMG' && node.src) {
+                                    node.src = window.fixImageUrl(node.src);
+                                }
+                                images.forEach(img => {
+                                    const originalSrc = img.getAttribute('src');
+                                    const fixedSrc = window.fixImageUrl(originalSrc);
+                                    if (fixedSrc !== originalSrc) {
+                                        img.setAttribute('src', fixedSrc);
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+            
+            observer.observe(document.body, { childList: true, subtree: true });
+        });
+    </script>
 
 </head>
 <body class="bg-gray-50 min-h-screen font-['Inter']">
@@ -209,13 +290,21 @@
                             <div class="flex items-center space-x-3">
                                 <?php
                                     $profilePic = $currentUser['profile_picture'] ?? '';
-                                    $imageData = safe_image_url($profilePic, 'avatar');
+                                    // Use same logic as working logos
+                                    if (!empty($profilePic)) {
+                                        if (strpos($profilePic, '/') !== false) {
+                                            $ppSrc = base_url('/previewDocument/profile_pictures/' . basename($profilePic));
+                                        } else {
+                                            $ppSrc = base_url('/previewDocument/profile_pictures/' . $profilePic);
+                                        }
+                                    } else {
+                                        $ppSrc = base_url('assets/images/default-avatar.svg');
+                                    }
                                 ?>
                                 <img class="h-8 w-8 rounded-full object-cover" 
-                                     src="<?= esc($imageData['src']) ?>" 
+                                     src="<?= esc($ppSrc) ?>" 
                                      alt="Profile"
-                                     data-type="avatar"
-                                     data-fallback="<?= esc($imageData['fallback']) ?>">
+                                     onerror="this.src='<?= base_url('assets/images/default-avatar.svg') ?>'">>
                                 <div class="text-left hidden sm:block">
                                     <p class="text-sm font-medium text-gray-900">
                                         <?= $currentUser ? esc($currentUser['full_name']) : 'User' ?>
@@ -243,13 +332,21 @@
                                 <div class="flex items-center space-x-3">
                                     <?php
                                         $profilePic = $currentUser['profile_picture'] ?? '';
-                                        $imageData = safe_image_url($profilePic, 'avatar');
+                                        // Use same logic as working logos
+                                        if (!empty($profilePic)) {
+                                            if (strpos($profilePic, '/') !== false) {
+                                                $ppSrc = base_url('/previewDocument/profile_pictures/' . basename($profilePic));
+                                            } else {
+                                                $ppSrc = base_url('/previewDocument/profile_pictures/' . $profilePic);
+                                            }
+                                        } else {
+                                            $ppSrc = base_url('assets/images/default-avatar.svg');
+                                        }
                                     ?>
                                     <img class="h-12 w-12 rounded-full object-cover" 
-                                         src="<?= esc($imageData['src']) ?>" 
+                                         src="<?= esc($ppSrc) ?>" 
                                          alt="Profile"
-                                         data-type="avatar"
-                                         data-fallback="<?= esc($imageData['fallback']) ?>">
+                                         onerror="this.src='<?= base_url('assets/images/default-avatar.svg') ?>'">
                                     <div class="flex-1">
                                         <h4 class="text-sm font-medium text-gray-900">
                                             <?= $currentUser ? esc($currentUser['full_name']) : 'User' ?>

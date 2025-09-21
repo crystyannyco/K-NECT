@@ -74,8 +74,8 @@ class AnalyticsController extends BaseController
         ];
 
         return 
-            $this->loadView('K-NECT/SK/Template/Header', $data) .
-            $this->loadView('K-NECT/SK/Template/Sidebar') .
+            $this->loadView('K-NECT/SK/template/header', $data) .
+            $this->loadView('K-NECT/SK/template/sidebar') .
             $this->loadView('K-NECT/analytics/demographics', $data);
     }
 
@@ -404,8 +404,8 @@ class AnalyticsController extends BaseController
         ];
 
         return 
-            $this->loadView('K-NECT/SK/Template/Header', $data) .
-            $this->loadView('K-NECT/SK/Template/Sidebar') .
+            $this->loadView('K-NECT/SK/template/header', $data) .
+            $this->loadView('K-NECT/SK/template/sidebar') .
             $this->loadView('K-NECT/analytics/events', $data);
     }
 
@@ -737,8 +737,8 @@ class AnalyticsController extends BaseController
         ];
 
         return 
-            $this->loadView('K-NECT/SK/Template/Header', $data) .
-            $this->loadView('K-NECT/SK/Template/Sidebar') .
+            $this->loadView('K-NECT/SK/template/header', $data) .
+            $this->loadView('K-NECT/SK/template/sidebar') .
             $this->loadView('K-NECT/analytics/documents', $data);
     }
 
@@ -884,8 +884,8 @@ class AnalyticsController extends BaseController
         ];
 
         return 
-            $this->loadView('K-NECT/SK/Template/Header', $data) .
-            $this->loadView('K-NECT/SK/Template/Sidebar') .
+            $this->loadView('K-NECT/SK/template/header', $data) .
+            $this->loadView('K-NECT/SK/template/sidebar') .
             $this->loadView('K-NECT/analytics/performance', $data);
     }
 
@@ -1031,6 +1031,82 @@ class AnalyticsController extends BaseController
             $session = session();
             $skBarangay = $session->get('sk_barangay');
             $data = $this->analyticsModel->getDocumentSummary($skBarangay);
+        }
+        
+        return $this->response->setJSON($data);
+    }
+
+    /**
+     * AJAX endpoint to get gender identity distribution data
+     */
+    public function getGenderIdentityDistribution()
+    {
+        $request = $this->request;
+        $barangayId = $request->getGet('barangay_id');
+        $viewType = $request->getGet('view_type');
+        
+        if ($viewType === 'citywide') {
+            if ($barangayId && $barangayId !== 'all') {
+                $data = $this->analyticsModel->getGenderIdentityDistributionPerBarangay($barangayId);
+            } else {
+                $data = $this->analyticsModel->getGenderIdentityDistributionCitywide();
+            }
+        } else {
+            // SK view - barangay specific
+            $session = session();
+            $skBarangay = $session->get('sk_barangay');
+            $data = $this->analyticsModel->getGenderIdentityDistributionPerBarangay($skBarangay);
+        }
+        
+        return $this->response->setJSON($data);
+    }
+
+    /**
+     * AJAX endpoint to get combined sex and gender analytics
+     */
+    public function getCombinedGenderAnalytics()
+    {
+        $request = $this->request;
+        $barangayId = $request->getGet('barangay_id');
+        $viewType = $request->getGet('view_type');
+        
+        if ($viewType === 'citywide') {
+            if ($barangayId && $barangayId !== 'all') {
+                $data = $this->analyticsModel->getCombinedGenderAnalytics($barangayId);
+            } else {
+                $data = $this->analyticsModel->getCombinedGenderAnalytics();
+            }
+        } else {
+            // SK view - barangay specific
+            $session = session();
+            $skBarangay = $session->get('sk_barangay');
+            $data = $this->analyticsModel->getCombinedGenderAnalytics($skBarangay);
+        }
+        
+        return $this->response->setJSON($data);
+    }
+
+    /**
+     * AJAX endpoint to get participation by gender identity per event
+     */
+    public function getParticipationByGenderIdentity()
+    {
+        $request = $this->request;
+        $barangayId = $request->getGet('barangay_id');
+        $viewType = $request->getGet('view_type');
+        $limit = $request->getGet('limit') ?: 10;
+        
+        if ($viewType === 'citywide') {
+            if ($barangayId && $barangayId !== 'all') {
+                $data = $this->analyticsModel->getParticipationByGenderIdentityPerEvent($barangayId, $limit);
+            } else {
+                $data = $this->analyticsModel->getParticipationByGenderIdentityPerEvent(null, $limit);
+            }
+        } else {
+            // SK view - barangay specific
+            $session = session();
+            $skBarangay = $session->get('sk_barangay');
+            $data = $this->analyticsModel->getParticipationByGenderIdentityPerEvent($skBarangay, $limit);
         }
         
         return $this->response->setJSON($data);

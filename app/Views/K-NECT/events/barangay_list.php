@@ -83,8 +83,26 @@ $barangay_name = isset($barangay_name) ? $barangay_name : 'Unknown Barangay';
                                                 $shortDesc = mb_strlen($desc) > 120 ? mb_substr($desc, 0, 120) . '...' : $desc;
                                                 $modalId = 'eventModal_' . $event['event_id'];
                                                 $status = isset($event['status']) ? $event['status'] : 'Published';
-                                                $banner = !empty($event['event_banner']) ? "/uploads/event/" . esc($event['event_banner']) : "/assets/images/default-event-banner.svg";
+                                                $banner = !empty($event['event_banner']) ? base_url('uploads/event/' . esc($event['event_banner'])) : base_url('assets/images/default-event-banner.svg');
                                                 $category = isset($event['category']) ? $event['category'] : '';
+                                                
+                                                // Determine temporal status for published events
+                                                $temporalStatus = null;
+                                                $canEdit = true;
+                                                if ($status === 'Published') {
+                                                    $currentDateTime = new DateTime('now', new DateTimeZone('Asia/Manila'));
+                                                    $startDateTime = new DateTime($event['start_datetime'], new DateTimeZone('Asia/Manila'));
+                                                    $endDateTime = new DateTime($event['end_datetime'], new DateTimeZone('Asia/Manila'));
+                                                    
+                                                    if ($currentDateTime < $startDateTime) {
+                                                        $temporalStatus = 'upcoming';
+                                                    } elseif ($currentDateTime >= $startDateTime && $currentDateTime <= $endDateTime) {
+                                                        $temporalStatus = 'ongoing';
+                                                    } else {
+                                                        $temporalStatus = 'completed';
+                                                        $canEdit = false; // Completed events cannot be edited
+                                                    }
+                                                }
                                             ?>
                                             <div class="flex items-center w-full event-row" data-status="<?= $status ?>" data-category="<?= esc($category) ?>">
                                                 <div class="flex-shrink-0 flex flex-col items-center justify-center h-full pr-2" onclick="event.stopPropagation();">
@@ -122,6 +140,26 @@ $barangay_name = isset($barangay_name) ? $barangay_name : 'Unknown Barangay';
                                                                 ?>">
                                                                 <?= $status ?>
                                                             </span>
+                                                            
+                                                            <!-- Temporal Status Badge for Published Events -->
+                                                            <?php if ($status === 'Published' && $temporalStatus): ?>
+                                                                <span class="inline-flex items-center leading-none px-2.5 py-1.5 text-xs font-medium rounded-full border
+                                                                    <?php
+                                                                    switch($temporalStatus) {
+                                                                        case 'upcoming':
+                                                                            echo 'bg-blue-100 text-blue-800 border-blue-200';
+                                                                            break;
+                                                                        case 'ongoing':
+                                                                            echo 'bg-purple-100 text-purple-800 border-purple-200';
+                                                                            break;
+                                                                        case 'completed':
+                                                                            echo 'bg-gray-100 text-gray-800 border-gray-200';
+                                                                            break;
+                                                                    }
+                                                                    ?>">
+                                                                    <?= ucfirst($temporalStatus) ?>
+                                                                </span>
+                                                            <?php endif; ?>
                                                         </div>
                                                         <h4 class="text-xl font-bold text-gray-900 group-hover:text-blue-700 mb-2"><?= esc($event['title']) ?></h4>
                                                         <p class="mt-1 text-sm font-normal text-gray-700 leading-5 mb-2"><?= $shortDesc ?></p>
@@ -137,7 +175,7 @@ $barangay_name = isset($barangay_name) ? $barangay_name : 'Unknown Barangay';
                                             
                                             <!-- Modal for this event -->
                                             <div id="<?= $modalId ?>" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9997] hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; margin: 0; padding: 0;">
-                                                <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 relative max-h-[90vh] overflow-hidden">
+                                                <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 relative max-h-[90vh] overflow-y-auto">
                                                     <!-- Header with image background and close button -->
                                                     <div class="relative">
                                                         <?php if (!empty($event['event_banner'])): ?>
@@ -180,7 +218,7 @@ $barangay_name = isset($barangay_name) ? $barangay_name : 'Unknown Barangay';
                                                     </div>
 
                                                     <!-- Content area -->
-                                                    <div class="p-6 overflow-y-auto max-h-96">
+                                                    <div class="p-6">
                                                         <!-- Single consolidated information box -->
                                                         <div class="border border-gray-200 rounded-lg p-6 bg-gray-50">
                                                             <div class="space-y-6">
@@ -235,13 +273,40 @@ $barangay_name = isset($barangay_name) ? $barangay_name : 'Unknown Barangay';
                                                         </div>
                                                     </div>
                                                     <!-- Action buttons -->
-                                                    <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end space-x-4">
-                                                        <button onclick="openEventModal('edit', <?= $event['event_id'] ?>)" class="bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-blue-700 transition duration-200 flex items-center">
-                                                            <i class="fas fa-edit mr-2"></i>Edit
-                                                        </button>
-                                                        <button onclick="showDeleteConfirmationModal('single', <?= $event['event_id'] ?>)" class="bg-red-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-red-700 transition duration-200 flex items-center">
-                                                            <i class="fas fa-trash mr-2"></i>Delete
-                                                        </button>
+                                                    <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-between items-center">
+                                                        <!-- Status information for completed events -->
+                                                        <?php if ($temporalStatus === 'completed'): ?>
+                                                            <div class="flex items-center text-sm text-gray-600">
+                                                                <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                                </svg>
+                                                                This event has been completed and cannot be edited.
+                                                            </div>
+                                                        <?php elseif ($temporalStatus === 'ongoing'): ?>
+                                                            <div class="flex items-center text-sm text-amber-600">
+                                                                <svg class="w-4 h-4 mr-2 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                                </svg>
+                                                                This event is ongoing. Start date and time cannot be modified.
+                                                            </div>
+                                                        <?php else: ?>
+                                                            <div></div>
+                                                        <?php endif; ?>
+                                                        
+                                                        <div class="flex space-x-4">
+                                                            <?php if ($canEdit): ?>
+                                                                <button onclick="openEventModal('edit', <?= $event['event_id'] ?>)" class="bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-blue-700 transition duration-200 flex items-center">
+                                                                    <i class="fas fa-edit mr-2"></i>Edit
+                                                                </button>
+                                                            <?php else: ?>
+                                                                <button disabled class="bg-gray-400 text-white font-semibold py-2 px-6 rounded-lg cursor-not-allowed flex items-center opacity-50">
+                                                                    <i class="fas fa-edit mr-2"></i>Edit
+                                                                </button>
+                                                            <?php endif; ?>
+                                                            <button onclick="showDeleteConfirmationModal('single', <?= $event['event_id'] ?>)" class="bg-red-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-red-700 transition duration-200 flex items-center">
+                                                                <i class="fas fa-trash mr-2"></i>Delete
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -494,6 +559,30 @@ function handleFormSubmit(e) {
         }
         return;
     }
+
+    // Show loading screen with appropriate message
+    let loadingTitle = 'Processing...';
+    let loadingMessage = 'Please wait while we process your request.';
+    
+    switch(submitAction) {
+        case 'publish':
+            loadingTitle = 'Publishing Event...';
+            loadingMessage = 'Publishing your event and syncing with Google Calendar.';
+            break;
+        case 'draft':
+            loadingTitle = 'Saving Draft...';
+            loadingMessage = 'Saving your event as a draft.';
+            break;
+        case 'schedule':
+            loadingTitle = 'Scheduling Event...';
+            loadingMessage = 'Scheduling your event for automatic publishing.';
+            break;
+        default:
+            loadingTitle = 'Updating Event...';
+            loadingMessage = 'Saving your changes and updating the event.';
+    }
+    
+    showLoadingScreen(loadingTitle, loadingMessage);
     
     // Log form data
     console.log('Form action:', form.action);
@@ -501,7 +590,7 @@ function handleFormSubmit(e) {
     for (let [key, value] of formData.entries()) {
         console.log('Form data:', key, '=', value);
     }
-    
+
     fetch(form.action, {
         method: 'POST',
         body: formData,
@@ -512,6 +601,9 @@ function handleFormSubmit(e) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            // Hide loading screen and show success notification
+            showNotificationWithLoading('Event ' + (submitAction === 'draft' ? 'saved as draft' : submitAction === 'schedule' ? 'scheduled' : 'published') + ' successfully!', 'success');
+            
             // Check Google Calendar sync status for published events
             if (submitAction === 'publish' && data.google_calendar_sync === false) {
                 showNotification('Event published successfully, but failed to sync with Google Calendar. Please check calendar permissions.', 'warning');
@@ -551,7 +643,7 @@ function handleFormSubmit(e) {
             // Handle various types of errors
             if (data.message && data.message.includes('Google Calendar')) {
                 // Google Calendar sync failed - show warning but don't prevent use
-                showNotification('Event was saved but Google Calendar sync failed: ' + data.message, 'warning');
+                showNotificationWithLoading('Event was saved but Google Calendar sync failed: ' + data.message, 'warning');
                 
                 // Still close modal and refresh after showing the warning
                 closeEventModal();
@@ -560,6 +652,7 @@ function handleFormSubmit(e) {
                 }, 3000);
             } else {
                 // Other errors - handle as before
+                hideLoadingScreen();
                 const fileErrorEl = document.getElementById('file-error');
                 if (fileErrorEl && data.message) {
                     fileErrorEl.textContent = data.message;
@@ -570,14 +663,14 @@ function handleFormSubmit(e) {
                         input.classList.remove('border-gray-300');
                     }
                 } else {
-                    showNotification('Error: ' + (data.message || 'Unknown error occurred'), 'error');
+                    showNotificationWithLoading('Error: ' + (data.message || 'Unknown error occurred'), 'error');
                 }
             }
         }
     })
     .catch(error => {
         console.error('Error submitting form:', error);
-        showNotification('Error submitting form. Please try again.', 'error');
+        showNotificationWithLoading('Error submitting form. Please try again.', 'error');
     });
 }
 
@@ -1217,6 +1310,52 @@ function initializeEventFormUpload() {
     }
 }
 
+// Professional Loading Screen Functions
+function showLoadingScreen(title = 'Processing...', message = 'Please wait while we process your request.') {
+    const loadingScreen = document.getElementById('loadingScreen');
+    const loadingContent = document.getElementById('loadingContent');
+    const loadingTitle = document.getElementById('loadingTitle');
+    const loadingMessage = document.getElementById('loadingMessage');
+    
+    if (loadingScreen && loadingContent) {
+        loadingTitle.textContent = title;
+        loadingMessage.textContent = message;
+        
+        // Show the overlay
+        loadingScreen.classList.remove('hidden');
+        
+        // Animate in the content
+        setTimeout(() => {
+            loadingContent.classList.remove('scale-95', 'opacity-0');
+            loadingContent.classList.add('scale-100', 'opacity-100');
+        }, 50);
+    }
+}
+
+function hideLoadingScreen() {
+    const loadingScreen = document.getElementById('loadingScreen');
+    const loadingContent = document.getElementById('loadingContent');
+    
+    if (loadingScreen && loadingContent) {
+        // Animate out the content
+        loadingContent.classList.remove('scale-100', 'opacity-100');
+        loadingContent.classList.add('scale-95', 'opacity-0');
+        
+        // Hide the overlay after animation
+        setTimeout(() => {
+            loadingScreen.classList.add('hidden');
+        }, 300);
+    }
+}
+
+// Enhanced notification function that also hides loading screen
+function showNotificationWithLoading(message, type = 'info') {
+    hideLoadingScreen();
+    setTimeout(() => {
+        showNotification(message, type);
+    }, 100);
+}
+
 // Utility function to show notifications (same as Pederasyon member.php)
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
@@ -1323,6 +1462,9 @@ function closeDeleteConfirmationModal() {
 function handleSingleDelete(eventId) {
     closeDeleteConfirmationModal();
     
+    // Show loading screen for delete operation
+    showLoadingScreen('Deleting Event...', 'Please wait while we delete the event.');
+    
     // Use AJAX to delete the event and show toast notification
     fetch(`/events/delete/${eventId}`, {
         method: 'GET',
@@ -1339,21 +1481,21 @@ function handleSingleDelete(eventId) {
     })
     .then(data => {
         if (data.success) {
-            // Show success notification
-            showNotification(data.message || 'Event deleted successfully', 'success');
+            // Show success notification and hide loading
+            showNotificationWithLoading(data.message || 'Event deleted successfully', 'success');
             
             // Reload page after a short delay
             setTimeout(() => {
                 window.location.reload();
             }, 1500);
         } else {
-            // Show error notification
-            showNotification(data.message || 'Failed to delete event', 'error');
+            // Show error notification and hide loading
+            showNotificationWithLoading(data.message || 'Failed to delete event', 'error');
         }
     })
     .catch(error => {
         console.error('Delete error:', error);
-        showNotification('Failed to delete event: ' + error.message, 'error');
+        showNotificationWithLoading('Failed to delete event: ' + error.message, 'error');
     });
 }
 
@@ -1363,6 +1505,9 @@ function handleBulkDelete() {
     const visibleCheckboxes = getVisibleCheckboxes();
     const checked = visibleCheckboxes.filter(cb => cb.checked);
     const bulkBtn = document.getElementById('bulkDeleteBtn');
+    
+    // Show loading screen for bulk delete
+    showLoadingScreen('Deleting Events...', `Deleting ${checked.length} selected event(s). Please wait...`);
     
     // Disable the button to prevent multiple clicks
     bulkBtn.disabled = true;
@@ -1387,7 +1532,7 @@ function handleBulkDelete() {
         if (data.success) {
             // Show success notification before reloading
             const successMessage = data.message || `Successfully deleted ${data.deleted_count || checked.length} event(s).`;
-            showNotification(successMessage, 'success');
+            showNotificationWithLoading(successMessage, 'success');
             setTimeout(() => {
                 window.location.reload();
             }, 1500);
@@ -1397,12 +1542,12 @@ function handleBulkDelete() {
             if (data.errors && data.errors.length > 0) {
                 errorMessage += ' Errors: ' + data.errors.join(', ');
             }
-            showNotification(errorMessage, 'error');
+            showNotificationWithLoading(errorMessage, 'error');
         }
     })
     .catch(error => {
         console.error('Bulk delete error:', error);
-        showNotification('Bulk delete failed: ' + error.message, 'error');
+        showNotificationWithLoading('Bulk delete failed: ' + error.message, 'error');
     })
     .finally(() => {
         // Re-enable the button
@@ -1503,6 +1648,31 @@ Z-Index Hierarchy:
 - Individual event modals: z-9997
 - Add/Edit event modal: z-9998  
 - Delete confirmation modal: z-9999
-- Toast notifications: z-99999 (highest)
+- Loading screen: z-[100000] (highest)
+- Toast notifications: z-99999
 */
 </style>
+
+<!-- Professional Loading Screen -->
+<div id="loadingScreen" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-[100000] hidden flex items-center justify-center">
+    <div class="bg-white rounded-2xl p-8 shadow-2xl max-w-sm w-full mx-4 text-center transform scale-95 opacity-0 transition-all duration-300" id="loadingContent">
+        <!-- Spinner -->
+        <div class="inline-flex items-center justify-center w-16 h-16 mb-4">
+            <div class="relative">
+                <div class="w-16 h-16 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin"></div>
+                <div class="absolute inset-0 w-16 h-16 border-4 border-transparent border-r-blue-400 rounded-full animate-spin" style="animation-direction: reverse; animation-duration: 1.5s;"></div>
+            </div>
+        </div>
+        
+        <!-- Loading Text -->
+        <h3 class="text-lg font-semibold text-gray-800 mb-2" id="loadingTitle">Processing...</h3>
+        <p class="text-sm text-gray-600" id="loadingMessage">Please wait while we process your request.</p>
+        
+        <!-- Progress Dots -->
+        <div class="flex justify-center space-x-1 mt-4">
+            <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
+            <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.1s;"></div>
+            <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.2s;"></div>
+        </div>
+    </div>
+</div>

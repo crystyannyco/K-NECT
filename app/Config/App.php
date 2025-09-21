@@ -16,7 +16,40 @@ class App extends BaseConfig
      *
      * E.g., http://example.com/
      */
-    public string $baseURL = 'http://localhost:8080/';
+    public string $baseURL = '/';
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        // Dynamically determine baseURL when running under web server (not CLI)
+        // This helps on platforms like Railway/Heroku where the app is behind a proxy
+        // and our default localhost baseURL would otherwise cause redirects to localhost.
+        if (PHP_SAPI !== 'cli') {
+            // 1) If an env var is provided, prefer it.
+            $envBase = getenv('app.baseURL') ?: getenv('APP_URL');
+            if ($envBase && is_string($envBase)) {
+                $this->baseURL = rtrim($envBase, '/') . '/';
+                return;
+            }
+
+            // 2) Otherwise, derive from incoming headers
+            // Prefer forwarded proto/host from reverse proxy
+            $proto = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ($_SERVER['REQUEST_SCHEME'] ?? null);
+            $host  = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? ($_SERVER['HTTP_HOST'] ?? null);
+
+            if ($host !== null) {
+                // If multiple hosts are forwarded, take the first
+                if (strpos($host, ',') !== false) {
+                    $host = trim(explode(',', $host)[0]);
+                }
+
+                $scheme = ($proto && stripos($proto, 'https') !== false) ? 'https' : (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http');
+
+                $this->baseURL = $scheme . '://' . $host . '/';
+            }
+        }
+    }
 
     /**
      * Allowed Hostnames in the Site URL other than the hostname in the baseURL.
@@ -29,7 +62,10 @@ class App extends BaseConfig
      *
      * @var list<string>
      */
-    public array $allowedHostnames = [];
+    public array $allowedHostnames = [
+        // Allow Railway domain(s)
+        'k-nect-production.up.railway.app',
+    ];
 
     /**
      * --------------------------------------------------------------------------

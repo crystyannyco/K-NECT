@@ -52,10 +52,11 @@
                                     <!-- Event Banner Image -->
                                     <div class="relative h-32 bg-gradient-to-br from-blue-50 to-blue-100">
                                         <?php if (!empty($record['event_banner'])): ?>
-                                            <img src="<?= base_url('uploads/event/' . $record['event_banner']) ?>" 
+                                            <img src="<?= base_url('/previewDocument/event/' . $record['event_banner']) ?>" 
                                                  alt="<?= esc($record['event_title']) ?>" 
                                                  class="w-full h-full object-cover"
-                                                 loading="lazy">
+                                                 loading="lazy"
+                                                 onerror="this.style.display='none'">
                                         <?php else: ?>
                                             <div class="w-full h-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
                                                 <svg class="w-16 h-16 text-white opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">

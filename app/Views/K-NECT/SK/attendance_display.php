@@ -1601,7 +1601,7 @@
                 <!-- Profile Picture or Initial -->
                 <div class="w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center overflow-hidden shadow-md border-2 border-white">
                     ${user.profile_picture ? 
-                        `<img src=\"<?= base_url('uploads/profile_pictures/') ?>${user.profile_picture}\" alt=\"${user.name}\" class=\"w-full h-full object-cover\">` :
+                        `<img src=\"<?= base_url('/previewDocument/profile_pictures/') ?>${user.profile_picture}\" alt=\"${user.name}\" class=\"w-full h-full object-cover\">` :
                         `<div class=\"w-full h-full bg-blue-400 flex items-center justify-center\">
                             <svg class=\"w-6 h-6 text-white\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\">
                                 <path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z\"></path>

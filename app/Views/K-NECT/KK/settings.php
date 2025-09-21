@@ -46,10 +46,19 @@
                                         <div class="relative">
                                             <?php if (!empty($userExtInfo['profile_picture'])): ?>
                                                 <?php 
-                                                    $pp = $userExtInfo['profile_picture'];
-                                                    $ppUrl = (strpos($pp, '/') !== false) ? base_url($pp) : base_url('uploads/profile_pictures/' . $pp);
+                                                    $pp = (string)($userExtInfo['profile_picture'] ?? '');
+                                                    // Use same logic as working logos
+                                                    if (strpos($pp, '/') !== false) {
+                                                        $ppSrc = base_url('/previewDocument/profile_pictures/' . basename($pp));
+                                                    } else {
+                                                        $ppSrc = base_url('/previewDocument/profile_pictures/' . $pp);
+                                                    }
                                                 ?>
-                                                <img id="profile-image" src="<?= esc($ppUrl) ?>" alt="Profile Picture" class="w-32 h-32 object-cover border-4 border-white shadow-lg rounded-full">
+                                                <img id="profile-image" 
+                                                     src="<?= esc($ppSrc) ?>" 
+                                                     alt="Profile Picture" 
+                                                     class="w-32 h-32 object-cover border-4 border-white shadow-lg rounded-full"
+                                                     onerror="this.src='<?= base_url('assets/images/default-avatar.svg') ?>'">
                                             <?php else: ?>
                                                 <div id="profile-placeholder" class="w-32 h-32 bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg border-4 border-white rounded-full">
                                                     <span class="text-white text-3xl font-bold">

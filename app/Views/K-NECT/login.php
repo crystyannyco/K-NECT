@@ -74,7 +74,7 @@
         
         <!-- Mobile Title for smaller screens -->
         <div class="lg:hidden w-full text-center p-8">
-            <img src="<?= base_url('/assets/images/K-Nect-Logo.png') ?>" alt="K-NECT Logo" class="w-48 mx-auto mb-1 drop-shadow-xl glow-logo" />
+            <img src="<?= base_url('/previewDocument/logos/K-Nect-Logo.png') ?>" alt="K-NECT Logo" class="w-48 mx-auto mb-1 drop-shadow-xl glow-logo" onerror="this.src='<?= base_url('assets/images/K-Nect-Logo.png') ?>'" />
             <h2 class="text-xl font-semibold text-white mb-2 font-domaine">KABATAAN CONNECT</h2>
             <p class="text-base text-white leading-relaxed mb-4 text-justify px-2">
                 A comprehensive governance system designed for Iriga City's youth development and community engagement. Connecting the youth with opportunities for growth, leadership, and civic participation.
@@ -104,7 +104,7 @@
         <!-- Left Side - System Title and Description (Desktop) -->
         <div class="hidden lg:flex lg:w-1/2 flex-col justify-center items-center p-12 text-center lg:text-left">
             <div class="max-w-md flex flex-col items-center lg:items-start">
-                <img src="<?= base_url('/assets/images/K-Nect-Logo.png') ?>" alt="K-NECT Logo" class="w-64 mb-1 drop-shadow-xl glow-logo items-center" />
+                <img src="<?= base_url('/previewDocument/logos/K-Nect-Logo.png') ?>" alt="K-NECT Logo" class="w-64 mb-1 drop-shadow-xl glow-logo items-center" onerror="this.src='<?= base_url('assets/images/K-Nect-Logo.png') ?>'" />
                 <h2 class="text-2xl md:text-2xl font-black text-white mb-2 font-public-sans font-domaine">
                     KABATAAN CONNECT
                 </h2>
@@ -140,7 +140,7 @@
                                 <!-- SK Pederasyon Logo -->
                                 <?php if ($hasPederasyonLogo): ?>
                                     <div class="w-12 h-12 flex-shrink-0">
-                                        <img src="<?= base_url($logos['pederasyon']['file_path']) ?>" 
+                                        <img src="<?= base_url('/previewDocument/logos/' . basename($logos['pederasyon']['file_path'])) ?>" 
                                              alt="SK Pederasyon Logo" 
                                              class="w-full h-full object-contain" onerror="this.style.display='none'">
                                     </div>
@@ -149,7 +149,7 @@
                                 <!-- Iriga City Logo -->
                                 <?php if ($hasIrigaLogo): ?>
                                     <div class="w-12 h-12 flex-shrink-0">
-                                        <img src="<?= base_url($logos['iriga_city']['file_path']) ?>" 
+                                        <img src="<?= base_url('/previewDocument/logos/' . basename($logos['iriga_city']['file_path'])) ?>" 
                                              alt="Iriga City Logo" 
                                              class="w-full h-full object-contain" onerror="this.style.display='none'">
                                     </div>

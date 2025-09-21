@@ -33,10 +33,10 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 lg:auto-rows-[220px] gap-5">
                 <!-- Primary -->
                 <article class="relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm lg:col-span-2 lg:row-span-2">
-                    <?php $pImg = !empty($primary['featured_image']) ? base_url('/uploads/bulletin/' . $primary['featured_image']) : null; ?>
+                    <?php $pImg = !empty($primary['featured_image']) ? base_url('/previewDocument/bulletin/' . $primary['featured_image']) : null; ?>
                     <div class="relative w-full h-64 md:h-72 lg:h-full">
                         <?php if ($pImg): ?>
-                            <img src="<?= $pImg ?>" alt="<?= esc($primary['title']) ?>" class="w-full h-full object-cover">
+                            <img src="<?= $pImg ?>" alt="<?= esc($primary['title']) ?>" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.querySelector('.bg-gradient-to-br').style.display='block'">
                             <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
                         <?php else: ?>
                             <div class="absolute inset-0 bg-gradient-to-br from-blue-700 to-blue-900"></div>
@@ -59,10 +59,10 @@
                 <!-- Secondary -->
                 <?php foreach ($others as $item): ?>
                 <article class="relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm h-52 lg:h-auto">
-                    <?php $sImg = !empty($item['featured_image']) ? base_url('/uploads/bulletin/' . $item['featured_image']) : null; ?>
+                    <?php $sImg = !empty($item['featured_image']) ? base_url('/previewDocument/bulletin/' . $item['featured_image']) : null; ?>
                     <div class="relative w-full h-full">
                         <?php if ($sImg): ?>
-                            <img src="<?= $sImg ?>" alt="<?= esc($item['title']) ?>" class="w-full h-full object-cover">
+                            <img src="<?= $sImg ?>" alt="<?= esc($item['title']) ?>" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.querySelector('.bg-gradient-to-br').style.display='block'">
                             <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent"></div>
                         <?php else: ?>
                             <div class="absolute inset-0 bg-gradient-to-br from-blue-600 to-blue-800"></div>
@@ -90,11 +90,11 @@
             <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center"><i class="fa-regular fa-calendar-days text-blue-600 mr-2"></i>Upcoming Events</h2>
             <div class="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 <?php foreach ($recent_events as $event): ?>
-                    <?php $date = !empty($event['event_date']) ? strtotime($event['event_date']) : null; $banner = !empty($event['event_banner']) ? base_url('uploads/event/' . $event['event_banner']) : null; ?>
+                    <?php $date = !empty($event['event_date']) ? strtotime($event['event_date']) : null; $banner = !empty($event['event_banner']) ? base_url('/previewDocument/event/' . $event['event_banner']) : null; ?>
                     <article class="overflow-hidden rounded-xl border bg-white shadow-sm hover:shadow-md transition">
                         <div class="relative h-36 w-full text-white">
                             <?php if ($banner): ?>
-                                <img src="<?= $banner ?>" alt="<?= esc($event['title'] ?? 'Event') ?>" class="w-full h-full object-cover">
+                                <img src="<?= $banner ?>" alt="<?= esc($event['title'] ?? 'Event') ?>" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.querySelector('.bg-gradient-to-br').style.display='block'">
                                 <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                             <?php else: ?>
                                 <div class="absolute inset-0 bg-gradient-to-br from-blue-600 to-blue-800"></div>
@@ -176,7 +176,7 @@
                         <article class="group relative flex flex-col bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition" data-id="<?= $post['id'] ?>">
                             <div class="relative media w-full overflow-hidden rounded-t-xl">
                                 <?php if (!empty($post['featured_image'])): ?>
-                                    <img src="<?= base_url('/uploads/bulletin/' . $post['featured_image']) ?>" alt="<?= esc($post['title']) ?>" class="w-full h-full object-cover duration-500 group-hover:scale-105">
+                                    <img src="<?= base_url('/previewDocument/bulletin/' . $post['featured_image']) ?>" alt="<?= esc($post['title']) ?>" class="w-full h-full object-cover duration-500 group-hover:scale-105" onerror="this.style.display='none'; this.parentElement.querySelector('.bg-gradient-to-br').style.display='block'">
                                 <?php else: ?>
                                     <div class="absolute inset-0 bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center text-blue-300">
                                         <i class="fa-regular fa-image text-3xl"></i>
@@ -234,7 +234,7 @@
   const searchInput = document.getElementById('search-posts');
   const categoryFilter = document.getElementById('category-filter');
   const baseViewUrl = '<?= base_url('/bulletin/view/') ?>';
-  const baseImgUrl = '<?= base_url('/uploads/bulletin/') ?>';
+  const baseImgUrl = '<?= base_url('/previewDocument/bulletin/') ?>';
 
     function boolish(v){
         if (v === true || v === 1 || v === '1') return true;

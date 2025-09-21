@@ -262,25 +262,25 @@
                                                         $pedPosition = isset($officer['ped_position']) ? (int)$officer['ped_position'] : 0;
                                                         switch($pedPosition) {
                                                             case 1:
-                                                                echo 'President';
+                                                                echo 'SK Pederasyon President';
                                                                 break;
                                                             case 2:
-                                                                echo 'Vice President';
+                                                                echo 'SK Pederasyon Vice President';
                                                                 break;
                                                             case 3:
-                                                                echo 'Secretary';
+                                                                echo 'SK Pederasyon Secretary';
                                                                 break;
                                                             case 4:
-                                                                echo 'Treasurer';
+                                                                echo 'SK Pederasyon Treasurer';
                                                                 break;
                                                             case 5:
-                                                                echo 'Auditor';
+                                                                echo 'SK Pederasyon Auditor';
                                                                 break;
                                                             case 6:
-                                                                echo 'Public Information Officer';
+                                                                echo 'SK Pederasyon Public Information Officer';
                                                                 break;
                                                             case 7:
-                                                                echo 'Sergeant at Arms';
+                                                                echo 'SK Pederasyon Sergeant at Arms';
                                                                 break;
                                                             default:
                                                                 echo 'SK Pederasyon Member';
@@ -294,7 +294,7 @@
                                                         data-id="<?= esc($officer['id']) ?>"
                                                     >
                                                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 616 0z" />
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                                         </svg>
                                                         View
@@ -680,6 +680,19 @@
         };
         
         $(document).ready(function () {
+            // Clean up placeholder rows to avoid DataTables column mismatch when no data
+            (function ensureConsistentCellsForDataTables() {
+                const $table = $('#myTable');
+                const headerCount = $table.find('thead th').length;
+                $table.find('tbody tr').each(function () {
+                    const cellCount = $(this).find('td').length;
+                    if (cellCount < headerCount) {
+                        // Remove any placeholder row (e.g., a single colspan cell)
+                        $(this).remove();
+                    }
+                });
+            })();
+
             // DataTable initialization
             const table = $('#myTable').DataTable({
                 columnDefs: [
@@ -695,7 +708,9 @@
                 searching: true,
                 language: {
                     search: "Search officers:",
-                    searchPlaceholder: "Type to search..."
+                    searchPlaceholder: "Type to search...",
+                    emptyTable: "No records found",
+                    zeroRecords: "No matching records found"
                 },
                 initComplete: function () {
                     // Apply Tailwind utility classes to DataTable components
@@ -741,16 +756,16 @@
                     if ($(this).find('td').length > 1) { // Skip "no data" rows
                         const position = $(this).find('td').eq(7).text().trim();
                         allCount++;
-                        if (position === 'President') {
+                        if (position === 'SK Pederasyon President') {
                             presidentCount++;
-                        } else if (position === 'Vice President') {
+                        } else if (position === 'SK Pederasyon Vice President') {
                             vicePresidentCount++;
-                        } else if (position === 'Secretary') {
+                        } else if (position === 'SK Pederasyon Secretary') {
                             secretaryCount++;
-                        } else if (position === 'Treasurer') {
+                        } else if (position === 'SK Pederasyon Treasurer') {
                             treasurerCount++;
                         } else {
-                            othersCount++; // Auditor, Public Information Officer, Sergeant at Arms, Officer
+                            othersCount++; // Auditor, Public Information Officer, Sergeant at Arms, Member
                         }
                     }
                 });
@@ -802,15 +817,15 @@
                 if (positionFilter !== 'all') {
                     let searchTerms = [];
                     if (positionFilter === 'president') {
-                        searchTerms = ['President'];
+                        searchTerms = ['SK Pederasyon President'];
                     } else if (positionFilter === 'vicepresident') {
-                        searchTerms = ['Vice President'];
+                        searchTerms = ['SK Pederasyon Vice President'];
                     } else if (positionFilter === 'secretary') {
-                        searchTerms = ['Secretary'];
+                        searchTerms = ['SK Pederasyon Secretary'];
                     } else if (positionFilter === 'treasurer') {
-                        searchTerms = ['Treasurer'];
+                        searchTerms = ['SK Pederasyon Treasurer'];
                     } else if (positionFilter === 'others') {
-                        searchTerms = ['Auditor', 'Public Information Officer', 'Sergeant at Arms', 'Officer'];
+                        searchTerms = ['SK Pederasyon Auditor', 'SK Pederasyon Public Information Officer', 'SK Pederasyon Sergeant at Arms', 'SK Pederasyon Member'];
                     }
                     
                     if (searchTerms.length > 0) {
@@ -1226,71 +1241,134 @@
         function loadOfficialList() {
             const loading = document.getElementById('officialListLoading');
             const content = document.getElementById('officialListContent');
+            // Show loader immediately
             if (loading) loading.classList.remove('hidden');
             if (content) content.classList.add('hidden');
-            
-            const officials = [];
+
+            let officials = [];
             let secretaryName = '';
             let presidentName = '';
-            
-            <?php if (!empty($ped_officers)): ?>
-            const pedOfficersList = <?= json_encode($ped_officers) ?>;
-            <?php else: ?>
-            const pedOfficersList = [];
-            <?php endif; ?>
-            
-            $('#myTable tbody tr').each(function() {
-                const status = $(this).find('td').eq(6).find('span').text().trim();
-                if (status !== 'Accepted') return; // include only accepted
+
+            try {
+                // Build a quick lookup for user info by user_id
+                <?php if (!empty($ped_officers)): ?>
+                const pedOfficersRaw = <?= json_encode($ped_officers) ?>;
+                <?php else: ?>
+                const pedOfficersRaw = [];
+                <?php endif; ?>
                 
-                const displayUserId = $(this).find('td').eq(1).text().trim();
-                const barangay = $(this).find('td').eq(2).text().trim();
-                const name = $(this).find('td').eq(3).text().trim();
-                const age = $(this).find('td').eq(4).text().trim();
-                const sex = $(this).find('td').eq(5).text().trim();
-                const positionText = $(this).find('td').eq(7).text().trim();
-                
-                let userData = pedOfficersList.find(u => String(u.user_id) === String(displayUserId));
-                let birthday = 'N/A';
-                let position = positionText ? `Pederasyon ${positionText}` : 'Pederasyon Officer';
-                
-                if (userData) {
-                    if (userData.birthdate) {
-                        const birthDate = new Date(userData.birthdate);
-                        if (!isNaN(birthDate) && birthDate.getFullYear() > 1900) {
-                            birthday = birthDate.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
-                        }
-                    }
-                    const pedPos = parseInt(userData.ped_position) || 0;
-                    if (pedPos === 1) { presidentName = formatFullNameFromUser(userData); }
-                    if (pedPos === 3) { secretaryName = formatFullNameFromUser(userData); }
+                // Ensure we have a valid array - handle both array and object cases
+                let pedOfficersList = [];
+                if (Array.isArray(pedOfficersRaw)) {
+                    pedOfficersList = pedOfficersRaw;
+                } else if (pedOfficersRaw && typeof pedOfficersRaw === 'object') {
+                    // Convert object to array if needed
+                    pedOfficersList = Object.values(pedOfficersRaw);
                 }
                 
-                officials.push({
-                    userId: displayUserId,
-                    barangay,
-                    name,
-                    age,
-                    birthday,
-                    sex,
-                    position
+                const byId = Object.create(null);
+                if (pedOfficersList.length > 0) {
+                    pedOfficersList.forEach(u => { 
+                        if (u && u.user_id != null) {
+                            byId[String(u.user_id)] = u; 
+                        }
+                    });
+                }
+
+                // Prefer DataTables API if initialized to ensure we iterate all rows reliably
+                // Simple and reliable approach: always use DOM iteration
+                $('#myTable tbody tr:visible').each(function () {
+                    try {
+                        const $row = $(this);
+                        const $cells = $row.find('td');
+                        if ($cells.length < 8) return; // Skip rows with insufficient columns
+
+                        // Extract cell values safely
+                        const statusSpan = $cells.eq(6).find('span');
+                        const statusText = statusSpan.length > 0 ? statusSpan.text().trim() : $cells.eq(6).text().trim();
+                        
+                        // Only include accepted officers
+                        if (statusText.toLowerCase() !== 'accepted') return;
+
+                        const displayUserId = $cells.eq(1).text().trim();
+                        const barangay = $cells.eq(2).text().trim();
+                        const name = $cells.eq(3).text().trim();
+                        const age = $cells.eq(4).text().trim();
+                        const sex = $cells.eq(5).text().trim();
+                        const positionText = $cells.eq(7).text().trim();
+
+                        // Skip if essential data is missing
+                        if (!displayUserId || !name) return;
+
+                        const userData = byId[String(displayUserId)];
+                        let birthday = 'N/A';
+                        let position = positionText ? `SK Pederasyon ${positionText}` : 'SK Pederasyon Officer';
+
+                        if (userData) {
+                            if (userData.birthdate) {
+                                const birthDate = new Date(userData.birthdate);
+                                if (!isNaN(birthDate) && birthDate.getFullYear() > 1900) {
+                                    birthday = birthDate.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+                                }
+                            }
+                            const pedPos = parseInt(userData.ped_position) || 0;
+                            if (pedPos === 1) { presidentName = formatFullNameFromUser(userData); }
+                            if (pedPos === 3) { secretaryName = formatFullNameFromUser(userData); }
+                        }
+
+                        officials.push({ 
+                            userId: displayUserId, 
+                            barangay, 
+                            name, 
+                            age, 
+                            birthday, 
+                            sex, 
+                            position 
+                        });
+                    } catch (rowError) {
+                        console.warn('Error processing row:', rowError);
+                        // Continue processing other rows
+                    }
                 });
-            });
-            
-            window.pederasyonSecretary = secretaryName;
-            window.pederasyonPresident = presidentName;
-            
-            if (loading) loading.classList.add('hidden');
-            if (content) content.classList.remove('hidden');
-            
-            if (officials.length > 0) {
-                displayOfficialList(officials);
-                document.getElementById('noOfficials').classList.add('hidden');
-            } else {
-                document.getElementById('noOfficials').classList.remove('hidden');
-                document.getElementById('officialListTableBody').innerHTML = '';
+
+                // Store signature names globally for PDF generation
+                window.pederasyonSecretary = secretaryName;
+                window.pederasyonPresident = presidentName;
+
+                // Update UI
+                const noOfficialsEl = document.getElementById('noOfficials');
+                const signatureEl = document.getElementById('signatureSection');
+                if (officials.length > 0) {
+                    displayOfficialList(officials);
+                    if (noOfficialsEl) noOfficialsEl.classList.add('hidden');
+                    if (signatureEl) signatureEl.classList.remove('hidden');
+                } else {
+                    if (noOfficialsEl) noOfficialsEl.classList.remove('hidden');
+                    if (signatureEl) signatureEl.classList.add('hidden');
+                    document.getElementById('officialListTableBody').innerHTML = '';
+                }
+                document.getElementById('officialListCount').textContent = `Total Officials: ${officials.length}`;
+            } catch (err) {
+                console.error('Failed to load official list:', err);
+                console.error('Error details:', {
+                    message: err.message,
+                    stack: err.stack,
+                    officialsCount: officials.length
+                });
+                showNotification('Failed to load official list. Please check console for details.', 'error');
+                // Ensure the table body is cleared on error
+                const tbody = document.getElementById('officialListTableBody');
+                if (tbody) tbody.innerHTML = '';
+                const noOfficialsEl = document.getElementById('noOfficials');
+                if (noOfficialsEl) noOfficialsEl.classList.remove('hidden');
+                const signatureEl = document.getElementById('signatureSection');
+                if (signatureEl) signatureEl.classList.add('hidden');
+                document.getElementById('officialListCount').textContent = 'Total Officials: 0';
+            } finally {
+                // Always reveal content and hide loader
+                if (loading) loading.classList.add('hidden');
+                if (content) content.classList.remove('hidden');
             }
-            document.getElementById('officialListCount').textContent = `Total Officials: ${officials.length}`;
         }
         
         // Display officials in table
@@ -1548,8 +1626,19 @@
                                         <tbody id="officialListTableBody"></tbody>
                                     </table>
                                 </div>
-                            </div>
+                                <!-- No officials message (shown when list is empty) -->
+                                <div id="noOfficials" class="text-center py-12 hidden">
+                                    <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2M4 13h2m13-8l-4 4-4-4m0 0V3"></path>
+                                        </svg>
+                                    </div>
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-2">No Officials Found</h3>
+                                    <p class="text-sm text-gray-500">No officials are currently registered in the system.</p>
+                                </div>
 
+                                <!-- Signature Section -->
+                                <div id="signatureSection" class="mt-8 print:mt-6" style="font-family: Arial, sans-serif;">
                             <!-- Signature Section -->
                             <div class="mt-8 print:mt-6" style="font-family: Arial, sans-serif;">
                                 <div class="flex justify-center items-end">
@@ -1572,15 +1661,7 @@
                         </div>
                     </div>
 
-                    <div id="noOfficials" class="text-center py-12 hidden">
-                        <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2M4 13h2m13-8l-4 4-4-4m0 0V3"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">No Officials Found</h3>
-                        <p class="text-sm text-gray-500">No officials are currently registered in the system.</p>
-                    </div>
+                    
                 </div>
             </div>
 

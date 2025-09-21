@@ -21,11 +21,20 @@ class AnalyticsModel extends Model
     {
         $query = $this->db->query("
             SELECT 
-                CASE WHEN sex = 1 THEN 'Male' ELSE 'Female' END AS gender,
+                CASE 
+                    WHEN sex = 1 THEN 'Male' 
+                    WHEN sex = 0 THEN 'Female'
+                    ELSE 'Female' 
+                END AS gender,
                 COUNT(*) AS total
             FROM user
             WHERE is_active = 1 AND status = 2
-            GROUP BY gender
+            GROUP BY 
+                CASE 
+                    WHEN sex = 1 THEN 'Male' 
+                    WHEN sex = 0 THEN 'Female'
+                    ELSE 'Female' 
+                END
         ");
         
         return $query->getResultArray();
@@ -44,13 +53,22 @@ class AnalyticsModel extends Model
         $query = $this->db->query("
             SELECT 
                 b.name AS barangay,
-                CASE WHEN u.sex = 1 THEN 'Male' ELSE 'Female' END AS gender,
+                CASE 
+                    WHEN u.sex = 1 THEN 'Male' 
+                    WHEN u.sex = 0 THEN 'Female'
+                    ELSE 'Female' 
+                END AS gender,
                 COUNT(*) AS total
             FROM user u
             JOIN address a ON u.id = a.user_id
             JOIN barangay b ON a.barangay = b.barangay_id
             {$whereClause}
-            GROUP BY b.name, gender
+            GROUP BY b.name, 
+                CASE 
+                    WHEN u.sex = 1 THEN 'Male' 
+                    WHEN u.sex = 0 THEN 'Female'
+                    ELSE 'Female' 
+                END
             ORDER BY b.name, gender
         ");
         

@@ -1229,98 +1229,55 @@
         // Initialize Panzoom for images after DOM is updated
         setTimeout(() => {
             if (birthCertFile && ['jpg','jpeg','png','gif','webp'].includes(birthCertFile.split('.').pop().toLowerCase())) {
-                const certContainer = document.getElementById('certPreviewWrapper');
-                if (certContainer) {
-                    try {
-                        // Try different ways to access Panzoom and Controls
-                        let PanzoomClass = Panzoom || window.Panzoom;
-                        let ControlsClass = Controls || window.Controls;
-                        
-                        if (PanzoomClass && ControlsClass) {
-                            const certPanzoom = new PanzoomClass(certContainer, {
-                                Controls: {
-                                    display: [
-                                        'zoomIn',
-                                        'zoomOut',
-                                        'toggle1to1',
-                                        'toggleFull',
-                                        'rotateCCW',
-                                        'rotateCW',
-                                        'flipX',
-                                        'flipY',
-                                        'reset'
-                                    ]
-                                }
-                            }, { Controls: ControlsClass });
-                        } else {
-                            console.warn('Panzoom or Controls not available');
-                        }
-                    } catch (error) {
-                        console.error('Error initializing cert Panzoom:', error);
+                const certPanzoom = Panzoom(document.getElementById('certPreviewWrapper'), {
+                    Controls: {
+                        display: [
+                            'zoomIn',
+                            'zoomOut',
+                            'toggle1to1',
+                            'rotateCCW',
+                            'rotateCW',
+                            'flipX',
+                            'flipY',
+                            'reset'
+                        ]
                     }
-                }
+                }, { Controls });
+                certPanzoom.init();
             }
             if (uploadIdFile && ['jpg','jpeg','png','gif','webp'].includes(uploadIdFile.split('.').pop().toLowerCase())) {
-                const idContainer = document.getElementById('idPreviewWrapper');
-                if (idContainer) {
-                    try {
-                        // Try different ways to access Panzoom and Controls
-                        let PanzoomClass = Panzoom || window.Panzoom;
-                        let ControlsClass = Controls || window.Controls;
-                        
-                        if (PanzoomClass && ControlsClass) {
-                            const idPanzoom = new PanzoomClass(idContainer, {
-                                Controls: {
-                                    display: [
-                                        'zoomIn',
-                                        'zoomOut',
-                                        'toggle1to1',
-                                        'toggleFull',
-                                        'rotateCCW',
-                                        'rotateCW',
-                                        'flipX',
-                                        'flipY',
-                                        'reset'
-                                    ]
-                                }
-                            }, { Controls: ControlsClass });
-                        } else {
-                            console.warn('Panzoom or Controls not available');
-                        }
-                    } catch (error) {
-                        console.error('Error initializing ID Panzoom:', error);
+                const idPanzoom = Panzoom(document.getElementById('idPreviewWrapper'), {
+                    Controls: {
+                        display: [
+                            'zoomIn',
+                            'zoomOut',
+                            'toggle1to1',
+                            'rotateCCW',
+                            'rotateCW',
+                            'flipX',
+                            'flipY',
+                            'reset'
+                        ]
                     }
-                }
+                }, { Controls });
+                idPanzoom.init();
             }
             if (uploadIdBackFile && ['jpg','jpeg','png','gif','webp'].includes(uploadIdBackFile.split('.').pop().toLowerCase())) {
-                const idBackContainer = document.getElementById('idPreviewWrapperBack');
-                if (idBackContainer) {
-                    try {
-                        let PanzoomClass = Panzoom || window.Panzoom;
-                        let ControlsClass = Controls || window.Controls;
-                        if (PanzoomClass && ControlsClass) {
-                            const idBackPanzoom = new PanzoomClass(idBackContainer, {
-                                Controls: {
-                                    display: [
-                                        'zoomIn',
-                                        'zoomOut',
-                                        'toggle1to1',
-                                        'toggleFull',
-                                        'rotateCCW',
-                                        'rotateCW',
-                                        'flipX',
-                                        'flipY',
-                                        'reset'
-                                    ]
-                                }
-                            }, { Controls: ControlsClass });
-                        } else {
-                            console.warn('Panzoom or Controls not available');
-                        }
-                    } catch (error) {
-                        console.error('Error initializing ID Back Panzoom:', error);
+                const idBackPanzoom = Panzoom(document.getElementById('idPreviewWrapperBack'), {
+                    Controls: {
+                        display: [
+                            'zoomIn',
+                            'zoomOut',
+                            'toggle1to1',
+                            'rotateCCW',
+                            'rotateCW',
+                            'flipX',
+                            'flipY',
+                            'reset'
+                        ]
                     }
-                }
+                }, { Controls });
+                idBackPanzoom.init();
             }
         }, 100);
     }

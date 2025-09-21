@@ -624,7 +624,7 @@
         // Utility function to show notifications
         function showNotification(message, type = 'info') {
             const notification = document.createElement('div');
-            notification.className = `fixed top-4 right-4 z-[99999] p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full`;
+            notification.className = `stacked-toast fixed right-4 z-[99999] p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full`;
             
             switch(type) {
                 case 'success':
@@ -633,9 +633,20 @@
                 case 'error':
                     notification.className += ' bg-red-500 text-white';
                     break;
+                case 'warning':
+                    notification.className += ' bg-yellow-500 text-white';
+                    break;
                 default:
                     notification.className += ' bg-blue-500 text-white';
             }
+            
+            // Calculate stacking position based on existing notifications
+            const existingToasts = document.querySelectorAll('.stacked-toast');
+            let topOffset = 16; // Initial top offset (1rem = 16px)
+            existingToasts.forEach(toast => {
+                topOffset += toast.offsetHeight + 16; // Add height + 16px gap
+            });
+            notification.style.top = topOffset + 'px';
             
             // Get appropriate icon based on type
             let icon = '';
@@ -644,6 +655,9 @@
                     icon = '<svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>';
                     break;
                 case 'error':
+                    icon = '<svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" /></svg>';
+                    break;
+                case 'warning':
                     icon = '<svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" /></svg>';
                     break;
                 case 'info':
@@ -656,7 +670,7 @@
                 <div class="flex items-center">
                     ${icon}
                     <span class="mr-2">${message}</span>
-                    <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-white hover:text-gray-200 focus:outline-none">
+                    <button onclick="this.parentElement.parentElement.remove(); repositionToasts();" class="ml-2 text-white hover:text-gray-200 focus:outline-none">
                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
                         </svg>
@@ -677,9 +691,51 @@
                 setTimeout(() => {
                     if (notification.parentElement) {
                         notification.remove();
+                        repositionToasts();
                     }
                 }, 300);
             }, 5000);
+        }
+        
+        // Helper function to reposition remaining toasts after one is removed
+        function repositionToasts() {
+            const toasts = document.querySelectorAll('.stacked-toast');
+            let topOffset = 16;
+            toasts.forEach(toast => {
+                toast.style.top = topOffset + 'px';
+                topOffset += toast.offsetHeight + 16;
+            });
+        }
+
+        // Pop-up modal asking user to download new credentials before logout
+        function promptCredentialsDownload() {
+            if (window.Swal && typeof Swal.fire === 'function') {
+                return Swal.fire({
+                    title: 'Download new credentials required',
+                    html: '<div style="text-align:left;font-size:14px;line-height:1.5">'+
+                          '<p>Please download your updated SK and Pederasyon credentials before logging out to ensure uninterrupted access to the system.</p>'+
+                          '<ul style="margin-top:8px;padding-left:18px;list-style:disc">'+
+                          '<li>Download SK credentials (for SK access)</li>'+
+                          '<li>Download Pederasyon credentials (for Pederasyon access)</li>'+
+                          '</ul>'+
+                          '<p style="margin-top:10px">Logout is disabled until both files have been downloaded.</p>'+
+                          '</div>',
+                    icon: 'warning',
+                    confirmButtonText: 'Okay',
+                    confirmButtonColor: '#3b82f6',
+                    heightAuto: false
+                }).then(() => {
+                    try {
+                        if (typeof openCredentialsPreviewModal === 'function') {
+                            openCredentialsPreviewModal();
+                        }
+                    } catch (e) {}
+                });
+            } else {
+                alert('Please download your updated SK and Pederasyon credentials before logging out. Logout is disabled until both are downloaded.');
+                try { if (typeof openCredentialsPreviewModal === 'function') openCredentialsPreviewModal(); } catch (e) {}
+                return Promise.resolve();
+            }
         }
         
         // Store original counts globally
@@ -691,6 +747,18 @@
         };
         
         $(document).ready(function () {
+            // Remove placeholder row if present to prevent DataTables column errors when empty
+            (function ensureConsistentCellsForDataTables() {
+                const $table = $('#myTable');
+                const headerCount = $table.find('thead th').length;
+                $table.find('tbody tr').each(function () {
+                    const cellCount = $(this).find('td').length;
+                    if (cellCount < headerCount) {
+                        $(this).remove();
+                    }
+                });
+            })();
+
             // DataTable and tab logic
             const table = $('#myTable').DataTable({
                 columnDefs: [
@@ -706,7 +774,9 @@
                 searching: true,
                 language: {
                     search: "Search all records:",
-                    searchPlaceholder: "Type to search..."
+                    searchPlaceholder: "Type to search...",
+                    emptyTable: "No records found",
+                    zeroRecords: "No matching records found"
                 },
                 initComplete: function () {
                     // Apply Tailwind utility classes to DataTable components
@@ -723,9 +793,44 @@
                         calculateOriginalCounts();
                         updateDisplayedCounts();
                         restoreFilters();
+                        // If a role change just happened, show the post-reload credentials prompt
+                        try {
+                            if (window.localStorage && localStorage.getItem('knect_show_credentials_prompt') === '1') {
+                                localStorage.removeItem('knect_show_credentials_prompt');
+                                setTimeout(() => { if (typeof promptCredentialsDownload === 'function') promptCredentialsDownload(); }, 300);
+                            }
+                        } catch (e) {}
                     }, 100);
                 }
             });
+
+            // On-load check: if credentials downloads are required, auto-open the modal and warn the user
+            try {
+                fetch('<?= base_url('pederasyon/credential-download-status') ?>', { credentials: 'same-origin' })
+                    .then(r => r.ok ? r.json() : Promise.reject(new Error('Network error')))
+                    .then(st => {
+                        if (st && st.success && st.require) {
+                            const needSk = !st.sk;
+                            const needPed = !st.pederasyon;
+                            const msgs = [];
+                            if (needSk) msgs.push('Please download SK credentials for your updated role.');
+                            if (needPed) msgs.push('Please download Pederasyon credentials for your updated role.');
+                            if (msgs.length) {
+                                // Show stacked toasts
+                                msgs.forEach(m => showNotification(m, 'warning'));
+                                // Open modal and focus the first missing tab
+                                if (typeof openCredentialsPreviewModal === 'function') {
+                                    openCredentialsPreviewModal();
+                                    setTimeout(() => {
+                                        if (needSk) { showCredentialsTab('sk'); }
+                                        else if (needPed) { showCredentialsTab('pederasyon'); }
+                                    }, 250);
+                                }
+                            }
+                        }
+                    })
+                    .catch(() => { /* silent */ });
+            } catch (e) { /* ignore */ }
 
             // Populate barangay filter
             function populateBarangayFilter() {
@@ -981,9 +1086,10 @@
                         success: function(response) {
                             if (response && response.success) {
                                 showNotification('User positions updated successfully! Pending users have been automatically accepted.', 'success');
-                                setTimeout(() => {
-                                    location.reload();
-                                }, 1000);
+                                // Close modal and set post-reload prompt flag
+                                try { $('#bulkChangeModal').addClass('hidden').css('display', 'none'); } catch (e) {}
+                                try { if (window.localStorage) localStorage.setItem('knect_show_credentials_prompt', '1'); } catch (e) {}
+                                setTimeout(() => { location.reload(); }, 600);
                             } else {
                                 showNotification(response.message || 'Failed to update user positions.', 'error');
                             }
@@ -1350,9 +1456,14 @@
                     success: function(response) {
                         if (response && response.success) {
                             showNotification('User type updated successfully!', 'success');
-                            setTimeout(() => {
-                                location.reload();
-                            }, 1000);
+                            // Close modals before reload
+                            try {
+                                $('#roleChangeModal').addClass('hidden').css('display', 'none');
+                                $('#userDetailModal').addClass('hidden');
+                            } catch (e) {}
+                            // Set flag to show prompt after page reload and refresh table
+                            try { if (window.localStorage) localStorage.setItem('knect_show_credentials_prompt', '1'); } catch (e) {}
+                            setTimeout(() => { location.reload(); }, 400);
                         } else {
                             showNotification(response.message || 'Failed to update user type.', 'error');
                         }
@@ -2262,6 +2373,20 @@
             // Show success notification after short delay
             setTimeout(() => {
                 showNotification(format.toUpperCase() + ' credentials document downloaded successfully!', 'success');
+                // Mark credential type as downloaded based on active tab
+                try {
+                    const activeTab = (typeof getActiveCredentialsTab === 'function') ? getActiveCredentialsTab() : 'sk';
+                    const type = activeTab === 'pederasyon' ? 'pederasyon' : 'sk';
+                    fetch('<?= base_url('pederasyon/mark-credential-downloaded') ?>', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: 'type=' + encodeURIComponent(type)
+                    }).then(() => {
+                        showNotification((type.charAt(0).toUpperCase() + type.slice(1)) + ' credentials download recorded.', 'success');
+                    }).catch(() => {
+                        showNotification('Failed to record credential download. Please try again if logout remains disabled.', 'error');
+                    });
+                } catch (e) { /* ignore */ }
             }, 1000);
         }
 
@@ -2896,7 +3021,15 @@
                         success: function(resp) {
                             if (resp && resp.success) {
                                 showNotification('User type updated successfully!', 'success');
-                                setTimeout(() => { location.reload(); }, 800);
+                                // Close preview and confirm modals before reload
+                                try {
+                                    $('#pedRoleChangeModal').addClass('hidden').css('display', 'none');
+                                    const $pedModal = $('#pedPreviewModal');
+                                    if ($pedModal && $pedModal.length) { $pedModal.addClass('hidden'); }
+                                } catch (e) {}
+                                // Set flag and reload to refresh table then show prompt
+                                try { if (window.localStorage) localStorage.setItem('knect_show_credentials_prompt', '1'); } catch (e) {}
+                                setTimeout(() => { location.reload(); }, 400);
                             } else {
                                 showNotification((resp && resp.message) || 'Failed to update user type.', 'error');
                             }

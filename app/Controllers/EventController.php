@@ -365,6 +365,16 @@ class EventController extends BaseController
                 return redirect()->back()->withInput()->with('error', 'Please select at least one recipient role for SMS notifications.');
             }
             
+            // Validate that if "All SK Officials" is selected, individual roles are not selected
+            if (in_array('all_officials', $recipientRoles)) {
+                $individualRoles = ['chairman', 'secretary', 'treasurer'];
+                foreach ($individualRoles as $role) {
+                    if (in_array($role, $recipientRoles)) {
+                        return redirect()->back()->withInput()->with('error', 'Cannot select "All SK Officials" and individual SK roles at the same time.');
+                    }
+                }
+            }
+            
             $data['sms_recipient_roles'] = json_encode($recipientRoles);
         } elseif ($smsNotificationEnabled && $isDraft) {
             // For drafts, just save the SMS settings without validation
@@ -718,6 +728,16 @@ class EventController extends BaseController
             $recipientRoles = $this->request->getPost('sms_recipient_roles');
             if (empty($recipientRoles)) {
                 return $this->handleErrorResponse('Please select at least one recipient role for SMS notifications.');
+            }
+            
+            // Validate that if "All SK Officials" is selected, individual roles are not selected
+            if (in_array('all_officials', $recipientRoles)) {
+                $individualRoles = ['chairman', 'secretary', 'treasurer'];
+                foreach ($individualRoles as $role) {
+                    if (in_array($role, $recipientRoles)) {
+                        return $this->handleErrorResponse('Cannot select "All SK Officials" and individual SK roles at the same time.');
+                    }
+                }
             }
             
             $data['sms_recipient_roles'] = json_encode($recipientRoles);

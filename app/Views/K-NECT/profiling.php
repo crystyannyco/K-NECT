@@ -74,6 +74,61 @@
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
         }
+        .custom-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            pointer-events: none;
+        }
+        .toast-notification {
+            background: #ef4444;
+            color: white;
+            padding: 16px 20px;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            font-weight: 500;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease-in-out;
+            pointer-events: auto;
+            max-width: 400px;
+            word-wrap: break-word;
+        }
+        .toast-notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        .toast-notification.success {
+            background: #10b981;
+        }
+        .toast-notification.info {
+            background: #3b82f6;
+        }
+        .toast-notification.warning {
+            background: #f59e0b;
+        }
         .btn-secondary {
             transition: all 0.2s ease-in-out;
         }
@@ -573,7 +628,8 @@
                         <div class="text-center sm:text-left">
                             <h3 class="text-base sm:text-lg md:text-xl font-bold text-slate-800 mb-2">Welcome to the Official Portal</h3>
                             <p class="text-sm sm:text-base text-slate-700 leading-relaxed">
-                                This is a local implementation of the national initiative under <strong class="text-blue-700">DILG Memorandum Circular No. 2022-324</strong>. 
+                                This is a local implementation of the national initiative under <strong class="text-blue-700 underline"><a href="https://www.dilg.gov.ph/PDF_File/issuances/memo_circulars/dilg-memocircular-2022324_f977fdab94.pdf" target="_blank" 
+                                       rel="noopener noreferrer" >DILG Memorandum Circular No. 2022-324</a></strong>. 
                                 We're profiling all youth aged 15 to 30 across Iriga City's 36 barangays for youth development planning and inclusive governance.
                             </p>
                         </div>
@@ -726,7 +782,14 @@
                                 <svg class="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.99 1.73l-2.35 1.05a1.99 1.99 0 01-1.85 0L12 16a2 2 0 01-1.85 0L8.37 14.78"></path>
                                 </svg>
-                                <span>Compliant with data privacy regulations</span>
+                                <span>Compliant with 
+                                    <a href="https://privacy.gov.ph/data-privacy-act/" 
+                                       target="_blank" 
+                                       rel="noopener noreferrer"
+                                       class="underline hover:text-green-800 font-medium">
+                                        Data Privacy Act of 2012 (RA 10173)
+                                    </a>
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -740,8 +803,24 @@
                             <p class="text-blue-100 text-sm max-w-md mx-auto">
                                 Join thousands of Iriga City youth who have already registered. Your voice matters in shaping our community's future.
                             </p>
-                            <form action="<?= base_url('profiling/step1') ?>" method="post" class="max-w-sm mx-auto">
-                                <button type="submit" class="w-full bg-white text-blue-600 font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-blue-50 hover:shadow-lg transform hover:scale-105 transition-all duration-200">
+                            <form action="<?= base_url('profiling/step1') ?>" method="post" class="max-w-sm mx-auto" id="qualificationForm">
+                                <!-- Terms and Conditions Checkbox -->
+                                <div class="mb-4 text-left">
+                                    <label class="flex items-start space-x-3 cursor-pointer p-3 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
+                                        <input type="checkbox" id="terms-checkbox" name="accept_terms" value="1" required 
+                                               class="mt-1 w-4 h-4 text-blue-600 bg-white border-2 border-white rounded focus:ring-blue-500 focus:ring-2 cursor-pointer">
+                                        <div class="text-white text-sm leading-relaxed">
+                                            <span>I have read and agree to the </span>
+                                            <button type="button" id="show-terms-btn" class="text-blue-200 underline hover:text-white font-medium">Terms and Conditions</button>
+                                            <span> and </span>
+                                            <button type="button" id="show-privacy-btn" class="text-blue-200 underline hover:text-white font-medium">Privacy Policy</button>
+                                            <span> of K-NECT Youth Profiling System.</span>
+                                        </div>
+                                    </label>
+                                </div>
+                                
+                                <button type="submit" id="continue-btn" disabled 
+                                        class="w-full bg-white text-blue-600 font-semibold py-3 px-6 rounded-lg shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none enabled:hover:bg-blue-50 enabled:hover:shadow-lg enabled:transform enabled:hover:scale-105">
                                     <span class="flex items-center justify-center space-x-2">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -1093,7 +1172,7 @@
                                     <label class="block text-xs sm:text-sm font-medium text-slate-700">
                                         Email Address <span class="text-red-500">*</span>
                                     </label>
-                                    <input type="email" name="email" id="email" placeholder="juan.delacruz@example.com"
+                                    <input type="email" name="email" id="email" placeholder="juan.delacruz@example.com" data-required="true"
                                         value="<?= old('email') !== null ? old('email') : (isset($profile_data['email']) ? esc($profile_data['email']) : '') ?>"
                                         class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= session('validation_user') && session('validation_user')->hasError('email') ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base">
                                     <?php if (session('validation_user') && session('validation_user')->hasError('email')): ?>
@@ -1130,7 +1209,7 @@
 
                     <!-- Form Actions -->
                     <div class="flex flex-col sm:flex-row justify-between items-center pt-4 sm:pt-6 space-y-3 sm:space-y-0">
-                        <button type="submit" formaction="<?= base_url('profiling/backToStep1') ?>" formmethod="post" 
+                        <button type="submit" formaction="<?= base_url('profiling/backToStep1') ?>" formmethod="post" formnovalidate 
                             class="btn-secondary bg-slate-300 text-slate-700 text-sm sm:text-base font-semibold py-2 sm:py-3 px-4 sm:px-6 rounded-lg sm:rounded-xl hover:bg-slate-400 transition-all duration-200 flex items-center space-x-2 w-full sm:w-auto justify-center">
                             <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"></path>
@@ -1565,7 +1644,7 @@
                     </div>
                     <!-- Form Actions -->
                     <div class="flex flex-col sm:flex-row justify-between items-center pt-4 sm:pt-6 space-y-3 sm:space-y-0">
-                        <button type="submit" formaction="<?= base_url('profiling/backToStep2') ?>" formmethod="post" class="btn-secondary bg-slate-300 text-slate-700 text-sm sm:text-base font-semibold py-2 sm:py-3 px-4 sm:px-6 rounded-lg sm:rounded-xl hover:bg-slate-400 transition-all duration-200 flex items-center space-x-2 w-full sm:w-auto justify-center">
+                        <button type="submit" formaction="<?= base_url('profiling/backToStep2') ?>" formmethod="post" formnovalidate class="btn-secondary bg-slate-300 text-slate-700 text-sm sm:text-base font-semibold py-2 sm:py-3 px-4 sm:px-6 rounded-lg sm:rounded-xl hover:bg-slate-400 transition-all duration-200 flex items-center space-x-2 w-full sm:w-auto justify-center">
                             <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"></path>
                             </svg>
@@ -1737,7 +1816,7 @@
                     </div>
                     <!-- Form Actions -->
                     <div class="flex flex-col sm:flex-row justify-between items-center pt-4 sm:pt-6 space-y-3 sm:space-y-0">
-                        <button type="submit" formaction="<?= base_url('profiling/backToStep3') ?>" formmethod="post" class="btn-secondary bg-slate-300 text-slate-700 text-sm sm:text-base font-semibold py-2 sm:py-3 px-4 sm:px-6 rounded-lg sm:rounded-xl hover:bg-slate-400 transition-all duration-200 flex items-center space-x-2 w-full sm:w-auto justify-center">
+                        <button type="submit" formaction="<?= base_url('profiling/backToStep3') ?>" formmethod="post" formnovalidate class="btn-secondary bg-slate-300 text-slate-700 text-sm sm:text-base font-semibold py-2 sm:py-3 px-4 sm:px-6 rounded-lg sm:rounded-xl hover:bg-slate-400 transition-all duration-200 flex items-center space-x-2 w-full sm:w-auto justify-center">
                             <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"></path>
                             </svg>
@@ -2290,7 +2369,7 @@
                 <!-- Form Actions -->
                 <div class="flex justify-between items-center pt-6">
                     <form action="<?= base_url('profiling/backToStep4') ?>" method="post" style="display:inline;">
-                        <button type="submit" formaction="<?= base_url('profiling/backToStep4') ?>" formmethod="post"
+                        <button type="submit" formaction="<?= base_url('profiling/backToStep4') ?>" formmethod="post" formnovalidate
                             class="btn-secondary bg-slate-300 text-slate-700 font-semibold py-3 px-6 rounded-xl hover:bg-slate-400 transition-all duration-200 flex items-center space-x-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"></path>
@@ -2397,6 +2476,681 @@
         <div id="file-size-modal-bg" class="fixed inset-0 bg-black opacity-30 z-0"></div>
     </div>
 
+    <!-- Terms and Conditions Modal -->
+    <div id="terms-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl relative animate-fade-in max-w-5xl max-h-[95vh] w-full mx-4 z-20 border border-gray-100">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-2xl">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-blue-800">Terms and Conditions</h3>
+                </div>
+                <button id="close-terms-modal" class="text-gray-400 hover:text-gray-600 text-2xl font-bold w-10 h-10 flex items-center justify-center rounded-full hover:bg-white hover:shadow-md transition-all duration-200">
+                    &times;
+                </button>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="p-8 max-h-[calc(95vh-200px)] overflow-y-auto custom-scrollbar">
+                <div class="prose prose-sm max-w-none space-y-6">
+                    <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg mb-6">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <svg class="w-5 h-5 text-blue-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-blue-700">
+                                    <strong>Last updated:</strong> <?= date('F d, Y') ?>
+                                </p>
+                                <p class="text-sm text-blue-700 mt-2">
+                                    Welcome to the K-NECT Youth Profiling System. These Terms and Conditions ("Terms") govern your use of our youth profiling platform in accordance with DILG Memorandum Circular No. 2022-324.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 mb-6 shadow-sm">
+                        <h4 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                            <span class="bg-blue-100 text-blue-800 text-sm font-medium mr-3 px-2.5 py-0.5 rounded-full">1</span>
+                            Acceptance of Terms
+                        </h4>
+                        <p class="text-gray-700 leading-relaxed">
+                            By accessing and using the K-NECT Youth Profiling System, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions and our Privacy Policy.
+                        </p>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 mb-6 shadow-sm">
+                        <h4 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                            <span class="bg-blue-100 text-blue-800 text-sm font-medium mr-3 px-2.5 py-0.5 rounded-full">2</span>
+                            Eligibility
+                        </h4>
+                        <p class="text-gray-700 leading-relaxed mb-4">
+                            This service is intended for youth aged 15-30 years old who are residents of Iriga City's 36 barangays. By registering, you confirm that:
+                        </p>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <ul class="space-y-2">
+                                <li class="flex items-center text-gray-700">
+                                    <svg class="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    You are between 15-30 years of age
+                                </li>
+                                <li class="flex items-center text-gray-700">
+                                    <svg class="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    You are a resident of Iriga City
+                                </li>
+                                <li class="flex items-center text-gray-700">
+                                    <svg class="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    All information provided is accurate and truthful
+                                </li>
+                                <li class="flex items-center text-gray-700">
+                                    <svg class="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    You have the legal capacity to enter into this agreement
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 mb-6 shadow-sm">
+                        <h4 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                            <span class="bg-blue-100 text-blue-800 text-sm font-medium mr-3 px-2.5 py-0.5 rounded-full">3</span>
+                            Data Collection and Use
+                        </h4>
+                        <p class="text-gray-700 leading-relaxed mb-4">
+                            The information you provide will be used for:
+                        </p>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <ul class="space-y-2">
+                                <li class="flex items-center text-gray-700">
+                                    <svg class="w-4 h-4 text-blue-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Youth development planning and program implementation
+                                </li>
+                                <li class="flex items-center text-gray-700">
+                                    <svg class="w-4 h-4 text-blue-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Sangguniang Kabataan (SK) planning and governance
+                                </li>
+                                <li class="flex items-center text-gray-700">
+                                    <svg class="w-4 h-4 text-blue-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    National Youth Commission (NYC) reporting requirements
+                                </li>
+                                <li class="flex items-center text-gray-700">
+                                    <svg class="w-4 h-4 text-blue-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Statistical analysis for policy development
+                                </li>
+                                <li class="flex items-center text-gray-700">
+                                    <svg class="w-4 h-4 text-blue-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Community engagement and service delivery
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                            <h4 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                                <span class="bg-blue-100 text-blue-800 text-sm font-medium mr-3 px-2.5 py-0.5 rounded-full">4</span>
+                                User Responsibilities
+                            </h4>
+                            <p class="text-gray-700 leading-relaxed mb-4">You agree to:</p>
+                            <ul class="space-y-2">
+                                <li class="flex items-start text-gray-700">
+                                    <svg class="w-4 h-4 text-orange-500 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Provide accurate, current, and complete information
+                                </li>
+                                <li class="flex items-start text-gray-700">
+                                    <svg class="w-4 h-4 text-orange-500 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Keep your login credentials secure and confidential
+                                </li>
+                                <li class="flex items-start text-gray-700">
+                                    <svg class="w-4 h-4 text-orange-500 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Notify us immediately of any unauthorized use
+                                </li>
+                                <li class="flex items-start text-gray-700">
+                                    <svg class="w-4 h-4 text-orange-500 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Use the system only for its intended purpose
+                                </li>
+                                <li class="flex items-start text-gray-700">
+                                    <svg class="w-4 h-4 text-orange-500 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Comply with all applicable laws and regulations
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                            <h4 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                                <span class="bg-red-100 text-red-800 text-sm font-medium mr-3 px-2.5 py-0.5 rounded-full">6</span>
+                                Prohibited Uses
+                            </h4>
+                            <p class="text-gray-700 leading-relaxed mb-4">You may not:</p>
+                            <ul class="space-y-2">
+                                <li class="flex items-start text-gray-700">
+                                    <svg class="w-4 h-4 text-red-500 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Provide false or misleading information
+                                </li>
+                                <li class="flex items-start text-gray-700">
+                                    <svg class="w-4 h-4 text-red-500 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Use the system for any unlawful purpose
+                                </li>
+                                <li class="flex items-start text-gray-700">
+                                    <svg class="w-4 h-4 text-red-500 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Attempt to gain unauthorized access
+                                </li>
+                                <li class="flex items-start text-gray-700">
+                                    <svg class="w-4 h-4 text-red-500 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Interfere with platform functioning
+                                </li>
+                                <li class="flex items-start text-gray-700">
+                                    <svg class="w-4 h-4 text-red-500 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Upload malicious files or content
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 mb-6 shadow-sm">
+                        <h4 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                            <span class="bg-blue-100 text-blue-800 text-sm font-medium mr-3 px-2.5 py-0.5 rounded-full">5</span>
+                            Account Security
+                        </h4>
+                        <p class="text-gray-700 leading-relaxed">
+                            You are responsible for maintaining the confidentiality of your account credentials. We recommend using a strong password and keeping your login information secure.
+                        </p>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                            <h4 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                                <span class="bg-blue-100 text-blue-800 text-sm font-medium mr-3 px-2.5 py-0.5 rounded-full">7</span>
+                                Data Security
+                            </h4>
+                            <p class="text-gray-700 leading-relaxed">
+                                We implement appropriate technical and organizational measures to protect your personal information. However, no system is completely secure, and we cannot guarantee absolute security.
+                            </p>
+                        </div>
+
+                        <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                            <h4 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                                <span class="bg-blue-100 text-blue-800 text-sm font-medium mr-3 px-2.5 py-0.5 rounded-full">8</span>
+                                Changes to Terms
+                            </h4>
+                            <p class="text-gray-700 leading-relaxed">
+                                We reserve the right to modify these Terms at any time. Changes will be effective immediately upon posting. Your continued use of the system constitutes acceptance of any modifications.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-6">
+                        <h4 class="text-xl font-bold text-blue-800 mb-4 flex items-center">
+                            <span class="bg-blue-200 text-blue-800 text-sm font-medium mr-3 px-2.5 py-0.5 rounded-full">9</span>
+                            Contact Information
+                        </h4>
+                        <p class="text-blue-700 leading-relaxed mb-4">
+                            For questions about these Terms, please contact your local Sangguniang Kabataan office or the Iriga City Youth Development Office.
+                        </p>
+                        <div class="flex items-center justify-center">
+                            <div class="bg-white rounded-lg p-4 shadow-sm border border-blue-200">
+                                <div class="flex items-center space-x-3">
+                                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                    </svg>
+                                    <div>
+                                        <p class="font-semibold text-blue-800">Need Help?</p>
+                                        <p class="text-sm text-blue-600">Contact your local SK office</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modal Footer -->
+            <div class="flex items-center justify-between p-6 border-t border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-b-2xl">
+                <div class="flex items-center space-x-2">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span class="text-sm text-blue-700 font-medium">By accepting, you agree to these terms</span>
+                </div>
+                <div class="flex space-x-3">
+                    <button id="decline-terms-btn" class="px-6 py-2 text-gray-600 bg-gray-100 border border-gray-300 rounded-lg font-medium hover:bg-gray-200 transition-colors duration-200">
+                        Decline
+                    </button>
+                    <button id="accept-terms-btn" class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-2 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
+                        I Accept These Terms
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="terms-modal-bg" class="fixed inset-0 bg-black opacity-75 z-10"></div>
+    </div>
+
+    <!-- Privacy Policy Modal -->
+    <div id="privacy-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl relative animate-fade-in max-w-5xl max-h-[95vh] w-full mx-4 z-20 border border-gray-100">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-2xl">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-green-800">Privacy Policy</h3>
+                </div>
+                <button id="close-privacy-modal" class="text-gray-400 hover:text-gray-600 text-2xl font-bold w-10 h-10 flex items-center justify-center rounded-full hover:bg-white hover:shadow-md transition-all duration-200">
+                    &times;
+                </button>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="p-8 max-h-[calc(95vh-200px)] overflow-y-auto custom-scrollbar">
+                <div class="prose prose-sm max-w-none space-y-6">
+                    <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg mb-6">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <svg class="w-5 h-5 text-green-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-green-700">
+                                    <strong>Last updated:</strong> <?= date('F d, Y') ?>
+                                </p>
+                                <p class="text-sm text-green-700 mt-2">
+                                    This Privacy Policy describes how the K-NECT Youth Profiling System collects, uses, and protects your personal information in compliance with the Data Privacy Act of 2012 (RA 10173) and other applicable laws.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 mb-6 shadow-sm">
+                        <h4 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                            <span class="bg-green-100 text-green-800 text-sm font-medium mr-3 px-2.5 py-0.5 rounded-full">1</span>
+                            Information We Collect
+                        </h4>
+                        <p class="text-gray-700 leading-relaxed mb-4">We collect the following types of information:</p>
+                        
+                        <div class="space-y-4">
+                            <div class="bg-green-50 rounded-lg p-4">
+                                <h5 class="text-lg font-semibold text-green-800 mb-3 flex items-center">
+                                    <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                    </svg>
+                                    Personal Information:
+                                </h5>
+                                <ul class="space-y-2">
+                                    <li class="flex items-center text-gray-700">
+                                        <svg class="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        Full name, date of birth, and contact information
+                                    </li>
+                                    <li class="flex items-center text-gray-700">
+                                        <svg class="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        Address and barangay information
+                                    </li>
+                                    <li class="flex items-center text-gray-700">
+                                        <svg class="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        Sex, gender identity, and civil status
+                                    </li>
+                                    <li class="flex items-center text-gray-700">
+                                        <svg class="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        Educational background and work status
+                                    </li>
+                                    <li class="flex items-center text-gray-700">
+                                        <svg class="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        Voter registration and SK participation details
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div class="bg-blue-50 rounded-lg p-4">
+                                <h5 class="text-lg font-semibold text-blue-800 mb-3 flex items-center">
+                                    <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    Documents:
+                                </h5>
+                                <ul class="space-y-2">
+                                    <li class="flex items-center text-gray-700">
+                                        <svg class="w-4 h-4 text-blue-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        Birth certificate
+                                    </li>
+                                    <li class="flex items-center text-gray-700">
+                                        <svg class="w-4 h-4 text-blue-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        Valid identification documents
+                                    </li>
+                                    <li class="flex items-center text-gray-700">
+                                        <svg class="w-4 h-4 text-blue-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        Profile photograph
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 mb-6 shadow-sm">
+                        <h4 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                            <span class="bg-green-100 text-green-800 text-sm font-medium mr-3 px-2.5 py-0.5 rounded-full">2</span>
+                            How We Use Your Information
+                        </h4>
+                        <p class="text-gray-700 leading-relaxed mb-4">Your information is used for:</p>
+                        <div class="bg-green-50 rounded-lg p-4">
+                            <ul class="space-y-2">
+                                <li class="flex items-center text-gray-700">
+                                    <svg class="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Creating and managing your youth profile
+                                </li>
+                                <li class="flex items-center text-gray-700">
+                                    <svg class="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Youth development planning and program design
+                                </li>
+                                <li class="flex items-center text-gray-700">
+                                    <svg class="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    SK governance and decision-making processes
+                                </li>
+                                <li class="flex items-center text-gray-700">
+                                    <svg class="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Statistical reporting to government agencies
+                                </li>
+                                <li class="flex items-center text-gray-700">
+                                    <svg class="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Community engagement and service delivery
+                                </li>
+                                <li class="flex items-center text-gray-700">
+                                    <svg class="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Compliance with DILG MC 2022-324 requirements
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 mb-6 shadow-sm">
+                        <h4 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                            <span class="bg-yellow-100 text-yellow-800 text-sm font-medium mr-3 px-2.5 py-0.5 rounded-full">3</span>
+                            Information Sharing
+                        </h4>
+                        <p class="text-gray-700 leading-relaxed mb-4">We may share your information with:</p>
+                        <div class="bg-yellow-50 rounded-lg p-4 mb-4">
+                            <ul class="space-y-2">
+                                <li class="flex items-center text-gray-700">
+                                    <svg class="w-4 h-4 text-yellow-600 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Local Sangguniang Kabataan offices
+                                </li>
+                                <li class="flex items-center text-gray-700">
+                                    <svg class="w-4 h-4 text-yellow-600 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Iriga City Local Government Unit
+                                </li>
+                                <li class="flex items-center text-gray-700">
+                                    <svg class="w-4 h-4 text-yellow-600 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    National Youth Commission (NYC)
+                                </li>
+                                <li class="flex items-center text-gray-700">
+                                    <svg class="w-4 h-4 text-yellow-600 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Department of the Interior and Local Government (DILG)
+                                </li>
+                                <li class="flex items-center text-gray-700">
+                                    <svg class="w-4 h-4 text-yellow-600 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Other government agencies as required by law
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-red-400 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                </svg>
+                                <p class="text-red-700 font-medium">
+                                    We do not sell, trade, or transfer your personal information to third parties for commercial purposes.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                            <h4 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                                <span class="bg-green-100 text-green-800 text-sm font-medium mr-3 px-2.5 py-0.5 rounded-full">4</span>
+                                Data Security
+                            </h4>
+                            <p class="text-gray-700 leading-relaxed mb-4">We implement appropriate security measures to protect your information, including:</p>
+                            <ul class="space-y-2">
+                                <li class="flex items-center text-gray-700">
+                                    <svg class="w-4 h-4 text-blue-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Secure data transmission and storage
+                                </li>
+                                <li class="flex items-center text-gray-700">
+                                    <svg class="w-4 h-4 text-blue-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Access controls and authentication
+                                </li>
+                                <li class="flex items-center text-gray-700">
+                                    <svg class="w-4 h-4 text-blue-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Regular security assessments
+                                </li>
+                                <li class="flex items-center text-gray-700">
+                                    <svg class="w-4 h-4 text-blue-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Staff training on data protection
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                            <h4 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                                <span class="bg-purple-100 text-purple-800 text-sm font-medium mr-3 px-2.5 py-0.5 rounded-full">5</span>
+                                Your Rights
+                            </h4>
+                            <p class="text-gray-700 leading-relaxed mb-4">Under the Data Privacy Act, you have the right to:</p>
+                            <ul class="space-y-2">
+                                <li class="flex items-start text-gray-700">
+                                    <svg class="w-4 h-4 text-purple-500 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Access your personal information
+                                </li>
+                                <li class="flex items-start text-gray-700">
+                                    <svg class="w-4 h-4 text-purple-500 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Request correction of inaccurate data
+                                </li>
+                                <li class="flex items-start text-gray-700">
+                                    <svg class="w-4 h-4 text-purple-500 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Object to processing in certain circumstances
+                                </li>
+                                <li class="flex items-start text-gray-700">
+                                    <svg class="w-4 h-4 text-purple-500 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Request data portability
+                                </li>
+                                <li class="flex items-start text-gray-700">
+                                    <svg class="w-4 h-4 text-purple-500 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    File complaints with the National Privacy Commission
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                            <h4 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                                <span class="bg-green-100 text-green-800 text-sm font-medium mr-3 px-2.5 py-0.5 rounded-full">6</span>
+                                Data Retention
+                            </h4>
+                            <p class="text-gray-700 leading-relaxed">
+                                We retain your information for as long as necessary to fulfill the purposes outlined in this policy and comply with legal requirements. Youth profiles may be maintained throughout your eligibility period (ages 15-30) and for statistical purposes thereafter.
+                            </p>
+                        </div>
+
+                        <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                            <h4 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                                <span class="bg-green-100 text-green-800 text-sm font-medium mr-3 px-2.5 py-0.5 rounded-full">7</span>
+                                Cookies and Tracking
+                            </h4>
+                            <p class="text-gray-700 leading-relaxed">
+                                Our system may use cookies and similar technologies to improve user experience and maintain session security. You can control cookie settings through your browser.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 mb-6 shadow-sm">
+                        <h4 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                            <span class="bg-green-100 text-green-800 text-sm font-medium mr-3 px-2.5 py-0.5 rounded-full">8</span>
+                            Changes to Privacy Policy
+                        </h4>
+                        <p class="text-gray-700 leading-relaxed">
+                            We may update this Privacy Policy periodically. Changes will be posted on this page with an updated revision date.
+                        </p>
+                    </div>
+
+                    <div class="bg-green-50 border border-green-200 rounded-xl p-6">
+                        <h4 class="text-xl font-bold text-green-800 mb-4 flex items-center">
+                            <span class="bg-green-200 text-green-800 text-sm font-medium mr-3 px-2.5 py-0.5 rounded-full">9</span>
+                            Contact Information
+                        </h4>
+                        <p class="text-green-700 leading-relaxed mb-4">
+                            For privacy-related questions or to exercise your data rights, contact:
+                        </p>
+                        <div class="bg-white border border-green-200 rounded-lg p-6 shadow-sm">
+                            <div class="flex items-start space-x-4">
+                                <div class="flex-shrink-0">
+                                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h5 class="font-bold text-green-800 text-lg mb-2">Data Protection Officer</h5>
+                                    <div class="space-y-1 text-green-700">
+                                        <p class="font-medium">Iriga City Youth Development Office</p>
+                                        <p>City Hall, Iriga City, Camarines Sur</p>
+                                        <p class="italic">Or your local Sangguniang Kabataan office</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modal Footer -->
+            <div class="flex items-center justify-between p-6 border-t border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50 rounded-b-2xl">
+                <div class="flex items-center space-x-2">
+                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                    </svg>
+                    <span class="text-sm text-green-700 font-medium">Your privacy is protected by law</span>
+                </div>
+                <div class="flex space-x-3">
+                    <button id="decline-privacy-btn" class="px-6 py-2 text-gray-600 bg-gray-100 border border-gray-300 rounded-lg font-medium hover:bg-gray-200 transition-colors duration-200">
+                        Close
+                    </button>
+                    <button id="accept-privacy-btn" class="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-8 py-2 rounded-lg font-medium hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
+                        I Understand This Policy
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="privacy-modal-bg" class="fixed inset-0 bg-black opacity-75 z-10"></div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container">
+        <!-- Toasts will be dynamically added here -->
+    </div>
+
     <!-- Document Preview Modal -->
     <div id="document-preview-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
         <div class="bg-white rounded-lg shadow-xl relative animate-fade-in max-w-4xl max-h-[90vh] w-full mx-4 z-20">
@@ -2463,6 +3217,8 @@
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Global flag: suppress client-side validation when navigating back
+            window.isNavigatingBack = false;
             // Expose current server-allowed step (1..6) to JS
             window.serverProfilingStep = parseInt('<?= (int)($step ?? 1) ?>', 10) || 1;
             // Add validation styles if not already present
@@ -2485,6 +3241,36 @@
                 `;
                 document.head.appendChild(style);
             }
+
+            // If arriving here due to a Back action, clear any error states in the visible step
+            (function clearErrorsAfterBackIfNeeded() {
+                try {
+                    const backFlag = sessionStorage.getItem('profiling_navigating_back');
+                    if (backFlag === '1') {
+                        // Find currently visible step container
+                        const parts = Array.from(document.querySelectorAll('[id^="part"]'));
+                        const visible = parts.find(p => (p.getAttribute('style') || '').indexOf('display:none') === -1) ||
+                                        parts.find(p => window.getComputedStyle(p).display !== 'none');
+                        const scope = visible || document;
+                        // Clear input error classes/attributes
+                        scope.querySelectorAll('input, select, textarea').forEach(el => {
+                            el.classList.remove('field-error', 'border-red-400', 'bg-red-50', 'invalid-field');
+                            el.removeAttribute('aria-invalid');
+                        });
+                        // Hide all error messages
+                        scope.querySelectorAll('.validation-error, .error-message, .validation-message.error').forEach(msg => {
+                            if (msg.classList) {
+                                msg.classList.add('hidden');
+                                msg.classList.remove('show');
+                            } else if (msg.style) {
+                                msg.style.display = 'none';
+                            }
+                        });
+                        // Reset the flag
+                        sessionStorage.removeItem('profiling_navigating_back');
+                    }
+                } catch (e) { /* no-op */ }
+            })();
 
             // Initialize all functionality
             initializeFormPersistence();
@@ -2771,26 +3557,37 @@
             // Handle back buttons separately to bypass validation
             function initializeBackButtonHandling() {
                 const backButtons = document.querySelectorAll('button[formaction*="backTo"]');
-                
+
                 backButtons.forEach(button => {
+                    // On mousedown set navigating flag to suppress blur-driven validators
+                    button.addEventListener('mousedown', function() {
+                        window.isNavigatingBack = true;
+                    });
                     button.addEventListener('click', function(e) {
-                        // Clear any existing validation errors when going back
                         const form = button.closest('form');
                         if (form) {
-                            const errorFields = form.querySelectorAll('.field-error');
-                            const errorMessages = form.querySelectorAll('.validation-error');
-                            
-                            errorFields.forEach(field => {
-                                field.classList.remove('field-error');
+                            try { sessionStorage.setItem('profiling_navigating_back', '1'); } catch (e) {}
+                            // 1) Remove any error classes on inputs/selects/textareas
+                            const inputs = form.querySelectorAll('input, select, textarea');
+                            inputs.forEach(el => {
+                                el.classList.remove('field-error', 'border-red-400', 'bg-red-50', 'invalid-field');
+                                el.removeAttribute('aria-invalid');
                             });
-                            
-                            errorMessages.forEach(message => {
-                                message.remove();
+
+                            // 2) Hide or remove error messages of all kinds
+                            form.querySelectorAll('.validation-error, .error-message, .validation-message.error').forEach(msg => {
+                                // Prefer hide to avoid layout shifts if needed
+                                if (msg.classList) {
+                                    msg.classList.add('hidden');
+                                    msg.classList.remove('show');
+                                } else if (msg.style) {
+                                    msg.style.display = 'none';
+                                }
                             });
                         }
-                        
-                        // Allow the form to submit normally for back navigation
-                        // The form action will handle the back navigation
+                        // Let the submit proceed (formnovalidate already skips HTML5 validation)
+                        // Reset the navigating flag shortly after to avoid affecting unrelated flows
+                        setTimeout(() => { window.isNavigatingBack = false; }, 0);
                     });
                 });
             }
@@ -2854,20 +3651,25 @@
                 const forms = document.querySelectorAll('form');
                 forms.forEach(form => {
                     form.addEventListener('submit', function(e) {
-                        // Check if the clicked button is a back button
-                        const clickedButton = document.activeElement;
-                        const isBackButton = clickedButton && (
-                            clickedButton.getAttribute('formaction') && 
-                            clickedButton.getAttribute('formaction').includes('backTo')
+                        // Detect actual submitter reliably
+                        const submitter = e.submitter || document.activeElement;
+                        const formaction = submitter ? (submitter.getAttribute('formaction') || '') : '';
+                        const isBackButton = !!submitter && (
+                            submitter.hasAttribute('formnovalidate') || formaction.includes('backTo')
                         );
-                        
-                        // Only validate if it's not a back button
-                        if (!isBackButton && !validateStepForm(form)) {
+
+                        // Skip any validation entirely on back navigation
+                        if (isBackButton) {
+                            return;
+                        }
+
+                        // Otherwise run validation
+                        if (!validateStepForm(form)) {
                             e.preventDefault();
                             const firstInvalidField = form.querySelector('.field-error') || form.querySelector('.validation-error');
                             if (firstInvalidField) {
                                 firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                firstInvalidField.focus();
+                                if (firstInvalidField.focus) firstInvalidField.focus();
                             }
                         }
                     });
@@ -4488,7 +5290,7 @@
         }
 
         // Enhanced Email and Phone Number Validation (matching account-settings pattern)
-        function initializePhoneValidation() {
+            function initializePhoneValidation() {
             const phoneInput = document.getElementById('phone_number');
             const emailInput = document.getElementById('email');
             
@@ -4535,24 +5337,26 @@
             }
             
             function showError(input, el, msg) {
-                input.classList.add('border-red-500');
+                // Match other fields' error styling
+                input.classList.add('border-red-400', 'bg-red-50');
                 input.classList.remove('border-green-500', 'border-gray-300', 'border-slate-200');
                 input.setAttribute('aria-invalid', 'true');
                 if (el) { 
-                    el.textContent = msg || ''; 
+                    el.textContent = msg || '';
+                    // Ensure el has same classes as server error-message
                     el.classList.remove('hidden');
-                    el.classList.add('show'); // Add show class for consistency
+                    el.classList.add('show');
                 }
             }
             
             function clearError(input, el) {
-                input.classList.remove('border-red-500');
+                input.classList.remove('border-red-400', 'bg-red-50');
                 input.classList.add('border-slate-200');
                 input.removeAttribute('aria-invalid');
                 if (el) { 
-                    el.textContent = ''; 
+                    el.textContent = '';
                     el.classList.add('hidden');
-                    el.classList.remove('show'); // Remove show class
+                    el.classList.remove('show');
                 }
             }
             
@@ -4562,6 +5366,11 @@
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
                 
                 function validateEmail() {
+                    if (window.isNavigatingBack) {
+                        // If user is navigating back, don't show errors
+                        clearError(emailInput, emailErr);
+                        return true;
+                    }
                     const value = (emailInput.value || '').trim();
                     
                     // Clear any existing server validation errors for this field
@@ -4621,6 +5430,10 @@
                 }
 
                 function validatePhone() {
+                    if (window.isNavigatingBack) {
+                        clearError(phoneInput, phoneErr);
+                        return true;
+                    }
                     const formatted = normalizePhone(phoneInput.value || '');
                     if (formatted !== phoneInput.value) phoneInput.value = formatted;
                     const digits = toDigits(formatted);
@@ -4666,6 +5479,12 @@
                 // Prevent Step 1 submit if invalid phone
                 if (step1Form) {
                     step1Form.addEventListener('submit', function(ev) {
+                        // If the submitter is a Back button with formnovalidate, skip client validation
+                        const submitter = ev.submitter;
+                        if (submitter && submitter.hasAttribute && submitter.hasAttribute('formnovalidate')) {
+                            return; // allow submit without validation
+                        }
+
                         const phoneValid = validatePhone();
                         const emailValid = window.validateEmailField ? window.validateEmailField() : true;
                         
@@ -4792,6 +5611,298 @@
         function initializeGenderDropdown() {
             // Gender dropdown functionality removed - no longer needed
         }
+
+        // Initialize Terms and Conditions functionality
+        function initializeTermsAndConditions() {
+            const termsCheckbox = document.getElementById('terms-checkbox');
+            const continueBtn = document.getElementById('continue-btn');
+            const showTermsBtn = document.getElementById('show-terms-btn');
+            const showPrivacyBtn = document.getElementById('show-privacy-btn');
+            
+            // Modal elements
+            const termsModal = document.getElementById('terms-modal');
+            const privacyModal = document.getElementById('privacy-modal');
+            const closeTermsBtn = document.getElementById('close-terms-modal');
+            const closePrivacyBtn = document.getElementById('close-privacy-modal');
+            const acceptTermsBtn = document.getElementById('accept-terms-btn');
+            const acceptPrivacyBtn = document.getElementById('accept-privacy-btn');
+            const declineTermsBtn = document.getElementById('decline-terms-btn');
+            const declinePrivacyBtn = document.getElementById('decline-privacy-btn');
+            const termsModalBg = document.getElementById('terms-modal-bg');
+            const privacyModalBg = document.getElementById('privacy-modal-bg');
+
+            if (!termsCheckbox || !continueBtn) return;
+
+            // Tracking state
+            let hasReadTerms = false;
+            let hasReadPrivacy = false;
+            let termsAccepted = false;
+
+            // Check session storage for previous acceptance
+            if (sessionStorage.getItem('termsAccepted') === 'true') {
+                termsAccepted = true;
+                termsCheckbox.checked = true;
+                updateContinueButton();
+            }
+
+            // Toast notification functions
+            function showToast(message, type = 'error') {
+                const toastContainer = document.getElementById('toast-container');
+                
+                // Create unique toast element
+                const toastId = 'toast-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                const toastElement = document.createElement('div');
+                toastElement.id = toastId;
+                toastElement.className = 'toast-notification';
+                
+                if (type === 'success') {
+                    toastElement.classList.add('success');
+                }
+                
+                const icon = type === 'success' ? 
+                    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>' :
+                    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>';
+                
+                toastElement.innerHTML = `
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            ${icon}
+                        </svg>
+                        <span class="text-sm font-medium">${message}</span>
+                    </div>
+                `;
+                
+                // Add to container
+                toastContainer.appendChild(toastElement);
+                
+                // Show with animation
+                setTimeout(() => {
+                    toastElement.classList.add('show');
+                }, 100);
+                
+                // Auto remove after 3 seconds
+                setTimeout(() => {
+                    toastElement.classList.remove('show');
+                    setTimeout(() => {
+                        if (toastElement.parentNode) {
+                            toastContainer.removeChild(toastElement);
+                        }
+                    }, 300);
+                }, 3000);
+            }
+
+            // Scroll tracking function
+            function trackScrollComplete(modalContent, callback) {
+                const checkScroll = () => {
+                    const scrollTop = modalContent.scrollTop;
+                    const scrollHeight = modalContent.scrollHeight;
+                    const clientHeight = modalContent.clientHeight;
+                    
+                    // Check if user has scrolled to bottom (with 10px tolerance)
+                    if (scrollTop + clientHeight >= scrollHeight - 10) {
+                        callback();
+                        modalContent.removeEventListener('scroll', checkScroll);
+                    }
+                };
+                
+                modalContent.addEventListener('scroll', checkScroll);
+                // Also check immediately in case content is already visible
+                checkScroll();
+            }
+
+            // Enable/disable continue button based on checkbox state
+            function updateContinueButton() {
+                if (termsCheckbox.checked) {
+                    continueBtn.disabled = false;
+                    continueBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    continueBtn.classList.add('hover:bg-blue-50', 'hover:shadow-lg', 'transform', 'hover:scale-105');
+                } else {
+                    continueBtn.disabled = true;
+                    continueBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    continueBtn.classList.remove('hover:bg-blue-50', 'hover:shadow-lg', 'transform', 'hover:scale-105');
+                }
+            }
+
+            // Checkbox click handler with validation
+            termsCheckbox.addEventListener('click', function(e) {
+                if (!termsAccepted) {
+                    e.preventDefault();
+                    showToast('Please read the complete Terms and Conditions and Privacy Policy before accepting.');
+                    return false;
+                }
+            });
+
+            // Continue button click handler with validation
+            continueBtn.addEventListener('click', function(e) {
+                if (!termsAccepted || !termsCheckbox.checked) {
+                    e.preventDefault();
+                    showToast('Please read and accept the Terms and Conditions and Privacy Policy to continue.');
+                    return false;
+                }
+            });
+
+            // Show Terms modal
+            if (showTermsBtn && termsModal) {
+                showTermsBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    termsModal.classList.remove('hidden');
+                    document.body.style.overflow = 'hidden';
+                    
+                    // Style accept button as disabled but keep it clickable
+                    if (acceptTermsBtn) {
+                        acceptTermsBtn.disabled = false; // Keep clickable
+                        acceptTermsBtn.classList.add('opacity-50');
+                        acceptTermsBtn.classList.remove('cursor-not-allowed'); // Remove cursor blocking
+                        acceptTermsBtn.textContent = 'Read to Accept Terms';
+                    }
+                    
+                    // Start tracking scroll
+                    const modalContent = termsModal.querySelector('.custom-scrollbar');
+                    if (modalContent) {
+                        trackScrollComplete(modalContent, function() {
+                            hasReadTerms = true;
+                            if (acceptTermsBtn) {
+                                acceptTermsBtn.classList.remove('opacity-50');
+                                acceptTermsBtn.textContent = 'I Accept These Terms';
+                                showToast('You can now accept the Terms and Conditions!', 'success');
+                            }
+                        });
+                    }
+                });
+            }
+
+            // Show Privacy modal
+            if (showPrivacyBtn && privacyModal) {
+                showPrivacyBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    privacyModal.classList.remove('hidden');
+                    document.body.style.overflow = 'hidden';
+                    
+                    // Style accept button as disabled but keep it clickable
+                    if (acceptPrivacyBtn) {
+                        acceptPrivacyBtn.disabled = false; // Keep clickable
+                        acceptPrivacyBtn.classList.add('opacity-50');
+                        acceptPrivacyBtn.classList.remove('cursor-not-allowed'); // Remove cursor blocking
+                        acceptPrivacyBtn.textContent = 'Read to Understand Policy';
+                    }
+                    
+                    // Start tracking scroll
+                    const modalContent = privacyModal.querySelector('.custom-scrollbar');
+                    if (modalContent) {
+                        trackScrollComplete(modalContent, function() {
+                            hasReadPrivacy = true;
+                            if (acceptPrivacyBtn) {
+                                acceptPrivacyBtn.classList.remove('opacity-50');
+                                acceptPrivacyBtn.textContent = 'I Understand This Policy';
+                                showToast('You can now confirm your understanding of the Privacy Policy!', 'success');
+                            }
+                        });
+                    }
+                });
+            }
+
+            // Close Terms modal
+            function closeTermsModal() {
+                if (termsModal) {
+                    termsModal.classList.add('hidden');
+                    document.body.style.overflow = 'auto';
+                }
+            }
+
+            // Close Privacy modal
+            function closePrivacyModal() {
+                if (privacyModal) {
+                    privacyModal.classList.add('hidden');
+                    document.body.style.overflow = 'auto';
+                }
+            }
+
+            // Terms modal handlers
+            if (closeTermsBtn) closeTermsBtn.addEventListener('click', closeTermsModal);
+            if (termsModalBg) termsModalBg.addEventListener('click', closeTermsModal);
+            if (declineTermsBtn) declineTermsBtn.addEventListener('click', closeTermsModal);
+            if (acceptTermsBtn) {
+                acceptTermsBtn.addEventListener('click', function(e) {
+                    // Check if user has read the document
+                    if (!hasReadTerms) {
+                        e.preventDefault();
+                        showToast('Please scroll to the bottom to read the complete Terms and Conditions.');
+                        return;
+                    }
+                    
+                    // Check if privacy has also been read
+                    if (!hasReadPrivacy) {
+                        showToast('Please also read the Privacy Policy before proceeding.');
+                        closeTermsModal();
+                        // Auto-open privacy modal
+                        if (privacyModal) {
+                            setTimeout(() => {
+                                showPrivacyBtn.click();
+                            }, 500);
+                        }
+                        return;
+                    }
+                    
+                    // Both documents read, enable everything
+                    termsAccepted = true;
+                    sessionStorage.setItem('termsAccepted', 'true');
+                    termsCheckbox.checked = true;
+                    updateContinueButton();
+                    closeTermsModal();
+                    showToast('Terms accepted! You can now proceed with registration.', 'success');
+                });
+            }
+
+            // Privacy modal handlers
+            if (closePrivacyBtn) closePrivacyBtn.addEventListener('click', closePrivacyModal);
+            if (privacyModalBg) privacyModalBg.addEventListener('click', closePrivacyModal);
+            if (declinePrivacyBtn) declinePrivacyBtn.addEventListener('click', closePrivacyModal);
+            if (acceptPrivacyBtn) {
+                acceptPrivacyBtn.addEventListener('click', function(e) {
+                    // Check if user has read the document
+                    if (!hasReadPrivacy) {
+                        e.preventDefault();
+                        showToast('Please scroll to the bottom to read the complete Privacy Policy.');
+                        return;
+                    }
+                    
+                    // Check if terms has also been read
+                    if (!hasReadTerms) {
+                        showToast('Please also read the Terms and Conditions before proceeding.');
+                        closePrivacyModal();
+                        // Auto-open terms modal
+                        if (termsModal) {
+                            setTimeout(() => {
+                                showTermsBtn.click();
+                            }, 500);
+                        }
+                        return;
+                    }
+                    
+                    // Both documents read, enable everything
+                    termsAccepted = true;
+                    sessionStorage.setItem('termsAccepted', 'true');
+                    termsCheckbox.checked = true;
+                    updateContinueButton();
+                    closePrivacyModal();
+                    showToast('Privacy Policy acknowledged! You can now proceed with registration.', 'success');
+                });
+            }
+
+            // ESC key to close modals
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeTermsModal();
+                    closePrivacyModal();
+                }
+            });
+
+            // Initial button state
+            updateContinueButton();
+        }
+
+        // Initialize Terms and Conditions when DOM is ready
+        initializeTermsAndConditions();
     </script>
 </body>
 </html>

@@ -91,42 +91,43 @@ class AnalyticsController extends BaseController
         if ($viewType === 'citywide') {
             if ($barangayId && $barangayId !== 'all') {
                 $data = $this->analyticsModel->getGenderDistributionPerBarangay($barangayId);
-                
-                // Transform barangay-specific data for pie chart
-                $chartData = [];
-                foreach ($data as $item) {
-                    $chartData[] = [
-                        'name' => $item['gender'],
-                        'y' => (int)$item['total']
-                    ];
-                }
             } else {
                 $data = $this->analyticsModel->getGenderDistributionCitywide();
-                
-                // Transform city-wide data for pie chart
-                $chartData = [];
-                foreach ($data as $item) {
-                    $chartData[] = [
-                        'name' => $item['gender'],
-                        'y' => (int)$item['total']
-                    ];
-                }
             }
         } else {
             // SK view - barangay specific
             $session = session();
             $skBarangay = $session->get('sk_barangay');
             $data = $this->analyticsModel->getGenderDistributionPerBarangay($skBarangay);
-            
-            // Transform data for pie chart
-            $chartData = [];
-            foreach ($data as $item) {
-                $chartData[] = [
-                    'name' => $item['gender'],
-                    'y' => (int)$item['total']
-                ];
-            }
         }
+        
+        // Initialize with both genders to ensure complete data structure
+        $genderCounts = [
+            'Male' => 0,
+            'Female' => 0
+        ];
+        
+        // Populate actual counts from database
+        foreach ($data as $item) {
+            $genderCounts[$item['gender']] = (int)$item['total'];
+        }
+        
+        // Transform to chart format
+        $chartData = [];
+        foreach ($genderCounts as $gender => $count) {
+            $chartData[] = [
+                'name' => $gender,
+                'y' => $count
+            ];
+        }
+        
+        // If one gender has zero count, filter it out to prevent empty slices
+        $chartData = array_filter($chartData, function($item) {
+            return $item['y'] > 0;
+        });
+        
+        // Re-index array to ensure proper JSON formatting
+        $chartData = array_values($chartData);
         
         return $this->response->setJSON($chartData);
     }

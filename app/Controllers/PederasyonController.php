@@ -3243,6 +3243,10 @@ class PederasyonController extends BaseController
             $successCount = 0;
             $errors = [];
 
+            // System validation: must keep at least one Pederasyon overall
+            $userModelForCount = new UserModel();
+            $remainingPed = (int) $userModelForCount->where('user_type', 3)->countAllResults();
+
             foreach ($userIds as $userId) {
                 try {
                     if (!is_numeric($userId)) {
@@ -3254,6 +3258,15 @@ class PederasyonController extends BaseController
                     if (!$user) {
                         $errors[] = "User not found: ID $userId";
                         continue;
+                    }
+
+                    // Guard: If converting a Pederasyon to a non-Pederasyon and that would remove the last one, block
+                    $currentType = (int)($user['user_type'] ?? 1);
+                    if ($currentType === 3 && $newUserType !== 3) {
+                        if ($remainingPed <= 1) {
+                            $errors[] = "Cannot remove the last Pederasyon user (ID $userId). The system must always have at least one.";
+                            continue;
+                        }
                     }
 
                     // Additional validation for SK Chairperson (user_type = 2)
@@ -3281,6 +3294,24 @@ class PederasyonController extends BaseController
                     }
 
                     $updateData = ['user_type' => $newUserType];
+                    
+                    // Apply position handling rules based on user type transitions
+                    $currentUserType = (int)($user['user_type'] ?? 1);
+                    
+                    if ($currentUserType == 3 && $newUserType == 2) {
+                        // From Pederasyon → SK: ped_position must be updated to NULL
+                        $updateData['ped_position'] = null;
+                    } elseif (($currentUserType == 3 || $currentUserType == 2) && $newUserType == 1) {
+                        // From Pederasyon or SK → KK: Both position and ped_position must be updated to NULL
+                        $updateData['position'] = null;
+                        $updateData['ped_position'] = null;
+                    } elseif ($currentUserType == 1 && $newUserType == 2) {
+                        // From KK → SK: position must be updated to 1
+                        $updateData['position'] = 1;
+                    } elseif ($currentUserType == 1 && $newUserType == 3) {
+                        // From KK → Pederasyon: position must be updated to 1
+                        $updateData['position'] = 1;
+                    }
                     
                     // If user is pending (status = 1), auto-accept them and generate user_id
                     if ((int)$user['status'] === 1) {
@@ -3311,7 +3342,7 @@ class PederasyonController extends BaseController
                             $updateData['sk_username'] = UserHelper::generateSKUsername($user['first_name'], $user['last_name']);
                             $updateData['sk_password'] = UserHelper::generatePassword(8);
                         }
-                        $updateData['position'] = 1; // Set position to Chairperson
+                        // Position is handled by position transition rules above
                         // If downgrading from PED -> SK, clear PED credentials
                         if (isset($user['user_type']) && (int)$user['user_type'] === 3) {
                             $updateData['ped_username'] = null;
@@ -3332,7 +3363,7 @@ class PederasyonController extends BaseController
                                 $updateData['sk_username'] = UserHelper::generateSKUsername($user['first_name'], $user['last_name']);
                                 $updateData['sk_password'] = UserHelper::generatePassword(8);
                             }
-                            $updateData['position'] = 1; // Promote to SK Chairperson to align with Pederasyon composition
+                            // Position is handled by position transition rules above
                         }
                     }
 
@@ -3358,9 +3389,13 @@ class PederasyonController extends BaseController
                         continue;
                     }
 
-                    // Set position = 1 for SK Chairperson (user_type = 2)
-                    if ($newUserType === 2) {
-                        $extInfoData = ['position' => 1];
+                    if ($currentType === 3 && $newUserType !== 3) {
+                        $remainingPed = max(0, $remainingPed - 1);
+                    }
+
+                    // Handle user_ext_info position updates based on transition rules
+                    if (isset($updateData['position'])) {
+                        $extInfoData = ['position' => $updateData['position']];
                         
                         // Check if user_ext_info record exists
                         $existingExtInfo = $userExtInfoModel->where('user_id', $userId)->first();
@@ -3370,6 +3405,9 @@ class PederasyonController extends BaseController
                             $extInfoData['user_id'] = $userId;
                             $userExtInfoModel->insert($extInfoData);
                         }
+                    } elseif ($updateData['position'] === null) {
+                        // If position should be null, remove from user_ext_info
+                        $userExtInfoModel->where('user_id', $userId)->delete();
                     }
 
                     $successCount++;
@@ -3399,6 +3437,37 @@ class PederasyonController extends BaseController
             log_message('error', 'Error in bulkUpdateUserType: ' . $e->getMessage());
             return $this->response->setJSON(['success' => false, 'message' => 'An error occurred while updating users']);
         }
+    }
+
+    // ===================== CREDENTIAL DOWNLOAD SESSION FLAGS =====================
+    public function credentialDownloadStatus()
+    {
+        $session = session();
+        return $this->response->setJSON([
+            'success' => true,
+            'require' => (bool) $session->get('require_credentials_download'),
+            'sk' => (bool) $session->get('downloaded_sk_credentials'),
+            'pederasyon' => (bool) $session->get('downloaded_ped_credentials'),
+        ]);
+    }
+
+    public function markCredentialDownloaded()
+    {
+        $type = strtolower((string) $this->request->getPost('type'));
+        if (!in_array($type, ['sk', 'pederasyon'], true)) {
+            return $this->response->setStatusCode(400)->setJSON(['success' => false, 'message' => 'Invalid credential type']);
+        }
+        $session = session();
+        if ($type === 'sk') {
+            $session->set('downloaded_sk_credentials', true);
+        } else {
+            $session->set('downloaded_ped_credentials', true);
+        }
+        // If both done, clear the requirement flag
+        if ((bool)$session->get('downloaded_sk_credentials') && (bool)$session->get('downloaded_ped_credentials')) {
+            $session->set('require_credentials_download', false);
+        }
+        return $this->response->setJSON(['success' => true]);
     }
 
     public function checkSKChairpersonByBarangay()

@@ -11,6 +11,7 @@ use CodeIgniter\Router\RouteCollection;
 // ------------- Public Landing & Authentication Routes ------------- //
 // Public landing page (always accessible). Authenticated users get redirected to their dashboard inside controller.
 $routes->get('/', 'PublicController::index');
+$routes->get('K-NECT', 'PublicController::index'); // Public website accessible to all users
 
 // Guest-only routes (login etc.)
 $routes->group('', ['filter' => 'guest'], function ($routes) {
@@ -18,6 +19,8 @@ $routes->group('', ['filter' => 'guest'], function ($routes) {
 });
 $routes->post('loginProcess', 'AuthController::loginProcess');
 $routes->post('logout', 'AuthController::logout');
+// Also allow GET logout for safety (server will still enforce credential gating)
+$routes->get('logout', 'AuthController::logout');
 $routes->get('change-password', 'AuthController::changePassword');
 $routes->post('change-password-process', 'AuthController::changePasswordProcess');
 
@@ -145,6 +148,9 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('pederasyon/generate-credentials-pdf', 'PederasyonController::generateCredentialsPDF');
     $routes->post('pederasyon/generate-credentials-word', 'PederasyonController::generateCredentialsWord');
     $routes->post('pederasyon/generate-credentials-excel', 'PederasyonController::generateCredentialsExcel');
+    // Credential download gating endpoints
+    $routes->get('pederasyon/credential-download-status', 'PederasyonController::credentialDownloadStatus');
+    $routes->post('pederasyon/mark-credential-downloaded', 'PederasyonController::markCredentialDownloaded');
 
     // ============== Module: Member Management ============== //
     $routes->post('getUserInfo', 'MemberController::getUserInfo');

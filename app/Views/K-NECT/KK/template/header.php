@@ -213,8 +213,8 @@
 									</svg>
 									Profile
 								</a>
-								<form action="<?= base_url('logout') ?>" method="post" class="w-full">
-									<button type="submit" class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md flex items-center">
+								<form id="logoutForm" action="<?= base_url('logout') ?>" method="post" class="w-full">
+									<button id="logoutBtn" type="submit" class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md flex items-center">
 										<svg class="w-4 h-4 mr-3 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
 										</svg>
@@ -236,6 +236,8 @@
 			const dropdownBtn = document.getElementById('userDropdownBtn');
 			const dropdownMenu = document.getElementById('userDropdownMenu');
 			const arrowPath = document.getElementById('arrowPath');
+			const logoutForm = document.getElementById('logoutForm');
+			const logoutBtn = document.getElementById('logoutBtn');
             
 			// Arrow paths
 			const downArrow = "M19 9l-7 7-7-7"; // Chevron down
@@ -341,6 +343,64 @@
 					}
 				});
 			}
+
+			// Helper toast
+			function showHeaderToast(message, type = 'info') {
+				const note = document.createElement('div');
+				note.className = 'header-stacked-toast fixed top-4 right-4 z-[99999] px-4 py-3 rounded-md shadow transition transform translate-x-full';
+				let bg = '#3b82f6', color = '#fff';
+				if (type === 'success') bg = '#16a34a';
+				if (type === 'warning') bg = '#f59e0b';
+				if (type === 'error') bg = '#dc2626';
+				note.style.background = bg; note.style.color = color; note.textContent = message;
+				const existing = document.querySelectorAll('.header-stacked-toast');
+				note.style.marginTop = (existing.length * 56) + 'px';
+				document.body.appendChild(note);
+				setTimeout(() => note.classList.remove('translate-x-full'), 50);
+				setTimeout(() => { note.classList.add('translate-x-full'); setTimeout(() => note.remove(), 350); }, 4800);
+			}
+
+			// Intercept logout to enforce credentials download requirement
+			if (logoutForm && logoutBtn) {
+				logoutForm.addEventListener('submit', function(e) {
+					e.preventDefault();
+					fetch('<?= base_url('pederasyon/credential-download-status') ?>', { credentials: 'same-origin' })
+						.then(r => r.json())
+						.then(st => {
+							if (st && st.success && st.require) {
+								const needSk = !st.sk;
+								const needPed = !st.pederasyon;
+								const msgs = [];
+								if (needSk) msgs.push('Credentials download required: SK');
+								if (needPed) msgs.push('Credentials download required: Pederasyon');
+								if (msgs.length) {
+									msgs.forEach(m => showHeaderToast(m, 'warning'));
+									setTimeout(() => { window.location.href = '<?= base_url('pederasyon/youthlist') ?>'; }, 700);
+									return;
+								}
+							}
+							// Allowed to logout
+							logoutForm.submit();
+						})
+						.catch(() => showHeaderToast('Unable to verify credential downloads. Please try again.', 'error'));
+				});
+			}
+
+			// On-load reminder if required
+			try {
+				fetch('<?= base_url('pederasyon/credential-download-status') ?>', { credentials: 'same-origin' })
+					.then(r => r.ok ? r.json() : Promise.reject(new Error('Network error')))
+					.then(st => {
+						if (st && st.success && st.require) {
+							const needSk = !st.sk;
+							const needPed = !st.pederasyon;
+							if (needSk || needPed) {
+								showHeaderToast('Please download updated credentials. Logout is disabled until both SK and Pederasyon are downloaded.', 'warning');
+							}
+						}
+					})
+					.catch(() => {});
+			} catch (e) {}
 		});
 	</script>
 

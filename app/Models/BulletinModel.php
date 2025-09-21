@@ -149,7 +149,8 @@ class BulletinModel extends Model
                 ->groupEnd();
                 break;
             case 'pederasyon':
-                // Can see all posts - no additional filter needed
+                // Federation should not see barangay-only posts
+                $builder->whereIn('bp.visibility', ['public', 'city']);
                 break;
             default:
                 // For safety, default to public only
@@ -246,8 +247,10 @@ class BulletinModel extends Model
             ->orderBy('bc.name', 'ASC');
 
         // Apply role-based filtering for post counts
-        if ($role && $role !== 'pederasyon') {
-            if ($barangayId) {
+        if ($role) {
+            if ($role === 'pederasyon') {
+                $builder->whereIn('bp.visibility', ['public','city']);
+            } elseif ($barangayId) {
                 $builder->groupStart()
                     ->where('bp.visibility', 'public')
                     ->orWhere('bp.visibility', 'city')
@@ -409,7 +412,8 @@ class BulletinModel extends Model
                 if ($post['visibility'] === 'barangay' && $post['barangay_id'] == $barangayId) return true;
                 return false;
             case 'pederasyon':
-                return true;
+                // Federation can only view city/public posts
+                return in_array($post['visibility'], ['public','city'], true);
             default:
                 return false;
         }
@@ -418,20 +422,24 @@ class BulletinModel extends Model
     /**
      * Check if user can edit post
      */
-    public function canUserEditPost($post, $userType, $userId)
+    public function canUserEditPost($post, $userType, $userId, $userBarangayId = null)
     {
         $role = strtolower((string) $userType);
         if ($role === 'pederasyon') return true;
-        if ($role === 'sk' && $post['author_id'] == $userId) return true;
+        if ($role === 'sk') {
+            // SK may edit only their own post and only within their barangay
+            if (empty($userBarangayId)) return false;
+            if ($post['author_id'] == $userId && (string)($post['barangay_id'] ?? '') === (string)$userBarangayId) return true;
+        }
         return false;
     }
 
     /**
      * Check if user can delete post
      */
-    public function canUserDeletePost($post, $userType, $userId)
+    public function canUserDeletePost($post, $userType, $userId, $userBarangayId = null)
     {
-        return $this->canUserEditPost($post, $userType, $userId);
+        return $this->canUserEditPost($post, $userType, $userId, $userBarangayId);
     }
 
     // ========== UTILITY METHODS ========== //

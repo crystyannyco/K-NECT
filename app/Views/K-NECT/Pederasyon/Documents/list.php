@@ -37,10 +37,12 @@ $start = ($currentPage - 1) * $perPage;
 $totalPages = (int) max(1, ceil($total / max(1, $perPage)));
 ?>
 
-<div class="max-w-6xl mx-auto p-0">
-    <div class="p-6 rounded-2xl shadow-lg border border-gray-200 bg-white flex flex-col gap-4">
-    <!-- Header Section -->
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-2">
+<div class="min-h-screen bg-gray-50">
+    <div class="max-w-7xl mx-auto p-0">
+        <div class="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200">
+            <div class="px-6 py-4 space-y-4 sm:space-y-6">
+                <!-- Header Section -->
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-2">
         <div>
                     <h1 class="text-2xl font-bold text-blue-900 tracking-tight flex items-center gap-2 drop-shadow-lg">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -66,92 +68,162 @@ $totalPages = (int) max(1, ceil($total / max(1, $perPage)));
         </div>
     </div>
 
-    <!-- Search and Filter Section -->
-            <form method="GET" action="<?= base_url('admin/documents') ?>" class="flex flex-col md:flex-row gap-3 w-full items-center justify-between bg-white/80 rounded-xl shadow-md p-4 border border-blue-200 backdrop-blur-md transition-all duration-300 hover:shadow-lg focus-within:ring-2 focus-within:ring-blue-200">
-                <div class="relative w-full md:w-2/5">
-                        <input type="text" name="search" id="search" value="<?= esc($search ?? '') ?>"
-                           class="border border-blue-200 rounded-lg px-4 py-2 w-full focus:ring-2 focus:ring-blue-300 focus:outline-none shadow-sm transition-all duration-300 placeholder-gray-400 text-sm bg-white/70"
-                           placeholder="🔍 Search documents...">
-                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-blue-400 cursor-pointer group" tabindex="0" title="Search by filename, description, or tags">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 group-hover:text-blue-600 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
-                            </svg>
-                    </span>
-                </div>
+                <!-- Search and Filter Section -->
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 lg:p-6 shadow-lg border border-blue-100">
+                    <form method="GET" action="<?= base_url('admin/documents') ?>" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                            <!-- Search Input -->
+                            <div class="md:col-span-2 lg:col-span-2 xl:col-span-2">
+                                <div class="relative">
+                                    <input type="text" name="search" value="<?= esc($search ?? '') ?>" 
+                                           placeholder="Search documents..." 
+                                           class="w-full pl-10 pr-4 py-2.5 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm bg-white shadow-sm">
+                                    <svg class="absolute left-3 top-3 h-4 w-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    </svg>
+                                </div>
+                            </div>
 
-                <select name="category" id="category" class="border border-blue-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-300 focus:outline-none shadow-sm text-sm bg-white/70">
-                        <option value="">All Categories</option>
-                        <?php foreach ($categories as $category): ?>
-                        <option value="<?= $category['id'] ?>" <?= ($selectedCategory == $category['id']) ? 'selected' : '' ?>>
-                            <?= esc($category['name']) ?>
-                        </option>
-                        <?php endforeach; ?>
-                    </select>
+                            <!-- Status Filter -->
+                            <div class="lg:col-span-1">
+                                <select name="status" class="w-full px-3 py-2.5 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm bg-white shadow-sm">
+                                    <option value="">All Status</option>
+                                    <option value="pending" <?= $selectedStatus === 'pending' ? 'selected' : '' ?>>Pending</option>
+                                    <option value="approved" <?= $selectedStatus === 'approved' ? 'selected' : '' ?>>Approved</option>
+                                    <option value="rejected" <?= $selectedStatus === 'rejected' ? 'selected' : '' ?>>Rejected</option>
+                                </select>
+                            </div>
 
-                <select name="status" id="status" class="border border-blue-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-300 focus:outline-none shadow-sm text-sm bg-white/70">
-                        <option value="">All Status</option>
-                        <option value="pending" <?= ($selectedStatus === 'pending') ? 'selected' : '' ?>>Pending</option>
-                        <option value="approved" <?= ($selectedStatus === 'approved') ? 'selected' : '' ?>>Approved</option>
-                        <option value="rejected" <?= ($selectedStatus === 'rejected') ? 'selected' : '' ?>>Rejected</option>
-                    </select>
+                            <!-- Category Filter -->
+                            <div class="lg:col-span-1">
+                                <select name="category_id" class="w-full px-3 py-2.5 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm bg-white shadow-sm">
+                                    <option value="">All Categories</option>
+                                    <?php foreach ($categories as $cat): ?>
+                                        <option value="<?= $cat['id'] ?>" <?= $selectedCategory == $cat['id'] ? 'selected' : '' ?>>
+                                            <?= esc($cat['name']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
 
-                <select name="date_filter" id="date_filter" class="border border-blue-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-300 focus:outline-none shadow-sm text-sm bg-white/70">
-                        <option value="">All Time</option>
-                        <option value="today" <?= ($selectedDate === 'today') ? 'selected' : '' ?>>Today</option>
-                        <option value="week" <?= ($selectedDate === 'week') ? 'selected' : '' ?>>This Week</option>
-                        <option value="month" <?= ($selectedDate === 'month') ? 'selected' : '' ?>>This Month</option>
-                        <option value="year" <?= ($selectedDate === 'year') ? 'selected' : '' ?>>This Year</option>
-                </select>
+                            <!-- Action Buttons -->
+                            <div class="flex flex-col sm:flex-row gap-2 lg:col-span-1">
+                                <button type="submit" class="w-full sm:flex-1 bg-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-sm">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    </svg>
+                                    <span class="hidden sm:inline">Search</span>
+                                </button>
+                                <?php if (!empty($_GET['search']) || !empty($_GET['category']) || !empty($_GET['status']) || !empty($_GET['date_filter'])): ?>
+                                <a href="<?= base_url('admin/documents') ?>" class="w-full sm:flex-1 bg-gray-500 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors flex items-center justify-center gap-2 shadow-sm">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                    </svg>
+                                    <span class="hidden sm:inline">Reset</span>
+                                </a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
 
-                <button type="submit" class="bg-gradient-to-r from-blue-600 to-blue-400 text-white px-6 py-2 rounded-lg font-bold shadow-md hover:from-blue-700 hover:to-blue-500 transition-all flex items-center gap-2 text-sm border-2 border-blue-200 hover:border-blue-400 focus:ring-2 focus:ring-blue-200 outline-none">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    Search
-                </button>
-
-                <?php if (!empty($_GET['search']) || !empty($_GET['category']) || !empty($_GET['status']) || !empty($_GET['date_filter'])): ?>
-                <a href="<?= base_url('admin/documents') ?>" class="bg-gray-100 text-gray-700 px-6 py-2 rounded-lg font-semibold shadow-sm hover:bg-gray-200 transition flex items-center gap-2 ml-2 border-2 border-gray-200 hover:border-gray-400" title="Show all documents">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6" />
-                    </svg>
-                    Show All
-                </a>
-                <?php endif; ?>
-            </form>
+                        <!-- Date Filter Row -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div class="md:col-span-1">
+                                <select name="date_filter" class="w-full px-3 py-2.5 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm bg-white shadow-sm">
+                                    <option value="">All Time</option>
+                                    <option value="today" <?= $selectedDate === 'today' ? 'selected' : '' ?>>Today</option>
+                                    <option value="week" <?= $selectedDate === 'week' ? 'selected' : '' ?>>This Week</option>
+                                    <option value="month" <?= $selectedDate === 'month' ? 'selected' : '' ?>>This Month</option>
+                                    <option value="year" <?= $selectedDate === 'year' ? 'selected' : '' ?>>This Year</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
             </div>
+        </div>
     </div>
+</div>
 
-    <?php if (session()->getFlashdata('success')): ?>
-        <div id="alert" class="mb-6 flex items-center justify-between bg-green-50 border border-green-200 text-green-800 px-6 py-4 rounded-lg shadow-sm animate-fade-in" role="alert">
-            <span class="flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-                <?= session()->getFlashdata('success') ?>
-            </span>
-            <button onclick="document.getElementById('alert').remove()" class="ml-4 text-green-700 hover:text-green-900 text-xl">&times;</button>
+<script>
+// Toast notification function - defined early for flash messages
+function showSuccessToast(message) {
+    // Create toast container if it doesn't exist
+    let toastContainer = document.getElementById('toastContainer');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toastContainer';
+        toastContainer.className = 'fixed top-4 right-4 z-50 space-y-2';
+        document.body.appendChild(toastContainer);
+    }
+    
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = 'bg-green-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 transform translate-x-full opacity-0 transition-all duration-300 ease-out max-w-sm';
+    toast.innerHTML = `
+        <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+            </svg>
         </div>
-    <?php endif; ?>
+        <div class="flex-1">
+            <p class="font-medium text-sm">${message}</p>
+        </div>
+        <button onclick="this.parentElement.remove()" class="flex-shrink-0 text-white hover:text-green-200 transition-colors">
+            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+            </svg>
+        </button>
+    `;
+    
+    // Add to container
+    toastContainer.appendChild(toast);
+    
+    // Animate in
+    setTimeout(() => {
+        toast.classList.remove('translate-x-full', 'opacity-0');
+    }, 100);
+    
+    // Auto hide after 5 seconds
+    setTimeout(() => {
+        toast.classList.add('translate-x-full', 'opacity-0');
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.remove();
+            }
+        }, 300);
+    }, 5000);
+}
+</script>
 
-    <!-- Results Summary -->
-    <div class="flex items-center justify-between mb-4">
-        <div class="text-xs text-gray-600">
-            Showing <?= $start + 1 ?> to <?= min($start + $perPage, $total) ?> of <?= $total ?> documents
-        </div>
-        <div class="flex items-center gap-2">
-            <span class="text-xs text-gray-600">Items per page:</span>
-            <select id="perPage" class="text-xs border border-gray-300 rounded px-2 py-1 focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
-                <option value="10" <?= ($perPage == 10) ? 'selected' : '' ?>>10</option>
-                <option value="25" <?= ($perPage == 25) ? 'selected' : '' ?>>25</option>
-                <option value="50" <?= ($perPage == 50) ? 'selected' : '' ?>>50</option>
-                <option value="100" <?= ($perPage == 100) ? 'selected' : '' ?>>100</option>
-            </select>
-        </div>
-                    </div>
+<?php if (session()->getFlashdata('success')): ?>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            showSuccessToast('<?= addslashes(session()->getFlashdata('success')) ?>');
+        });
+    </script>
+<?php endif; ?>
 
-    <!-- Bulk Operations Section -->
-    <div class="mb-4 flex items-center justify-between bg-gray-50 p-3 rounded-lg border">
+<!-- Main Content Area -->
+<div class="max-w-7xl mx-auto p-0">
+    <div class="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200">
+        <div class="px-6 py-4 space-y-4 sm:space-y-6">
+            <!-- Results Summary -->
+            <div class="flex items-center justify-between">
+                <div class="text-xs text-gray-600">
+                    Showing <?= $start + 1 ?> to <?= min($start + $perPage, $total) ?> of <?= $total ?> documents
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-gray-600">Items per page:</span>
+                    <select id="perPage" class="text-xs border border-gray-300 rounded px-2 py-1 focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="10" <?= ($perPage == 10) ? 'selected' : '' ?>>10</option>
+                        <option value="25" <?= ($perPage == 25) ? 'selected' : '' ?>>25</option>
+                        <option value="50" <?= ($perPage == 50) ? 'selected' : '' ?>>50</option>
+                        <option value="100" <?= ($perPage == 100) ? 'selected' : '' ?>>100</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Bulk Operations Section -->
+            <div class="flex items-center justify-between bg-gray-50 p-3 rounded-lg border">
         <div class="flex items-center gap-4">
             <label class="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" id="selectAllDocs" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
@@ -191,11 +263,11 @@ $totalPages = (int) max(1, ceil($total / max(1, $perPage)));
         $isPdf = $doc['mimetype'] === 'application/pdf';
         ?>
         
-        <div class="flex flex-col md:flex-row items-center bg-white rounded-xl shadow-md p-4 border border-gray-100 hover:shadow-lg transition-all duration-300 relative">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center bg-white rounded-lg shadow-sm p-3 sm:p-4 border border-gray-100 hover:shadow-md transition-all duration-300 relative">
             <!-- Document Checkbox -->
-            <div class="absolute top-3 left-3 z-20">
+            <div class="absolute top-2 left-2 z-20">
                 <input type="checkbox" 
-                       class="document-checkbox w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" 
+                       class="document-checkbox w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500" 
                        value="<?= $doc['id'] ?>" 
                        data-filename="<?= esc($doc['filename'] ?? 'document') ?>"
                        data-filepath="<?= esc($doc['filepath'] ?? '') ?>"
@@ -204,7 +276,7 @@ $totalPages = (int) max(1, ceil($total / max(1, $perPage)));
             </div>
             
             <!-- Preview -->
-            <div class="preview-area flex-shrink-0 w-32 h-40 flex items-center justify-center bg-white rounded-lg shadow-inner border border-gray-200 overflow-hidden mr-4 relative">
+            <div class="preview-area flex-shrink-0 w-20 h-24 sm:w-24 sm:h-28 flex items-center justify-center bg-gray-50 rounded-md border border-gray-200 overflow-hidden mr-0 sm:mr-3 mb-3 sm:mb-0 relative">
                 <?php if (!empty($doc['thumbnail_path']) && file_exists(FCPATH . $doc['thumbnail_path'])): ?>
                     <img src="<?= base_url('uploads/thumbnails/' . basename($doc['thumbnail_path'])) ?>" alt="PDF Preview" class="object-contain w-full h-full" />
                 <?php elseif ($isImage): ?>
@@ -225,111 +297,107 @@ $totalPages = (int) max(1, ceil($total / max(1, $perPage)));
             </div>
             
             <!-- Info -->
-            <div class="flex-1 flex flex-col gap-2 min-w-0">
-                <div class="flex items-center justify-between">
-                                         <h2 class="text-lg font-bold text-blue-900 truncate">
-                        <a href="javascript:void(0)" onclick="openDocumentModal(<?= $doc['id'] ?>)" class="hover:underline text-left cursor-pointer">
-                            <?= esc($doc['title'] ?? ($doc['filename'] ?? 'Untitled document')) ?>
+            <div class="flex-1 flex flex-col gap-1.5 sm:gap-2 min-w-0 w-full">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <h2 class="text-sm sm:text-base font-semibold text-blue-900 truncate">
+                        <a href="javascript:void(0)" onclick="openDocumentModal(<?= $doc['id'] ?>)" class="hover:underline cursor-pointer">
+                            <?= esc($doc['filename'] ?? 'Untitled document') ?>
                         </a>
                     </h2>
-                    <div class="flex items-center gap-3">
-                        <span class="px-3 py-1 rounded-full text-xs font-bold <?= $doc['approval_status'] === 'approved' ? 'bg-green-100 text-green-800' : ($doc['approval_status'] === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') ?> shadow">
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                        <span class="px-2 py-1 rounded-full text-xs font-medium <?= $doc['approval_status'] === 'approved' ? 'bg-green-100 text-green-700' : ($doc['approval_status'] === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700') ?>">
                             <?= ucfirst($doc['approval_status']) ?>
                         </span>
                         <?php if (session('role') === 'super_admin' && $doc['approval_status'] === 'pending'): ?>
-                        <div class="flex gap-2">
+                        <div class="flex gap-1">
                             <form action="<?= base_url('admin/documents/approve/' . $doc['id']) ?>" method="post" class="approve-form">
                                 <?= csrf_field() ?>
-                                <button type="submit" class="bg-gradient-to-r from-green-500 to-lime-400 text-white hover:from-green-600 hover:to-lime-500 px-3 py-1 rounded-full text-xs font-semibold shadow-md flex items-center gap-1 transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-200" title="Approve document" tabindex="0">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <button type="submit" class="bg-green-500 text-white hover:bg-green-600 px-2 py-1 rounded text-xs font-medium flex items-center gap-1 transition focus:outline-none focus:ring-2 focus:ring-green-200" title="Approve document">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                     </svg>
-                                    <span>Approve</span>
+                                    <span class="hidden sm:inline">Approve</span>
                                 </button>
                             </form>
                             <form action="<?= base_url('admin/documents/reject/' . $doc['id']) ?>" method="post" class="reject-form">
                                 <?= csrf_field() ?>
-                                <button type="submit" class="bg-gradient-to-r from-rose-500 to-red-400 text-white hover:from-rose-600 hover:to-red-500 px-3 py-1 rounded-full text-xs font-semibold shadow-md flex items-center gap-1 transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-200" title="Reject document" tabindex="0">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <button type="submit" class="bg-red-500 text-white hover:bg-red-600 px-2 py-1 rounded text-xs font-medium flex items-center gap-1 transition focus:outline-none focus:ring-2 focus:ring-red-200" title="Reject document">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                     </svg>
-                                    <span>Reject</span>
+                                    <span class="hidden sm:inline">Reject</span>
                                 </button>
                             </form>
                         </div>
                         <?php endif; ?>
                     </div>
-                          </div>
+                </div>
                 
-                <div class="text-gray-700 text-sm mt-1">
-                    <span class="font-semibold">Type:</span> <?= esc($doc['mimetype']) ?>
-                    <span class="mx-2">|</span>
-                    <span class="font-semibold">Size:</span> <?= number_format($doc['filesize']/1024, 2) ?> KB
-                    <span class="mx-2">|</span>
-                    <span class="font-semibold">Uploaded:</span> <?php $createdAt = $doc['created_at'] ?? ($doc['uploaded_at'] ?? null); echo $createdAt ? date('M j, Y', strtotime($createdAt)) : '—'; ?>
-                        </div>
+                <div class="text-gray-600 text-xs mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                    <span><span class="font-medium">Type:</span> <?= esc($doc['mimetype']) ?></span>
+                    <span><span class="font-medium">Size:</span> <?= number_format($doc['filesize']/1024, 2) ?> KB</span>
+                    <span><span class="font-medium">Uploaded:</span> <?php $createdAt = $doc['created_at'] ?? ($doc['uploaded_at'] ?? null); echo $createdAt ? date('M j, Y', strtotime($createdAt)) : '—'; ?></span>
+                </div>
 
-                <div class="flex items-center gap-2 mt-1">
-                                         <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-100 text-blue-700 font-bold text-sm">
-                         <?= strtoupper(substr(esc($doc['uploaded_by']), 0, 1)) ?>
-                     </span>
-                     <span class="text-gray-800 font-semibold text-base"><?= esc($doc['uploaded_by']) ?></span>
-                     <?php if ($uploaderRole): ?>
-                     <span class="ml-2 text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 uppercase font-semibold tracking-wide">
-                         <?= esc($uploaderRole) ?>
-                     </span>
-                     <?php endif; ?>
-                        </div>
+                <div class="flex items-center gap-2 mt-2">
+                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-semibold text-xs">
+                        <?= strtoupper(substr(esc($doc['uploaded_by']), 0, 1)) ?>
+                    </span>
+                    <span class="text-gray-700 font-medium text-sm"><?= esc($doc['uploaded_by']) ?></span>
+                    <?php if ($uploaderRole): ?>
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200 uppercase font-medium">
+                        <?= esc($uploaderRole) ?>
+                    </span>
+                    <?php endif; ?>
+                </div>
 
-                    <?php if (!empty($doc['category_name'])): ?>
-                 <div class="flex items-center gap-2 mt-1">
-                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                <?php if (!empty($doc['category_name'])): ?>
+                <div class="flex items-center gap-2 mt-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                    <span class="text-blue-600 font-medium text-xs"><?= esc($doc['category_name']) ?></span>
+                </div>
+                <?php endif; ?>
+
+                <?php if (!empty($doc['tags'])): ?>
+                <div class="flex flex-wrap gap-1 mt-1.5">
+                    <?php foreach (explode(',', $doc['tags']) as $tag): ?>
+                        <span class="inline-block bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded text-xs font-medium">#<?= esc(trim($tag)) ?></span>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- Actions -->
+            <div class="relative ml-auto mt-2 sm:mt-0" x-data="{ open: false }">
+                <button @click="open = !open" 
+                        @click.away="open = false"
+                        class="inline-flex items-center justify-center w-7 h-7 rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+                        title="Actions">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                    </svg>
+                </button>
+                
+                <div x-show="open" 
+                     x-transition:enter="transition ease-out duration-100"
+                     x-transition:enter-start="transform opacity-0 scale-95"
+                     x-transition:enter-end="transform opacity-100 scale-100"
+                     x-transition:leave="transition ease-in duration-75"
+                     x-transition:leave-start="transform opacity-100 scale-100"
+                     x-transition:leave-end="transform opacity-0 scale-95"
+                     class="absolute right-0 mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                    
+                    <a href="<?= base_url('admin/documents/download/' . $doc['id']) ?>" 
+                       class="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                     <span class="text-blue-700 font-medium"><?= esc($doc['category_name']) ?></span>
-                        </div>
-                                <?php endif; ?>
-
-                                 <div class="flex flex-wrap gap-1 mt-1">
-                     <?php if (!empty($doc['tags'])): ?>
-                         <?php foreach (explode(',', $doc['tags']) as $tag): ?>
-                             <span class="inline-block bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-semibold shadow-sm">#<?= esc(trim($tag)) ?></span>
-                         <?php endforeach; ?>
-                     <?php else: ?>
-                         <span class="text-gray-400 italic">No tags</span>
-                     <?php endif; ?>
-                        </div>
-                      </div>
-
-                         <!-- Actions -->
-                         <div class="relative ml-4 mt-4 md:mt-0" x-data="{ open: false }">
-                             <button @click="open = !open" 
-                                     @click.away="open = false"
-                                     class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-                                     title="Actions">
-                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                                 </svg>
-                             </button>
-                             
-                             <div x-show="open" 
-                                  x-transition:enter="transition ease-out duration-100"
-                                  x-transition:enter-start="transform opacity-0 scale-95"
-                                  x-transition:enter-end="transform opacity-100 scale-100"
-                                  x-transition:leave="transition ease-in duration-75"
-                                  x-transition:leave-start="transform opacity-100 scale-100"
-                                  x-transition:leave-end="transform opacity-0 scale-95"
-                                  class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                                 
-                                 <a href="<?= base_url('admin/documents/download/' . $doc['id']) ?>" 
-                                    class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors">
-                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                         Download
-                     </a>
-                     
-                                 <a href="javascript:void(0)" onclick="openDocumentModal(<?= $doc['id'] ?>)" 
+                        Download
+                    </a>
+                    
+                    <a href="javascript:void(0)" onclick="openDocumentModal(<?= $doc['id'] ?>)" 
                                     class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors w-full text-left cursor-pointer">
                                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
@@ -760,7 +828,7 @@ async function fetchDocumentDetails(documentId) {
 // Populate modal with document data
 function populateModal(doc) {
     // Update header
-    document.getElementById('modalTitle').textContent = doc.title || doc.filename || 'Untitled Document';
+    document.getElementById('modalTitle').textContent = doc.filename || 'Untitled Document';
     document.getElementById('modalSubtitle').textContent = `Uploaded on ${new Date(doc.uploaded_at || doc.created_at).toLocaleDateString()}`;
     
     // Update status
@@ -1169,19 +1237,8 @@ document.getElementById('addCategoryForm').addEventListener('submit', function(e
             // Clear the form
             document.getElementById('newCategoryName').value = '';
             
-            // Show success notification
-            Swal.fire({
-                title: 'Success!',
-                text: 'Category has been added successfully.',
-                icon: 'success',
-                timer: 2000,
-                showConfirmButton: false,
-                toast: true,
-                position: 'top-end',
-                customClass: {
-                    popup: 'colored-toast'
-                }
-            });
+            // Show success notification with custom green style
+            showSuccessToast('Category added successfully!');
             
             // Refresh the page to update categories
             setTimeout(() => {
@@ -1255,13 +1312,7 @@ function editCategory(id, name) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    Swal.fire({
-                        title: 'Updated!',
-                        text: 'Category has been updated successfully.',
-                        icon: 'success',
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
+                    showSuccessToast('Category updated successfully!');
                     setTimeout(() => {
                         window.location.reload();
                     }, 1000);
@@ -1348,16 +1399,10 @@ function deleteCategory(id) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    Swal.fire({
-                        title: 'Deleted!',
-                        text: data.message,
-                        icon: 'success',
-                        timer: 2000,
-                        showConfirmButton: false
-                    }).then(() => {
-                        // Reload the page to refresh the category list
+                    showSuccessToast('Category deleted successfully!');
+                    setTimeout(() => {
                         location.reload();
-                    });
+                    }, 1000);
                 } else {
                     Swal.fire({
                         title: 'Error!',
@@ -1642,3 +1687,7 @@ if (bulkDeleteBtn) {
 // Initialize UI
 updateBulkUI();
 </script>
+
+        </div>
+    </div>
+</div>

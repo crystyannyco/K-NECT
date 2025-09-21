@@ -119,10 +119,10 @@
                                     <span class="font-medium text-gray-700">Document ID:</span>
                                     <span class="text-gray-900">#<?= $document['id'] ?></span>
                                 </div>
-                                <?php if (!empty($document['title'])): ?>
+                                <?php if (!empty($document['filename'])): ?>
                                 <div class="flex items-center justify-between">
-                                    <span class="font-medium text-gray-700">Title:</span>
-                                    <span class="text-gray-900"><?= esc($document['title']) ?></span>
+                                    <span class="font-medium text-gray-700">Document Name:</span>
+                                    <span class="text-gray-900"><?= esc($document['filename']) ?></span>
                                 </div>
                                 <?php endif; ?>
                                 <?php if (!empty($document['description'])): ?>

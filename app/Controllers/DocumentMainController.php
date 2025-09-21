@@ -329,6 +329,7 @@ class DocumentMainController extends BaseController
             
             $isValid = $this->validate([
                 'document' => "uploaded[document]|max_size[document,{$maxSizeKB}]|ext_in[document,{$allowedExtensions}]",
+                'filename' => 'required|min_length[1]|max_length[255]'
             ]);
             
             if (!$isValid) {
@@ -336,7 +337,7 @@ class DocumentMainController extends BaseController
                 $errorMsg = implode(' ', $errors);
                 file_put_contents($logFile, "Validation failed: " . $errorMsg . "\n", FILE_APPEND);
                 if ($isAjax) {
-                    return $this->response->setJSON(['success' => false, 'error' => $errorMsg]);
+                    return $this->response->setJSON(['success' => false, 'error' => $errorMsg, 'errors' => $errors]);
                 }
             } else {
                 file_put_contents($logFile, "Validation passed\n", FILE_APPEND);
@@ -354,7 +355,7 @@ class DocumentMainController extends BaseController
                 }
                 
                 $categoryIds = $this->request->getPost('categories') ?? [];
-                $title = $this->request->getPost('title');
+                $userFilename = trim($this->request->getPost('filename') ?? '');
                 $description = $this->request->getPost('description');
                 $tagsInput = $this->request->getPost('tags');
                 $downloadable = $this->request->getPost('downloadable') ? 1 : 0;
@@ -399,8 +400,7 @@ class DocumentMainController extends BaseController
                     }
 
                     $saveData = [
-                        'filename' => $file->getClientName(),
-                        'title' => $title,
+                        'filename' => $userFilename,
                         'filepath' => 'uploads/documents/' . $newName,
                         'uploaded_by' => $uploadedByUsername,
                         'uploaded_at' => date('Y-m-d H:i:s'),
@@ -763,6 +763,12 @@ class DocumentMainController extends BaseController
         if (strtolower($this->request->getMethod()) === 'post') {
             file_put_contents(WRITEPATH . 'logs/tag_debug.log', "[EDIT] Entered POST block\n", FILE_APPEND);
             file_put_contents(WRITEPATH . 'logs/tag_debug.log', "[EDIT] _POST['tags']: " . print_r($_POST['tags'] ?? null, true) . "\n", FILE_APPEND);
+            // Require non-empty filename to align with model validation
+            $newFilename = trim($this->request->getPost('filename') ?? '');
+            if ($newFilename === '') {
+                file_put_contents(WRITEPATH . 'logs/tag_debug.log', "[EDIT] Validation failed: Filename is required.\n", FILE_APPEND);
+                return redirect()->back()->withInput()->with('error', 'Filename is required.');
+            }
             $categoryIds = $this->request->getPost('categories') ?? [];
             if (!is_array($categoryIds)) {
                 $categoryIds = $categoryIds ? [$categoryIds] : [];
@@ -787,8 +793,7 @@ class DocumentMainController extends BaseController
                 }
             }
             $model->update($id, [
-                'filename' => $doc['filename'],
-                'title' => $this->request->getPost('title') ?? $doc['title'] ?? null,
+                'filename' => $newFilename,
                 'filepath' => $doc['filepath'],
                 'uploaded_by' => $doc['uploaded_by'],
                 'uploaded_at' => $doc['uploaded_at'],
@@ -798,6 +803,10 @@ class DocumentMainController extends BaseController
                 'tags' => $tagsInput,
                 'downloadable' => $downloadable,
             ]);
+            if (!empty($model->errors())) {
+                file_put_contents(WRITEPATH . 'logs/tag_debug.log', "[EDIT] Model validation errors: " . print_r($model->errors(), true) . "\n", FILE_APPEND);
+                return redirect()->back()->withInput()->with('error', implode(' ', $model->errors()));
+            }
             // Always update categories, even if empty
             $db->table('document_category')->where('document_id', $id)->delete();
             foreach ($categoryIds as $catId) {
@@ -830,7 +839,7 @@ class DocumentMainController extends BaseController
             $db->transComplete();
             file_put_contents(WRITEPATH . 'logs/tag_debug.log', "[EDIT] Finished tag update block for doc $id\n", FILE_APPEND);
             file_put_contents(WRITEPATH . 'logs/tag_debug.log', "[EDIT] Redirecting after update.\n", FILE_APPEND);
-            return redirect()->to(base_url('admin/documents'))->with('success', 'Document updated.');
+            return redirect()->to(base_url('admin/documents'))->with('success', 'Document updated successfully!');
         }
         file_put_contents(WRITEPATH . 'logs/tag_debug.log', "[EDIT] Returning: End of edit() method, rendering view.\n", FILE_APPEND);
         // Return role-specific edit view

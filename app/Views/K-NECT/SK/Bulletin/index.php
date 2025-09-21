@@ -1,71 +1,11 @@
-<?= $this->include('K-NECT/SK/Template/header') ?>
-<?= $this->include('K-NECT/SK/Template/sidebar') ?>
+<?= $this->include('K-NECT/SK/template/header') ?>
+<?= $this->include('K-NECT/SK/template/sidebar') ?>
 <?= $this->include('K-NECT/includes/bulletin-assets') ?>
 
 <div class="flex-1 flex flex-col min-h-0 ml-0 lg:ml-64 pt-16">
     <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
-        <div class="px-0 py-6 bulletin-wrap">
-            <!-- Sleek Header Panel (unified) -->
-            <div class="mx-auto">
-                <div class="p-4 md:p-5 rounded-2xl shadow-md border border-gray-200 bg-white flex flex-col gap-3 animate-fade-in bulletin-header">
-                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-1">
-                        <div class="min-w-0">
-                            <?php $welcomeName = $currentUser['first_name'] ?? session('first_name') ?? ($currentUser['full_name'] ?? session('full_name') ?? 'User'); ?>
-                            <div class="text-[1.4rem] md:text-[1.6rem] font-extrabold text-gray-900 leading-tight tracking-tight animate-slide-up truncate">
-                                Welcome, <span class="text-blue-700 drop-shadow-[0_1px_0_rgba(59,130,246,0.25)]"><?= esc($welcomeName) ?></span>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <a href="<?= base_url('/bulletin/create') ?>" class="inline-flex items-center justify-center gap-2 text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:ring-offset-1 focus:ring-offset-white px-3.5 py-2 rounded-lg text-sm font-semibold shadow-sm">
-                                <i class="fa-solid fa-plus"></i>
-                                <span class="whitespace-nowrap">Create Post</span>
-                            </a>
-                            <button type="button" onclick="window.location.reload()" class="inline-flex items-center justify-center gap-2 text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:ring-offset-1 focus:ring-offset-white px-3.5 py-2 rounded-lg text-sm font-semibold shadow-sm">
-                                <i class="fa-solid fa-rotate"></i>
-                                <span class="whitespace-nowrap">Refresh</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <form id="headerSearchForm" class="controls flex flex-col sm:flex-row gap-2.5 w-full items-center bg-gradient-to-r from-blue-50 to-indigo-50/70 rounded-2xl shadow-sm p-3.5 md:p-4 border border-blue-100 transition-all duration-300 hover:shadow-md animate-fade-in-more">
-                        <div class="relative flex-1 w-full">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <i class="fa-solid fa-magnifying-glass text-gray-400"></i>
-                            </div>
-                            <input type="text" id="header-search" placeholder="Search posts..." class="block w-full pl-10 pr-3 h-10 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500 bg-white text-gray-900 placeholder-gray-400 text-sm shadow-sm" />
-                        </div>
-
-                        <select id="header-category" class="w-full sm:w-auto h-10 border border-gray-200 rounded-lg px-3.5 text-sm focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500 bg-white text-gray-900 shadow-sm">
-                            <option value="">All Categories</option>
-                            <?php foreach (($categories ?? []) as $cat): ?>
-                                <option value="<?= $cat['id'] ?>"><?= esc($cat['name']) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-
-                        <select id="header-status" class="w-full sm:w-auto h-10 border border-gray-200 rounded-lg px-3.5 text-sm focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500 bg-white text-gray-900 shadow-sm">
-                            <option value="all">All Status</option>
-                            <option value="featured">Featured</option>
-                            <option value="urgent">Urgent</option>
-                        </select>
-
-                        <button id="header-search-btn" type="submit" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-10 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 rounded-lg text-sm font-semibold shadow-sm hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:ring-offset-1 focus:ring-offset-white transition">
-                            <i class="fa-solid fa-magnifying-glass"></i>
-                            <span>Search</span>
-                        </button>
-
-                        <button id="header-clear-btn" type="button" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-10 bg-white text-gray-700 px-4 rounded-lg text-sm font-semibold shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:ring-offset-1 focus:ring-offset-white border border-gray-200">
-                            <i class="fa-regular fa-circle-xmark"></i>
-                            <span>Clear</span>
-                        </button>
-                    </form>
-
-                    <div class="flex flex-wrap items-center gap-2">
-                        <button type="button" class="chip bg-white text-gray-700 border border-gray-200 hover:border-blue-200 hover:bg-blue-50/60" data-kk-chip="all">All</button>
-                        <button type="button" class="chip bg-yellow-50 text-yellow-800 border border-yellow-200 hover:bg-yellow-50" data-kk-chip="featured">Featured</button>
-                        <button type="button" class="chip bg-red-50 text-red-700 border border-red-200 hover:bg-red-50" data-kk-chip="urgent">Urgent</button>
-                    </div>
-                </div>
-            </div>
+        <div class="max-w-7xl mx-auto p-0">
+            <!-- Header panel removed per request -->
             <!-- Flash Messages -->
             <?php if (session()->getFlashdata('success')): ?>
                 <div class="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
@@ -87,7 +27,7 @@
 
             <!-- Actions toolbar removed (Create moved to header) -->
 
-            <div class="grid grid-cols-1 gap-6 bulletin-section">
+            <div class="grid grid-cols-1 gap-6 px-6">
                 <!-- Main Content -->
                 <div class="w-full space-y-6">
                     
@@ -135,12 +75,12 @@
 
                     <!-- Featured Posts (mosaic) -->
                     <?php if (!empty($featured_posts)): ?>
-                    <div class="mb-8 bulletin-section">
+                    <div class="mb-8">
                         <!-- Featured Posts heading removed per request -->
                         <?php $primary = $featured_posts[0]; $others = array_slice($featured_posts, 1, 4); ?>
                         <div class="grid grid-cols-1 lg:grid-cols-3 lg:auto-rows-[220px] gap-5">
                             <!-- Primary featured -->
-                            <article class="relative overflow-hidden rounded-xl border border-gray-200 shadow-sm lg:col-span-2 lg:row-span-2">
+                            <article class="relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm lg:col-span-2 lg:row-span-2">
                                 <?php $pImg = !empty($primary['featured_image']) ? base_url('/uploads/bulletin/' . $primary['featured_image']) : null; ?>
                                 <div class="relative w-full h-64 md:h-72 lg:h-full">
                                     <?php if ($pImg): ?>
@@ -151,9 +91,9 @@
                                     <?php endif; ?>
                                     <div class="absolute top-3 left-3 flex gap-2 flex-wrap">
                                         <?php if (!empty($primary['category_name'])): ?>
-                                            <span class="badge bg-white/90 text-gray-800"><?= esc($primary['category_name']) ?></span>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white/90 text-gray-800"><?= esc($primary['category_name']) ?></span>
                                         <?php endif; ?>
-                                        <span class="badge bg-blue-100 text-blue-800">Featured</span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Featured</span>
                                     </div>
                                     <div class="absolute bottom-4 left-4 right-4 text-white">
                                         <h3 class="text-2xl font-bold leading-tight mb-2"><a href="<?= base_url('/bulletin/view/' . $primary['id']) ?>" class="hover:underline"><?= esc($primary['title']) ?></a></h3>
@@ -166,7 +106,7 @@
                             </article>
                             <!-- Secondary featured -->
                             <?php foreach ($others as $item): ?>
-                            <article class="relative overflow-hidden rounded-xl border border-gray-200 shadow-sm h-52 lg:h-auto">
+                            <article class="relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm h-52 lg:h-auto">
                                 <?php $sImg = !empty($item['featured_image']) ? base_url('/uploads/bulletin/' . $item['featured_image']) : null; ?>
                                 <div class="relative w-full h-full">
                                     <?php if ($sImg): ?>
@@ -177,9 +117,9 @@
                                     <?php endif; ?>
                                     <div class="absolute top-2 left-2 flex gap-2 flex-wrap">
                                         <?php if (!empty($item['category_name'])): ?>
-                                            <span class="badge bg-white/90 text-gray-800 text-[10px] px-2 py-0.5"><?= esc($item['category_name']) ?></span>
+                                            <span class="inline-flex items-center rounded-full bg-white/90 text-gray-800 text-[10px] px-2 py-0.5 font-medium"><?= esc($item['category_name']) ?></span>
                                         <?php endif; ?>
-                                        <span class="badge bg-blue-100 text-blue-800 text-[10px] px-2 py-0.5">Featured</span>
+                                        <span class="inline-flex items-center rounded-full bg-blue-100 text-blue-800 text-[10px] px-2 py-0.5 font-medium">Featured</span>
                                     </div>
                                     <div class="absolute bottom-2 left-2 right-2 text-white">
                                         <h4 class="text-base font-semibold leading-snug line-clamp-2"><a href="<?= base_url('/bulletin/view/' . $item['id']) ?>" class="hover:underline"><?= esc($item['title']) ?></a></h4>
@@ -194,7 +134,7 @@
 
                     <!-- Upcoming Events Preview -->
                     <?php if (!empty($recent_events)): ?>
-                    <div class="mb-8 bulletin-section">
+                    <div class="mb-8">
                         <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center"><i class="fa-regular fa-calendar-days text-blue-600 mr-2"></i>Upcoming Events</h2>
                         <div class="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                             <?php foreach ($recent_events as $event): ?>
@@ -204,7 +144,7 @@
                                     $day = $date ? date('d', $date) : '';
                                     $banner = !empty($event['event_banner']) ? base_url('uploads/event/' . $event['event_banner']) : null;
                                 ?>
-                                <article class="card overflow-hidden hover:shadow-md">
+                                <article class="overflow-hidden rounded-xl border bg-white shadow-sm hover:shadow-md transition">
                                     <div class="relative h-36 w-full text-white">
                                         <?php if ($banner): ?>
                                             <img src="<?= $banner ?>" alt="<?= esc($event['title'] ?? 'Event') ?>" class="w-full h-full object-cover">
@@ -241,7 +181,7 @@
                             <button type="button" aria-label="Previous documents" class="doc-carousel-btn prev disabled:opacity-40 disabled:cursor-not-allowed absolute left-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white shadow flex items-center justify-center text-gray-600 hover:text-blue-600 hover:shadow-md transition"><i class="fa-solid fa-chevron-left"></i></button>
                             <div class="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-white to-transparent hidden md:block"></div>
                             <div class="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-white to-transparent hidden md:block"></div>
-                            <div class="doc-carousel-viewport overflow-hidden">
+                            <div class="doc-carousel-viewport overflow-x-auto">
                                 <div class="doc-carousel-track flex gap-5">
                                     <?php foreach ($recent_documents as $doc): ?>
                                         <?php 
@@ -255,19 +195,19 @@
                                             elseif (in_array($ext,['xls','xlsx','csv'])) $icon = 'fa-file-excel text-blue-600';
                                             elseif (in_array($ext,['ppt','pptx'])) $icon = 'fa-file-powerpoint text-blue-600';
                                         ?>
-                                        <article class="card w-64 sm:w-72 flex-shrink-0">
+                                        <article class="w-64 sm:w-72 flex-shrink-0 bg-white rounded-xl border shadow-sm overflow-hidden hover:shadow-md transition">
                                             <div class="relative h-36 w-full overflow-hidden bg-gray-100 flex items-center justify-center">
                                                 <?php if ($isImage): ?>
-                                                    <img src="<?= $docUrl ?>" alt="<?= esc($doc['title'] ?? 'Document') ?>" class="w-full h-full object-cover">
+                                                    <img src="<?= $docUrl ?>" alt="<?= esc($doc['filename'] ?? 'Document') ?>" class="w-full h-full object-cover">
                                                     <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
                                                 <?php else: ?>
                                                     <i class="fa-regular <?= $icon ?> text-5xl"></i>
                                                 <?php endif; ?>
-                                                <div class="absolute top-3 left-3"><span class="badge bg-white text-gray-800"><?= strtoupper($ext ?: 'FILE') ?></span></div>
+                                                <div class="absolute top-3 left-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white text-gray-800"><?= strtoupper($ext ?: 'FILE') ?></span></div>
                                                 <div class="absolute bottom-3 right-3"><button onclick="previewDocument('<?= esc($docUrl) ?>', <?= $isImage ? 'true':'false' ?>)" class="inline-flex items-center px-3 py-1.5 rounded-md bg-white/90 text-gray-800 text-xs font-medium hover:bg-white"><i class="fa-regular fa-eye mr-1"></i> Preview</button></div>
                                             </div>
                                             <div class="p-4">
-                                                <h3 class="text-sm font-semibold text-gray-900 truncate" title="<?= esc($doc['title'] ?? 'Untitled Document') ?>"><?= esc($doc['title'] ?? 'Untitled Document') ?></h3>
+                                                <h3 class="text-sm font-semibold text-gray-900 truncate" title="<?= esc($doc['filename'] ?? 'Untitled Document') ?>"><?= esc($doc['filename'] ?? 'Untitled Document') ?></h3>
                                                 <div class="mt-2 flex items-center justify-between text-xs text-gray-500"><span><?= !empty($doc['created_at']) ? date('M d, Y', strtotime($doc['created_at'])) : '' ?></span><a href="<?= esc($docUrl) ?>" target="_blank" class="text-blue-600 hover:text-blue-700">Open</a></div>
                                             </div>
                                         </article>
@@ -279,83 +219,124 @@
                     </div>
                     <?php endif; ?>
 
-                    <!-- Navigation to All Posts (sleek/minimal) -->
-                    <div class="mb-2 text-center">
-                        <button id="showAllPostsBtn" class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors text-sm"><i class="fa-solid fa-list"></i>View all posts</button>
+                    <!-- Reintroduced compact hero header under Documents (SK) -->
+                    <div class="px-0 py-4 bulletin-wrap">
+                        <div class="mx-auto">
+                            <div class="p-4 md:p-5 rounded-2xl shadow-md border border-gray-200 bg-white flex flex-col gap-3 animate-fade-in bulletin-header">
+                                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-1">
+                                    <div class="min-w-0">
+                                        <?php $welcomeName = session('first_name') ?? session('full_name') ?? 'Admin'; ?>
+                                        <div class="text-[1.4rem] md:text-[1.6rem] font-extrabold text-gray-900 leading-tight tracking-tight animate-slide-up truncate">
+                                            Welcome, <span class="text-blue-700 drop-shadow-[0_1px_0_rgba(59,130,246,0.25)]"><?= esc($welcomeName) ?></span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <a href="<?= base_url('/bulletin/create') ?>" class="inline-flex items-center justify-center gap-2 text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:ring-offset-1 focus:ring-offset-white px-3.5 py-2 rounded-lg text-sm font-semibold shadow-sm">
+                                            <i class="fa-solid fa-plus"></i>
+                                            <span class="whitespace-nowrap">Create Post</span>
+                                        </a>
+                                        <button type="button" onclick="window.location.reload()" class="inline-flex items-center justify-center gap-2 text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:ring-offset-1 focus:ring-offset-white px-3.5 py-2 rounded-lg text-sm font-semibold shadow-sm">
+                                            <i class="fa-solid fa-rotate"></i>
+                                            <span class="whitespace-nowrap">Refresh</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <form id="headerSearchForm" class="flex flex-col sm:flex-row gap-2.5 w-full items-center bg-gradient-to-r from-blue-50 to-indigo-50/70 rounded-2xl shadow-sm p-3.5 md:p-4 border border-blue-100 transition-all duration-300 hover:shadow-md">
+                                    <div class="relative flex-1 w-full">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <i class="fa-solid fa-magnifying-glass text-gray-400"></i>
+                                        </div>
+                                        <input type="text" id="header-search" placeholder="Search posts..." class="block w-full pl-10 pr-3 h-10 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500 bg-white text-gray-900 placeholder-gray-400 text-sm shadow-sm" />
+                                    </div>
+
+                                    <select id="header-category" class="w-full sm:w-auto h-10 border border-gray-200 rounded-lg px-3.5 text-sm focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500 bg-white text-gray-900 shadow-sm">
+                                        <option value="">All Categories</option>
+                                        <?php foreach (($categories ?? []) as $cat): ?>
+                                            <option value="<?= $cat['id'] ?>"><?= esc($cat['name']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+
+                                    <select id="header-status" class="w-full sm:w-auto h-10 border border-gray-200 rounded-lg px-3.5 text-sm focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500 bg-white text-gray-900 shadow-sm">
+                                        <option value="all">All Status</option>
+                                        <option value="featured">Featured</option>
+                                        <option value="urgent">Urgent</option>
+                                    </select>
+
+                                    <button id="header-search-btn" type="submit" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-10 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 rounded-lg text-sm font-semibold shadow-sm hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:ring-offset-1 focus:ring-offset-white transition">
+                                        <i class="fa-solid fa-magnifying-glass"></i>
+                                        <span>Search</span>
+                                    </button>
+
+                                    <button id="header-clear-btn" type="button" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-10 bg-white text-gray-700 px-4 rounded-lg text-sm font-semibold shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:ring-offset-1 focus:ring-offset-white border border-gray-200">
+                                        <i class="fa-regular fa-circle-xmark"></i>
+                                        <span>Clear</span>
+                                    </button>
+                                </form>
+
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <button type="button" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-sm font-medium bg-white text-gray-700 border-gray-200 hover:border-blue-200 hover:bg-blue-50/60" data-kk-chip="all">All</button>
+                                    <button type="button" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-sm font-medium bg-yellow-50 text-yellow-800 border-yellow-200 hover:bg-yellow-100" data-kk-chip="featured">Featured</button>
+                                    <button type="button" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-sm font-medium bg-red-50 text-red-700 border-red-200 hover:bg-red-100" data-kk-chip="urgent">Urgent</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- All Posts Grid - Hidden by default -->
-                    <div id="allPostsSection" class="mt-2 hidden">
-                        <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center justify-between"><span><i class="fa-solid fa-list mr-2"></i>All Posts</span><button id="hideAllPostsBtn" class="text-sm text-gray-600 hover:text-gray-800"><i class="fa-solid fa-times mr-1"></i>Hide</button></h2>
-                        <div class="mb-3 flex items-center justify-between gap-3">
-                            <div class="relative flex-1"><span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fa-solid fa-magnifying-glass"></i></span><input id="search-posts" type="text" placeholder="Search posts..." class="w-full pl-10 pr-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
-                            <select id="category-filter" class="px-3 py-2 rounded-md bg-white text-gray-800 border border-gray-300 focus:outline-none"><option value="">All Categories</option><?php foreach ($categories as $category): ?><option value="<?= $category['id'] ?>"><?= esc($category['name']) ?></option><?php endforeach; ?></select>
-                        </div>
+                    <!-- All Posts - Visible by default, sleek header -->
+                    <div id="allPostsSection" class="mt-6">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2"><i class="fa-solid fa-list text-gray-500"></i><span>All Posts</span></h2>
+                        <!-- Toolbar removed: use header panel above -->
                         <div id="posts-container" class="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div>
                     </div>
                 </div>
                 <!-- Sidebar removed; content is full-width -->
             </div>
         </div>
-    </main>
+    </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const postsContainer = document.getElementById('posts-container');
-    const categoryFilter = document.getElementById('category-filter');
-    const searchInput = document.getElementById('search-posts');
-    const showAllPostsBtn = document.getElementById('showAllPostsBtn');
-    const hideAllPostsBtn = document.getElementById('hideAllPostsBtn');
-    const allPostsSection = document.getElementById('allPostsSection');
+    // Header panel controls
+    const headerForm = document.getElementById('headerSearchForm');
+    const headerSearch = document.getElementById('header-search');
+    const headerCategory = document.getElementById('header-category');
+    const headerStatus = document.getElementById('header-status');
+    const headerClearBtn = document.getElementById('header-clear-btn');
+    const headerChips = document.querySelectorAll('[data-kk-chip]');
+    // Base URLs for rendering links/images (must be defined before first render)
+    const baseViewUrl = '<?= base_url('/bulletin/view/') ?>';
+    const baseEditUrl = '<?= base_url('/bulletin/edit/') ?>';
+    const baseImgUrl = '<?= base_url('/uploads/bulletin/') ?>';
+    // All posts section is always visible now
 
-    if (showAllPostsBtn && allPostsSection) {
-        showAllPostsBtn.addEventListener('click', () => {
-            allPostsSection.classList.remove('hidden');
-            showAllPostsBtn.style.display = 'none';
-        });
-    }
-    if (hideAllPostsBtn && allPostsSection) {
-        hideAllPostsBtn.addEventListener('click', () => {
-            allPostsSection.classList.add('hidden');
-            if (showAllPostsBtn) showAllPostsBtn.style.display = 'inline-flex';
-        });
-    }
-
-    async function filterPosts() {
-        const searchTerm = searchInput.value.toLowerCase().trim();
-        const selectedCategory = categoryFilter.value;
-
-        // If no filters, render server-provided posts for speed
-        if (!searchTerm && !selectedCategory) {
-            return renderPosts(<?= json_encode($posts ?? []) ?>);
-        }
-
-        try {
+    async function fetchAndRender({ q = '', categoryId = '', status = 'all' } = {}){
+        try{
             let url = '';
-            if (searchTerm) {
-                const q = encodeURIComponent(searchTerm);
-                url = `<?= base_url('/bulletin/search') ?>?q=${q}`;
-            } else if (selectedCategory) {
-                url = `<?= base_url('/bulletin/category') ?>/${encodeURIComponent(selectedCategory)}`;
+            let list = [];
+            if (q) url = `<?= base_url('/bulletin/search') ?>?q=${encodeURIComponent(q)}&limit=30&offset=0`;
+            else if (categoryId) url = `<?= base_url('/bulletin/category') ?>/${encodeURIComponent(categoryId)}?limit=30&offset=0`;
+
+            if (url){
+                showSkeleton();
+                const res = await fetch(url,{ headers:{ 'Accept':'application/json','X-Requested-With':'XMLHttpRequest' } });
+                const data = await res.json();
+                if(!data.success) throw new Error(data.message||'Failed to load');
+                list = Array.isArray(data.posts)?data.posts:[];
+            } else {
+                list = <?= json_encode($posts ?? []) ?>;
             }
 
-            const res = await fetch(url, {
-                headers: {
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
-            const data = await res.json();
-            if (!data.success) throw new Error(data.message || 'Request failed');
-            renderPosts(Array.isArray(data.posts) ? data.posts : []);
-        } catch (error) {
+            // status filter client-side
+            if (status === 'featured') list = list.filter(p => boolish(p.is_featured));
+            else if (status === 'urgent') list = list.filter(p => boolish(p.is_urgent));
+
+            renderPosts(list);
+        }catch(error){
             console.error('Filter error:', error);
-            postsContainer.innerHTML = `
-                <div class="text-center py-12">
-                    <p class="text-red-500">Error loading posts. Please refresh the page.</p>
-                </div>
-            `;
+            renderPosts([]);
         }
     }
 
@@ -424,7 +405,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                         ${parseInt(viewCount).toLocaleString()}
                                     </span>
                                     <a href="<?= base_url('/bulletin/view/') ?>${postId}" class="text-blue-600 hover:text-blue-800 font-medium">Read more →</a>
-                                    ${post.author_id == <?= $user_id ?? 0 ?> ? `<a href="<?= base_url('/bulletin/edit/') ?>${postId}" class="text-gray-500 hover:text-blue-600 transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></a>` : ''}
+                                    ${(post.author_id == <?= $user_id ?? 0 ?>) && (String(post.barangay_id) == String(<?= (int)($barangay_id ?? 0) ?>)) ? `<a href="<?= base_url('/bulletin/edit/') ?>${postId}" class="text-gray-500 hover:text-blue-600 transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></a>` : ''}
                                 </div>
                             </div>
                         </div>
@@ -435,67 +416,122 @@ document.addEventListener('DOMContentLoaded', function() {
         }).join('');
     }
 
-    // Add debouncing for search input
+    // Debounced search via header input
     let searchTimeout;
-    searchInput.addEventListener('input', function() {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(filterPosts, 300);
-    });
-    
-    categoryFilter.addEventListener('change', filterPosts);
-
-    // Category filter clicks from sidebar
-    const categoryFilters = document.querySelectorAll('.category-filter');
-    categoryFilters.forEach(filter => {
-        filter.addEventListener('click', function(e) {
-            e.preventDefault();
-            const categoryId = this.dataset.categoryId;
-            categoryFilter.value = categoryId;
-            filterPosts();
+    if (headerSearch){
+        headerSearch.addEventListener('input', function(){
+            clearTimeout(searchTimeout);
+            const term = headerSearch.value.trim();
+            searchTimeout = setTimeout(()=> fetchAndRender({ q: term, categoryId: headerCategory?.value||'', status: 'all' }), 300);
         });
-    });
+    }
+
+    // Category change via header
+    if (headerCategory){
+        headerCategory.addEventListener('change', ()=>{
+            const cid = headerCategory.value;
+            const term = headerSearch?.value.trim() || '';
+            fetchAndRender({ q: term, categoryId: cid, status: 'all' });
+        });
+    }
+
+    // Status dropdown
+    function setActiveChip(key){
+        headerChips.forEach(b=>{
+            const isActive = b.dataset.kkChip===key;
+            b.classList.toggle('ring-2', isActive);
+            b.classList.toggle('ring-blue-500/60', isActive);
+            b.classList.toggle('border-blue-300', isActive);
+        });
+        if (headerStatus) headerStatus.value = key==='all' ? 'all' : key;
+    }
+    if (headerStatus){
+        headerStatus.addEventListener('change', ()=>{
+            const status = headerStatus.value;
+            setActiveChip(status === 'all' ? 'all' : status);
+            const cid = headerCategory?.value||'';
+            const term = headerSearch?.value.trim()||'';
+            fetchAndRender({ q: term, categoryId: cid, status });
+        });
+    }
+
+    // Quick chips
+    headerChips.forEach(btn => btn.addEventListener('click', ()=>{
+        const key = btn.dataset.kkChip;
+        setActiveChip(key);
+        const cid = headerCategory?.value||'';
+        const term = headerSearch?.value.trim()||'';
+        fetchAndRender({ q: term, categoryId: cid, status: key });
+    }));
+
+    // Header form submit + clear
+    if (headerForm){
+        headerForm.addEventListener('submit', (e)=>{
+            e.preventDefault();
+            const term = headerSearch?.value.trim()||'';
+            const cid = headerCategory?.value||'';
+            const status = headerStatus?.value||'all';
+            fetchAndRender({ q: term, categoryId: cid, status });
+        });
+    }
+    if (headerClearBtn){
+        headerClearBtn.addEventListener('click', ()=>{
+            if (headerSearch) headerSearch.value='';
+            if (headerCategory) headerCategory.value='';
+            if (headerStatus) headerStatus.value='all';
+            setActiveChip('all');
+            renderPosts(<?= json_encode($posts ?? []) ?>);
+        });
+    }
 
     // Initialize the view
-    filterPosts();
-    const baseViewUrl = '<?= base_url('/bulletin/view/') ?>';
-    const baseEditUrl = '<?= base_url('/bulletin/edit/') ?>';
-    const baseImgUrl = '<?= base_url('/uploads/bulletin/') ?>';
+    setActiveChip('all');
+    renderPosts(<?= json_encode($posts ?? []) ?>);
 
         function showSkeleton(count=4){
                 postsContainer.innerHTML = Array.from({length:count}).map(()=>`
-                    <div class=\"post-card skeleton flex flex-col\">
-                        <div class=\"skeleton-media h-40 w-full rounded-t-xl\"></div>
+                    <div class=\"flex flex-col bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden\">
+                        <div class=\"h-40 w-full bg-slate-200 animate-pulse\"></div>
                         <div class=\"p-4 space-y-3 flex-1\">
-                            <div class=\"skeleton-line h-4 w-3/4\"></div>
-                            <div class=\"skeleton-line h-3 w-full\"></div>
-                            <div class=\"skeleton-line h-3 w-5/6\"></div>
+                            <div class=\"h-4 w-3/4 bg-slate-200 rounded animate-pulse\"></div>
+                            <div class=\"h-3 w-full bg-slate-200 rounded animate-pulse\"></div>
+                            <div class=\"h-3 w-5/6 bg-slate-200 rounded animate-pulse\"></div>
                         </div>
                         <div class=\"px-4 pb-4 flex items-center gap-3\">
-                            <div class=\"skeleton-avatar h-6 w-6 rounded-full\"></div>
-                            <div class=\"skeleton-line h-3 w-24\"></div>
+                            <div class=\"h-6 w-6 rounded-full bg-slate-200 animate-pulse\"></div>
+                            <div class=\"h-3 w-24 bg-slate-200 rounded animate-pulse\"></div>
                         </div>
                     </div>`).join('');
         }
-        function renderPosts(posts){
+                        function boolish(v){
+                            if (v === true || v === 1 || v === '1') return true;
+                            if (typeof v === 'string'){
+                                const s=v.toLowerCase();
+                                if (s==='true' || s==='yes') return true;
+                            }
+                            return false;
+                        }
+
+                        function renderPosts(posts){
                 if (!Array.isArray(posts) || posts.length === 0) {
                         postsContainer.innerHTML = `<div class=\"col-span-full\"><div class=\"bg-white border border-dashed border-gray-300 rounded-xl p-10 text-center\"><div class=\"mx-auto w-16 h-16 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mb-4\"><i class=\"fa-regular fa-newspaper text-xl\"></i></div><h3 class=\"text-lg font-semibold text-gray-900\">No posts found</h3><p class=\"text-gray-500 mt-1\">Try different keywords or filters.</p></div></div>`;
                         return;
                 }
                 postsContainer.innerHTML = posts.map(post => {
-                        const title = post.title || 'Untitled';
-                        const hasImg = !!post.featured_image;
-                        const categoryChip = post.category_name ? `<span class=\"chip\" style=\"background-color:${post.category_color}20;color:${post.category_color}\">${post.category_name}</span>` : '';
-                        const featChip = post.is_featured ? `<span class=\"chip bg-yellow-100 text-yellow-700\">Featured</span>` : '';
-                        const urgentChip = post.is_urgent ? `<span class=\"chip bg-red-100 text-red-700\">Urgent</span>` : '';
-                        const visChip = `<span class=\"chip bg-gray-100 text-gray-700\">${(post.visibility||'public')[0].toUpperCase()+(post.visibility||'public').slice(1)}</span>`;
-                        const statusChip = (post.status && post.status !== 'published') ? `<span class=\"chip bg-gray-200 text-gray-700\">${post.status[0].toUpperCase()+post.status.slice(1)}</span>` : '';
-                        const excerpt = (post.excerpt || (post.content||'').replace(/<[^>]*>/g,'')).substring(0,220);
-                        const dateStr = post.published_at || post.created_at ? new Date(post.published_at || post.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
-                        const views = parseInt(post.view_count||0).toLocaleString();
-                        const initial = ((post.first_name||'U')[0]||'U').toUpperCase();
-                        const authorName = `${post.first_name||''} ${post.last_name||''}`.trim();
-                        const editLink = (post.author_id == <?= $user_id ?? 0 ?>) ? `<a href=\"${baseEditUrl}${post.id}\" class=\"text-gray-500 hover:text-blue-600 transition-colors\" title=\"Edit\"><i class=\"fa-regular fa-pen-to-square\"></i></a>` : '';
-                        return `<article class=\"post-card group relative flex flex-col\" data-id=\"${post.id}\">\n  <div class=\"relative media w-full overflow-hidden rounded-t-xl\">\n    ${hasImg?`<img src=\"${baseImgUrl}${post.featured_image}\" alt=\"${title}\" class=\"w-full h-full object-cover duration-500 group-hover:scale-105\">`:`<div class=\"absolute inset-0 bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center text-blue-300\"><i class=\"fa-regular fa-image text-3xl\"></i></div>`}\n    <div class=\"absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent opacity-60 group-hover:opacity-70 transition\"></div>\n    <div class=\"absolute top-2 left-2 flex flex-wrap gap-1\">${categoryChip}${featChip}${urgentChip}${visChip}${statusChip}</div>\n  </div>\n  <div class=\"p-4 flex flex-col gap-2 flex-1\">\n    <h3 class=\"text-base font-semibold text-gray-900 leading-snug line-clamp-2 group-hover:text-blue-600 transition\"><a href=\"${baseViewUrl}${post.id}\" class=\"stretched-link relative z-10\">${title}</a></h3>\n    <p class=\"text-sm text-gray-600 leading-relaxed line-clamp-3\">${excerpt}${excerpt.length>=220?'...':''}</p>\n  </div>\n  <div class=\"px-4 pb-4 flex items-center justify-between text-xs text-gray-500\">\n    <div class=\"flex items-center gap-2\">\n      <div class=\"h-6 w-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center text-[10px] font-medium shadow-sm\">${initial}</div>\n      <span>${authorName}</span><span class=\"text-gray-400\">•</span><span>${dateStr}</span>\n    </div>\n    <div class=\"flex items-center gap-3\"><span class=\"flex items-center gap-1\"><i class=\"fa-regular fa-eye\"></i>${views}</span>${editLink}</div>\n  </div>\n  <a href=\"${baseViewUrl}${post.id}\" class=\"absolute inset-0\" aria-label=\"Read post: ${title}\"></a>\n</article>`;
+                            const title = post.title || 'Untitled';
+                            const hasImg = !!post.featured_image;
+                            const categoryChip = post.category_name ? `<span class=\"inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold\" style=\"background-color:${post.category_color}20;color:${post.category_color}\">${post.category_name}</span>` : '';
+                            const featChip = boolish(post.is_featured) ? `<span class=\"inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-yellow-100 text-yellow-700\">Featured</span>` : '';
+                            const urgentChip = boolish(post.is_urgent) ? `<span class=\"inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700\">Urgent</span>` : '';
+                            const visChip = `<span class=\"inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-700\">${(post.visibility||'public')[0].toUpperCase()+(post.visibility||'public').slice(1)}</span>`;
+                            const statusChip = (post.status && post.status !== 'published') ? `<span class=\"inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-200 text-gray-700\">${post.status[0].toUpperCase()+post.status.slice(1)}</span>` : '';
+                            const excerpt = (post.excerpt || (post.content||'').replace(/<[^>]*>/g,'')).substring(0,220);
+                            const dateStr = post.published_at || post.created_at ? new Date(post.published_at || post.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
+                            const views = parseInt(post.view_count||0).toLocaleString();
+                            const initial = ((post.first_name||'U')[0]||'U').toUpperCase();
+                            const authorName = `${post.first_name||''} ${post.last_name||''}`.trim();
+                            const editLink = ((post.author_id == <?= $user_id ?? 0 ?>) && (String(post.barangay_id) == String(<?= (int)($barangay_id ?? 0) ?>))) ? `<a href=\"${baseEditUrl}${post.id}\" class=\"text-gray-500 hover:text-blue-600 transition-colors\" title=\"Edit\"><i class=\"fa-regular fa-pen-to-square\"></i></a>` : '';
+                            return `<article class=\"group relative flex flex-col bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition\" data-id=\"${post.id}\">\n  <div class=\"relative media w-full overflow-hidden rounded-t-xl\">\n    ${hasImg?`<img src=\"${baseImgUrl}${post.featured_image}\" alt=\"${title}\" class=\"w-full h-full object-cover duration-500 group-hover:scale-105\">`:`<div class=\"absolute inset-0 bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center text-blue-300\"><i class=\"fa-regular fa-image text-3xl\"></i></div>`}\n    <div class=\"absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent opacity-60 group-hover:opacity-70 transition\"></div>\n    <div class=\"absolute top-2 left-2 flex flex-wrap gap-1\">${categoryChip}${featChip}${urgentChip}${visChip}${statusChip}</div>\n  </div>\n  <div class=\"p-4 flex flex-col gap-2 flex-1\">\n    <h3 class=\"text-base font-semibold text-gray-900 leading-snug line-clamp-2 group-hover:text-blue-600 transition\"><a href=\"${baseViewUrl}${post.id}\" class=\"stretched-link relative z-10\">${title}</a></h3>\n    <p class=\"text-sm text-gray-600 leading-relaxed line-clamp-3\">${excerpt}${excerpt.length>=220?'...':''}</p>\n  </div>\n  <div class=\"px-4 pb-4 flex items-center justify-between text-xs text-gray-500\">\n    <div class=\"flex items-center gap-2\">\n      <div class=\"h-6 w-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center text-[10px] font-medium shadow-sm\">${initial}</div>\n      <span>${authorName}</span><span class=\"text-gray-400\">•</span><span>${dateStr}</span>\n    </div>\n    <div class=\"flex items-center gap-3\"><span class=\"flex items-center gap-1\"><i class=\"fa-regular fa-eye\"></i>${views}</span>${editLink}</div>\n  </div>\n  <a href=\"${baseViewUrl}${post.id}\" class=\"absolute inset-0\" aria-label=\"Read post: ${title}\"></a>\n</article>`;
                 }).join('');
         }
 
@@ -551,7 +587,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const prevBtn = root.querySelector('.doc-carousel-btn.prev');
         const nextBtn = root.querySelector('.doc-carousel-btn.next');
         if(!viewport || !prevBtn || !nextBtn) return;
-        const scrollStep = () => Math.min(viewport.clientWidth * 0.9, (viewport.querySelector('.card')?.clientWidth || 250) * 2 + 40);
+    const scrollStep = () => Math.min(viewport.clientWidth * 0.9, (viewport.querySelector('.doc-carousel-track > article')?.clientWidth || 250) * 2 + 40);
         function update(){
             const maxScroll = viewport.scrollWidth - viewport.clientWidth - 2;
             prevBtn.disabled = viewport.scrollLeft <= 0;
@@ -572,30 +608,12 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <style>
-    .chip-btn { display:inline-flex; align-items:center; padding:0.375rem 0.75rem; border-radius:9999px; font-size:0.75rem; font-weight:600; color:#1f2937; border:1px solid #e5e7eb; transition:all .2s ease; background:#fff; }
-    .chip-btn:hover { background:#f9fafb; }
-    .chip-btn.active { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
-    .card { background:#fff; border-radius:0.75rem; border:1px solid #e5e7eb; box-shadow:0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04); transition: box-shadow .2s ease; overflow:hidden; }
-    .card:hover { box-shadow:0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); }
-    .card-title { font-size:1.125rem; line-height:1.5rem; font-weight:700; color:#111827; }
-    .card-excerpt { color:#4b5563; margin-top:0.25rem; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
-    .badge { display:inline-flex; align-items:center; padding:0.125rem 0.625rem; border-radius:9999px; font-size:0.75rem; font-weight:600; }
 @keyframes fadeInUp{0%{opacity:0;transform:translateY(14px)}100%{opacity:1;transform:translateY(0)}}
-.animate-slide-up,.animate-fade-in-delay,.card{opacity:0;transition:opacity .6s ease,transform .6s ease}
+.animate-slide-up,.animate-fade-in-delay{opacity:0;transition:opacity .6s ease,transform .6s ease}
 .animate-slide-up.in{animation:fadeInUp .65s ease forwards}
 .animate-fade-in-delay.in{animation:fadeInUp .85s ease forwards}
-.card.in{animation:fadeInUp .6s ease forwards}
-/* Enhanced post card & skeleton (parity with KK) */
-.post-card{background:#fff;border:1px solid #e5e7eb;border-radius:1rem;box-shadow:0 2px 4px rgba(0,0,0,.04),0 1px 2px rgba(0,0,0,.04);transition:box-shadow .35s cubic-bezier(.4,0,.2,1),transform .35s cubic-bezier(.4,0,.2,1);overflow:hidden}
-.post-card:hover{box-shadow:0 12px 28px -6px rgba(59,130,246,.28),0 8px 16px -8px rgba(59,130,246,.18);transform:translateY(-4px)}
-.chip{display:inline-flex;align-items:center;font-size:.625rem;letter-spacing:.5px;font-weight:600;padding:.25rem .55rem;border-radius:.65rem;text-transform:uppercase;line-height:1;background:#f1f5f9;color:#334155;backdrop-filter:blur(4px)}
 .line-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .line-clamp-3{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-.skeleton-media,.skeleton-line,.skeleton-avatar{background:linear-gradient(90deg,#f1f5f9 0%,#e2e8f0 50%,#f1f5f9 100%);background-size:200% 100%;animation:skeleton 1.4s ease-in-out infinite;border-radius:.5rem}
-.skeleton-line{border-radius:.375rem}
-.skeleton-avatar{border-radius:9999px}
-@keyframes skeleton{0%{background-position:200% 0}100%{background-position:-200% 0}}
-/* Document carousel */
 .doc-carousel-viewport{scroll-behavior:smooth;}
 .doc-carousel-viewport::-webkit-scrollbar{height:8px}
 .doc-carousel-viewport::-webkit-scrollbar-track{background:transparent}
@@ -605,7 +623,7 @@ document.addEventListener('DOMContentLoaded', () => {
 <script>
 // IntersectionObserver animations (ported from KK view)
 (() => {
-    const animated = document.querySelectorAll('.card, .animate-slide-up, .animate-fade-in-delay');
+    const animated = document.querySelectorAll('.animate-slide-up, .animate-fade-in-delay');
     const io = new IntersectionObserver(entries => {
         entries.forEach(e => { if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }});
     }, { threshold: 0.15 });
@@ -613,4 +631,40 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 </script>
 
-<?= $this->include('K-NECT/SK/Template/footer') ?>
+<script>
+// Page-load toasts for redirects and flash messages
+document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const t = params.get('toast');
+    if (t === 'created') showToast('Bulletin post created successfully');
+    if (t === 'updated') showToast('Bulletin post updated successfully');
+    if (t === 'deleted') showToast('Bulletin post deleted');
+    if (t) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    // Flash data to toast
+    const flash = {
+        success: <?= json_encode(session()->getFlashdata('success') ?? '') ?>,
+        error: <?= json_encode(session()->getFlashdata('error') ?? '') ?>,
+        warning: <?= json_encode(session()->getFlashdata('warning') ?? '') ?>
+    };
+    if (flash.success) showToast(flash.success, 'success');
+    if (flash.error) showToast(flash.error, 'error');
+    if (flash.warning) showToast(flash.warning, 'error');
+    // Hide any static alert boxes if present
+    document.querySelectorAll('div[role="alert"]').forEach(el => el.classList.add('hidden'));
+});
+function showToast(message, type='success'){
+    let c = document.getElementById('toastContainer');
+    if (!c){ c = document.createElement('div'); c.id='toastContainer'; c.className='fixed top-4 right-4 z-[100000] flex flex-col gap-2 items-end pointer-events-none'; document.body.appendChild(c); }
+    const el = document.createElement('div');
+    el.className = `pointer-events-auto max-w-sm w-80 rounded-lg shadow-lg ring-1 ring-black/10 px-4 py-3 text-sm text-white ${type==='success'?'bg-emerald-600':'bg-rose-600'}`;
+    el.textContent = message;
+    c.appendChild(el);
+    setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateY(-4px)'; el.style.transition='all .25s ease'; }, 2000);
+    setTimeout(()=>{ el.remove(); }, 2400);
+}
+</script>
+
+<?= $this->include('K-NECT/SK/template/footer') ?>

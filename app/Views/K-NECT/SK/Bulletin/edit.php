@@ -35,7 +35,7 @@
 
     <!-- Main Form Content -->
     <div class="px-4 sm:px-6 lg:px-8 py-6">
-        <form id="bulletinEditForm" class="max-w-4xl mx-auto" enctype="multipart/form-data">
+        <form id="bulletinEditForm" class="max-w-7xl mx-auto" enctype="multipart/form-data">
             <input type="hidden" name="post_id" value="<?= $post['id'] ?>">
             
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -399,8 +399,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 showMessage('Post updated successfully!', 'success');
                 setTimeout(() => {
-                    window.location.href = `<?= base_url('/bulletin/view/') ?>${postId}`;
-                }, 2000);
+                    window.location.href = `<?= base_url('/bulletin/view/') ?>${postId}?toast=updated`;
+                }, 1200);
             } else {
                 showMessage(data.message || 'An error occurred while updating the post', 'error');
                 if (data.errors) {

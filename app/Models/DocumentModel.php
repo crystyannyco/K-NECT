@@ -11,7 +11,6 @@ class DocumentModel extends Model
     protected $returnType = 'array';
     protected $allowedFields = [
         'filename',
-        'title',
         'filepath',
         'uploaded_by',
         'uploaded_at',
@@ -32,7 +31,6 @@ class DocumentModel extends Model
     protected bool $updateOnlyChanged = true;
 
     protected $validationRules = [
-        'title' => 'permit_empty|max_length[255]',
         'filename' => 'required|max_length[255]',
         'filepath' => 'required|max_length[255]',
         'uploaded_by' => 'required|max_length[100]',

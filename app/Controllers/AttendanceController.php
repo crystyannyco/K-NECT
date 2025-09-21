@@ -51,8 +51,8 @@ class AttendanceController extends BaseController
         ];
 
         return 
-            $this->loadView('K-NECT/SK/Template/Header') .
-            $this->loadView('K-NECT/SK/Template/Sidebar') .
+            $this->loadView('K-NECT/SK/template/header') .
+            $this->loadView('K-NECT/SK/template/sidebar') .
             $this->loadView('K-NECT/SK/attendance', $data);
     }
 
@@ -158,8 +158,8 @@ class AttendanceController extends BaseController
         ];
 
         return 
-            $this->loadView('K-NECT/SK/Template/Header') .
-            $this->loadView('K-NECT/SK/Template/Sidebar') .
+            $this->loadView('K-NECT/SK/template/header') .
+            $this->loadView('K-NECT/SK/template/sidebar') .
             $this->loadView('K-NECT/SK/attendance_display', $data);
     }
 
@@ -191,8 +191,8 @@ class AttendanceController extends BaseController
         ];
 
         return 
-            $this->loadView('K-NECT/Pederasyon/Template/Header') .
-            $this->loadView('K-NECT/Pederasyon/Template/Sidebar') .
+            $this->loadView('K-NECT/Pederasyon/template/header') .
+            $this->loadView('K-NECT/Pederasyon/template/sidebar') .
             $this->loadView('K-NECT/Pederasyon/attendance_display', $data);
     }
 
@@ -1093,8 +1093,8 @@ class AttendanceController extends BaseController
                 $this->loadView('K-NECT/Pederasyon/attendance_report', $data);
         } else {
             return 
-                $this->loadView('K-NECT/SK/Template/Header') .
-                $this->loadView('K-NECT/SK/Template/Sidebar') .
+                $this->loadView('K-NECT/SK/template/header') .
+                $this->loadView('K-NECT/SK/template/sidebar') .
                 $this->loadView('K-NECT/SK/attendance_report', $data);
         }
     }

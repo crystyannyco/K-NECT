@@ -74,8 +74,8 @@ class AnalyticsController extends BaseController
         ];
 
         return 
-            $this->loadView('K-NECT/SK/Template/Header', $data) .
-            $this->loadView('K-NECT/SK/Template/Sidebar') .
+            $this->loadView('K-NECT/SK/template/header', $data) .
+            $this->loadView('K-NECT/SK/template/sidebar') .
             $this->loadView('K-NECT/analytics/demographics', $data);
     }
 
@@ -404,8 +404,8 @@ class AnalyticsController extends BaseController
         ];
 
         return 
-            $this->loadView('K-NECT/SK/Template/Header', $data) .
-            $this->loadView('K-NECT/SK/Template/Sidebar') .
+            $this->loadView('K-NECT/SK/template/header', $data) .
+            $this->loadView('K-NECT/SK/template/sidebar') .
             $this->loadView('K-NECT/analytics/events', $data);
     }
 
@@ -737,8 +737,8 @@ class AnalyticsController extends BaseController
         ];
 
         return 
-            $this->loadView('K-NECT/SK/Template/Header', $data) .
-            $this->loadView('K-NECT/SK/Template/Sidebar') .
+            $this->loadView('K-NECT/SK/template/header', $data) .
+            $this->loadView('K-NECT/SK/template/sidebar') .
             $this->loadView('K-NECT/analytics/documents', $data);
     }
 
@@ -884,8 +884,8 @@ class AnalyticsController extends BaseController
         ];
 
         return 
-            $this->loadView('K-NECT/SK/Template/Header', $data) .
-            $this->loadView('K-NECT/SK/Template/Sidebar') .
+            $this->loadView('K-NECT/SK/template/header', $data) .
+            $this->loadView('K-NECT/SK/template/sidebar') .
             $this->loadView('K-NECT/analytics/performance', $data);
     }
 

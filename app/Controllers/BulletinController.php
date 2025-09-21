@@ -95,7 +95,7 @@ class BulletinController extends BaseController
             'recent_documents' => $recentDocuments,
             'stats' => $stats,
             'user_type' => $userType,
-            'user_id' => $userId,
+            'user_id' => $authorDbId,
             'barangay_id' => $barangayId,
             'barangay_name' => $barangayId ? \App\Libraries\BarangayHelper::getBarangayName($barangayId) : null
         ];
@@ -144,6 +144,7 @@ class BulletinController extends BaseController
             'post' => $post,
             'related_posts' => array_slice($relatedPosts, 0, 3),
             'user_type' => $userType,
+            'user_id' => $this->resolveAuthorDbId(),
             'barangay_id' => $barangayId
         ];
 
@@ -196,6 +197,8 @@ class BulletinController extends BaseController
     $userId = $session->get('user_id');
     // Resolve DB primary key for permission checks
     $authorDbId = $this->resolveAuthorDbId();
+    $barangayId = $this->getCurrentBarangayId();
+    $barangayId = $this->getCurrentBarangayId();
 
         if (!in_array($userType, ['sk', 'pederasyon'])) {
             if ($this->request->isAJAX()) {
@@ -356,6 +359,7 @@ class BulletinController extends BaseController
         $userId = $session->get('user_id');
     // Resolve DB primary key for current user (needed for SK ownership checks)
     $authorDbId = $this->resolveAuthorDbId();
+    $barangayId = $this->getCurrentBarangayId();
 
         if (!in_array($userType, ['sk', 'pederasyon'])) {
             return redirect()->to('/bulletin')->with('error', 'You do not have permission to edit posts.');
@@ -369,7 +373,7 @@ class BulletinController extends BaseController
         }
 
         // Check if user can edit this post (pederasyon always allowed; SK must own)
-    if (!$this->bulletinModel->canUserEditPost($post, $userType, $authorDbId)) {
+    if (!$this->bulletinModel->canUserEditPost($post, $userType, $authorDbId, $barangayId)) {
             return redirect()->to('/bulletin')->with('error', 'You do not have permission to edit this post.');
         }
 
@@ -394,6 +398,8 @@ class BulletinController extends BaseController
             'categories' => $categories,
             'barangays' => $barangays,
             'user_type' => $userType,
+            'user_id' => $authorDbId,
+            'barangay_id' => $barangayId,
             'post_tags' => $postTags
         ];
 
@@ -409,6 +415,8 @@ class BulletinController extends BaseController
         $userType = $session->get('user_type');
     $userId = $session->get('user_id');
     $authorDbId = $this->resolveAuthorDbId();
+    // Resolve current barangay for permission checks (used in canUserEditPost)
+    $barangayId = $this->getCurrentBarangayId();
 
         if (!in_array($userType, ['sk', 'pederasyon'])) {
             return redirect()->to('/bulletin')->with('error', 'You do not have permission to edit posts.');
@@ -441,7 +449,7 @@ class BulletinController extends BaseController
             }
 
             // Check if user can edit this post
-            if (!$this->bulletinModel->canUserEditPost($post, $userType, $authorDbId)) {
+            if (!$this->bulletinModel->canUserEditPost($post, $userType, $authorDbId, $barangayId)) {
                 if ($this->request->isAJAX()) {
                     return $this->response->setJSON(['success' => false, 'message' => 'You do not have permission to edit this post.']);
                 }
@@ -569,6 +577,8 @@ class BulletinController extends BaseController
         $userType = $session->get('user_type');
     $userId = $session->get('user_id');
     $authorDbId = $this->resolveAuthorDbId();
+    // Resolve current barangay for permission checks (used in canUserDeletePost)
+    $barangayId = $this->getCurrentBarangayId();
 
         if (!in_array($userType, ['sk', 'pederasyon'])) {
             if ($this->request->isAJAX()) {
@@ -594,7 +604,7 @@ class BulletinController extends BaseController
             }
 
             // Check if user can delete this post
-            if (!$this->bulletinModel->canUserDeletePost($post, $userType, $authorDbId)) {
+            if (!$this->bulletinModel->canUserDeletePost($post, $userType, $authorDbId, $barangayId)) {
                 if ($this->request->isAJAX()) {
                     return $this->response->setJSON([
                         'success' => false,
@@ -934,7 +944,7 @@ class BulletinController extends BaseController
         try {
             // Map user type to canonical folder name (fix case sensitivity across environments)
             $folder = $this->resolveUserFolder($userType);
-            $templatePath = "K-NECT/{$folder}/Template/";
+            $templatePath = "K-NECT/{$folder}/template/";
             // Normalize the provided view path to use the canonical folder
             $viewPath = $view;
             if (strpos($view, 'K-NECT/') === 0) {

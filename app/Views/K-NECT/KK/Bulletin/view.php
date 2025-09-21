@@ -64,7 +64,7 @@
 
     <!-- Main Content -->
     <div class="px-4 sm:px-6 lg:px-8 py-6">
-        <div class="max-w-4xl mx-auto">
+        <div class="max-w-7xl mx-auto">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 <!-- Main Article Column -->
@@ -74,9 +74,10 @@
                         <!-- Featured Image -->
                         <?php if ($post['featured_image']): ?>
                         <div class="aspect-w-16 aspect-h-9">
-                            <img src="<?= base_url('/uploads/bulletin/' . $post['featured_image']) ?>" 
+                            <img src="<?= base_url('/previewDocument/bulletin/' . $post['featured_image']) ?>" 
                                  alt="<?= esc($post['title']) ?>" 
-                                 class="w-full h-64 object-cover">
+                                 class="w-full h-64 object-cover"
+                                 onerror="this.style.display='none'">
                         </div>
                         <?php endif; ?>
 

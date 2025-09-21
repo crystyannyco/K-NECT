@@ -8,68 +8,96 @@
             <p class="text-gray-600">Document usage and governance analytics</p>
         </div>
 
-        <!-- Summary Cards -->
-        <div class="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Filter Section (Only for City-wide view) -->
+        <?php if ($view_type === 'citywide'): ?>
+        <div class="mb-6">
             <div class="bg-white rounded-lg shadow-sm p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                    </svg>
+                    Filters
+                </h3>
+                <div class="flex flex-wrap items-end gap-4">
+                    <div class="flex-1 min-w-64">
+                        <label for="barangayFilter" class="block text-sm font-medium text-gray-700 mb-2">Filter by Barangay:</label>
+                        <select id="barangayFilter" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="all">All Barangays</option>
+                            <option value="city-wide">City-wide</option>
+                            <?php if (isset($barangays)): ?>
+                                <?php foreach ($barangays as $barangay): ?>
+                                    <option value="<?= $barangay['barangay_id'] ?>"><?= $barangay['name'] ?></option>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <!-- Summary Cards -->
+        <div class="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="bg-white rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 p-6 summary-card" data-metric="total_approved_documents">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <div class="w-8 h-8 bg-green-100 rounded-md flex items-center justify-center">
-                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="w-10 h-10 bg-gradient-to-br from-blue-900 to-blue-800 rounded-xl flex items-center justify-center shadow-sm">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                         </div>
                     </div>
                     <div class="ml-4 flex-1">
-                        <h3 class="text-sm font-medium text-gray-500">Approved Documents</h3>
-                        <p class="text-2xl font-bold text-gray-900"><?= $document_summary['total_approved_documents'] ?? 0 ?></p>
+                        <h3 class="text-sm font-medium text-gray-500 metric-label">Approved Documents</h3>
+                        <p class="text-2xl font-bold text-gray-800 metric-value"><?= $document_summary['total_approved_documents'] ?? 0 ?></p>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="bg-white rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 p-6 summary-card" data-metric="total_pending_documents">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <div class="w-8 h-8 bg-yellow-100 rounded-md flex items-center justify-center">
-                            <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="w-10 h-10 bg-gradient-to-br from-gray-700 to-gray-600 rounded-xl flex items-center justify-center shadow-sm">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                         </div>
                     </div>
                     <div class="ml-4 flex-1">
-                        <h3 class="text-sm font-medium text-gray-500">Pending Approval</h3>
-                        <p class="text-2xl font-bold text-gray-900"><?= $document_summary['total_pending_documents'] ?? 0 ?></p>
+                        <h3 class="text-sm font-medium text-gray-500 metric-label">Pending Approval</h3>
+                        <p class="text-2xl font-bold text-gray-800 metric-value"><?= $document_summary['total_pending_documents'] ?? 0 ?></p>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="bg-white rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 p-6 summary-card" data-metric="total_downloads">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <div class="w-8 h-8 bg-blue-100 rounded-md flex items-center justify-center">
-                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="w-10 h-10 bg-gradient-to-br from-gray-600 to-gray-500 rounded-xl flex items-center justify-center shadow-sm">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
                             </svg>
                         </div>
                     </div>
                     <div class="ml-4 flex-1">
-                        <h3 class="text-sm font-medium text-gray-500">Total Downloads</h3>
-                        <p class="text-2xl font-bold text-gray-900"><?= $document_summary['total_downloads'] ?? 0 ?></p>
+                        <h3 class="text-sm font-medium text-gray-500 metric-label">Total Downloads</h3>
+                        <p class="text-2xl font-bold text-gray-800 metric-value"><?= $document_summary['total_downloads'] ?? 0 ?></p>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="bg-white rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 p-6 summary-card" data-metric="avg_approval_time_days">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <div class="w-8 h-8 bg-purple-100 rounded-md flex items-center justify-center">
-                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="w-10 h-10 bg-gradient-to-br from-slate-700 to-slate-600 rounded-xl flex items-center justify-center shadow-sm">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                             </svg>
                         </div>
                     </div>
                     <div class="ml-4 flex-1">
-                        <h3 class="text-sm font-medium text-gray-500">Avg Approval Time</h3>
-                        <p class="text-2xl font-bold text-gray-900"><?= round($document_summary['avg_approval_time_days'] ?? 0, 1) ?> days</p>
+                        <h3 class="text-sm font-medium text-gray-500 metric-label">Avg Approval Time</h3>
+                        <p class="text-2xl font-bold text-gray-800 metric-value"><?= round($document_summary['avg_approval_time_days'] ?? 0, 1) ?> days</p>
                     </div>
                 </div>
             </div>
@@ -146,11 +174,75 @@
         loadDocumentCategoriesChart();
         loadApprovalTimeChart();
         loadTopDocumentsTable();
+        
+        <?php if ($view_type === 'citywide'): ?>
+        // Add event listener for barangay filter changes
+        $('#barangayFilter').on('change', function() {
+            console.log('Barangay filter changed to:', $(this).val());
+            refreshCharts(); // Automatically refresh charts when filter changes
+        });
+        <?php endif; ?>
     });
+
+    // Function to refresh all charts (for filter changes)
+    function refreshCharts() {
+        loadDocumentCategoriesChart();
+        loadApprovalTimeChart();
+        loadTopDocumentsTable();
+        loadDocumentSummaryCards(); // Refresh summary cards with filtered data
+    }
+
+    // Load Document Summary Cards
+    function loadDocumentSummaryCards() {
+        const params = new URLSearchParams({
+            view_type: viewType
+        });
+        
+        if (viewType === 'citywide') {
+            const barangayId = $('#barangayFilter').val();
+            
+            // Always send barangay_id to backend to distinguish between all/city-wide/specific
+            if (barangayId) {
+                params.append('barangay_id', barangayId);
+            }
+        }
+
+        $.get(`${baseApiUrl}/document-summary?${params.toString()}`)
+            .done(function(data) {
+                // Update each summary card based on its data-metric attribute
+                $('.summary-card').each(function() {
+                    const $card = $(this);
+                    const metric = $card.data('metric');
+                    const $valueElement = $card.find('.metric-value');
+                    
+                    if (data[metric] !== undefined) {
+                        if (metric === 'avg_approval_time_days') {
+                            $valueElement.text(Math.round(data[metric] * 10) / 10 + ' days');
+                        } else {
+                            $valueElement.text(data[metric] || 0);
+                        }
+                    }
+                });
+            })
+            .fail(function() {
+                console.error('Failed to load document summary cards');
+            });
+    }
 
     // Load Most Accessed Document Categories Chart
     function loadDocumentCategoriesChart() {
-        $.get(`${baseApiUrl}/document-categories`)
+        const params = new URLSearchParams({
+            view_type: viewType
+        });
+        
+        if (viewType === 'citywide') {
+            const barangayId = $('#barangayFilter').val();
+            if (barangayId) {
+                params.append('barangay_id', barangayId);
+            }
+        }
+
+        $.get(`${baseApiUrl}/document-categories?${params.toString()}`)
             .done(function(data) {
                 documentCategoriesChart = Highcharts.chart('documentCategoriesChart', {
                     chart: {
@@ -199,7 +291,18 @@
 
     // Load Document Approval Time Chart
     function loadApprovalTimeChart() {
-        $.get(`${baseApiUrl}/document-approval-time`)
+        const params = new URLSearchParams({
+            view_type: viewType
+        });
+        
+        if (viewType === 'citywide') {
+            const barangayId = $('#barangayFilter').val();
+            if (barangayId) {
+                params.append('barangay_id', barangayId);
+            }
+        }
+
+        $.get(`${baseApiUrl}/document-approval-time?${params.toString()}`)
             .done(function(data) {
                 approvalTimeChart = Highcharts.chart('approvalTimeChart', {
                     chart: {
@@ -273,8 +376,8 @@
                                 ${index < 3 ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">' + (index + 1) + '</span>' : (index + 1)}
                             </td>
                             <td class="px-6 py-4 text-sm text-gray-900">
-                                <div class="max-w-xs truncate" title="${document.title || document.filename}">
-                                    ${document.title || document.filename}
+                                <div class="max-w-xs truncate" title="${document.filename}">
+                                    ${document.filename}
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${document.category || 'Uncategorized'}</td>

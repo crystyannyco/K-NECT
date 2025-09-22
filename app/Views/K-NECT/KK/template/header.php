@@ -34,6 +34,9 @@
 	
 	<!-- K-NECT Image Fallback System -->
 	<link href="<?= base_url('assets/css/image-fallback.css') ?>" rel="stylesheet" type="text/css" />
+	
+	<!-- Invisible Event Auto-refresh -->
+	<script src="/assets/js/invisible-event-refresh.js"></script>
 </head>
 <body class="bg-gray-50 min-h-screen font-['Inter']">
     <!-- ===== HEADER SECTION ===== -->

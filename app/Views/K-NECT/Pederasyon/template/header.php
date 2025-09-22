@@ -37,6 +37,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0/dist/panzoom/panzoom.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0/dist/panzoom/panzoom.controls.css" />
     
+    <!-- Invisible Event Auto-refresh -->
+    <script src="/assets/js/invisible-event-refresh.js"></script>
+    
     <!-- Panzoom JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0/dist/panzoom/panzoom.umd.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0/dist/panzoom/panzoom.controls.umd.js"></script>

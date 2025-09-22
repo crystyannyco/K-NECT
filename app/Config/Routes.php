@@ -8,6 +8,10 @@ use CodeIgniter\Router\RouteCollection;
 
 // ==================== PUBLIC ROUTES ==================== //
 
+// ------------- Cron Job Routes (Public but secured with token) ------------- //
+$routes->match(['GET', 'POST'], 'cron/publish-events', 'CronController::publishScheduledEvents');
+$routes->get('cron/health', 'CronController::health');
+
 // ------------- Public Landing & Authentication Routes ------------- //
 // Public landing page (always accessible). Authenticated users get redirected to their dashboard inside controller.
 $routes->get('/', 'PublicController::index');

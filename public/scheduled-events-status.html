@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K-NECT Scheduled Events Status</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background-color: #f5f5f5; 
+        }
+        .container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+        }
+        .status { 
+            padding: 10px; 
+            border-radius: 4px; 
+            margin: 10px 0; 
+        }
+        .healthy { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .loading { background-color: #e2e3e5; color: #383d41; border: 1px solid #d6d8db; }
+        button { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 8px 16px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .refresh-btn { background: #28a745; }
+        .test-btn { background: #ffc107; color: #212529; }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin: 15px 0; 
+        }
+        th, td { 
+            border: 1px solid #ddd; 
+            padding: 8px; 
+            text-align: left; 
+        }
+        th { background-color: #f8f9fa; }
+        .timestamp { 
+            color: #666; 
+            font-size: 0.9em; 
+        }
+        pre { 
+            background: #f8f9fa; 
+            padding: 10px; 
+            border-radius: 4px; 
+            overflow-x: auto; 
+            font-size: 0.9em;
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗓️ K-NECT Scheduled Events Status</h1>
+        
+        <div class="controls">
+            <button onclick="checkHealth()" class="refresh-btn">🔄 Refresh Status</button>
+            <button onclick="testCron()" class="test-btn">🧪 Test Cron Job</button>
+            <button onclick="toggleDetails()">📊 Toggle Details</button>
+        </div>
+
+        <div id="status-container">
+            <div class="status loading">
+                📡 Loading system status...
+            </div>
+        </div>
+
+        <div id="details" class="hidden">
+            <h3>📋 System Details</h3>
+            <div id="details-content">
+                <p>Click "Refresh Status" to load details...</p>
+            </div>
+        </div>
+
+        <div id="test-results" class="hidden">
+            <h3>🧪 Test Results</h3>
+            <div id="test-content"></div>
+        </div>
+
+        <div class="info">
+            <h3>📖 How It Works</h3>
+            <ul>
+                <li><strong>Every Minute:</strong> Cron job checks for scheduled events due for publishing</li>
+                <li><strong>Automatic Publishing:</strong> Events with status "Scheduled" are published when their scheduled time arrives</li>
+                <li><strong>Google Calendar:</strong> Published events are automatically synced to Google Calendar</li>
+                <li><strong>SMS Notifications:</strong> Notifications are sent to selected recipients when events are published</li>
+            </ul>
+
+            <h3>📞 Troubleshooting</h3>
+            <ul>
+                <li>If status shows "warning" or "error", check the cron job setup in Hostinger cPanel</li>
+                <li>Verify the cron command path: <code>php /path/to/your/cron_publish_events.php</code></li>
+                <li>Check application logs in <code>writable/logs/</code> directory</li>
+                <li>Ensure database connectivity and Google Calendar API credentials are working</li>
+            </ul>
+
+            <p class="timestamp">
+                Page generated: <span id="page-time"></span>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Set page load time
+        document.getElementById('page-time').textContent = new Date().toLocaleString();
+
+        // Check health status
+        async function checkHealth() {
+            const statusContainer = document.getElementById('status-container');
+            const detailsContent = document.getElementById('details-content');
+            
+            statusContainer.innerHTML = '<div class="status loading">🔄 Checking system health...</div>';
+
+            try {
+                const response = await fetch('/cron/health');
+                const data = await response.json();
+                
+                let statusClass = 'healthy';
+                let statusIcon = '✅';
+                
+                if (data.status === 'warning') {
+                    statusClass = 'warning';
+                    statusIcon = '⚠️';
+                } else if (data.status === 'error') {
+                    statusClass = 'error';
+                    statusIcon = '❌';
+                }
+
+                statusContainer.innerHTML = `
+                    <div class="status ${statusClass}">
+                        ${statusIcon} <strong>Status:</strong> ${data.status.toUpperCase()}<br>
+                        <strong>Message:</strong> ${data.message}<br>
+                        <span class="timestamp">Last checked: ${data.timestamp}</span>
+                    </div>
+                `;
+
+                // Update details
+                detailsContent.innerHTML = `
+                    <table>
+                        <tr><th>Metric</th><th>Value</th></tr>
+                        <tr><td>Overdue Events</td><td>${data.overdue_events}</td></tr>
+                        <tr><td>Upcoming Scheduled</td><td>${data.upcoming_scheduled}</td></tr>
+                        <tr><td>System Status</td><td>${data.status}</td></tr>
+                        <tr><td>Last Check</td><td>${data.timestamp}</td></tr>
+                    </table>
+                `;
+
+            } catch (error) {
+                statusContainer.innerHTML = `
+                    <div class="status error">
+                        ❌ <strong>Error:</strong> Could not connect to health check endpoint<br>
+                        <strong>Details:</strong> ${error.message}<br>
+                        <small>Make sure the CronController is properly configured and the routes are set up.</small>
+                    </div>
+                `;
+            }
+        }
+
+        // Test cron job endpoint
+        async function testCron() {
+            const testResults = document.getElementById('test-results');
+            const testContent = document.getElementById('test-content');
+            
+            testResults.classList.remove('hidden');
+            testContent.innerHTML = '<div class="status loading">🧪 Testing cron job endpoint...</div>';
+
+            try {
+                // Note: This would need the actual token in a real implementation
+                const response = await fetch('/cron/publish-events?token=test-token');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    testContent.innerHTML = `
+                        <div class="status healthy">
+                            ✅ <strong>Test Successful!</strong><br>
+                            Published Events: ${data.published_count}<br>
+                            Pending Scheduled: ${data.pending_scheduled}<br>
+                            <span class="timestamp">Test time: ${data.timestamp}</span>
+                        </div>
+                    `;
+                } else {
+                    testContent.innerHTML = `
+                        <div class="status error">
+                            ❌ <strong>Test Failed:</strong> ${data.message}<br>
+                            <small>This is expected if you haven't configured the secret token yet.</small>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                testContent.innerHTML = `
+                    <div class="status error">
+                        ❌ <strong>Test Error:</strong> ${error.message}<br>
+                        <small>Could not reach the cron endpoint. Check your route configuration.</small>
+                    </div>
+                `;
+            }
+        }
+
+        // Toggle details visibility
+        function toggleDetails() {
+            const details = document.getElementById('details');
+            details.classList.toggle('hidden');
+        }
+
+        // Auto-refresh every 30 seconds
+        setInterval(checkHealth, 30000);
+
+        // Load initial status
+        checkHealth();
+    </script>
+</body>
+</html>

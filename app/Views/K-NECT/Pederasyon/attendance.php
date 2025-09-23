@@ -605,8 +605,8 @@ function openAttendanceModal(eventId) {
         <div class="flex items-start space-x-4">
             <div class="flex-shrink-0">
                 ${event.event_banner ? 
-                    `<img src="${window.location.origin}/uploads/event/${event.event_banner}" alt="${event.title}" class="w-16 h-16 rounded-lg object-cover">` :
-                    `<img src="${window.location.origin}/assets/images/default-event-banner.svg" alt="No banner" class="w-16 h-16 rounded-lg object-cover">`
+                    `<img src="<?= base_url('uploads/event/') ?>${event.event_banner}" alt="${event.title}" class="w-16 h-16 rounded-lg object-cover">` :
+                    `<img src="<?= base_url('assets/images/default-event-banner.svg') ?>" alt="No banner" class="w-16 h-16 rounded-lg object-cover">`
                 }
             </div>
             <div class="flex-1">

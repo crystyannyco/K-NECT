@@ -466,7 +466,9 @@
                 <?php endif; ?>
 
                 <div class="text-center flex flex-col items-center">
-                    <img src="<?= base_url('/assets/images/K-Nect-Logo.png') ?>" alt="K-NECT Logo" class="w-48 sm:w-56 mx-auto" />
+                    <a href="<?= base_url('/K-NECT') ?>">
+                        <img src="<?= base_url('/assets/images/K-Nect-Logo.png') ?>" alt="K-NECT Logo" class="w-48 sm:w-56 mx-auto" />
+                    </a>
                 </div>
 
                 <?php if ($hasIrigaLogo): ?>
@@ -873,19 +875,6 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
                             <div class="space-y-1 sm:space-y-2">
                                 <label class="block text-xs sm:text-sm font-medium text-slate-700">
-                                    Last Name <span class="text-red-500">*</span>
-                                </label>
-                                <input type="text" name="last_name" placeholder="Dela Cruz"
-                                    value="<?= old('last_name') !== null ? old('last_name') : (isset($profile_data['last_name']) ? esc($profile_data['last_name']) : '') ?>"
-                                    class="form-field w-full p-3 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= session('validation_user') && session('validation_user')->hasError('last_name') ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base"
-                                    data-required="true">
-                                <?php if (session('validation_user') && session('validation_user')->hasError('last_name')): ?>
-                                    <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('validation_user')->getError('last_name') ?></p>
-                                <?php endif; ?>
-                            </div>
-                            
-                            <div class="space-y-1 sm:space-y-2">
-                                <label class="block text-xs sm:text-sm font-medium text-slate-700">
                                     First Name <span class="text-red-500">*</span>
                                 </label>
                                 <input type="text" name="first_name" placeholder="Juan"
@@ -904,6 +893,19 @@
                                 <input type="text" name="middle_name" placeholder="Santos"
                                     value="<?= old('middle_name') !== null ? old('middle_name') : (isset($profile_data['middle_name']) ? esc($profile_data['middle_name']) : '') ?>"
                                     class="form-field w-full p-3 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent border-slate-200 transition-all duration-200 text-sm sm:text-base">
+                            </div>
+                            
+                            <div class="space-y-1 sm:space-y-2">
+                                <label class="block text-xs sm:text-sm font-medium text-slate-700">
+                                    Last Name <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" name="last_name" placeholder="Dela Cruz"
+                                    value="<?= old('last_name') !== null ? old('last_name') : (isset($profile_data['last_name']) ? esc($profile_data['last_name']) : '') ?>"
+                                    class="form-field w-full p-3 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= session('validation_user') && session('validation_user')->hasError('last_name') ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base"
+                                    data-required="true">
+                                <?php if (session('validation_user') && session('validation_user')->hasError('last_name')): ?>
+                                    <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('validation_user')->getError('last_name') ?></p>
+                                <?php endif; ?>
                             </div>
                             
                             <div class="space-y-1 sm:space-y-2">
@@ -1208,7 +1210,7 @@
                     </div>
 
                     <!-- Form Actions -->
-                    <div class="flex flex-col sm:flex-row justify-between items-center pt-4 sm:pt-6 space-y-3 sm:space-y-0">
+                    <div class="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center pt-0 sm:pt-2 gap-3 sm:gap-0">
                         <button type="submit" formaction="<?= base_url('profiling/backToStep1') ?>" formmethod="post" formnovalidate 
                             class="btn-secondary bg-slate-300 text-slate-700 text-sm sm:text-base font-semibold py-2 sm:py-3 px-4 sm:px-6 rounded-lg sm:rounded-xl hover:bg-slate-400 transition-all duration-200 flex items-center space-x-2 w-full sm:w-auto justify-center">
                             <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1643,7 +1645,7 @@
                         </div>
                     </div>
                     <!-- Form Actions -->
-                    <div class="flex flex-col sm:flex-row justify-between items-center pt-4 sm:pt-6 space-y-3 sm:space-y-0">
+                    <div class="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center pt-0 sm:pt-2 gap-3 sm:gap-0">
                         <button type="submit" formaction="<?= base_url('profiling/backToStep2') ?>" formmethod="post" formnovalidate class="btn-secondary bg-slate-300 text-slate-700 text-sm sm:text-base font-semibold py-2 sm:py-3 px-4 sm:px-6 rounded-lg sm:rounded-xl hover:bg-slate-400 transition-all duration-200 flex items-center space-x-2 w-full sm:w-auto justify-center">
                             <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"></path>
@@ -1701,9 +1703,22 @@
                                 <label class="block text-xs sm:text-sm font-medium text-slate-700">
                                     Password <span class="text-red-500">*</span>
                                 </label>
-                                <input type="password" id="password" name="password" placeholder="Enter your password" data-required="true" 
-                                    value="<?= old('password') !== null ? old('password') : (isset($account_data['password']) ? esc($account_data['password']) : '') ?>" 
-                                    class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= isset($validationAccountErrors['password']) ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base">
+                                <div class="relative">
+                                    <input type="password" id="password" name="password" placeholder="Enter your password" data-required="true" 
+                                        value="<?= old('password') !== null ? old('password') : (isset($account_data['password']) ? esc($account_data['password']) : '') ?>" 
+                                        class="form-field w-full pr-10 p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= isset($validationAccountErrors['password']) ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base">
+                                    <button type="button" class="absolute inset-y-0 right-0 px-3 flex items-center text-slate-500 hover:text-slate-700 focus:outline-none" aria-label="Toggle password visibility" data-toggle-password data-target="#password">
+                                        <svg data-icon="show" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                                            <path d="M2 12c2.5-4 6.5-7 10-7s7.5 3 10 7c-2.5 4-6.5 7-10 7s-7.5-3-10-7z"/>
+                                            <circle cx="12" cy="12" r="2.5"/>
+                                        </svg>
+                                        <svg data-icon="hide" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                                            <path d="M2 12c2.5-4 6.5-7 10-7s7.5 3 10 7c-2.5 4-6.5 7-10 7s-7.5-3-10-7z"/>
+                                            <circle cx="12" cy="12" r="2.5"/>
+                                            <path d="M4 4c5 5 11 11 16 16"/>
+                                        </svg>
+                                    </button>
+                                </div>
                                 <?php if (isset($validationAccountErrors['password'])): ?>
                                     <p class="error-message text-red-500 text-xs sm:text-sm"><?= $validationAccountErrors['password'] ?></p>
                                 <?php endif; ?>
@@ -1749,13 +1764,50 @@
                                 <label class="block text-xs sm:text-sm font-medium text-slate-700">
                                     Confirm Password <span class="text-red-500">*</span>
                                 </label>
-                                <input type="password" name="confirm_password" placeholder="Confirm your password" data-required="true" 
-                                    value="<?= old('confirm_password') !== null ? old('confirm_password') : (isset($account_data['confirm_password']) ? esc($account_data['confirm_password']) : '') ?>" 
-                                    class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= isset($validationAccountErrors['confirm_password']) ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base">
+                                <div class="relative">
+                                    <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm your password" data-required="true" 
+                                        value="<?= old('confirm_password') !== null ? old('confirm_password') : (isset($account_data['confirm_password']) ? esc($account_data['confirm_password']) : '') ?>" 
+                                        class="form-field w-full pr-10 p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= isset($validationAccountErrors['confirm_password']) ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base">
+                                    <button type="button" class="absolute inset-y-0 right-0 px-3 flex items-center text-slate-500 hover:text-slate-700 focus:outline-none" aria-label="Toggle confirm password visibility" data-toggle-password data-target="#confirm_password">
+                                        <svg data-icon="show" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                                            <path d="M2 12c2.5-4 6.5-7 10-7s7.5 3 10 7c-2.5 4-6.5 7-10 7s-7.5-3-10-7z"/>
+                                            <circle cx="12" cy="12" r="2.5"/>
+                                        </svg>
+                                        <svg data-icon="hide" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                                            <path d="M2 12c2.5-4 6.5-7 10-7s7.5 3 10 7c-2.5 4-6.5 7-10 7s-7.5-3-10-7z"/>
+                                            <circle cx="12" cy="12" r="2.5"/>
+                                            <path d="M4 4c5 5 11 11 16 16"/>
+                                        </svg>
+                                    </button>
+                                </div>
                                 <?php if (isset($validationAccountErrors['confirm_password'])): ?>
                                     <p class="error-message text-red-500 text-xs sm:text-sm"><?= $validationAccountErrors['confirm_password'] ?></p>
                                 <?php endif; ?>
                             </div>
+                                                        <script>
+                                                            // Password visibility toggles (profiling form)
+                                                            (() => {
+                                                                const handler = (btn) => {
+                                                                    const targetSel = btn.getAttribute('data-target');
+                                                                    if (!targetSel) return;
+                                                                    const input = document.querySelector(targetSel);
+                                                                    if (!input) return;
+                                                                    const showIcon = btn.querySelector('[data-icon="show"]');
+                                                                    const hideIcon = btn.querySelector('[data-icon="hide"]');
+                                                                    const isPassword = input.type === 'password';
+                                                                    input.type = isPassword ? 'text' : 'password';
+                                                                    if (showIcon && hideIcon) {
+                                                                        if (isPassword) { showIcon.classList.add('hidden'); hideIcon.classList.remove('hidden'); }
+                                                                        else { hideIcon.classList.add('hidden'); showIcon.classList.remove('hidden'); }
+                                                                    }
+                                                                };
+                                                                document.addEventListener('click', (e) => {
+                                                                    const btn = e.target.closest('[data-toggle-password]');
+                                                                    if (!btn) return;
+                                                                    handler(btn);
+                                                                });
+                                                            })();
+                                                        </script>
                         </div>
                     </div>
                     <!-- Profile Picture Section -->
@@ -1815,7 +1867,7 @@
                         </div>
                     </div>
                     <!-- Form Actions -->
-                    <div class="flex flex-col sm:flex-row justify-between items-center pt-4 sm:pt-6 space-y-3 sm:space-y-0">
+                    <div class="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center pt-0 sm:pt-2 gap-3 sm:gap-0">
                         <button type="submit" formaction="<?= base_url('profiling/backToStep3') ?>" formmethod="post" formnovalidate class="btn-secondary bg-slate-300 text-slate-700 text-sm sm:text-base font-semibold py-2 sm:py-3 px-4 sm:px-6 rounded-lg sm:rounded-xl hover:bg-slate-400 transition-all duration-200 flex items-center space-x-2 w-full sm:w-auto justify-center">
                             <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"></path>
@@ -2059,10 +2111,12 @@
                                 <span class="text-slate-600 font-medium">Gender:</span>
                                 <span class="text-slate-800">
                                     <?php 
-                                    if (isset($profile_data['gender']) && $profile_data['gender'] !== '') {
-                                        switch($profile_data['gender']) {
-                                            case '1': echo 'Male'; break;
-                                            case '2': echo 'Female'; break;
+                                    // Mirror the form logic: prefer old('gender') then saved profile_data
+                                    $gender_val_display = old('gender') !== null ? old('gender') : (isset($profile_data['gender']) ? $profile_data['gender'] : '');
+                                    if ($gender_val_display !== '' && $gender_val_display !== null) {
+                                        switch((string)$gender_val_display) {
+                                            case '1': echo 'Man'; break;
+                                            case '2': echo 'Woman'; break;
                                             case '3': echo 'Non-binary'; break;
                                             case '4': echo 'Prefer not to say'; break;
                                             case '5': echo 'Other'; break;
@@ -2279,7 +2333,7 @@
                                         </svg>
                                         Preview Document
                                     </button>
-                                    <p class="text-xs text-slate-500 mt-1"><?= esc($demographic_data['birth_certificate']) ?></p>
+                                    <p class="text-xs text-slate-500 mt-1 truncate" title="<?= esc($demographic_data['birth_certificate']) ?>"><?= esc($demographic_data['birth_certificate']) ?></p>
                                 </div>
                             <?php else: ?>
                                 <div class="flex items-center space-x-2">
@@ -2315,7 +2369,7 @@
                                         </svg>
                                         Preview Front Side
                                     </button>
-                                    <p class="text-xs text-slate-500 mt-1"><?= esc($demographic_data['upload_id']) ?></p>
+                                    <p class="text-xs text-slate-500 mt-1 truncate" title="<?= esc($demographic_data['upload_id']) ?>"><?= esc($demographic_data['upload_id']) ?></p>
                                     <?php if (isset($demographic_data['upload_id-back']) && $demographic_data['upload_id-back']): ?>
                                         <div class="mt-3">
                                             <button type="button" 
@@ -2327,7 +2381,7 @@
                                                 </svg>
                                                 Preview Back Side
                                             </button>
-                                            <p class="text-xs text-slate-500 mt-1"><?= esc($demographic_data['upload_id-back']) ?></p>
+                                            <p class="text-xs text-slate-500 mt-1 truncate" title="<?= esc($demographic_data['upload_id-back']) ?>"><?= esc($demographic_data['upload_id-back']) ?></p>
                                         </div>
                                     <?php endif; ?>
                                 </div>
@@ -2367,10 +2421,10 @@
                 </div>
 
                 <!-- Form Actions -->
-                <div class="flex justify-between items-center pt-6">
-                    <form action="<?= base_url('profiling/backToStep4') ?>" method="post" style="display:inline;">
+                <div class="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center pt-0 sm:pt-2 gap-3 sm:gap-0">
+                    <form action="<?= base_url('profiling/backToStep4') ?>" method="post" class="w-full sm:w-auto" style="display:inline;">
                         <button type="submit" formaction="<?= base_url('profiling/backToStep4') ?>" formmethod="post" formnovalidate
-                            class="btn-secondary bg-slate-300 text-slate-700 font-semibold py-3 px-6 rounded-xl hover:bg-slate-400 transition-all duration-200 flex items-center space-x-2">
+                            class="btn-secondary bg-slate-300 text-slate-700 font-semibold py-3 px-6 rounded-xl hover:bg-slate-400 transition-all duration-200 flex items-center space-x-2 w-full sm:w-auto justify-center">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"></path>
                             </svg>
@@ -2378,9 +2432,9 @@
                         </button>
                     </form>
                     
-                    <form action="<?= base_url('profiling/submit') ?>" method="post" style="display:inline;">
+                    <form action="<?= base_url('profiling/submit') ?>" method="post" class="w-full sm:w-auto" style="display:inline;">
                         <button type="submit" 
-                            class="btn-primary text-white font-semibold py-3 px-8 rounded-xl transition-all duration-200 flex items-center space-x-2 hover:shadow-lg transform hover:scale-105">
+                            class="btn-primary text-white font-semibold py-3 px-8 rounded-xl transition-all duration-200 flex items-center space-x-2 hover:shadow-lg transform hover:scale-105 w-full sm:w-auto justify-center">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
@@ -3943,6 +3997,7 @@
                 
                 // For radio buttons, find the container div and add red border
                 let errorContainer;
+                let insertAfter = false;
                 if (field.type === 'radio') {
                     errorContainer = field.closest('.bg-gray-50');
                     if (errorContainer) {
@@ -3966,9 +4021,16 @@
                     }
                 } else {
                     errorContainer = field.parentNode;
+                    // If the direct parent is a relative wrapper (used for eye icon), insert error after the wrapper
+                    if (errorContainer && errorContainer.classList && errorContainer.classList.contains('relative')) {
+                        insertAfter = true;
+                    }
                 }
                 
-                const existingError = errorContainer.querySelector('.validation-error');
+                // Remove any existing validation error near this field
+                const existingError = insertAfter
+                  ? (errorContainer.nextElementSibling && errorContainer.nextElementSibling.classList && errorContainer.nextElementSibling.classList.contains('validation-error') ? errorContainer.nextElementSibling : null)
+                  : errorContainer.querySelector('.validation-error');
                 if (existingError) {
                     existingError.remove();
                 }
@@ -3976,7 +4038,11 @@
                 const errorElement = document.createElement('p');
                 errorElement.className = 'validation-error text-red-500 text-xs mt-1';
                 errorElement.textContent = message;
-                errorContainer.appendChild(errorElement);
+                if (insertAfter && errorContainer.parentNode) {
+                    errorContainer.parentNode.insertBefore(errorElement, errorContainer.nextSibling);
+                } else {
+                    errorContainer.appendChild(errorElement);
+                }
                 
                 setTimeout(() => {
                     field.classList.remove('shake');
@@ -3988,6 +4054,7 @@
                 
                 // For radio buttons and file inputs, find the container div and remove red border
                 let errorContainer;
+                let removeNext = false;
                 if (field.type === 'radio') {
                     errorContainer = field.closest('.bg-gray-50');
                     if (errorContainer) {
@@ -4004,11 +4071,16 @@
                     errorContainer = uploadWrapper ? uploadWrapper.parentNode : field.parentNode;
                 } else {
                     errorContainer = field.parentNode;
+                    if (errorContainer && errorContainer.classList && errorContainer.classList.contains('relative')) {
+                        removeNext = true;
+                    }
                 }
                 
-                const errorElement = errorContainer.querySelector('.validation-error');
-                if (errorElement) {
-                    errorElement.remove();
+                if (removeNext && errorContainer && errorContainer.nextElementSibling && errorContainer.nextElementSibling.classList.contains('validation-error')) {
+                    errorContainer.nextElementSibling.remove();
+                } else if (errorContainer) {
+                    const errorElement = errorContainer.querySelector('.validation-error');
+                    if (errorElement) errorElement.remove();
                 }
             }
 

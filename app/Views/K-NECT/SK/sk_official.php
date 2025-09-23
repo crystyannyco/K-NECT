@@ -98,12 +98,12 @@
                                     KK Member
                                 </button>
                             </div>
-                            <!-- Barangay Filter -->
+                            <!-- Zone Filter -->
                             <div class="flex items-center gap-2">
-                                <span class="text-sm font-medium text-gray-600">Barangay:</span>
-                                <select id="barangayFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                    <option value="">All Barangays</option>
-                                    <!-- Barangay options will be populated dynamically -->
+                                <span class="text-sm font-medium text-gray-600">Zone:</span>
+                                <select id="zoneFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">All Zones</option>
+                                    <!-- Zone options will be populated dynamically -->
                                 </select>
                                 <button id="clearFilters" class="px-3 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors duration-200">
                                     Clear Filters
@@ -195,7 +195,7 @@
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     <?php
                                                         $position = isset($user['position']) ? (int)$user['position'] : 5;
-                                                        echo $position == 1 ? 'SK Chairperson' : ($position == 2 ? 'SK Kagawad' : ($position == 3 ? 'Secretary' : ($position == 4 ? 'Treasurer' : 'KK Member')));
+                                                        echo $position == 1 ? 'SK Chairperson' : ($position == 2 ? 'SK Kagawad' : ($position == 3 ? 'Secretary' : ($position == 4 ? 'Treasurer' : 'SK Member')));
                                                     ?>
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap">
@@ -603,8 +603,8 @@
                     $('#myTable_paginate').addClass('mt-4');
                     $('#myTable_paginate span a').addClass('px-2 py-1 border rounded mx-1');
                     
-                    // Populate barangay filter options
-                    populateBarangayFilter();
+                    // Populate zone filter options
+                    populateZoneFilter();
                     
                     // Initialize "All" tab as active by default
                     $('.status-tab[data-status="all"]').trigger('click');
@@ -688,38 +688,41 @@
                 localStorage.setItem('memberTab', status);
             });
             
-            // Function to populate barangay filter dropdown
-            function populateBarangayFilter() {
-                const barangays = new Set();
+            // Function to populate zone filter dropdown
+            function populateZoneFilter() {
+                const zones = new Set();
                 $('#myTable tbody tr').each(function() {
-                    const barangayCell = $(this).find('td').eq(2); // Barangay is in the 3rd column (0-indexed: 2)
-                    if (barangayCell.length) {
-                        const barangayText = barangayCell.text().trim();
-                        if (barangayText && barangayText !== '-') {
-                            barangays.add(barangayText);
+                    const zoneCell = $(this).find('td').eq(3); // Zone is in the 4th column (0-indexed: 3)
+                    if (zoneCell.length) {
+                        const zoneText = zoneCell.text().trim();
+                        if (zoneText && zoneText !== '-') {
+                            zones.add(zoneText);
                         }
                     }
                 });
-                
-                //
-                
-                const barangayFilter = $('#barangayFilter');
-                Array.from(barangays).sort().forEach(barangay => {
-                    barangayFilter.append(`<option value="${barangay}">${barangay}</option>`);
+
+                const zoneFilter = $('#zoneFilter');
+                Array.from(zones).sort((a,b)=>{
+                    // Numeric-aware sort
+                    const na = parseInt(a, 10), nb = parseInt(b, 10);
+                    if (!isNaN(na) && !isNaN(nb)) return na - nb;
+                    return String(a).localeCompare(String(b));
+                }).forEach(zone => {
+                    zoneFilter.append(`<option value="${zone}">${zone}</option>`);
                 });
             }
-            
-            // Barangay filter dropdown
-            $('#barangayFilter').on('change', function() {
-                const barangayValue = $(this).val();
-                // Apply barangay filter (barangay is in column 2 - 0-indexed)
-                table.column(2).search(barangayValue).draw();
+
+            // Zone filter dropdown
+            $('#zoneFilter').on('change', function() {
+                const zoneValue = $(this).val();
+                // Apply zone filter (zone is in column 3 - 0-indexed)
+                table.column(3).search(zoneValue).draw();
             });
             
             // Clear filters button
             $('#clearFilters').on('click', function() {
-                // Reset barangay filter
-                $('#barangayFilter').val('');
+                // Reset zone filter
+                $('#zoneFilter').val('');
                 
                 // Reset status tabs
                 $('.status-tab').removeClass('active');
@@ -741,8 +744,8 @@
             var savedTab = localStorage.getItem('memberTab') || 'all';
             $('.status-tab[data-status="' + savedTab + '"]').trigger('click');
 
-            // Populate barangay filter options after table is loaded
-            populateBarangayFilter();
+            // Populate zone filter options after table is loaded
+            populateZoneFilter();
             
             function setActiveTab(tab) {
                 $('#tabAll, #tabChairperson, #tabSK, #tabPederasyon, #tabKK')

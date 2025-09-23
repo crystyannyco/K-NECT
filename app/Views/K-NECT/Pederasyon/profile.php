@@ -27,15 +27,21 @@
                 <div class="flex flex-col lg:flex-row items-center lg:items-start space-y-6 lg:space-y-0 lg:space-x-8">
                     <!-- Profile Picture -->
                     <div class="flex-shrink-0">
-                        <?php
-                            $ppUrl = trim($profile_picture_url ?? '');
-                            $imageData = safe_image_url($ppUrl, 'avatar');
-                        ?>
-                        <img src="<?= esc($imageData['src']) ?>"
-                             alt="Profile Picture"
-                             class="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-white shadow-md"
-                             data-type="avatar"
-                             data-fallback="<?= esc($imageData['fallback']) ?>">
+                        <?php if (!empty($userExtInfo['profile_picture'])): ?>
+                            <?php 
+                                $pp = $userExtInfo['profile_picture'];
+                                $ppUrl = (strpos($pp, '/') !== false) ? base_url($pp) : base_url('uploads/profile_pictures/' . $pp);
+                            ?>
+                            <img src="<?= esc($ppUrl) ?>"
+                                 alt="Profile Picture"
+                                 class="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-white shadow-md">
+                        <?php else: ?>
+                            <div class="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-md border-4 border-white rounded-full">
+                                <span class="text-white text-xl sm:text-2xl font-bold">
+                                    <?= $user ? strtoupper(substr($user['first_name'] ?? 'U', 0, 1) . substr($user['last_name'] ?? '', 0, 1)) : 'U' ?>
+                                </span>
+                            </div>
+                        <?php endif; ?>
                     </div>
                     
                     <!-- Basic Info -->

@@ -707,37 +707,6 @@
             });
         }
 
-        // Pop-up modal asking user to download new credentials before logout
-        function promptCredentialsDownload() {
-            if (window.Swal && typeof Swal.fire === 'function') {
-                return Swal.fire({
-                    title: 'Download new credentials required',
-                    html: '<div style="text-align:left;font-size:14px;line-height:1.5">'+
-                          '<p>Please download your updated SK and Pederasyon credentials before logging out to ensure uninterrupted access to the system.</p>'+
-                          '<ul style="margin-top:8px;padding-left:18px;list-style:disc">'+
-                          '<li>Download SK credentials (for SK access)</li>'+
-                          '<li>Download Pederasyon credentials (for Pederasyon access)</li>'+
-                          '</ul>'+
-                          '<p style="margin-top:10px">Logout is disabled until both files have been downloaded.</p>'+
-                          '</div>',
-                    icon: 'warning',
-                    confirmButtonText: 'Okay',
-                    confirmButtonColor: '#3b82f6',
-                    heightAuto: false
-                }).then(() => {
-                    try {
-                        if (typeof openCredentialsPreviewModal === 'function') {
-                            openCredentialsPreviewModal();
-                        }
-                    } catch (e) {}
-                });
-            } else {
-                alert('Please download your updated SK and Pederasyon credentials before logging out. Logout is disabled until both are downloaded.');
-                try { if (typeof openCredentialsPreviewModal === 'function') openCredentialsPreviewModal(); } catch (e) {}
-                return Promise.resolve();
-            }
-        }
-        
         // Store original counts globally
         let originalCounts = {
             all: 0,
@@ -793,44 +762,9 @@
                         calculateOriginalCounts();
                         updateDisplayedCounts();
                         restoreFilters();
-                        // If a role change just happened, show the post-reload credentials prompt
-                        try {
-                            if (window.localStorage && localStorage.getItem('knect_show_credentials_prompt') === '1') {
-                                localStorage.removeItem('knect_show_credentials_prompt');
-                                setTimeout(() => { if (typeof promptCredentialsDownload === 'function') promptCredentialsDownload(); }, 300);
-                            }
-                        } catch (e) {}
                     }, 100);
                 }
             });
-
-            // On-load check: if credentials downloads are required, auto-open the modal and warn the user
-            try {
-                fetch('<?= base_url('pederasyon/credential-download-status') ?>', { credentials: 'same-origin' })
-                    .then(r => r.ok ? r.json() : Promise.reject(new Error('Network error')))
-                    .then(st => {
-                        if (st && st.success && st.require) {
-                            const needSk = !st.sk;
-                            const needPed = !st.pederasyon;
-                            const msgs = [];
-                            if (needSk) msgs.push('Please download SK credentials for your updated role.');
-                            if (needPed) msgs.push('Please download Pederasyon credentials for your updated role.');
-                            if (msgs.length) {
-                                // Show stacked toasts
-                                msgs.forEach(m => showNotification(m, 'warning'));
-                                // Open modal and focus the first missing tab
-                                if (typeof openCredentialsPreviewModal === 'function') {
-                                    openCredentialsPreviewModal();
-                                    setTimeout(() => {
-                                        if (needSk) { showCredentialsTab('sk'); }
-                                        else if (needPed) { showCredentialsTab('pederasyon'); }
-                                    }, 250);
-                                }
-                            }
-                        }
-                    })
-                    .catch(() => { /* silent */ });
-            } catch (e) { /* ignore */ }
 
             // Populate barangay filter
             function populateBarangayFilter() {

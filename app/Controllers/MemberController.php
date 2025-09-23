@@ -189,27 +189,6 @@ class MemberController extends BaseController
 
         $result = $userModel->update($userId, $updateData);
         if ($result) {
-            // If the currently logged-in user changed between SK (2) and Pederasyon (3), set session flags to require credentials download
-            try {
-                $session = session();
-                $permanentUserId = $session->get('user_id'); // permanent public user_id string
-                if ($permanentUserId) {
-                    $me = $userModel->where('user_id', $permanentUserId)->first();
-                    if ($me && (int)($me['id'] ?? 0) === (int)$userId) {
-                        $oldType = $currentTypeInt;
-                        $newType = $newTypeInt;
-                        if ((in_array($oldType, [2,3], true)) && (in_array($newType, [2,3], true)) && $oldType !== $newType) {
-                            $session->set('require_credentials_download', true);
-                            // Reset both flags so user must download at least one SK and one Pederasyon credentials
-                            $session->set('downloaded_sk_credentials', false);
-                            $session->set('downloaded_ped_credentials', false);
-                        }
-                    }
-                }
-            } catch (\Throwable $e) {
-                // Non-fatal if session flagging fails
-                log_message('warning', 'Failed setting credential download flags: ' . $e->getMessage());
-            }
             return $this->response->setJSON(['success' => true, 'message' => 'User type updated successfully']);
         } else {
             $errors = method_exists($userModel, 'errors') ? $userModel->errors() : [];
@@ -255,6 +234,31 @@ class MemberController extends BaseController
             return $this->response->setStatusCode(403)->setJSON(['success' => false, 'message' => 'SK Chairperson position cannot be changed']);
         }
 
+        // Check position limits - ensure only 1 person per position (except position 5 - KK Member)
+        if ($position != 5) {
+            $existingUserWithPosition = $userModel->where('position', $position)
+                                                   ->where('id !=', $userId)
+                                                   ->first();
+            
+            if ($existingUserWithPosition) {
+                $positionNames = [
+                    1 => 'SK Chairperson',
+                    2 => 'SK Kagawad', 
+                    3 => 'Secretary',
+                    4 => 'Treasurer',
+                    5 => 'KK Member'
+                ];
+                
+                $positionName = $positionNames[$position] ?? 'Unknown Position';
+                $currentHolderName = $existingUserWithPosition['first_name'] . ' ' . $existingUserWithPosition['last_name'];
+                
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false, 
+                    'message' => "Position '{$positionName}' is already occupied by {$currentHolderName}. Only one person can hold this position at a time."
+                ]);
+            }
+        }
+
         $updateData = ['position' => $position];
 
         // Update user_type based on position
@@ -290,8 +294,10 @@ class MemberController extends BaseController
                 $updateData['ped_username'] = UserHelper::generatePEDUsername($user['first_name'], $user['last_name']);
                 $updateData['ped_password'] = UserHelper::generatePassword(8);
             }
-        } elseif ($position == 5) { // KK Member
+        } elseif ($position == 5) { // SK Pederasyon Member (KK Member)
             $updateData['user_type'] = 1;
+            // When selecting "SK pederasyon member", set ped_position to null
+            $updateData['ped_position'] = null;
         }
 
         $result = $userModel->update($userId, $updateData);
@@ -487,10 +493,49 @@ class MemberController extends BaseController
             return $this->response->setStatusCode(400)->setJSON(['success' => false, 'message' => 'SK Chairperson position cannot be assigned in bulk']);
         }
         
+        // Check position limits - ensure only 1 person per position (except position 5 - KK Member)
+        $userModel = new UserModel();
+        if ($position != 5) {
+            $existingUserWithPosition = $userModel->where('position', $position)
+                                                   ->whereNotIn('id', $userIds)
+                                                   ->first();
+            
+            if ($existingUserWithPosition) {
+                $positionNames = [
+                    2 => 'SK Kagawad', 
+                    3 => 'Secretary',
+                    4 => 'Treasurer'
+                ];
+                
+                $positionName = $positionNames[$position] ?? 'Unknown Position';
+                $currentHolderName = $existingUserWithPosition['first_name'] . ' ' . $existingUserWithPosition['last_name'];
+                
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false, 
+                    'message' => "Position '{$positionName}' is already occupied by {$currentHolderName}. Only one person can hold this position at a time. Please remove them from the position first or select multiple users including the current holder."
+                ]);
+            }
+            
+            // Also check if more than 1 user is selected for positions 2, 3, or 4
+            if (count($userIds) > 1) {
+                $positionNames = [
+                    2 => 'SK Kagawad', 
+                    3 => 'Secretary',
+                    4 => 'Treasurer'
+                ];
+                
+                $positionName = $positionNames[$position] ?? 'Unknown Position';
+                
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false, 
+                    'message' => "Cannot assign multiple users to '{$positionName}' position. Only one person can hold this position at a time."
+                ]);
+            }
+        }
+        
         // Get current user's database ID from session
         $session = session();
         $currentUserPermanentId = $session->get('user_id');
-        $userModel = new UserModel();
         $currentUser = $userModel->where('user_id', $currentUserPermanentId)->first();
         $currentUserId = $currentUser ? $currentUser['id'] : null;
         
@@ -538,8 +583,10 @@ class MemberController extends BaseController
                         $updateData['ped_username'] = UserHelper::generatePEDUsername($user['first_name'], $user['last_name']);
                         $updateData['ped_password'] = UserHelper::generatePassword(8);
                     }
-                } elseif ($position == 5) { // KK Member
+                } elseif ($position == 5) { // SK Pederasyon Member (KK Member)
                     $updateData['user_type'] = 1;
+                    // When selecting "SK pederasyon member", set ped_position to null
+                    $updateData['ped_position'] = null;
                 }
 
                 $userModel->update($id, $updateData);

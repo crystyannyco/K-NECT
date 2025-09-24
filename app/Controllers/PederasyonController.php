@@ -413,14 +413,48 @@ class PederasyonController extends BaseController
         $userId = $request->getPost('user_id');
         $pedPosition = $request->getPost('ped_position');
 
-        if (empty($userId) || !is_numeric($pedPosition)) {
+        if (empty($userId) || ($pedPosition !== null && $pedPosition !== 'NULL' && !is_numeric($pedPosition))) {
             return $this->response->setJSON(['success' => false, 'message' => 'Invalid data']);
+        }
+
+        // Convert NULL string to actual null
+        if ($pedPosition === 'NULL') {
+            $pedPosition = null;
+        } else {
+            $pedPosition = (int)$pedPosition;
         }
 
         $userModel = new UserModel();
         
+        // Check position limits - ensure only 1 person per position (except null - SK Pederasyon Member)
+        if ($pedPosition !== null) {
+            $existingUserWithPosition = $userModel->where('ped_position', $pedPosition)
+                                                   ->where('id !=', $userId)
+                                                   ->first();
+            
+            if ($existingUserWithPosition) {
+                $positionNames = [
+                    1 => 'SK Pederasyon President',
+                    2 => 'SK Pederasyon Vice President',
+                    3 => 'SK Pederasyon Secretary',
+                    4 => 'SK Pederasyon Treasurer',
+                    5 => 'SK Pederasyon Auditor',
+                    6 => 'SK Pederasyon Public Information Officer',
+                    7 => 'SK Pederasyon Sergeant at Arms'
+                ];
+                
+                $positionName = $positionNames[$pedPosition] ?? 'Unknown Position';
+                $currentHolderName = $existingUserWithPosition['first_name'] . ' ' . $existingUserWithPosition['last_name'];
+                
+                return $this->response->setJSON([
+                    'success' => false, 
+                    'message' => "Position '{$positionName}' is already occupied by {$currentHolderName}. Only one person can hold this position at a time."
+                ]);
+            }
+        }
+        
         // Update the ped_position in the users table
-        $updated = $userModel->update($userId, ['ped_position' => (int)$pedPosition]);
+        $updated = $userModel->update($userId, ['ped_position' => $pedPosition]);
         
         if ($updated) {
             return $this->response->setJSON(['success' => true, 'message' => 'Officer position updated successfully']);
@@ -440,16 +474,71 @@ class PederasyonController extends BaseController
         $officerIds = $request->getPost('officer_ids');
         $pedPosition = $request->getPost('ped_position');
 
-        if (empty($officerIds) || !is_array($officerIds) || !is_numeric($pedPosition)) {
+        if (empty($officerIds) || !is_array($officerIds) || ($pedPosition !== null && $pedPosition !== 'NULL' && !is_numeric($pedPosition))) {
             return $this->response->setJSON(['success' => false, 'message' => 'Invalid data']);
         }
 
+        // Convert NULL string to actual null
+        if ($pedPosition === 'NULL') {
+            $pedPosition = null;
+        } else {
+            $pedPosition = (int)$pedPosition;
+        }
+
         $userModel = new UserModel();
+        
+        // Check position limits - ensure only 1 person per position (except null - SK Pederasyon Member)
+        if ($pedPosition !== null) {
+            $existingUserWithPosition = $userModel->where('ped_position', $pedPosition)
+                                                   ->whereNotIn('id', $officerIds)
+                                                   ->first();
+            
+            if ($existingUserWithPosition) {
+                $positionNames = [
+                    1 => 'SK Pederasyon President',
+                    2 => 'SK Pederasyon Vice President',
+                    3 => 'SK Pederasyon Secretary',
+                    4 => 'SK Pederasyon Treasurer',
+                    5 => 'SK Pederasyon Auditor',
+                    6 => 'SK Pederasyon Public Information Officer',
+                    7 => 'SK Pederasyon Sergeant at Arms'
+                ];
+                
+                $positionName = $positionNames[$pedPosition] ?? 'Unknown Position';
+                $currentHolderName = $existingUserWithPosition['first_name'] . ' ' . $existingUserWithPosition['last_name'];
+                
+                return $this->response->setJSON([
+                    'success' => false, 
+                    'message' => "Position '{$positionName}' is already occupied by {$currentHolderName}. Only one person can hold this position at a time. Please remove them from the position first or select multiple users including the current holder."
+                ]);
+            }
+            
+            // Also check if more than 1 user is selected for positions 1-7
+            if (count($officerIds) > 1) {
+                $positionNames = [
+                    1 => 'SK Pederasyon President',
+                    2 => 'SK Pederasyon Vice President',
+                    3 => 'SK Pederasyon Secretary',
+                    4 => 'SK Pederasyon Treasurer',
+                    5 => 'SK Pederasyon Auditor',
+                    6 => 'SK Pederasyon Public Information Officer',
+                    7 => 'SK Pederasyon Sergeant at Arms'
+                ];
+                
+                $positionName = $positionNames[$pedPosition] ?? 'Unknown Position';
+                
+                return $this->response->setJSON([
+                    'success' => false, 
+                    'message' => "Cannot assign multiple users to '{$positionName}' position. Only one person can hold this position at a time."
+                ]);
+            }
+        }
+
         $updated = 0;
         
         foreach ($officerIds as $officerId) {
             if (is_numeric($officerId)) {
-                $result = $userModel->update((int)$officerId, ['ped_position' => (int)$pedPosition]);
+                $result = $userModel->update((int)$officerId, ['ped_position' => $pedPosition]);
                 if ($result) {
                     $updated++;
                 }
@@ -3437,37 +3526,6 @@ class PederasyonController extends BaseController
             log_message('error', 'Error in bulkUpdateUserType: ' . $e->getMessage());
             return $this->response->setJSON(['success' => false, 'message' => 'An error occurred while updating users']);
         }
-    }
-
-    // ===================== CREDENTIAL DOWNLOAD SESSION FLAGS =====================
-    public function credentialDownloadStatus()
-    {
-        $session = session();
-        return $this->response->setJSON([
-            'success' => true,
-            'require' => (bool) $session->get('require_credentials_download'),
-            'sk' => (bool) $session->get('downloaded_sk_credentials'),
-            'pederasyon' => (bool) $session->get('downloaded_ped_credentials'),
-        ]);
-    }
-
-    public function markCredentialDownloaded()
-    {
-        $type = strtolower((string) $this->request->getPost('type'));
-        if (!in_array($type, ['sk', 'pederasyon'], true)) {
-            return $this->response->setStatusCode(400)->setJSON(['success' => false, 'message' => 'Invalid credential type']);
-        }
-        $session = session();
-        if ($type === 'sk') {
-            $session->set('downloaded_sk_credentials', true);
-        } else {
-            $session->set('downloaded_ped_credentials', true);
-        }
-        // If both done, clear the requirement flag
-        if ((bool)$session->get('downloaded_sk_credentials') && (bool)$session->get('downloaded_ped_credentials')) {
-            $session->set('require_credentials_download', false);
-        }
-        return $this->response->setJSON(['success' => true]);
     }
 
     public function checkSKChairpersonByBarangay()

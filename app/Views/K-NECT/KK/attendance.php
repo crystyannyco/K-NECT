@@ -16,7 +16,25 @@
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                 </svg>
-                                <span class="font-medium"><?= count($attendance_records) ?> Events</span>
+                                <span class="font-medium"><span id="attendance-count"><?= count($attendance_records) ?></span> Events</span>
+                            </div>
+
+                            <!-- Filters: Search and Date -->
+                            <div class="flex items-center gap-2">
+                                <div class="relative">
+                                    <input id="attendance-search" type="text" placeholder="Search events..." 
+                                           class="w-40 sm:w-48 md:w-64 lg:w-72 px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                           autocomplete="off" />
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <input id="attendance-date-start" type="date" 
+                                           class="px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" />
+                                    <span class="text-gray-500 text-sm">to</span>
+                                    <input id="attendance-date-end" type="date" 
+                                           class="px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" />
+                                </div>
+                                <button id="attendance-clear" type="button" 
+                                        class="px-3 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm">Clear</button>
                             </div>
                         </div>
                     </div>
@@ -47,7 +65,11 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                             <?php foreach ($attendance_records as $record): ?>
                                 <!-- Attendance Card -->
-                                <div class="attendance-card bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1">
+                                <div 
+                                    class="attendance-card bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1"
+                                    data-date="<?= !empty($record['event_date']) ? date('Y-m-d', strtotime($record['event_date'])) : '' ?>"
+                                    data-keywords="<?= esc(strtolower(($record['event_title'] ?? '') . ' ' . ($record['event_location'] ?? '') . ' ' . ($record['event_date'] ?? '') . ' ' . ($record['event_time'] ?? '') . ' ' . ($record['overall_status'] ?? '')), 'attr') ?>"
+                                >
                                     
                                     <!-- Event Banner Image -->
                                     <div class="relative h-32 bg-gradient-to-br from-blue-50 to-blue-100">
@@ -195,6 +217,17 @@
                                     </div>
                                 </div>
                             <?php endforeach; ?>
+                        </div>
+
+                        <!-- No results after filtering -->
+                        <div id="attendance-empty-filtered" class="hidden flex flex-col items-center justify-center text-center py-12 px-4">
+                            <div class="max-w-md mx-auto">
+                                <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                </svg>
+                                <h3 class="text-base font-medium text-gray-900 mb-1">No matching records</h3>
+                                <p class="text-sm text-gray-600">Try adjusting your search or picking a different date.</p>
+                            </div>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -360,6 +393,134 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 100);
         });
     });
+
+    // Filtering logic
+    const searchInput = document.getElementById('attendance-search');
+    const dateStartInput = document.getElementById('attendance-date-start');
+    const dateEndInput = document.getElementById('attendance-date-end');
+    const clearBtn = document.getElementById('attendance-clear');
+    const countEl = document.getElementById('attendance-count');
+    const emptyFiltered = document.getElementById('attendance-empty-filtered');
+
+    function normalize(val) {
+        return (val || '').toString().toLowerCase();
+    }
+
+    function applyFilters() {
+        const q = normalize(searchInput && searchInput.value);
+        const startDate = (dateStartInput && dateStartInput.value) || '';
+        const endDate = (dateEndInput && dateEndInput.value) || '';
+        let visibleCount = 0;
+
+        cards.forEach(card => {
+            let matches = true;
+
+            if (q) {
+                const keywords = normalize(card.dataset.keywords || card.textContent || '');
+                if (!keywords.includes(q)) {
+                    matches = false;
+                }
+            }
+
+            if (matches && (startDate || endDate)) {
+                const cardDate = (card.dataset.date || '').slice(0, 10);
+                if (!cardDate) {
+                    matches = false;
+                } else {
+                    if (startDate && cardDate < startDate) matches = false;
+                    if (endDate && cardDate > endDate) matches = false;
+                }
+            }
+
+            card.style.display = matches ? '' : 'none';
+            if (matches) visibleCount++;
+        });
+
+        if (countEl) countEl.textContent = String(visibleCount);
+        if (emptyFiltered) emptyFiltered.classList.toggle('hidden', visibleCount !== 0);
+    }
+
+    if (searchInput) searchInput.addEventListener('input', applyFilters, { passive: true });
+    if (dateStartInput) dateStartInput.addEventListener('input', applyFilters, { passive: true });
+    if (dateStartInput) dateStartInput.addEventListener('change', applyFilters, { passive: true });
+    if (dateEndInput) dateEndInput.addEventListener('input', applyFilters, { passive: true });
+    if (dateEndInput) dateEndInput.addEventListener('change', applyFilters, { passive: true });
+    if (clearBtn) clearBtn.addEventListener('click', () => {
+        if (searchInput) searchInput.value = '';
+        if (dateStartInput) dateStartInput.value = '';
+        if (dateEndInput) dateEndInput.value = '';
+        applyFilters();
+        if (searchInput) searchInput.focus();
+    });
+
+    // Initialize in case of pre-filled values (e.g., browser back/forward cache)
+    applyFilters();
+});
+</script>
+
+<script>
+// Toast notifications (reuse style from settings.php)
+if (typeof window.showNotification !== 'function') {
+    window.showNotification = function(message, type = 'info') {
+        if (!message) return;
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 z-[99999] p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full`;
+
+        switch(type) {
+            case 'success':
+                notification.className += ' bg-green-500 text-white';
+                break;
+            case 'error':
+                notification.className += ' bg-red-500 text-white';
+                break;
+            default:
+                notification.className += ' bg-blue-500 text-white';
+        }
+
+        let icon = '';
+        switch(type) {
+            case 'success':
+                icon = '<svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>';
+                break;
+            case 'error':
+                icon = '<svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" /></svg>';
+                break;
+            case 'info':
+            default:
+                icon = '<svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01" /></svg>';
+                break;
+        }
+
+        notification.innerHTML = `
+            <div class="flex items-center">
+                ${icon}
+                <span class="mr-2">${message}</span>
+                <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-white hover:text-gray-200 focus:outline-none">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                </button>
+            </div>
+        `;
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => { notification.classList.remove('translate-x-full'); }, 100);
+        setTimeout(() => {
+            notification.classList.add('translate-x-full');
+            setTimeout(() => { if (notification.parentElement) notification.remove(); }, 300);
+        }, 3000);
+    };
+}
+
+// Hook into the existing Clear button to show toast
+document.addEventListener('DOMContentLoaded', function() {
+    const clearBtn = document.getElementById('attendance-clear');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            if (typeof window.showNotification === 'function') {
+                window.showNotification('Filters cleared.', 'info');
+            }
+        });
+    }
 });
 </script>
 

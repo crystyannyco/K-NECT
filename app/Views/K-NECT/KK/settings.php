@@ -193,7 +193,22 @@
                                         </div>
                                         <div>
                                             <label for="new_password" class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
-                                            <input type="password" id="new_password" name="new_password" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required minlength="8" placeholder="Enter your new password">
+                                            <div class="relative">
+                                                <input type="password" id="new_password" name="new_password" class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required minlength="8" placeholder="Enter your new password">
+                                                <button type="button" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700 password-toggle focus:outline-none focus:ring-0 focus:ring-offset-0" data-toggle-password data-target="#new_password" aria-label="Toggle password visibility">
+                                                    <!-- show icon -->
+                                                    <svg data-icon="show" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path d="M2 12c2.5-4 6.5-7 10-7s7.5 3 10 7c-2.5 4-6.5 7-10 7s-7.5-3-10-7z"/>
+                                                        <circle cx="12" cy="12" r="2.5"/>
+                                                    </svg>
+                                                    <!-- hide icon -->
+                                                    <svg data-icon="hide" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path d="M2 12c2.5-4 6.5-7 10-7s7.5 3 10 7c-2.5 4-6.5 7-10 7s-7.5-3-10-7z"/>
+                                                        <circle cx="12" cy="12" r="2.5"/>
+                                                        <path d="M4 4c5 5 11 11 16 16"/>
+                                                    </svg>
+                                                </button>
+                                            </div>
                                             <!-- Strength Indicator -->
                                             <div id="password-strength" class="mt-2 hidden">
                                                 <div class="flex items-center space-x-2">
@@ -231,7 +246,22 @@
                                         </div>
                                         <div>
                                             <label for="confirm_password" class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
-                                            <input type="password" id="confirm_password" name="confirm_password" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required minlength="8" placeholder="Confirm your new password">
+                                            <div class="relative">
+                                                <input type="password" id="confirm_password" name="confirm_password" class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required minlength="8" placeholder="Confirm your new password">
+                                                <button type="button" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700 password-toggle focus:outline-none focus:ring-0 focus:ring-offset-0" data-toggle-password data-target="#confirm_password" aria-label="Toggle password visibility">
+                                                    <!-- show icon -->
+                                                    <svg data-icon="show" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path d="M2 12c2.5-4 6.5-7 10-7s7.5 3 10 7c-2.5 4-6.5 7-10 7s-7.5-3-10-7z"/>
+                                                        <circle cx="12" cy="12" r="2.5"/>
+                                                    </svg>
+                                                    <!-- hide icon -->
+                                                    <svg data-icon="hide" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path d="M2 12c2.5-4 6.5-7 10-7s7.5 3 10 7c-2.5 4-6.5 7-10 7s-7.5-3-10-7z"/>
+                                                        <circle cx="12" cy="12" r="2.5"/>
+                                                        <path d="M4 4c5 5 11 11 16 16"/>
+                                                    </svg>
+                                                </button>
+                                            </div>
                                             <div id="confirm-password-error" class="mt-1 text-xs text-red-500 hidden">Passwords do not match</div>
                                             <div id="confirm-password-success" class="mt-1 text-xs text-green-500 hidden">Passwords match</div>
                                         </div>
@@ -273,6 +303,9 @@
 /* Remove side focus ring on tabs; keep it simple */
 .tab-button:focus, .tab-button:focus-visible { outline: none; box-shadow: none; }
 .tab-button:not(.active):focus-visible { background: #f9fafb; }
+/* Suppress focus ring on password eye buttons */
+.password-toggle:focus,
+.password-toggle:focus-visible { outline: none !important; box-shadow: none !important; }
 </style>
 
 <script>
@@ -757,6 +790,29 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     })();
 });
+
+// Password visibility toggles (match account_settings style)
+(function() {
+    const handler = (btn) => {
+        const targetSel = btn.getAttribute('data-target');
+        if (!targetSel) return;
+        const input = document.querySelector(targetSel);
+        if (!input) return;
+        const showIcon = btn.querySelector('[data-icon="show"]');
+        const hideIcon = btn.querySelector('[data-icon="hide"]');
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        if (showIcon && hideIcon) {
+            if (isPassword) { showIcon.classList.add('hidden'); hideIcon.classList.remove('hidden'); }
+            else { hideIcon.classList.add('hidden'); showIcon.classList.remove('hidden'); }
+        }
+    };
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-toggle-password]');
+        if (!btn) return;
+        handler(btn);
+    });
+})();
 
 // Strong password helpers
 function validatePasswordMatch() {

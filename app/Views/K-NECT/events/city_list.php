@@ -904,7 +904,13 @@
                 allOfficialsCheckbox.addEventListener('change', function() {
                     console.log('All SK Officials checkbox changed:', this.checked);
                     if (this.checked) {
-                        // Uncheck all individual roles
+                        // Check all individual SK role checkboxes
+                        individualRoleCheckboxes.forEach(checkbox => {
+                            checkbox.checked = true;
+                        });
+                        console.log('Individual role checkboxes checked');
+                    } else {
+                        // When "All SK Officials" is unchecked, uncheck all individual SK role checkboxes
                         individualRoleCheckboxes.forEach(checkbox => {
                             checkbox.checked = false;
                         });
@@ -917,11 +923,61 @@
             individualRoleCheckboxes.forEach(checkbox => {
                 checkbox.addEventListener('change', function() {
                     console.log('Individual role checkbox changed:', this.value, this.checked);
+                    // If any individual role is unchecked, uncheck "All SK Officials"
+                    if (!this.checked && allOfficialsCheckbox) {
+                        allOfficialsCheckbox.checked = false;
+                        console.log('All SK Officials checkbox unchecked due to individual role being unchecked');
+                    }
+                    // If all individual roles are checked, check "All SK Officials"
+                    else if (this.checked && allOfficialsCheckbox) {
+                        const allIndividualChecked = Array.from(individualRoleCheckboxes).every(cb => cb.checked);
+                        if (allIndividualChecked) {
+                            allOfficialsCheckbox.checked = true;
+                            console.log('All SK Officials checkbox checked because all individual roles are selected');
+                        }
+                    }
+                });
+            });
+            
+            // All Pederasyon Officials vs Individual Pederasyon Roles logic
+            const allPederasyonOfficialsCheckbox = document.querySelector('.all-pederasyon-officials-checkbox');
+            const pederasyonRoleCheckboxes = document.querySelectorAll('.pederasyon-role-checkbox');
+            
+            // Handle "All Pederasyon Officials" checkbox logic
+            if (allPederasyonOfficialsCheckbox) {
+                allPederasyonOfficialsCheckbox.addEventListener('change', function() {
+                    console.log('All Pederasyon Officials checkbox changed:', this.checked);
                     if (this.checked) {
-                        // Uncheck "All SK Officials"
-                        if (allOfficialsCheckbox) {
-                            allOfficialsCheckbox.checked = false;
-                            console.log('All SK Officials checkbox unchecked');
+                        // When "All Pederasyon Officials" is checked, check all Pederasyon suboptions
+                        pederasyonRoleCheckboxes.forEach(function(checkbox) {
+                            checkbox.checked = true;
+                        });
+                        console.log('All Pederasyon role checkboxes checked');
+                    } else {
+                        // When "All Pederasyon Officials" is unchecked, uncheck all Pederasyon suboptions
+                        pederasyonRoleCheckboxes.forEach(function(checkbox) {
+                            checkbox.checked = false;
+                        });
+                        console.log('All Pederasyon role checkboxes unchecked');
+                    }
+                });
+            }
+
+            // Handle Pederasyon suboption checkboxes
+            pederasyonRoleCheckboxes.forEach(function(checkbox) {
+                checkbox.addEventListener('change', function() {
+                    console.log('Pederasyon role checkbox changed:', this.value, this.checked);
+                    // If any Pederasyon suboption is unchecked, uncheck "All Pederasyon Officials"
+                    if (!this.checked && allPederasyonOfficialsCheckbox) {
+                        allPederasyonOfficialsCheckbox.checked = false;
+                        console.log('All Pederasyon Officials checkbox unchecked due to individual Pederasyon role being unchecked');
+                    }
+                    // If all Pederasyon suboptions are checked, check "All Pederasyon Officials"
+                    else if (this.checked && allPederasyonOfficialsCheckbox) {
+                        const allPederasyonChecked = Array.from(pederasyonRoleCheckboxes).every(cb => cb.checked);
+                        if (allPederasyonChecked) {
+                            allPederasyonOfficialsCheckbox.checked = true;
+                            console.log('All Pederasyon Officials checkbox checked because all Pederasyon suboptions are selected');
                         }
                     }
                 });
@@ -929,30 +985,37 @@
             
             // Helper functions
             function updateRecipientRolesAvailability() {
-                const recipientRolesGroup = document.getElementById('recipient_roles_group');
+                const barangayLevelRolesGroup = document.getElementById('barangay_level_roles_group');
                 const selectedBarangays = document.querySelectorAll('input[name="sms_recipient_barangays[]"]:checked');
                 
                 if (selectedBarangays.length > 0) {
-                    console.log('Barangays selected, enabling recipient roles');
-                    recipientRolesGroup.classList.remove('opacity-50', 'pointer-events-none');
+                    console.log('Barangays selected, enabling barangay-level roles');
+                    if (barangayLevelRolesGroup) {
+                        barangayLevelRolesGroup.classList.remove('opacity-50', 'pointer-events-none');
+                    }
                 } else {
-                    console.log('No barangays selected, disabling recipient roles');
-                    recipientRolesGroup.classList.add('opacity-50', 'pointer-events-none');
+                    console.log('No barangays selected, disabling barangay-level roles');
+                    if (barangayLevelRolesGroup) {
+                        barangayLevelRolesGroup.classList.add('opacity-50', 'pointer-events-none');
+                    }
                 }
             }
             
             function clearRecipientRoles() {
-                const allRecipientRoleCheckboxes = document.querySelectorAll('input[name="sms_recipient_roles[]"]');
-                allRecipientRoleCheckboxes.forEach(checkbox => {
+                // Only clear barangay-level roles, not city-level officials
+                const barangayRoleCheckboxes = document.querySelectorAll('#barangay_level_roles_group input[name="sms_recipient_roles[]"]');
+                barangayRoleCheckboxes.forEach(checkbox => {
                     checkbox.checked = false;
                 });
-                console.log('All recipient role checkboxes cleared');
+                console.log('Barangay-level role checkboxes cleared');
             }
             
             function enableRecipientRoles() {
-                const recipientRolesGroup = document.getElementById('recipient_roles_group');
-                console.log('Enabling recipient roles for all barangays');
-                recipientRolesGroup.classList.remove('opacity-50', 'pointer-events-none');
+                const barangayLevelRolesGroup = document.getElementById('barangay_level_roles_group');
+                console.log('Enabling barangay-level roles for all barangays');
+                if (barangayLevelRolesGroup) {
+                    barangayLevelRolesGroup.classList.remove('opacity-50', 'pointer-events-none');
+                }
             }
             
             // Initialize recipient roles availability

@@ -939,15 +939,11 @@ function initializeToggleFunctionality() {
     if (allPederasyonOfficialsCheckbox) {
         allPederasyonOfficialsCheckbox.addEventListener('change', function() {
             if (this.checked) {
-                // When "All Pederasyon Officials" is checked, check all Pederasyon suboptions and uncheck other role options
+                // When "All Pederasyon Officials" is checked, check all Pederasyon suboptions
                 pederasyonRoleCheckboxes.forEach(checkbox => {
                     checkbox.checked = true;
                 });
-                if (allOfficialsCheckbox) allOfficialsCheckbox.checked = false;
-                individualRoleCheckboxes.forEach(checkbox => {
-                    checkbox.checked = false;
-                });
-                console.log('All Pederasyon role checkboxes checked, other roles unchecked');
+                console.log('All Pederasyon role checkboxes checked');
             } else {
                 // When "All Pederasyon Officials" is unchecked, uncheck all Pederasyon suboptions
                 pederasyonRoleCheckboxes.forEach(checkbox => {
@@ -961,13 +957,6 @@ function initializeToggleFunctionality() {
     // Handle Pederasyon suboption checkboxes
     pederasyonRoleCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', function() {
-            if (this.checked) {
-                // When any Pederasyon suboption is checked, uncheck other role groups
-                if (allOfficialsCheckbox) allOfficialsCheckbox.checked = false;
-                individualRoleCheckboxes.forEach(checkbox => {
-                    checkbox.checked = false;
-                });
-            }
             // If any Pederasyon suboption is unchecked, uncheck "All Pederasyon Officials"
             if (!this.checked && allPederasyonOfficialsCheckbox) {
                 allPederasyonOfficialsCheckbox.checked = false;
@@ -987,15 +976,11 @@ function initializeToggleFunctionality() {
     if (allOfficialsCheckbox) {
         allOfficialsCheckbox.addEventListener('change', function() {
             if (this.checked) {
-                // When "All SK Officials" is checked, uncheck Pederasyon options and check all individual SK role checkboxes
-                if (allPederasyonOfficialsCheckbox) allPederasyonOfficialsCheckbox.checked = false;
-                pederasyonRoleCheckboxes.forEach(checkbox => {
-                    checkbox.checked = false;
-                });
+                // When "All SK Officials" is checked, check all individual SK role checkboxes
                 individualRoleCheckboxes.forEach(checkbox => {
                     checkbox.checked = true;
                 });
-                console.log('All individual role checkboxes checked, Pederasyon options unchecked');
+                console.log('All individual role checkboxes checked');
             } else {
                 // When "All SK Officials" is unchecked, uncheck all individual SK role checkboxes
                 individualRoleCheckboxes.forEach(checkbox => {
@@ -1010,11 +995,7 @@ function initializeToggleFunctionality() {
     individualRoleCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', function() {
             if (this.checked) {
-                // When any individual SK role is checked, uncheck Pederasyon options
-                if (allPederasyonOfficialsCheckbox) allPederasyonOfficialsCheckbox.checked = false;
-                pederasyonRoleCheckboxes.forEach(checkbox => {
-                    checkbox.checked = false;
-                });
+                // Individual role selected - no cross-group interference
             }
             // If any individual role is unchecked, uncheck "All SK Officials"
             if (!this.checked && allOfficialsCheckbox) {

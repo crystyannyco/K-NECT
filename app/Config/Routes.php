@@ -224,6 +224,12 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     // Removed manual publish testing route
     $routes->post('events/bulk_delete', 'EventController::bulkDelete');
 
+    // ============== Module: SMS Testing & Dashboard (Admin + Super Admin) ============== //
+    $routes->get('sms-test', 'SMSTestController::index');
+    $routes->post('sms-test/send', 'SMSTestController::sendTest');
+    $routes->get('sms-test/recipients', 'SMSTestController::testRecipients');
+    $routes->get('sms-test/logs', 'SMSTestController::getSMSLogs');
+
     // ============== Module: Google Calendar ============== //
     $routes->get('google-calendar/connect', 'GoogleCalendarController::connect');
     $routes->get('google-calendar/callback', 'GoogleCalendarController::callback');

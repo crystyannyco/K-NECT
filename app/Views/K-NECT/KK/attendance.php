@@ -62,32 +62,37 @@
                         </div>
                     <?php else: ?>
                         <!-- Attendance Records - Responsive Grid Layout -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 auto-rows-fr">
                             <?php foreach ($attendance_records as $record): ?>
                                 <!-- Attendance Card -->
                                 <div 
-                                    class="attendance-card bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1"
+                                    class="attendance-card bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1 flex flex-col h-full"
                                     data-date="<?= !empty($record['event_date']) ? date('Y-m-d', strtotime($record['event_date'])) : '' ?>"
                                     data-keywords="<?= esc(strtolower(($record['event_title'] ?? '') . ' ' . ($record['event_location'] ?? '') . ' ' . ($record['event_date'] ?? '') . ' ' . ($record['event_time'] ?? '') . ' ' . ($record['overall_status'] ?? '')), 'attr') ?>"
+                                    data-event='<?= json_encode([
+                                        'title' => $record['event_title'] ?? '',
+                                        'date' => $record['event_date'] ?? '',
+                                        'time' => $record['event_time'] ?? '',
+                                        'location' => $record['event_location'] ?? '',
+                                        'status' => $record['overall_status'] ?? '',
+                                        'banner' => $record['event_banner'] ?? '',
+                                        'time_in_am' => $record['time_in_am'] ?? '',
+                                        'time_out_am' => $record['time_out_am'] ?? '',
+                                        'time_in_pm' => $record['time_in_pm'] ?? '',
+                                        'time_out_pm' => $record['time_out_pm'] ?? '',
+                                        'description' => $record['event_description'] ?? ''
+                                    ]) ?>'
                                 >
                                     
-                                    <!-- Event Banner Image -->
-                                    <div class="relative h-32 bg-gradient-to-br from-blue-50 to-blue-100">
-                                        <?php if (!empty($record['event_banner'])): ?>
-                                            <img src="<?= base_url('uploads/event/' . $record['event_banner']) ?>" 
+                                        <div class="relative h-40 bg-gradient-to-br from-blue-50 to-blue-100 flex-shrink-0">
+                                            <img src="<?= !empty($record['event_banner']) ? base_url('uploads/event/' . $record['event_banner']) : base_url('assets/images/default-event-banner.svg') ?>" 
                                                  alt="<?= esc($record['event_title']) ?>" 
                                                  class="w-full h-full object-cover"
-                                                 loading="lazy">
-                                        <?php else: ?>
-                                            <div class="w-full h-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
-                                                <svg class="w-16 h-16 text-white opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2z"/>
-                                                </svg>
-                                            </div>
-                                        <?php endif; ?>
+                                                 loading="lazy"
+                                                 onerror="this.onerror=null; this.src='<?= base_url('assets/images/default-event-banner.svg') ?>';">
                                         
-                                        <!-- Status Badge -->
-                                        <div class="absolute top-3 right-3">
+                                            <!-- Status Badge -->
+                                            <div class="absolute top-3 right-3">
                                             <?php if ($record['overall_status'] === 'Attended'): ?>
                                                 <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-green-500 text-white text-xs font-semibold shadow-lg">
                                                     <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -108,15 +113,15 @@
                                     </div>
 
                                     <!-- Card Content -->
-                                    <div class="p-4">
+                                    <div class="p-4 flex-grow flex flex-col">
                                         <!-- Event Title and Basic Info -->
-                                        <div class="mb-4">
-                                            <h3 class="text-lg font-bold text-gray-900 mb-2 line-clamp-2 leading-tight">
+                                        <div class="mb-2 flex-grow">
+                                            <h3 class="text-lg font-bold text-gray-900 mb-2 line-clamp-2 leading-tight overflow-hidden">
                                                 <?= esc($record['event_title']) ?>
                                             </h3>
                                             
                                             <!-- Event Date and Time -->
-                                            <div class="space-y-1">
+                                            <div class="space-y-2">
                                                 <div class="flex items-center text-sm text-gray-600">
                                                     <svg class="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2z"/>
@@ -141,79 +146,81 @@
                                             </div>
                                         </div>
 
-                                        <!-- Attendance Details -->
+                                        <!-- Attendance Information -->
                                         <?php if ($record['overall_status'] === 'Attended'): ?>
-                                            <div class="space-y-3">
-                                                <!-- Morning Session -->
-                                                <?php if ($record['time_in_am'] || $record['time_out_am']): ?>
-                                                    <div class="bg-blue-50 rounded-lg p-3 border border-blue-100">
-                                                        <div class="text-xs font-semibold text-blue-800 mb-2 flex items-center">
-                                                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
-                                                            </svg>
-                                                            Morning Session
-                                                        </div>
-                                                        <div class="grid grid-cols-2 gap-2">
-                                                            <?php if ($record['time_in_am']): ?>
-                                                                <div class="text-center bg-white p-2 rounded-md border border-blue-200">
-                                                                    <div class="text-xs text-gray-600 mb-1">Time In</div>
-                                                                    <div class="text-sm font-mono font-bold text-green-700">
-                                                                        <?= date('g:i A', strtotime($record['time_in_am'])) ?>
-                                                                    </div>
-                                                                </div>
+                                            <!-- Attendance Time Summary -->
+                                            <div class="mb-3">
+                                                <div class="grid grid-cols-2 gap-2">
+                                                    <?php if (!empty($record['time_in_am']) || !empty($record['time_out_am'])): ?>
+                                                    <div class="bg-blue-50 rounded-md p-2 border border-blue-100">
+                                                        <div class="text-xs font-medium text-blue-700 mb-1">Morning Session</div>
+                                                        <div class="grid grid-cols-1 gap-1">
+                                                            <?php if (!empty($record['time_in_am'])): ?>
+                                                            <div class="bg-white rounded px-2 py-1 flex justify-between items-center">
+                                                                <span class="text-xs text-gray-500">In:</span>
+                                                                <span class="text-xs font-mono font-medium"><?= substr($record['time_in_am'], 0, 5) ?></span>
+                                                            </div>
                                                             <?php endif; ?>
-                                                            <?php if ($record['time_out_am']): ?>
-                                                                <div class="text-center bg-white p-2 rounded-md border border-blue-200">
-                                                                    <div class="text-xs text-gray-600 mb-1">Time Out</div>
-                                                                    <div class="text-sm font-mono font-bold text-red-700">
-                                                                        <?= date('g:i A', strtotime($record['time_out_am'])) ?>
-                                                                    </div>
-                                                                </div>
+                                                            
+                                                            <?php if (!empty($record['time_out_am'])): ?>
+                                                            <div class="bg-white rounded px-2 py-1 flex justify-between items-center">
+                                                                <span class="text-xs text-gray-500">Out:</span>
+                                                                <span class="text-xs font-mono font-medium"><?= substr($record['time_out_am'], 0, 5) ?></span>
+                                                            </div>
                                                             <?php endif; ?>
                                                         </div>
                                                     </div>
-                                                <?php endif; ?>
-                                                
-                                                <!-- Afternoon Session -->
-                                                <?php if ($record['time_in_pm'] || $record['time_out_pm']): ?>
-                                                    <div class="bg-orange-50 rounded-lg p-3 border border-orange-100">
-                                                        <div class="text-xs font-semibold text-orange-800 mb-2 flex items-center">
-                                                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
-                                                            </svg>
-                                                            Afternoon Session
-                                                        </div>
-                                                        <div class="grid grid-cols-2 gap-2">
-                                                            <?php if ($record['time_in_pm']): ?>
-                                                                <div class="text-center bg-white p-2 rounded-md border border-orange-200">
-                                                                    <div class="text-xs text-gray-600 mb-1">Time In</div>
-                                                                    <div class="text-sm font-mono font-bold text-green-700">
-                                                                        <?= date('g:i A', strtotime($record['time_in_pm'])) ?>
-                                                                    </div>
-                                                                </div>
+                                                    <?php endif; ?>
+                                                    
+                                                    <?php if (!empty($record['time_in_pm']) || !empty($record['time_out_pm'])): ?>
+                                                    <div class="bg-orange-50 rounded-md p-2 border border-orange-100">
+                                                        <div class="text-xs font-medium text-orange-700 mb-1">Afternoon Session</div>
+                                                        <div class="grid grid-cols-1 gap-1">
+                                                            <?php if (!empty($record['time_in_pm'])): ?>
+                                                            <div class="bg-white rounded px-2 py-1 flex justify-between items-center">
+                                                                <span class="text-xs text-gray-500">In:</span>
+                                                                <span class="text-xs font-mono font-medium"><?= substr($record['time_in_pm'], 0, 5) ?></span>
+                                                            </div>
                                                             <?php endif; ?>
-                                                            <?php if ($record['time_out_pm']): ?>
-                                                                <div class="text-center bg-white p-2 rounded-md border border-orange-200">
-                                                                    <div class="text-xs text-gray-600 mb-1">Time Out</div>
-                                                                    <div class="text-sm font-mono font-bold text-red-700">
-                                                                        <?= date('g:i A', strtotime($record['time_out_pm'])) ?>
-                                                                    </div>
-                                                                </div>
+                                                            
+                                                            <?php if (!empty($record['time_out_pm'])): ?>
+                                                            <div class="bg-white rounded px-2 py-1 flex justify-between items-center">
+                                                                <span class="text-xs text-gray-500">Out:</span>
+                                                                <span class="text-xs font-mono font-medium"><?= substr($record['time_out_pm'], 0, 5) ?></span>
+                                                            </div>
                                                             <?php endif; ?>
                                                         </div>
                                                     </div>
-                                                <?php endif; ?>
-                                            </div>
-                                        <?php else: ?>
-                                            <div class="bg-gray-50 rounded-lg p-4 text-center border border-gray-200">
-                                                <div class="text-sm text-gray-600 flex items-center justify-center">
-                                                    <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                                    </svg>
-                                                    Registered but no attendance recorded
+                                                    <?php endif; ?>
                                                 </div>
                                             </div>
                                         <?php endif; ?>
+
+                                        <!-- Attendance Status Summary -->
+                                        <div class="mt-auto">
+                                            <?php if ($record['overall_status'] === 'Attended'): ?>
+                                                <button 
+                                                    onclick="openAttendanceModal(this.closest('.attendance-card'))"
+                                                    class="w-full bg-green-600 hover:bg-green-700 text-white text-xs font-medium py-2 px-3 rounded-md transition-colors duration-200 flex items-center justify-center"
+                                                >
+                                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                    </svg>
+                                                    View Detailed Attendance
+                                                </button>
+                                            <?php else: ?>
+                                                <button 
+                                                    onclick="openAttendanceModal(this.closest('.attendance-card'))"
+                                                    class="w-full bg-gray-600 hover:bg-gray-700 text-white text-xs font-medium py-2 px-3 rounded-md transition-colors duration-200 flex items-center justify-center"
+                                                >
+                                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                    </svg>
+                                                    View Event Details
+                                                </button>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
@@ -236,6 +243,149 @@
     </div> <!-- End content container -->
 </div> <!-- End main content area -->
 
+<!-- Attendance Detail Modal -->
+<div id="attendanceModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+        <!-- Modal Header -->
+        <div class="relative">
+            <div id="modalBanner" class="h-48 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+                <img id="modalBannerImg" class="w-full h-full object-cover hidden" alt="">
+                <div id="modalBannerDefault" class="text-center">
+                    <svg class="w-20 h-20 text-white opacity-80 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2z"/>
+                    </svg>
+                    <h3 class="text-white text-lg font-semibold">Event Details</h3>
+                </div>
+            </div>
+            
+            <!-- Status Badge -->
+            <div class="absolute top-4 right-4">
+                <span id="modalStatusBadge" class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold shadow-lg">
+                    <svg id="modalStatusIcon" class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20"></svg>
+                    <span id="modalStatusText"></span>
+                </span>
+            </div>
+            
+            <!-- Close Button -->
+            <button onclick="closeAttendanceModal()" class="absolute top-4 left-4 bg-black bg-opacity-20 hover:bg-opacity-30 text-white rounded-full p-2 transition-all">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        
+        <!-- Modal Body -->
+        <div class="p-6 max-h-[60vh] overflow-y-auto">
+            <!-- Event Info -->
+            <div class="mb-6">
+                <h2 id="modalTitle" class="text-2xl font-bold text-gray-900 mb-4"></h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div class="flex items-center text-gray-600">
+                        <svg class="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2z"/>
+                        </svg>
+                        <div>
+                            <div class="text-sm text-gray-500">Date</div>
+                            <div id="modalDate" class="font-medium"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center text-gray-600">
+                        <svg class="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <div>
+                            <div class="text-sm text-gray-500">Time</div>
+                            <div id="modalTime" class="font-medium"></div>
+                        </div>
+                    </div>
+                    
+                    <div id="modalLocationContainer" class="flex items-center text-gray-600 md:col-span-2">
+                        <svg class="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        <div>
+                            <div class="text-sm text-gray-500">Location</div>
+                            <div id="modalLocation" class="font-medium"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Description -->
+                <div id="modalDescriptionContainer" class="hidden">
+                    <h4 class="text-lg font-semibold text-gray-900 mb-2">Description</h4>
+                    <p id="modalDescription" class="text-gray-600 leading-relaxed mb-4"></p>
+                </div>
+            </div>
+            
+            <!-- Attendance Details -->
+            <div id="modalAttendanceDetails">
+                <h4 class="text-lg font-semibold text-gray-900 mb-4">Attendance Record</h4>
+                
+                <div id="modalNoAttendance" class="hidden bg-gray-50 rounded-lg p-6 text-center border border-gray-200">
+                    <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    <h5 class="text-lg font-medium text-gray-900 mb-1">No Attendance Recorded</h5>
+                    <p class="text-gray-600">You were registered for this event but didn't check in.</p>
+                </div>
+                
+                <div id="modalAttendanceData" class="space-y-4">
+                    <!-- Morning Session -->
+                    <div id="modalMorningSession" class="hidden bg-blue-50 rounded-lg p-4 border border-blue-200">
+                        <div class="text-sm font-semibold text-blue-800 mb-3 flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                            </svg>
+                            Morning Session
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div id="modalTimeInAM" class="hidden bg-white p-4 rounded-lg border border-blue-300">
+                                <div class="text-center">
+                                    <div class="text-sm text-gray-600 mb-1">Time In</div>
+                                    <div class="text-lg font-mono font-bold text-green-700" id="modalTimeInAMValue"></div>
+                                </div>
+                            </div>
+                            <div id="modalTimeOutAM" class="hidden bg-white p-4 rounded-lg border border-blue-300">
+                                <div class="text-center">
+                                    <div class="text-sm text-gray-600 mb-1">Time Out</div>
+                                    <div class="text-lg font-mono font-bold text-red-700" id="modalTimeOutAMValue"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Afternoon Session -->
+                    <div id="modalAfternoonSession" class="hidden bg-orange-50 rounded-lg p-4 border border-orange-200">
+                        <div class="text-sm font-semibold text-orange-800 mb-3 flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                            </svg>
+                            Afternoon Session
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div id="modalTimeInPM" class="hidden bg-white p-4 rounded-lg border border-orange-300">
+                                <div class="text-center">
+                                    <div class="text-sm text-gray-600 mb-1">Time In</div>
+                                    <div class="text-lg font-mono font-bold text-green-700" id="modalTimeInPMValue"></div>
+                                </div>
+                            </div>
+                            <div id="modalTimeOutPM" class="hidden bg-white p-4 rounded-lg border border-orange-300">
+                                <div class="text-center">
+                                    <div class="text-sm text-gray-600 mb-1">Time Out</div>
+                                    <div class="text-lg font-mono font-bold text-red-700" id="modalTimeOutPMValue"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
 /* Line clamp utility for text truncation */
 .line-clamp-2 {
@@ -243,12 +393,16 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    text-overflow: ellipsis;
+    max-height: 3rem; /* Control maximum height */
 }
 
 /* Card styles */
 .attendance-card {
     transition: all 0.3s ease-in-out;
-    height: fit-content;
+    min-height: 360px; /* Further reduced card height */
+    display: flex;
+    flex-direction: column;
 }
 
 .attendance-card:hover {
@@ -260,6 +414,24 @@
 .attendance-card:focus-within {
     outline: 2px solid #3B82F6;
     outline-offset: 2px;
+}
+
+/* Button styles for attendance actions */
+.attendance-card button {
+    cursor: pointer;
+}
+
+/* Grid improvements */
+.auto-rows-fr {
+    grid-auto-rows: 1fr;
+}
+
+/* Ensure equal height cards */
+@supports (display: grid) {
+    .grid.auto-rows-fr > .attendance-card {
+        height: 100%;
+        min-height: auto;
+    }
 }
 
 /* Responsive layout fixes */
@@ -377,22 +549,6 @@ document.addEventListener('DOMContentLoaded', function() {
             card.style.transform = 'translateY(0)';
         }, index * 50);
     });
-    
-    // Add click interaction for cards (if needed for future enhancement)
-    cards.forEach(card => {
-        card.addEventListener('click', function(e) {
-            // Prevent default action if clicking on interactive elements
-            if (e.target.closest('button') || e.target.closest('a')) {
-                return;
-            }
-            
-            // Add subtle click feedback
-            this.style.transform = 'scale(0.98) translateY(-2px)';
-            setTimeout(() => {
-                this.style.transform = 'translateY(-4px)';
-            }, 100);
-        });
-    });
 
     // Filtering logic
     const searchInput = document.getElementById('attendance-search');
@@ -455,6 +611,188 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize in case of pre-filled values (e.g., browser back/forward cache)
     applyFilters();
+});
+
+// Modal Functions
+function openAttendanceModal(cardElement) {
+    const eventData = JSON.parse(cardElement.getAttribute('data-event'));
+    const modal = document.getElementById('attendanceModal');
+    
+    // Set modal content
+    document.getElementById('modalTitle').textContent = eventData.title || 'Event';
+    document.getElementById('modalDate').textContent = eventData.date || 'N/A';
+    document.getElementById('modalTime').textContent = eventData.time || 'N/A';
+    
+    // Handle location
+    const locationContainer = document.getElementById('modalLocationContainer');
+    const locationElement = document.getElementById('modalLocation');
+    if (eventData.location) {
+        locationElement.textContent = eventData.location;
+        locationContainer.classList.remove('hidden');
+    } else {
+        locationContainer.classList.add('hidden');
+    }
+    
+    // Handle description
+    const descContainer = document.getElementById('modalDescriptionContainer');
+    const descElement = document.getElementById('modalDescription');
+    if (eventData.description && eventData.description.trim()) {
+        descElement.textContent = eventData.description;
+        descContainer.classList.remove('hidden');
+    } else {
+        descContainer.classList.add('hidden');
+    }
+    
+    // Handle banner image
+    const bannerImg = document.getElementById('modalBannerImg');
+    const bannerDefault = document.getElementById('modalBannerDefault');
+    if (eventData.banner && eventData.banner.trim() !== '') {
+        // Check if the banner file exists, if not fallback to default
+        const bannerPath = `<?= base_url('uploads/event/') ?>${eventData.banner}`;
+        bannerImg.src = bannerPath;
+        bannerImg.onload = function() {
+            bannerImg.classList.remove('hidden');
+            bannerDefault.classList.add('hidden');
+        };
+        bannerImg.onerror = function() {
+            // If image fails to load, use default banner
+            bannerImg.src = '<?= base_url('assets/images/default-event-banner.svg') ?>';
+            bannerImg.onload = function() {
+                bannerImg.classList.remove('hidden');
+                bannerDefault.classList.add('hidden');
+            };
+            bannerImg.onerror = function() {
+                // If even the default fails, show the default div
+                bannerImg.classList.add('hidden');
+                bannerDefault.classList.remove('hidden');
+            };
+        };
+    } else {
+        // No banner specified, use default image
+        bannerImg.src = '<?= base_url('assets/images/default-event-banner.svg') ?>';
+        bannerImg.onload = function() {
+            bannerImg.classList.remove('hidden');
+            bannerDefault.classList.add('hidden');
+        };
+        bannerImg.onerror = function() {
+            // If default image fails to load, show the default div
+            bannerImg.classList.add('hidden');
+            bannerDefault.classList.remove('hidden');
+        };
+    }
+    
+    // Handle status badge
+    const statusBadge = document.getElementById('modalStatusBadge');
+    const statusIcon = document.getElementById('modalStatusIcon');
+    const statusText = document.getElementById('modalStatusText');
+    
+    if (eventData.status === 'Attended') {
+        statusBadge.className = 'inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold shadow-lg bg-green-500 text-white';
+        statusIcon.innerHTML = '<path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>';
+        statusText.textContent = 'Present';
+    } else {
+        statusBadge.className = 'inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold shadow-lg bg-gray-500 text-white';
+        statusIcon.innerHTML = '<path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2h8a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>';
+        statusText.textContent = 'Registered';
+    }
+    
+    // Handle attendance data
+    const noAttendance = document.getElementById('modalNoAttendance');
+    const attendanceData = document.getElementById('modalAttendanceData');
+    const morningSession = document.getElementById('modalMorningSession');
+    const afternoonSession = document.getElementById('modalAfternoonSession');
+    
+    // Hide all attendance sections first
+    noAttendance.classList.add('hidden');
+    morningSession.classList.add('hidden');
+    afternoonSession.classList.add('hidden');
+    
+    if (eventData.status === 'Attended') {
+        // Show morning session if data exists
+        if (eventData.time_in_am || eventData.time_out_am) {
+            morningSession.classList.remove('hidden');
+            
+            const timeInAM = document.getElementById('modalTimeInAM');
+            const timeOutAM = document.getElementById('modalTimeOutAM');
+            
+            if (eventData.time_in_am) {
+                timeInAM.classList.remove('hidden');
+                document.getElementById('modalTimeInAMValue').textContent = formatTime(eventData.time_in_am);
+            } else {
+                timeInAM.classList.add('hidden');
+            }
+            
+            if (eventData.time_out_am) {
+                timeOutAM.classList.remove('hidden');
+                document.getElementById('modalTimeOutAMValue').textContent = formatTime(eventData.time_out_am);
+            } else {
+                timeOutAM.classList.add('hidden');
+            }
+        }
+        
+        // Show afternoon session if data exists
+        if (eventData.time_in_pm || eventData.time_out_pm) {
+            afternoonSession.classList.remove('hidden');
+            
+            const timeInPM = document.getElementById('modalTimeInPM');
+            const timeOutPM = document.getElementById('modalTimeOutPM');
+            
+            if (eventData.time_in_pm) {
+                timeInPM.classList.remove('hidden');
+                document.getElementById('modalTimeInPMValue').textContent = formatTime(eventData.time_in_pm);
+            } else {
+                timeInPM.classList.add('hidden');
+            }
+            
+            if (eventData.time_out_pm) {
+                timeOutPM.classList.remove('hidden');
+                document.getElementById('modalTimeOutPMValue').textContent = formatTime(eventData.time_out_pm);
+            } else {
+                timeOutPM.classList.add('hidden');
+            }
+        }
+    } else {
+        noAttendance.classList.remove('hidden');
+    }
+    
+    // Show modal
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeAttendanceModal() {
+    const modal = document.getElementById('attendanceModal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+function formatTime(timeString) {
+    if (!timeString) return 'N/A';
+    try {
+        const date = new Date(`2000-01-01 ${timeString}`);
+        return date.toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit',
+            hour12: true 
+        });
+    } catch (e) {
+        return timeString;
+    }
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('attendanceModal');
+    if (e.target === modal) {
+        closeAttendanceModal();
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeAttendanceModal();
+    }
 });
 </script>
 

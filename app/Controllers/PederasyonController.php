@@ -190,8 +190,15 @@ class PederasyonController extends BaseController
             return redirect()->to('login')->with('error', 'User profile not found.');
         }
 
+        // Get barangay name from ID
+        $barangayName = '';
+        if (!empty($profileData['address']['barangay'])) {
+            $barangayName = BarangayHelper::getBarangayName($profileData['address']['barangay']);
+        }
+
         $data = array_merge($profileData, [
             'username' => $session->get('username'),
+            'barangay_name' => $barangayName,
         ]);
 
         return 

@@ -100,7 +100,7 @@
 							</div>
 							<div>
 								<label class="block text-sm font-medium text-gray-700 mb-1">Barangay</label>
-								<input type="text" value="<?= esc($address['barangay'] ?? '') ?>" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50" disabled>
+								<input type="text" value="<?= esc($barangay_name ?? '') ?>" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50" disabled>
 								<input type="hidden" name="barangay" value="<?= esc($address['barangay'] ?? '') ?>">
 							</div>
 							<div>

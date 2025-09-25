@@ -140,6 +140,106 @@
             background-color: #3b82f6;
             color: white;
         }
+
+        /* Permanent visibility for all attendance records */
+        .permanent-visible {
+            display: table-row !important;
+        }
+        
+        /* Highlight active session records with a subtle border */
+        .highlight-active-session {
+            background-color: #f0f9ff !important;
+            border-left: 3px solid #3b82f6;
+        }
+        
+        /* Slightly dim inactive session records but keep them visible */
+        .dim-inactive-session {
+            opacity: 0.7;
+            background-color: #f9fafb;
+        }
+        
+        /* Enhanced session filter styling */
+        .session-filter-enhanced {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+        }
+        
+        /* Override any display: none for attendance rows */
+        tr[data-session] {
+            display: table-row !important;
+        }
+        
+        /* Smooth transitions for row highlighting */
+        .permanent-visible {
+            transition: all 0.3s ease;
+        }
+        
+        /* Enhanced attendance status badges (no animation) */
+        .highlight-active-session .status-badge {
+            box-shadow: 0 1px 3px rgba(59, 130, 246, 0.3);
+        }
+        
+        /* Session indicator in time column for better visibility */
+        .session-indicator {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .session-indicator.morning {
+            color: #0891b2;
+        }
+        
+        .session-indicator.afternoon {
+            color: #c2410c;
+        }
+        
+        /* Responsive header title sizing: keep readable but fit container */
+        .header-title {
+            font-size: clamp(1rem, 2.2vw, 1.75rem); /* scales between 16px and 28px */
+            line-height: 1.05;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* Responsive logos to prevent overlap with title */
+        .header-logo {
+            width: clamp(48px, 6.5vw, 96px); /* 48px - 96px */
+            height: clamp(48px, 6.5vw, 96px);
+            flex: 0 0 auto; /* do not grow or shrink unexpectedly */
+            object-fit: contain;
+        }
+
+        .sk-logo {
+            width: clamp(64px, 9vw, 128px); /* 64px - 128px */
+            height: clamp(64px, 9vw, 128px);
+            flex: 0 0 auto;
+            object-fit: contain;
+        }
+        
+        /* Allow title to wrap on very small screens to avoid overlap with logos */
+        @media (max-width: 420px) {
+            .header-title {
+                white-space: normal;
+                overflow: visible;
+                text-overflow: clip;
+            }
+            /* Slightly reduce center card padding on tiny screens */
+            .flex-shrink-0.flex {
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
+            }
+        }
+        
+        /* Highlight for recent taps (transient) */
+        .recent-tap {
+            background-color: #fff7ed !important; /* light warm highlight */
+            border-left: 3px solid #f59e0b !important;
+            transition: background-color 0.6s ease, border-left-color 0.6s ease, opacity 0.6s ease;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -147,33 +247,33 @@
     <!-- Enhanced Header Section -->
     <header class="bg-white shadow border-b border-gray-200">
         <div class="max-w-full mx-auto px-6 py-6">
-            <div class="flex flex-wrap items-center justify-between gap-6">
-                <!-- Left: Barangay Logo and Event Info -->
-                <div class="flex items-center gap-2 flex-1 min-w-0">
-                    <!-- Logos Section -->
-                    <div class="flex items-center gap-2">
-                        <!-- SK Logo -->
+            <div class="flex flex-col sm:flex-row flex-wrap items-center justify-between gap-6">
+                <!-- Left: Barangay Logo and Event Info - split into logo box and title box to avoid overlap -->
+                <div class="flex items-center gap-2 flex-1 min-w-0 w-full">
+                    <!-- Logo box: fixed/shrink container -->
+                    <div class="flex-shrink-0 flex items-center gap-1">
                         <div class="flex-shrink-0">
                             <?php if (!empty($sk_logo['file_path'])): ?>
-                                <img src="<?= base_url($sk_logo['file_path']) ?>" alt="<?= esc($sk_logo['logo_name']) ?>" class="w-32 h-32 rounded-full object-cover">
+                                <img src="<?= base_url($sk_logo['file_path']) ?>" alt="<?= esc($sk_logo['logo_name']) ?>" class="sk-logo rounded-full">
                             <?php else: ?>
-                                <div class="w-32 h-32 bg-blue-100 rounded-full flex items-center justify-center">
-                                    <svg class="w-10 h-10 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+                                <div class="sk-logo bg-blue-100 rounded-full flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
                                         <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                                     </svg>
                                 </div>
                             <?php endif; ?>
                         </div>
                     </div>
-                    <!-- Event and Barangay Info -->
-                    <div class="min-w-0">
+
+                    <!-- Title box: flexible and allowed to shrink/truncate -->
+                    <div class="flex-1 min-w-0">
                         <h2 class="text-sm font-bold uppercase">
                             Barangay <?= esc($barangay_name) ?>
                         </h2>
                         <h2 class="text-base font-bold uppercase mb-1">
                             Sanguniang Kabataan ng Barangay <?= esc($barangay_name) ?>
                         </h2>
-                        <h1 class="text-2xl font-bold text-blue-800 mb-1"><?= esc($event['title']) ?></h1>
+                        <h1 class="header-title font-bold text-blue-800 mb-1 max-w-full truncate" title="<?= esc($event['title']) ?>"><?= esc($event['title']) ?></h1>
                         <div class="flex flex-wrap gap-4 items-center">
                             <div class="text-xs text-gray-600">
                                 <span class="font-semibold">Date:</span> <?= date('F d, Y', strtotime($event['start_datetime'])) ?>
@@ -190,13 +290,15 @@
                     </div>
                 </div>
                 <!-- Center: Current Time Card -->
-                <div class="flex flex-col items-center justify-center bg-blue-50 border border-blue-200 rounded-lg px-8 py-4 shadow-sm mx-auto">
+                <!-- Removed mx-auto to avoid forcing center alignment that can overlap title on small widths -->
+                <div class="flex-shrink-0 flex flex-col items-center justify-center bg-blue-50 border border-blue-200 rounded-lg px-6 py-3 shadow-sm">
                     <div class="text-xs text-blue-700 font-semibold mb-1">Current Time</div>
                     <div class="text-3xl font-bold text-blue-700 mb-1" id="currentTime"></div>
                     <div class="text-xs text-gray-500">Manila Time (PHT)</div>
                 </div>
                 <!-- Right: Session Card -->
-                <div class="flex flex-col items-end justify-center bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 min-w-[200px] shadow-sm">
+                <!-- Make session card shrinkable on small screens and align to end on larger screens -->
+                <div class="flex-shrink-0 sm:flex sm:flex-col items-end justify-center bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 min-w-[160px] shadow-sm">
                     <div class="flex items-center space-x-2 mb-1">
                         <div class="w-2 h-2 rounded-full" id="sessionIndicator"></div>
                         <span class="text-xs font-medium" id="sessionStatus">Waiting</span>
@@ -345,7 +447,17 @@
                                     </tr>
                                 </thead>
                                 <tbody id="attendanceLogsList" class="bg-white divide-y divide-gray-200">
-                                    <!-- Records will be dynamically populated here -->
+                                    <tr class="text-center loading-records">
+                                        <td colspan="4" class="px-2 py-6 text-gray-500">
+                                            <div class="flex flex-col items-center justify-center space-y-2">
+                                                <svg class="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24">
+                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                <p class="text-xs">Loading attendance records...</p>
+                                            </div>
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -464,6 +576,11 @@
 
         // Check attendance status and update display
         async function checkAttendanceStatus() {
+            // Preserve manual entry state during update
+            const userIdInput = document.getElementById('userIdInput');
+            const preservedValue = userIdInput ? userIdInput.value : '';
+            const preservedFocus = document.activeElement === userIdInput;
+            
             try {
                 const response = await fetch(`<?= base_url('sk/getAttendanceStatus/') ?>${eventId}`, {
                     method: 'GET',
@@ -511,6 +628,19 @@
                 }
             } catch (error) {
                 console.error('Error checking attendance status:', error);
+            } finally {
+                // Restore manual entry state after update
+                if (userIdInput) {
+                    userIdInput.value = preservedValue;
+                    if (preservedFocus && preservedValue.length > 0) {
+                        // Only restore focus if user was typing
+                        setTimeout(() => {
+                            userIdInput.focus();
+                            // Restore cursor position to end
+                            userIdInput.setSelectionRange(preservedValue.length, preservedValue.length);
+                        }, 50);
+                    }
+                }
             }
         }
 
@@ -704,10 +834,7 @@
             if (dataRows.length === 0) {
                 // No data rows, show "no records" message if not already present
                 if (!existingNoRecordsRow) {
-                    const noRecordsRow = document.createElement('tr');
-                    noRecordsRow.className = 'text-center no-records-row';
-                    noRecordsRow.innerHTML = '<td colspan="6" class="px-6 py-4 text-gray-500">No attendance records yet</td>';
-                    tbody.appendChild(noRecordsRow);
+                    showNoRecordsMessage(logsList, 'No attendance records yet');
                 }
             } else {
                 // Data rows exist, remove "no records" message if present
@@ -717,61 +844,132 @@
             }
         }
 
+        // Central helper to append a consistent no-records row
+        function showNoRecordsMessage(logsList, message = 'No attendance records yet') {
+            const tbody = logsList.querySelector('tbody') || logsList;
+            const existing = tbody.querySelector('tr.no-records-row');
+            if (existing) return;
+            const noRecordsRow = document.createElement('tr');
+            noRecordsRow.className = 'text-center no-records-row';
+            noRecordsRow.innerHTML = `<td colspan="4" class="px-2 py-4 text-gray-500">${message}</td>`;
+            tbody.appendChild(noRecordsRow);
+        }
+
         // Load existing attendance records on page load
         function loadExistingAttendanceRecords() {
+            const logsList = document.getElementById('attendanceLogsList');
+            
             if (existingAttendanceRecords && existingAttendanceRecords.length > 0) {
                 console.log('Loading existing attendance records:', existingAttendanceRecords.length);
                 
-                // Clear the "no records" row
-                const logsList = document.getElementById('attendanceLogsList');
-                const noRecordsRow = logsList.querySelector('tr.no-records-row');
-                if (noRecordsRow) {
-                    noRecordsRow.remove();
-                }
+                // Remove loading state and any placeholder rows
+                const placeholderRows = logsList.querySelectorAll('tr.loading-records, tr.no-records-row, tr.text-center');
+                placeholderRows.forEach(row => row.remove());
                 
-                // Add each existing record to the log
+                // Add each existing record using the unified addAttendanceLogEntry function
                 existingAttendanceRecords.forEach(record => {
-                    addExistingAttendanceRecord(record);
+                    // Process both AM and PM sessions if they exist - create separate entries for time-in and time-out
+                    if (record['time-in_am']) {
+                        // Add time-in entry for AM session
+                        addAttendanceLogEntry({
+                            user_id: record.user_id,
+                            name: record.user_name || getFullName(record),
+                            session: 'morning',
+                            time: formatTimeDisplay(record['time-in_am']),
+                            status: record.status_am || 'Present',
+                            action: 'check_in',
+                            rfid_code: record.rfid_code,
+                            zone_purok: record.zone_purok || '',
+                            barangay: record.barangay || '',
+                            profile_picture: record.profile_picture || '',
+                            attendanceStatus: record.status_am || 'Present',
+                            isExisting: true  // Mark as existing record for always visible display
+                        });
+                        
+                        // Add time-out entry for AM session if it exists
+                        if (record['time-out_am']) {
+                            addAttendanceLogEntry({
+                                user_id: record.user_id,
+                                name: record.user_name || getFullName(record),
+                                session: 'morning',
+                                time: formatTimeDisplay(record['time-out_am']),
+                                status: record.status_am || 'Present',
+                                action: 'check_out',
+                                rfid_code: record.rfid_code,
+                                zone_purok: record.zone_purok || '',
+                                barangay: record.barangay || '',
+                                profile_picture: record.profile_picture || '',
+                                attendanceStatus: record.status_am || 'Present',
+                                isExisting: true  // Mark as existing record for always visible display
+                            });
+                        }
+                    }
+                    
+                    // Process PM session - create separate entries for time-in and time-out
+                    if (record['time-in_pm']) {
+                        // Add time-in entry for PM session
+                        addAttendanceLogEntry({
+                            user_id: record.user_id,
+                            name: record.user_name || getFullName(record),
+                            session: 'afternoon',
+                            time: formatTimeDisplay(record['time-in_pm']),
+                            status: record.status_pm || 'Present',
+                            action: 'check_in',
+                            rfid_code: record.rfid_code,
+                            zone_purok: record.zone_purok || '',
+                            barangay: record.barangay || '',
+                            profile_picture: record.profile_picture || '',
+                            attendanceStatus: record.status_pm || 'Present',
+                            isExisting: true  // Mark as existing record for always visible display
+                        });
+                        
+                        // Add time-out entry for PM session if it exists
+                        if (record['time-out_pm']) {
+                            addAttendanceLogEntry({
+                                user_id: record.user_id,
+                                name: record.user_name || getFullName(record),
+                                session: 'afternoon',
+                                time: formatTimeDisplay(record['time-out_pm']),
+                                status: record.status_pm || 'Present',
+                                action: 'check_out',
+                                rfid_code: record.rfid_code,
+                                zone_purok: record.zone_purok || '',
+                                barangay: record.barangay || '',
+                                profile_picture: record.profile_picture || '',
+                                attendanceStatus: record.status_pm || 'Present',
+                                isExisting: true  // Mark as existing record for always visible display
+                            });
+                        }
+                    }
                 });
                 
                 // Update counts
                 updateAttendanceCounts();
+            } else {
+                // No existing records, remove loading state and show appropriate message
+                const placeholderRows = logsList.querySelectorAll('tr.loading-records');
+                placeholderRows.forEach(row => row.remove());
+                
+                // Only show "no records" if no session is active
+                if (!currentActiveSession) {
+                    // append a consistent "no records" row so updateNoRecordsMessage can find/remove it later
+                    const noRecordsRow = document.createElement('tr');
+                    noRecordsRow.className = 'text-center no-records-row';
+                    noRecordsRow.innerHTML = `
+                        <td colspan="4" class="px-2 py-4 text-gray-500">
+                            <svg class="mx-auto h-5 w-5 text-gray-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <p class="text-xs">No attendance records for this event yet</p>
+                        </td>
+                    `;
+                    logsList.appendChild(noRecordsRow);
+                }
             }
         }
 
         // Add existing attendance record to the log
-        function addExistingAttendanceRecord(record) {
-            const logsList = document.getElementById('attendanceLogsList');
-            
-            // Process both AM and PM sessions if they exist
-            if (record['time-in_am']) {
-                addAttendanceLogEntry({
-                    user_id: record.user_id,
-                    name: record.user_name || getFullName(record),
-                    session: 'morning',
-                    time: formatTimeDisplay(record['time-in_am']),
-                    status: record.status_am || 'Present',
-                    action: record['time-out_am'] ? 'check_out' : 'check_in',
-                    rfid_code: record.rfid_code,
-                    zone_purok: record.zone_purok || '',
-                    attendanceStatus: record.status_am || 'Present'
-                });
-            }
-            
-            if (record['time-in_pm']) {
-                addAttendanceLogEntry({
-                    user_id: record.user_id,
-                    name: record.user_name || getFullName(record),
-                    session: 'afternoon',
-                    time: formatTimeDisplay(record['time-in_pm']),
-                    status: record.status_pm || 'Present',
-                    action: record['time-out_pm'] ? 'check_out' : 'check_in',
-                    rfid_code: record.rfid_code,
-                    zone_purok: record.zone_purok || '',
-                    attendanceStatus: record.status_pm || 'Present'
-                });
-            }
-        }
+
 
         // Helper function to get full name from record
         function getFullName(record) {
@@ -790,6 +988,49 @@
                 minute: '2-digit',
                 hour12: true 
             });
+        }
+
+        // Insert entry by time in chronological order
+        function insertEntryByTime(logsList, newRow, newTime) {
+            const newTimeMs = new Date(newTime).getTime();
+            const newAction = newRow.getAttribute('data-action');
+            const existingRows = Array.from(logsList.querySelectorAll('tr[data-time]'));
+            
+            // If no existing rows, just append
+            if (existingRows.length === 0) {
+                logsList.appendChild(newRow);
+                return;
+            }
+            
+            // Find the correct position to insert (newest first - descending order)
+            let insertPosition = null;
+            
+            for (let i = 0; i < existingRows.length; i++) {
+                const rowTime = existingRows[i].getAttribute('data-time');
+                const rowTimeMs = new Date(rowTime).getTime();
+                const rowAction = existingRows[i].getAttribute('data-action');
+                
+                // If new time is newer (greater), insert before this row
+                if (newTimeMs > rowTimeMs) {
+                    insertPosition = existingRows[i];
+                    break;
+                }
+                
+                // If same time, sort by action (check_in before check_out)
+                if (newTimeMs === rowTimeMs) {
+                    if (newAction === 'check_in' && rowAction === 'check_out') {
+                        insertPosition = existingRows[i];
+                        break;
+                    }
+                }
+            }
+            
+            // If no position found, append at the end (oldest)
+            if (insertPosition) {
+                logsList.insertBefore(newRow, insertPosition);
+            } else {
+                logsList.appendChild(newRow);
+            }
         }
 
         // Wait for session to start (automatic session start behavior)
@@ -827,6 +1068,11 @@
 
         // Update session display based on server data
         function updateSessionDisplay(activeSessionInfo, morningStatus, afternoonStatus) {
+            // Preserve manual entry state
+            const userIdInput = document.getElementById('userIdInput');
+            const preservedValue = userIdInput ? userIdInput.value : '';
+            const preservedFocus = document.activeElement === userIdInput;
+            
             const sessionIndicator = document.getElementById('sessionIndicator');
             const sessionStatus = document.getElementById('sessionStatus');
             const currentSessionDisplay = document.getElementById('currentSessionDisplay');
@@ -841,9 +1087,12 @@
                 sessionIndicator.className = 'w-3 h-3 rounded-full bg-green-500 session-indicator';
                 scanStatus.textContent = 'Ready to scan - Tap your RFID card';
                 
-                // Enable attendance input
+                // Enable attendance input but preserve manual entry
                 document.getElementById('rfidInput').disabled = false;
-                document.getElementById('userIdInput').disabled = false;
+                if (userIdInput) {
+                    userIdInput.disabled = false;
+                    userIdInput.value = preservedValue; // Restore value
+                }
                 
                 // Filter attendance log by active session
                 filterAttendanceLogBySession();
@@ -867,9 +1116,12 @@
                     const displayTime = pendingSession.display_start_time || formatTimeTo12Hour(pendingSession.start_time);
                     scanStatus.textContent = `Session starts at ${displayTime}`;
                     
-                    // Disable RFID input but keep manual entry enabled
+                    // Disable RFID input but keep manual entry enabled and preserve its state
                     document.getElementById('rfidInput').disabled = true;
-                    document.getElementById('userIdInput').disabled = false;
+                    if (userIdInput) {
+                        userIdInput.disabled = false;
+                        userIdInput.value = preservedValue; // Restore value
+                    }
                     
                 } else {
                     // No sessions
@@ -879,9 +1131,12 @@
                     sessionIndicator.className = 'w-3 h-3 rounded-full bg-gray-400';
                     scanStatus.textContent = 'No session scheduled';
                     
-                    // Keep RFID disabled, but allow manual entry
+                    // Keep RFID disabled, but allow manual entry and preserve its state
                     document.getElementById('rfidInput').disabled = true;
-                    document.getElementById('userIdInput').disabled = false;
+                    if (userIdInput) {
+                        userIdInput.disabled = false;
+                        userIdInput.value = preservedValue; // Restore value
+                    }
                     
                     // Show all attendance logs when no session is active
                     showAllAttendanceLogs();
@@ -898,6 +1153,14 @@
             if (manualEntryStatus) {
                 manualEntryStatus.textContent = 'Ready for manual input';
                 manualEntryStatus.className = 'text-xs text-gray-500 text-center';
+            }
+            
+            // Restore focus if user was typing
+            if (preservedFocus && preservedValue.length > 0 && userIdInput) {
+                setTimeout(() => {
+                    userIdInput.focus();
+                    userIdInput.setSelectionRange(preservedValue.length, preservedValue.length);
+                }, 50);
             }
         }
 
@@ -1135,6 +1398,14 @@
             rows.forEach(row => {
                 const rowSession = row.getAttribute('data-session');
                 const rowTimeStr = row.getAttribute('data-time');
+                const isExistingRecord = row.getAttribute('data-existing-record') === 'true';
+                
+                // Always show existing records regardless of session filtering
+                if (isExistingRecord) {
+                    row.style.display = '';
+                    visibleCount++;
+                    return;
+                }
                 
                 // Only show entries from current active session that are within the exact timeframe
                 if (rowSession === currentActiveSession && rowTimeStr) {
@@ -1217,9 +1488,13 @@
             const logsList = document.getElementById('attendanceLogsList');
             const rows = logsList.querySelectorAll('tr[data-session]');
             
-            // Hide all live attendance entries but keep them in DOM
+            // Hide only live session entries, keep existing records always visible
             rows.forEach(row => {
-                row.style.display = 'none';
+                const isExistingRecord = row.getAttribute('data-existing-record') === 'true';
+                if (!isExistingRecord) {
+                    row.style.display = 'none';
+                }
+                // Existing records remain visible (don't change display property)
             });
             
             // Show a message indicating session has ended
@@ -1322,15 +1597,7 @@
                 return;
             }
             
-            if (!rfidCode && !userId) {
-                showToast('Please enter either RFID code or User ID', 'warning');
-                return;
-            }
-            
-            if (rfidCode && rfidCode.length < 3) {
-                showToast('RFID code too short - Please scan again', 'warning');
-                return;
-            }
+            // Remove RFID length validation - let backend handle it
             
             if (userId && isNaN(userId)) {
                 showToast('User ID must be a number', 'warning');
@@ -1342,8 +1609,22 @@
             document.getElementById('userIdInput').value = '';
         }
 
-        // Process attendance (RFID or manual)
+        // Ensure AppState exists
+        if (typeof window.AppState === 'undefined') window.AppState = {};
+        window.AppState.processing = window.AppState.processing || false;
+
+        // Process attendance (RFID or manual) with duplicate-guard
         function processAttendance(rfidCode, userId) {
+            // Unique key for this scan to detect immediate follow-up errors
+            const scanKey = `${rfidCode || ''}:${userId || ''}`;
+            // If already processing a scan, ignore to prevent duplicate notifications
+            if (window.AppState.processing) return;
+            window.AppState.processing = true;
+
+            // Ensure processing lock is released after a short delay
+            const _releaseProcessing = () => { setTimeout(() => { window.AppState.processing = false; }, 1200); };
+
+            try {
             if (!currentActiveSession) {
                 // More specific message for RFID vs manual entry
                 const inputType = rfidCode ? 'RFID card scanned' : 'User ID entered';
@@ -1382,6 +1663,13 @@
             })
             .then(data => {
                 if (data.success) {
+                    try {
+                        // Record success so immediate follow-up errors for same scan are ignored
+                        window.AppState.lastSuccessScan = scanKey;
+                        window.AppState.lastSuccessAt = Date.now();
+                    } catch (e) {
+                        // ignore AppState set errors
+                    }
                     const user = data.data.user;
                     showUserInfo({
                         name: user.name,
@@ -1492,10 +1780,10 @@
                     }
                 }
                 
-                // Clear user info after 5 seconds
+                // Clear user info after 30 seconds
                 setTimeout(() => {
                     clearUserInfo();
-                }, 5000);
+                }, 30000);
             })
             .catch(error => {
                 console.error('Error processing attendance:', error);
@@ -1510,17 +1798,28 @@
                     errorMessage = 'Connection failed - Check network';
                 }
                 
-                showUserInfo({
-                    name: rfidCode ? `RFID: ${rfidCode}` : `User ID: ${userId}`,
-                    status: errorMessage,
-                    error: true
-                });
-                showToast(`${errorMessage}`, 'error');
-                updateScanStatus(`${errorMessage}`, 'error');
-                
+                // If we just had a successful response for the same scan, suppress immediate network/server error toast
+                const lastScan = window.AppState.lastSuccessScan || null;
+                const lastAt = window.AppState.lastSuccessAt || 0;
+                const now = Date.now();
+                if (lastScan === scanKey && (now - lastAt) < 2000) {
+                    // Suppress spurious error message for immediate follow-up errors
+                    console.info('Suppressed server/network error toast due to immediate successful scan for same input');
+                } else {
+                    showUserInfo({
+                        name: rfidCode ? `RFID: ${rfidCode}` : `User ID: ${userId}`,
+                        status: errorMessage,
+                        error: true
+                    });
+                    showToast(`${errorMessage}`, 'error');
+                    updateScanStatus(`${errorMessage}`, 'error');
+                }
+
                 setTimeout(() => {
                     clearUserInfo();
-                }, 5000);
+                }, 30000);
+            }).finally(() => {
+                _releaseProcessing();
             });
         }
 
@@ -1530,7 +1829,7 @@
             
             if (user.loading) {
                 userInfoContent.innerHTML = `
-                    <div class="animate-spin w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+                    <div class="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
                     <h4 class="font-medium text-gray-900 mb-1 text-sm">Processing...</h4>
                     <p class="text-xs text-gray-600">${user.status || 'Checking attendance...'}</p>
                 `;
@@ -1696,6 +1995,12 @@
         // Add attendance log entry (unified function for new and existing records)
         function addAttendanceLogEntry(user) {
             const logsList = document.getElementById('attendanceLogsList');
+            
+            // Remove "no records" and "session ended" messages when actual attendance is recorded
+            // include both legacy 'no-records' and standardized 'no-records-row'
+            const placeholderRows = logsList.querySelectorAll('tr.text-center, tr.no-records, tr.no-records-row, tr.session-ended-message');
+            placeholderRows.forEach(row => row.remove());
+            
             const status = user.attendanceStatus || user.status || 'Present';
             const statusColor = status === 'Late' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800';
             const actionLabel = user.action === 'check_out' ? 'Time-Out' : 'Time-In';
@@ -1721,19 +2026,54 @@
                 isoTime = new Date().toISOString(); // Fallback to current time
             }
             
+            // Create unique identifier for this entry to prevent duplicates
+            const entryId = `${user.user_id || user.id}-${user.session}-${user.action}-${isoTime}`;
+            
+            // Check if this entry already exists to prevent duplicates
+            const existingEntry = logsList.querySelector(`tr[data-entry-id="${entryId}"]`);
+            if (existingEntry) {
+                console.log('Duplicate entry detected, skipping:', entryId);
+                return;
+            }
+            
             const logRow = document.createElement('tr');
-            logRow.className = 'hover:bg-gray-50';
+            logRow.className = 'hover:bg-gray-50 permanent-visible';
             logRow.setAttribute('data-session', user.session);
             logRow.setAttribute('data-time', isoTime);
+            logRow.setAttribute('data-entry-id', entryId);
+            logRow.setAttribute('data-user-id', user.user_id || user.id);
+            logRow.setAttribute('data-action', user.action);
+            
+            // Mark existing records so they are always visible
+            if (user.isExisting) {
+                logRow.setAttribute('data-existing-record', 'true');
+            }
+            
+            // Apply session highlighting based on current active session
+            if (currentActiveSession === user.session) {
+                logRow.classList.add('highlight-active-session');
+            } else if (currentActiveSession !== null) {
+                logRow.classList.add('dim-inactive-session');
+            }
+            
             logRow.innerHTML = `
                 <td class="px-2 py-1">
                     <div class="flex items-center">
-                        <div class="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center mr-2 flex-shrink-0">
-                            <span class="text-white text-xs font-medium">${user.name.charAt(0).toUpperCase()}</span>
+                        <div class="w-6 h-6 rounded-full flex items-center justify-center mr-2 flex-shrink-0 overflow-hidden shadow-sm border border-gray-200">
+                            ${user.profile_picture ? 
+                                `<img src="<?= base_url('uploads/profile_pictures/') ?>${user.profile_picture}" alt="${user.name}" class="w-full h-full object-cover">` :
+                                `<div class="w-full h-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                                    <span class="text-white text-[10px] font-medium">${user.name.charAt(0).toUpperCase()}</span>
+                                </div>`
+                            }
                         </div>
                         <div class="min-w-0 flex-1">
                             <div class="text-xs font-medium text-gray-900 truncate">${user.name}</div>
-                            ${user.zone_purok ? `<div class="text-xs text-gray-400">Zone ${user.zone_purok}</div>` : ''}
+                            <div class="flex flex-row space-x-1">
+                                ${user.zone_purok ? `<span class="text-xs text-gray-400">Zone ${user.zone_purok}</span>` : ''}
+                                ${user.zone_purok && user.barangay ? `<span class="text-xs text-gray-300">|</span>` : ''}
+                                ${user.barangay ? `<span class="text-xs text-gray-400">Brgy. ${user.barangay}</span>` : ''}
+                            </div>
                         </div>
                     </div>
                 </td>
@@ -1743,24 +2083,34 @@
                     </span>
                 </td>
                 <td class="px-2 py-1">
-                    <div class="text-xs text-gray-900">${user.time}</div>
+                    <div class="text-xs text-gray-900 time-indicator ${currentActiveSession === user.session ? 'active-session-indicator' : (currentActiveSession !== null ? 'inactive-session-indicator' : '')}">${user.time}</div>
                 </td>
                 <td class="px-2 py-1">
-                    <span class="inline-flex px-1 py-0.5 text-[10px] font-medium rounded-full bg-blue-100 text-blue-800">
+                    <span class="inline-flex px-1 py-0.5 text-[10px] font-medium rounded-full ${user.action === 'check_out' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}">
                         ${actionLabel}
                     </span>
                 </td>
             `;
             
-            // Insert at the top for real-time updates, but preserve existing order for loaded records
-            if (user.isNewEntry) {
-                logsList.insertBefore(logRow, logsList.firstChild);
-            } else {
-                logsList.appendChild(logRow);
+            // Insert entry in chronological order based on time
+            insertEntryByTime(logsList, logRow, isoTime);
+
+            // Ensure recent taps are visible at the top: scroll container to top and add transient highlight
+            try {
+                // The wrapper div that scrolls is the parent of the table
+                const wrapper = logsList.closest('div[style*="max-height"]');
+                if (wrapper) {
+                    // Scroll to top so newest entries (top) are visible
+                    wrapper.scrollTop = 0;
+                }
+                // Add transient highlight class
+                logRow.classList.add('recent-tap');
+                setTimeout(() => {
+                    logRow.classList.remove('recent-tap');
+                }, 2500);
+            } catch (err) {
+                console.warn('Could not apply recent tap highlight or scroll:', err);
             }
-            
-            // Update no records message state
-            updateNoRecordsMessage();
         }
 
         // Add attendance log (wrapper for new records)
@@ -1798,6 +2148,13 @@
             rows.forEach(row => {
                 const rowSession = row.getAttribute('data-session');
                 const rowTimeStr = row.getAttribute('data-time');
+                const isExistingRecord = row.getAttribute('data-existing-record') === 'true';
+                
+                // Always show existing records regardless of session filtering
+                if (isExistingRecord) {
+                    row.style.display = '';
+                    return;
+                }
                 
                 // Show only entries from current active session within timeframe
                 if (rowSession === currentActiveSession && rowTimeStr) {
@@ -1962,9 +2319,9 @@
             }
         }
 
-        // Refresh attendance data - reload the page for a full refresh
+        // Refresh attendance data - update session status and attendance records without page reload
         function refreshData() {
-            window.location.reload();
+            checkAttendanceStatus();
         }
 
         // Update session card display with current settings
@@ -2082,7 +2439,7 @@
             const indicator = document.createElement('div');
             indicator.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-blue-600 text-white px-8 py-4 rounded-lg shadow-lg z-50 flex items-center space-x-3';
             indicator.innerHTML = `
-                <svg class="w-6 h-6 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                 </svg>
                 <div>
@@ -2227,6 +2584,12 @@
             // Initialize the real-time attendance system
             initializeRealTimeAttendance();
             
+            // Ensure loading state is cleared after initialization
+            setTimeout(() => {
+                const loadingRows = document.querySelectorAll('tr.loading-records');
+                loadingRows.forEach(row => row.remove());
+            }, 2000); // 2 second fallback to clear any stuck loading states
+            
             // Setup enhanced real-time update listeners
             setupSessionUpdateListener();
             
@@ -2286,27 +2649,74 @@
                 Object.values(autoTimeoutTimers).forEach(timer => clearTimeout(timer));
             });
             
-            // Auto-refresh data every 30 seconds
-            refreshInterval = setInterval(refreshData, 30000);
+            // Auto-refresh session status every 30 seconds (without reloading page)
+            refreshInterval = setInterval(checkAttendanceStatus, 30000);
             
-            // Focus on RFID input and keep it focused
+            // Focus on RFID input and keep it focused with smart manual entry detection
             const rfidInput = document.getElementById('rfidInput');
+            let manualEntryInUse = false;
+            let manualEntryTimeout = null;
+            
             if (rfidInput) {
                 rfidInput.focus();
                 
-                // Keep RFID input focused at all times
+                // Track when user starts using manual entry
+                const userIdInput = document.getElementById('userIdInput');
+                if (userIdInput) {
+                    userIdInput.addEventListener('focus', function() {
+                        manualEntryInUse = true;
+                        clearTimeout(manualEntryTimeout);
+                    });
+                    
+                    userIdInput.addEventListener('input', function() {
+                        manualEntryInUse = true;
+                        clearTimeout(manualEntryTimeout);
+                        // Keep manual entry active for 10 seconds after last input
+                        manualEntryTimeout = setTimeout(() => {
+                            if (document.activeElement !== userIdInput) {
+                                manualEntryInUse = false;
+                            }
+                        }, 10000);
+                    });
+                    
+                    userIdInput.addEventListener('blur', function() {
+                        // Delay clearing manual entry flag to avoid focus conflicts
+                        clearTimeout(manualEntryTimeout);
+                        manualEntryTimeout = setTimeout(() => {
+                            manualEntryInUse = false;
+                        }, 2000);
+                    });
+                }
+                
+                // Less aggressive RFID focus management - every 3 seconds instead of 1 second
                 setInterval(() => {
-                    if (document.activeElement !== rfidInput && !rfidInput.disabled) {
+                    const activeElement = document.activeElement;
+                    
+                    // Only auto-focus RFID if:
+                    // 1. Manual entry is not in use
+                    // 2. RFID input is enabled
+                    // 3. No input field has focus
+                    // 4. User is not actively typing anywhere
+                    if (!manualEntryInUse && 
+                        !rfidInput.disabled &&
+                        activeElement !== userIdInput && 
+                        activeElement.tagName !== 'INPUT' &&
+                        activeElement.tagName !== 'TEXTAREA') {
                         rfidInput.focus();
                     }
-                }, 1000);
+                }, 3000);
                 
-                // Prevent RFID input from losing focus
+                // Prevent RFID input from losing focus (unless user is using manual entry)
                 rfidInput.addEventListener('blur', function() {
-                    if (!this.disabled) {
+                    if (!this.disabled && 
+                        !manualEntryInUse &&
+                        document.activeElement.tagName !== 'INPUT' &&
+                        document.activeElement.tagName !== 'TEXTAREA') {
                         setTimeout(() => {
-                            this.focus();
-                        }, 100);
+                            if (!manualEntryInUse) {
+                                this.focus();
+                            }
+                        }, 500);
                     }
                 });
             }
@@ -2323,11 +2733,11 @@
                 updateSessionStatus();
                 
                 // Reload fresh attendance data from server
-                refreshData();
+                checkAttendanceStatus();
                 
                 // Restart refresh interval
                 clearInterval(refreshInterval);
-                refreshInterval = setInterval(refreshData, 30000);
+                refreshInterval = setInterval(checkAttendanceStatus, 30000);
                 
                 // Refocus RFID input if not disabled
                 const rfidInput = document.getElementById('rfidInput');

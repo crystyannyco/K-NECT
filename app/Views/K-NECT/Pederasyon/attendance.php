@@ -2,6 +2,7 @@
     .event-card {
         transition: all 0.2s ease;
         border: 1px solid #e5e7eb;
+        height: 100%;
     }
     
     .event-card:hover {
@@ -200,12 +201,12 @@
                         }
                     }
                     ?>
-                    <div class="event-card bg-white rounded-lg overflow-hidden" 
+                    <div class="event-card bg-white rounded-lg overflow-hidden flex flex-col h-full" 
                          data-status="<?= $status ?>" 
                          data-category="<?= esc($event['category']) ?>">
                         
                         <!-- Event Image -->
-                        <div class="h-48 bg-blue-500 relative overflow-hidden">
+                        <div class="h-48 bg-blue-500 relative overflow-hidden flex-shrink-0">
             <?php if (!empty($event['event_banner'])): ?>
                 <img src="<?= base_url('uploads/event/' . $event['event_banner']) ?>" 
                      alt="<?= esc($event['title']) ?>" 
@@ -233,7 +234,7 @@
                         </div>
                         
                         <!-- Event Details -->
-                        <div class="p-4">
+                        <div class="p-4 flex flex-col flex-grow">
                             <div class="flex items-start justify-between mb-2">
                                 <h4 class="text-lg font-semibold text-gray-900 line-clamp-2"><?= esc($event['title']) ?></h4>
                             </div>
@@ -285,30 +286,34 @@
                                 <?php endif; ?>
                             </div>
                             
-                            <?php if ($event['description']): ?>
-                            <p class="text-sm text-gray-600 mb-4 line-clamp-1"><?= esc($event['description']) ?></p>
-                            <?php endif; ?>
+                            <div class="flex-grow">
+                                <?php if ($event['description']): ?>
+                                <p class="text-sm text-gray-600 mb-4 line-clamp-1"><?= esc($event['description']) ?></p>
+                                <?php endif; ?>
+                            </div>
                             
-                            <!-- Action Button -->
-                            <?php if ($status === 'completed'): ?>
-                                <button onclick="viewAttendanceReport(<?= $event['event_id'] ?>)" 
-                                        class="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
-                                    View Attendance
-                                </button>
-                            <?php else: ?>
-                                <div class="flex gap-2">
-                                    <button onclick="openAttendanceModal(<?= $event['event_id'] ?>)" 
-                                            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
-                                            style="flex-basis: 70%;">
-                                        Manage Attendance
+                            <!-- Action Button - Always at bottom -->
+                            <div class="mt-auto">
+                                <?php if ($status === 'completed'): ?>
+                                    <button onclick="viewAttendanceReport(<?= $event['event_id'] ?>)" 
+                                            class="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+                                        View Attendance
                                     </button>
-                                    <button onclick="openLiveAttendanceModal(<?= $event['event_id'] ?>)" 
-                                            class="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
-                                            style="flex-basis: 30%;">
-                                        Live
-                                    </button>
-                                </div>
-                            <?php endif; ?>
+                                <?php else: ?>
+                                    <div class="flex gap-2">
+                                        <button onclick="openAttendanceModal(<?= $event['event_id'] ?>)" 
+                                                class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
+                                                style="flex-basis: 70%;">
+                                            Manage Attendance
+                                        </button>
+                                        <button onclick="openLiveAttendanceModal(<?= $event['event_id'] ?>)" 
+                                                class="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
+                                                style="flex-basis: 30%;">
+                                            Live
+                                        </button>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
                         </div>
                     </div>
                 <?php endforeach; ?>
@@ -415,7 +420,7 @@
                 Cancel
             </button>
             <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
-                <button onclick="saveAttendanceSettings()" 
+                <button id="saveAttendanceBtn" onclick="saveAttendanceSettings()" 
                     class="px-4 py-2 w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-semibold focus:ring-2 focus:ring-blue-400 focus:outline-none">
                     Save Settings
                 </button>
@@ -483,6 +488,7 @@ function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = 'pointer-events-auto p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full min-w-[280px] max-w-md break-words';
     
+    // Choose background color based on type
     switch(type) {
         case 'success':
             notification.className += ' bg-green-500 text-white';
@@ -496,9 +502,27 @@ function showNotification(message, type = 'info') {
         default:
             notification.className += ' bg-blue-500 text-white';
     }
-    
+
+    // Icon SVGs for notification types
+    let icon = '';
+    switch(type) {
+        case 'success':
+            icon = '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>';
+            break;
+        case 'error':
+            icon = '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
+            break;
+        case 'warning':
+            icon = '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h17.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>';
+            break;
+        default:
+            icon = '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01" /></svg>';
+            break;
+    }
+
     notification.innerHTML = `
         <div class="flex items-center">
+            <div class="flex-none mr-3">${icon}</div>
             <div class="flex-1">${message}</div>
             <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white opacity-70 hover:opacity-100">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -933,7 +957,7 @@ function startAttendance() {
     
     // Open attendance display in a new tab
     const attendanceDisplayUrl = `<?= base_url('pederasyon/attendanceDisplay') ?>/${currentEventId}`;
-    window.open(attendanceDisplayUrl, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+    openNewAttendanceWindow(attendanceDisplayUrl, currentEventId);
     
     // Close the modal
     closeAttendanceModal();
@@ -975,6 +999,41 @@ function broadcastSessionUpdate(eventId) {
 
 // Track opened attendance display windows
 window.attendanceDisplayWindows = window.attendanceDisplayWindows || {};
+
+// Helper function to open new attendance display tab/window for a specific event
+function openNewAttendanceWindow(url, eventId) {
+    // Open as a normal tab by using the named target without window features
+    try {
+        const targetName = `attendance_${eventId}`;
+        const attendanceWindow = window.open(url, targetName);
+
+        if (attendanceWindow) {
+            // Track the opened tab/window reference for this event
+            window.attendanceDisplayWindows = window.attendanceDisplayWindows || {};
+            window.attendanceDisplayWindows[eventId] = attendanceWindow;
+
+            // Clean up when tab/window is closed
+            const checkClosed = setInterval(() => {
+                try {
+                    if (attendanceWindow.closed) {
+                        delete window.attendanceDisplayWindows[eventId];
+                        clearInterval(checkClosed);
+                    }
+                } catch (e) {
+                    // Accessing properties can fail if cross-origin; just stop the checker
+                    clearInterval(checkClosed);
+                }
+            }, 1000);
+
+            showNotification('Attendance display opened in new tab', 'success');
+        } else {
+            showNotification('Failed to open attendance display. Please check popup blocker.', 'error');
+        }
+    } catch (err) {
+        console.error('Error opening attendance tab:', err);
+        showNotification('Unable to open attendance display', 'error');
+    }
+}
 
 // Enhanced startAttendance function to save settings first, then track windows
 function startAttendanceEnhanced() {
@@ -1082,28 +1141,55 @@ function startAttendanceEnhanced() {
             // Broadcast session update to attendance display windows
             broadcastSessionUpdate(currentEventId);
             
-            // Wait a moment, then open attendance display
+            // Wait a moment, then check for existing tab or open new one
             setTimeout(() => {
                 const attendanceDisplayUrl = `<?= base_url('pederasyon/attendanceDisplay') ?>/${currentEventId}`;
-                const attendanceWindow = window.open(attendanceDisplayUrl, '_blank');
+                const targetName = `attendance_${currentEventId}`;
                 
-                // Track the window for direct messaging
-                if (attendanceWindow) {
-                    window.attendanceDisplayWindows[currentEventId] = attendanceWindow;
-                    
-                    // Clean up when window is closed
-                    const checkClosed = setInterval(() => {
-                        if (attendanceWindow.closed) {
-                            delete window.attendanceDisplayWindows[currentEventId];
-                            clearInterval(checkClosed);
+                // Try to focus/update an existing tracked tab for this event, otherwise open a new named tab
+                const existingWindow = window.attendanceDisplayWindows && window.attendanceDisplayWindows[currentEventId];
+
+                if (existingWindow && !existingWindow.closed) {
+                    try {
+                        // Try to focus the tab and refresh it
+                        existingWindow.focus();
+                        existingWindow.location.reload();
+                        showNotification('Focused existing tab and refreshed page', 'success');
+                    } catch (focusError) {
+                        // If focus/reload fails, try to open a new window with same name (will replace if exists)
+                        console.warn('Cannot focus existing tab, opening replacement:', focusError);
+                        const newWindow = window.open(attendanceDisplayUrl, targetName);
+                        if (newWindow) {
+                            window.attendanceDisplayWindows[currentEventId] = newWindow;
+                            showNotification('Opened fresh attendance display', 'success');
                         }
-                    }, 1000);
+                    }
+                } else {
+                    // No valid window reference; open a new named tab
+                    const newWindow = window.open(attendanceDisplayUrl, targetName);
+                    if (newWindow) {
+                        window.attendanceDisplayWindows = window.attendanceDisplayWindows || {};
+                        window.attendanceDisplayWindows[currentEventId] = newWindow;
+                        showNotification('Opened new attendance display tab', 'success');
+                        
+                        // Clean up when tab/window is closed
+                        const checkClosed = setInterval(() => {
+                            try {
+                                if (newWindow.closed) {
+                                    delete window.attendanceDisplayWindows[currentEventId];
+                                    clearInterval(checkClosed);
+                                }
+                            } catch (e) {
+                                clearInterval(checkClosed);
+                            }
+                        }, 1000);
+                    } else {
+                        showNotification('Failed to open attendance display. Please check popup blocker.', 'error');
+                    }
                 }
                 
                 // Close the modal
                 closeAttendanceModal();
-                
-                showNotification('Attendance display opened in new tab', 'success');
             }, 500);
             
         } else {

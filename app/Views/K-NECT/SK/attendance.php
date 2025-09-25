@@ -2,6 +2,7 @@
     .event-card {
         transition: all 0.2s ease;
         border: 1px solid #e5e7eb;
+        height: 100%;
     }
     
     .event-card:hover {
@@ -235,12 +236,12 @@
                         }
                     }
                     ?>
-                    <div class="event-card bg-white rounded-lg overflow-hidden" 
+                    <div class="event-card bg-white rounded-lg overflow-hidden flex flex-col h-full" 
                          data-status="<?= $status ?>" 
                          data-category="<?= esc($event['category']) ?>">
                         
                         <!-- Event Image -->
-                        <div class="h-48 bg-blue-500 relative overflow-hidden">
+                        <div class="h-48 bg-blue-500 relative overflow-hidden flex-shrink-0">
                             <?php if (!empty($event['event_banner'])): ?>
                                 <img src="<?= base_url('uploads/event/' . $event['event_banner']) ?>" 
                                      alt="<?= esc($event['title']) ?>" 
@@ -268,7 +269,7 @@
                         </div>
                         
                         <!-- Event Details -->
-                        <div class="p-4">
+                        <div class="p-4 flex flex-col flex-grow">
                             <div class="flex items-start justify-between mb-2">
                                 <h4 class="text-lg font-semibold text-gray-900 line-clamp-2"><?= esc($event['title']) ?></h4>
                             </div>
@@ -320,30 +321,34 @@
                                 <?php endif; ?>
                             </div>
                             
-                            <?php if ($event['description']): ?>
-                            <p class="text-sm text-gray-600 mb-4 line-clamp-1"><?= esc($event['description']) ?></p>
-                            <?php endif; ?>
+                            <div class="flex-grow">
+                                <?php if ($event['description']): ?>
+                                <p class="text-sm text-gray-600 mb-4 line-clamp-1"><?= esc($event['description']) ?></p>
+                                <?php endif; ?>
+                            </div>
                             
-                            <!-- Action Button -->
-                            <?php if ($status === 'completed'): ?>
-                                <button onclick="viewAttendanceReport(<?= $event['event_id'] ?>)" 
-                                        class="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
-                                    View Attendance
-                                </button>
-                            <?php else: ?>
-                                <div class="flex gap-2">
-                                    <button onclick="openAttendanceModal(<?= $event['event_id'] ?>)" 
-                                            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
-                                            style="flex-basis: 70%;">
-                                        Manage Attendance
+                            <!-- Action Button - Always at bottom -->
+                            <div class="mt-auto">
+                                <?php if ($status === 'completed'): ?>
+                                    <button onclick="viewAttendanceReport(<?= $event['event_id'] ?>)" 
+                                            class="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+                                        View Attendance
                                     </button>
-                                    <button onclick="openLiveAttendanceModal(<?= $event['event_id'] ?>)" 
-                                            class="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
-                                            style="flex-basis: 30%;">
-                                        Live
-                                    </button>
-                                </div>
-                            <?php endif; ?>
+                                <?php else: ?>
+                                    <div class="flex gap-2">
+                                        <button onclick="openAttendanceModal(<?= $event['event_id'] ?>)" 
+                                                class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
+                                                style="flex-basis: 70%;">
+                                            Manage Attendance
+                                        </button>
+                                        <button onclick="openLiveAttendanceModal(<?= $event['event_id'] ?>)" 
+                                                class="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
+                                                style="flex-basis: 30%;">
+                                            Live
+                                        </button>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
                         </div>
                     </div>
                 <?php endforeach; ?>
@@ -1203,9 +1208,9 @@ document.getElementById('attendanceModal').addEventListener('click', function(e)
 
 // Live Attendance Monitoring Functions
 function openLiveAttendanceModal(eventId) {
-    // Open live attendance in a new tab
-    const liveAttendanceUrl = `<?= base_url('sk/liveAttendance') ?>/${eventId}`;
-    window.open(liveAttendanceUrl, '_blank');
+    // Open the same attendance display as "Save & Start"
+    const attendanceDisplayUrl = `<?= base_url('sk/liveAttendance') ?>/${eventId}`;
+    window.open(attendanceDisplayUrl, '_blank');
 }
 
 // Function to view attendance report for completed events

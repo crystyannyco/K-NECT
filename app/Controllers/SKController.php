@@ -324,7 +324,7 @@ class SKController extends BaseController
                      user_ext_info.civil_status, user_ext_info.youth_classification, user_ext_info.age_group, 
                      user_ext_info.work_status, user_ext_info.educational_background,
                      user_ext_info.sk_voter, user_ext_info.sk_election, user_ext_info.national_voter, user_ext_info.kk_assembly, user_ext_info.how_many_times, user_ext_info.no_why,
-                     user_ext_info.profile_picture, user_ext_info.birth_certificate, user_ext_info.upload_id, `user_ext_info`.`upload_id-back` AS upload_id_back')
+                     user_ext_info.profile_picture, user_ext_info.birth_certificate, user_ext_info.upload_id, `user_ext_info`.`upload_id-back` AS `upload_id-back`')
             ->join('address', 'address.user_id = user.id', 'left')
             ->join('user_ext_info', 'user_ext_info.user_id = user.id', 'left');
         

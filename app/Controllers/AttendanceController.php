@@ -16,7 +16,7 @@ use App\Libraries\ZoneHelper;
 
 class AttendanceController extends BaseController
 {
-// ================== ATTENDANCE SYSTEM (START) ==================
+    // ================== ATTENDANCE SYSTEM (START) ==================
     // All methods below are related to the SK attendance system (UI, data, processing, reports)
     public function attendance()
     {
@@ -447,7 +447,7 @@ class AttendanceController extends BaseController
                 $sessionData['time_in'] = $record['time-in_am'];
                 $sessionData['time_out'] = null;
                 $sessionData['status'] = $record['status_am'] ?? 'Present';
-                $sessionData['action'] = 'check_in';
+                $sessionData['action'] = 'time_in';
                 
                 // Only include if within session timeframe when filtering by active session
                 $includeRecord = true;
@@ -475,7 +475,7 @@ class AttendanceController extends BaseController
                     $timeOutData['time_in'] = $record['time-in_am'];
                     $timeOutData['time_out'] = $record['time-out_am'];
                     $timeOutData['status'] = $record['status_am'] ?? 'Present';
-                    $timeOutData['action'] = 'check_out';
+                    $timeOutData['action'] = 'time_out';
                     
                     // Check if time-out is within session timeframe
                     $includeTimeOut = true;
@@ -504,7 +504,7 @@ class AttendanceController extends BaseController
                 $sessionData['time_in'] = $record['time-in_pm'];
                 $sessionData['time_out'] = null;
                 $sessionData['status'] = $record['status_pm'] ?? 'Present';
-                $sessionData['action'] = 'check_in';
+                $sessionData['action'] = 'time_in';
                 
                 // Only include if within session timeframe when filtering by active session
                 $includeRecord = true;
@@ -532,7 +532,7 @@ class AttendanceController extends BaseController
                     $timeOutData['time_in'] = $record['time-in_pm'];
                     $timeOutData['time_out'] = $record['time-out_pm'];
                     $timeOutData['status'] = $record['status_pm'] ?? 'Present';
-                    $timeOutData['action'] = 'check_out';
+                    $timeOutData['action'] = 'time_out';
                     
                     // Check if time-out is within session timeframe
                     $includeTimeOut = true;
@@ -611,23 +611,49 @@ class AttendanceController extends BaseController
             return $this->response->setJSON(['success' => false, 'message' => 'Missing required fields']);
         }
 
-        if (!$rfidCode && !$userId) {
-            log_message('error', 'processAttendance: Either RFID code or User ID is required');
-            return $this->response->setJSON(['success' => false, 'message' => 'Either RFID code or User ID is required']);
-        }
-
         try {
+            $eventModel = new EventModel();
             $userModel = new UserModel();
             $attendanceModel = new AttendanceModel();
             $eventAttendanceModel = new EventAttendanceModel();
             
-            // Get attendance settings to check if session is active
-            $attendanceSettings = $eventAttendanceModel->getEventAttendanceSettings($eventId);
+            // Get event for date validation
+            $event = $eventModel->find($eventId);
+            if (!$event) {
+                return $this->response->setJSON([
+                    'success' => false, 
+                    'message' => 'Event not found'
+                ]);
+            }
             
             // Define current time and datetime for calculations with proper timezone
             date_default_timezone_set('Asia/Manila'); // Ensure consistent timezone
+            $currentDate = date('Y-m-d');
             $currentTime = date('H:i'); // Use exact HH:MM format without seconds
             $currentDateTime = date('Y-m-d H:i:s');
+            
+            // Validate event date range
+            $eventStartDate = $event['event_date'] ?? date('Y-m-d', strtotime($event['start_datetime']));
+            $eventEndDate = date('Y-m-d', strtotime($event['end_datetime']));
+            
+            // Check if current date is within event date range
+            if ($currentDate < $eventStartDate || $currentDate > $eventEndDate) {
+                $dateRangeText = $eventStartDate === $eventEndDate ? 
+                    date('F d, Y', strtotime($eventStartDate)) : 
+                    date('F d, Y', strtotime($eventStartDate)) . ' - ' . date('F d, Y', strtotime($eventEndDate));
+                    
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Attendance not available - Current date is not within event period (' . $dateRangeText . ')',
+                    'event_date_mismatch' => true,
+                    'current_date' => $currentDate,
+                    'event_start_date' => $eventStartDate,
+                    'event_end_date' => $eventEndDate
+                ]);
+            }
+            
+            // Get attendance settings to check if session is active
+            $attendanceSettings = $eventAttendanceModel->getEventAttendanceSettings($eventId);
             
             // Determine session validity and times with enhanced logic
             $sessionActive = false;
@@ -715,34 +741,73 @@ class AttendanceController extends BaseController
             
             if ($rfidCode && $userId) {
                 // Both RFID and User ID provided - validate they match
-                $user = $userModel->where(['rfid_code' => $rfidCode, 'user_id' => $userId])->first();
-                if (!$user) {
-                    // Try with 'id' field as well
-                    $user = $userModel->where(['rfid_code' => $rfidCode, 'id' => $userId])->first();
+                // Handle YY-XXXXXX format for User ID
+                $searchUserId = $userId;
+                if (preg_match('/^\d{2}-\d{6}$/', $userId)) {
+                    // Use the full YY-XXXXXX format for search
+                    log_message('info', "Dual lookup: YY-XXXXXX format {$userId}, RFID: {$rfidCode}");
+                } else {
+                    log_message('info', "Dual lookup: Regular User ID: {$searchUserId}, RFID: {$rfidCode}");
+                }
+                
+                $user = $userModel->where(['rfid_code' => $rfidCode, 'user_id' => $searchUserId])->first();
+                if (!$user && !preg_match('/^\d{2}-\d{6}$/', $userId)) {
+                    // Try with 'id' field as well, but only for non YY-XXXXXX format
+                    log_message('info', "Dual lookup: user_id field failed, trying primary id field");
+                    $user = $userModel->where(['rfid_code' => $rfidCode, 'id' => $searchUserId])->first();
                 }
                 if (!$user) {
                     log_message('error', "User not found with RFID: {$rfidCode} and User ID: {$userId}");
                     return $this->response->setJSON([
                         'success' => false, 
-                        'message' => 'RFID code and User ID do not match any existing record'
+                        'message' => 'RFID and User ID do not match. Please verify your credentials.'
                     ]);
                 }
             } else if ($rfidCode) {
                 // Only RFID provided
                 $user = $userModel->where('rfid_code', $rfidCode)->first();
                 if (!$user) {
-                    log_message('error', "RFID code not found: {$rfidCode}");
-                    return $this->response->setJSON(['success' => false, 'message' => 'RFID code not found']);
+                    log_message('error', "RFID not found: {$rfidCode}");
+                    return $this->response->setJSON(['success' => false, 'message' => 'RFID not found. Please ensure your ID is properly registered.']);
                 }
             } else if ($userId) {
-                // Only User ID provided - try both user_id and id fields
-                $user = $userModel->where('user_id', $userId)->first();
-                if (!$user) {
-                    $user = $userModel->find($userId); // This uses the primary key 'id'
+                // Only User ID provided - handle YY-XXXXXX format (e.g., 25-123456)
+                $searchUserId = $userId; // Store original for logging
+                if (preg_match('/^\d{2}-\d{6}$/', $userId)) {
+                    // Search for the full YY-XXXXXX format in user_id field
+                    log_message('info', "Processing YY-XXXXXX format: {$userId}");
+                    $user = $userModel->where('user_id', $userId)->first();
+                } else {
+                    // Handle regular user ID format - try both user_id and id fields
+                    log_message('info', "Processing regular User ID: {$userId}");
+                    $user = $userModel->where('user_id', $userId)->first();
+                    if (!$user) {
+                        log_message('info', "User ID not found in user_id field, trying primary key id: {$userId}");
+                        $user = $userModel->find($userId); // This uses the primary key 'id'
+                    }
                 }
+                
                 if (!$user) {
-                    log_message('error', "User ID not found: {$userId}");
-                    return $this->response->setJSON(['success' => false, 'message' => 'User ID not found']);
+                    // Enhanced debugging - check if the user exists with different search criteria
+                    $debugUser1 = $userModel->where('user_id', $userId)->first();
+                    $debugUser2 = $userModel->find($userId);
+                    $allUsers = $userModel->select('id, user_id, first_name, last_name')->limit(5)->findAll();
+                    
+                    log_message('error', "User lookup failed for: {$searchUserId}");
+                    log_message('error', "Debug - user_id field search result: " . ($debugUser1 ? 'Found' : 'Not found'));
+                    log_message('error', "Debug - primary id field search result: " . ($debugUser2 ? 'Found' : 'Not found'));
+                    log_message('error', "Debug - Sample users in database: " . json_encode($allUsers));
+                    
+                    return $this->response->setJSON([
+                        'success' => false, 
+                        'message' => "User ID not found. Please ensure your ID is properly registered.",
+                        'debug_info' => [
+                            'searched_user_id' => $searchUserId,
+                            'user_id_field_search' => $debugUser1 ? true : false,
+                            'primary_id_search' => $debugUser2 ? true : false,
+                            'sample_users' => $allUsers
+                        ]
+                    ]);
                 }
             }
             
@@ -857,7 +922,7 @@ class AttendanceController extends BaseController
                                 'user_id' => $user['user_id'] ?? '',
                                 'rfid_code' => $rfidCode ?? $user['rfid_code'] ?? '',
                                 'session' => $session,
-                                'action' => 'check_out',
+                                'action' => 'time_out',
                                 'status' => $originalStatus,
                                 'attendanceStatus' => $originalStatus,
                                 'time' => date('g:i A'),
@@ -956,7 +1021,7 @@ class AttendanceController extends BaseController
                         'user_id' => $user['user_id'] ?? '',
                         'rfid_code' => $rfidCode ?? $user['rfid_code'] ?? '',
                         'session' => $session,
-                        'action' => 'check_in',
+                        'action' => 'time_in',
                         'status' => $status,
                         'attendanceStatus' => $status,
                         'time' => date('g:i A'),
@@ -1860,21 +1925,91 @@ class AttendanceController extends BaseController
     }
 
     /**
+     * Debug user lookup - temporary endpoint for troubleshooting
+     */
+    public function debugUserLookup()
+    {
+        $userId = $this->request->getGet('user_id') ?: $this->request->getPost('user_id');
+        
+        if (!$userId) {
+            return $this->response->setJSON([
+                'error' => 'Please provide user_id parameter'
+            ]);
+        }
+        
+        $userModel = new UserModel();
+        
+        // Test different lookup methods
+        $results = [];
+        
+        // Method 1: Direct user_id field search
+        $user1 = $userModel->where('user_id', $userId)->first();
+        $results['user_id_field'] = $user1 ? 'Found: ' . $user1['first_name'] . ' ' . $user1['last_name'] : 'Not found';
+        
+        // Method 2: Primary key search
+        $user2 = $userModel->find($userId);
+        $results['primary_key'] = $user2 ? 'Found: ' . $user2['first_name'] . ' ' . $user2['last_name'] : 'Not found';
+        
+        // Method 3: YY-XXXXXX format handling (for debug comparison)
+        if (preg_match('/^\d{2}-\d{6}$/', $userId)) {
+            $extractedId = substr($userId, 3);
+            $user3_wrong = $userModel->where('user_id', $extractedId)->first();
+            $user3_correct = $userModel->where('user_id', $userId)->first();
+            $results['yy_xxxxxx_format'] = [
+                'original' => $userId,
+                'extracted' => $extractedId,
+                'wrong_search_result' => $user3_wrong ? 'Found: ' . $user3_wrong['first_name'] . ' ' . $user3_wrong['last_name'] : 'Not found',
+                'correct_search_result' => $user3_correct ? 'Found: ' . $user3_correct['first_name'] . ' ' . $user3_correct['last_name'] : 'Not found'
+            ];
+        }
+        
+        // Get sample users for reference
+        $sampleUsers = $userModel->select('id, user_id, first_name, last_name, rfid_code, status')
+            ->limit(10)
+            ->findAll();
+        
+        return $this->response->setJSON([
+            'searched_user_id' => $userId,
+            'lookup_results' => $results,
+            'sample_users' => $sampleUsers
+        ]);
+    }
+
+    /**
      * Get current attendance status and session state for real-time updates
      */
     public function getAttendanceStatus($eventId)
     {
         try {
+            $eventModel = new EventModel();
             $eventAttendanceModel = new EventAttendanceModel();
             $attendanceModel = new AttendanceModel();
             
-            // Get current attendance settings
-            $attendanceSettings = $eventAttendanceModel->getEventAttendanceSettings($eventId);
+            // Get event details for date validation
+            $event = $eventModel->find($eventId);
+            if (!$event) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Event not found'
+                ]);
+            }
             
             // Set timezone
             date_default_timezone_set('Asia/Manila');
+            $currentDate = date('Y-m-d');
             $currentTime = date('H:i');
             $currentDateTime = date('Y-m-d H:i:s');
+            
+            // Validate event date range
+            $eventStartDate = $event['event_date'] ?? date('Y-m-d', strtotime($event['start_datetime']));
+            $eventEndDate = date('Y-m-d', strtotime($event['end_datetime']));
+            
+            // Check if current date is within event date range
+            $eventDateValid = ($currentDate >= $eventStartDate && $currentDate <= $eventEndDate);
+            $eventDate = $eventStartDate; // For backward compatibility
+            
+            // Get current attendance settings
+            $attendanceSettings = $eventAttendanceModel->getEventAttendanceSettings($eventId);
             
             // Calculate session states
             $morningStatus = $this->calculateSessionStatus($attendanceSettings, 'morning', $currentTime);
@@ -1926,6 +2061,9 @@ class AttendanceController extends BaseController
                 'success' => true,
                 'current_time' => $currentTime,
                 'current_datetime' => $currentDateTime,
+                'current_date' => $currentDate,
+                'event_date' => $eventDate,
+                'event_date_valid' => $eventDateValid,
                 'morning_status' => $morningStatus,
                 'afternoon_status' => $afternoonStatus,
                 'attendance_settings' => $attendanceSettings,
@@ -2230,7 +2368,7 @@ class AttendanceController extends BaseController
                 $morningTimeIn = $userData;
                 $morningTimeIn['session'] = 'morning';
                 $morningTimeIn['time'] = $record['time-in_am'];
-                $morningTimeIn['action'] = 'check_in';
+                $morningTimeIn['action'] = 'time_in';
                 $morningTimeIn['status'] = $record['status_am'] ?? 'Present';
                 $morningTimeIn['time_sort'] = strtotime($record['time-in_am']);
                 $stackedData[] = $morningTimeIn;
@@ -2240,7 +2378,7 @@ class AttendanceController extends BaseController
                     $morningTimeOut = $userData;
                     $morningTimeOut['session'] = 'morning';
                     $morningTimeOut['time'] = $record['time-out_am'];
-                    $morningTimeOut['action'] = 'check_out';
+                    $morningTimeOut['action'] = 'time_out';
                     $morningTimeOut['status'] = $record['status_am'] ?? 'Present';
                     $morningTimeOut['time_sort'] = strtotime($record['time-out_am']);
                     $stackedData[] = $morningTimeOut;
@@ -2253,7 +2391,7 @@ class AttendanceController extends BaseController
                 $afternoonTimeIn = $userData;
                 $afternoonTimeIn['session'] = 'afternoon';
                 $afternoonTimeIn['time'] = $record['time-in_pm'];
-                $afternoonTimeIn['action'] = 'check_in';
+                $afternoonTimeIn['action'] = 'time_in';
                 $afternoonTimeIn['status'] = $record['status_pm'] ?? 'Present';
                 $afternoonTimeIn['time_sort'] = strtotime($record['time-in_pm']);
                 $stackedData[] = $afternoonTimeIn;
@@ -2263,7 +2401,7 @@ class AttendanceController extends BaseController
                     $afternoonTimeOut = $userData;
                     $afternoonTimeOut['session'] = 'afternoon';
                     $afternoonTimeOut['time'] = $record['time-out_pm'];
-                    $afternoonTimeOut['action'] = 'check_out';
+                    $afternoonTimeOut['action'] = 'time_out';
                     $afternoonTimeOut['status'] = $record['status_pm'] ?? 'Present';
                     $afternoonTimeOut['time_sort'] = strtotime($record['time-out_pm']);
                     $stackedData[] = $afternoonTimeOut;

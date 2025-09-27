@@ -1489,7 +1489,7 @@ class AttendanceController extends BaseController
             }
             
             $eventTitle = preg_replace('/[^a-zA-Z0-9_-]/', '_', $event['title']);
-            $fileName = 'Attendance_Report_' . $eventTitle . '_' . date('Y-m-d_H-i-s') . '.xlsx';
+            $fileName = $eventTitle . '_Attendance_Report_' . date('Y-m-d') . '.xlsx';
             $outputPath = $outputDir . $fileName;
             
             $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
@@ -1522,13 +1522,15 @@ class AttendanceController extends BaseController
             $properties->setDescription('Attendance report generated from K-NECT System');
             $properties->setSubject('Attendance Report');
             
-            // Add section with landscape orientation
+            // Add section with landscape orientation and custom 13x8.5in size
             $section = $phpWord->addSection([
                 'orientation' => 'landscape',
-                'marginLeft' => 720,
-                'marginRight' => 720,
-                'marginTop' => 720,
-                'marginBottom' => 720
+                'pageSizeW' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(13.0),
+                'pageSizeH' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(8.5),
+                'marginLeft' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(0.5),
+                'marginRight' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(0.5),
+                'marginTop' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(0.5),
+                'marginBottom' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(0.5)
             ]);
             
             // Header styles
@@ -1599,9 +1601,9 @@ class AttendanceController extends BaseController
                 $rightCell->addText('IRIGA LOGO', $subHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
             }
             
-            // Add title and event details
+            // Add title and event details (no extra space after paragraphs)
             $section->addTextBreak();
-            $section->addText('ATTENDANCE REPORT', $titleStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
+            $section->addText('ATTENDANCE REPORT', $titleStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             $section->addTextBreak();
             
             // Event information - FIXED: Remove space after paragraphs
@@ -1613,27 +1615,36 @@ class AttendanceController extends BaseController
             }
             $section->addTextBreak();
             
-            // Create attendance table with optimized column widths for landscape
+            // Create attendance table and compute column widths to exactly fill printable area
             $table = $section->addTable([
                 'borderSize' => 4,
                 'borderColor' => '000000',
                 'cellMargin' => 20,
-                'width' => 100 * 50,
+                // width will be set by cell widths; keep table centered
                 'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER
             ]);
-            
-            // Add table header with proper column widths
+
+            // Printable width in twips: page width (13in) minus left/right margins (0.5in each) = 12in
+            $printableWidth = \PhpOffice\PhpWord\Shared\Converter::inchToTwip(12.0);
+            // Use the previous relative column units to distribute widths proportionally
+            $colRel = [1000, 1500, 3500, 1000, 1200, 1200, 1200, 1200, 1200, 1200];
+            $totalRel = array_sum($colRel);
+            $colWidths = array_map(function($r) use ($printableWidth, $totalRel) {
+                return (int) floor(($r / $totalRel) * $printableWidth);
+            }, $colRel);
+
+            // Add table header with computed column widths (spaceAfter=0 to remove extra paragraph spacing)
             $table->addRow();
-            $table->addCell(1000)->addText('No.', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
-            $table->addCell(1500)->addText('KK Number', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
-            $table->addCell(3500)->addText('Name', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
-            $table->addCell(1000)->addText('Zone', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
-            $table->addCell(1200)->addText('AM Time-In', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
-            $table->addCell(1200)->addText('AM Time-Out', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
-            $table->addCell(1200)->addText('AM Status', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
-            $table->addCell(1200)->addText('PM Time-In', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
-            $table->addCell(1200)->addText('PM Time-Out', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
-            $table->addCell(1200)->addText('PM Status', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
+            $table->addCell($colWidths[0])->addText('No.', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $table->addCell($colWidths[1])->addText('KK Number', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $table->addCell($colWidths[2])->addText('Name', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $table->addCell($colWidths[3])->addText('Zone', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $table->addCell($colWidths[4])->addText('AM Time-In', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $table->addCell($colWidths[5])->addText('AM Time-Out', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $table->addCell($colWidths[6])->addText('AM Status', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $table->addCell($colWidths[7])->addText('PM Time-In', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $table->addCell($colWidths[8])->addText('PM Time-Out', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $table->addCell($colWidths[9])->addText('PM Status', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             
             // Add data rows
             foreach ($attendanceRecords as $index => $record) {
@@ -1698,16 +1709,16 @@ class AttendanceController extends BaseController
                 }
                 
                 $table->addRow();
-                $table->addCell(1000)->addText($index + 1, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
-                $table->addCell(1500)->addText($record['permanent_user_id'] ?? 'N/A', $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
-                $table->addCell(3500)->addText($formattedName, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::LEFT]);
-                $table->addCell(1000)->addText($record['zone_purok'] ?? 'N/A', $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
-                $table->addCell(1200)->addText($amTimeIn, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
-                $table->addCell(1200)->addText($amTimeOut, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
-                $table->addCell(1200)->addText($amStatus, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
-                $table->addCell(1200)->addText($pmTimeIn, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
-                $table->addCell(1200)->addText($pmTimeOut, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
-                $table->addCell(1200)->addText($pmStatus, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
+                $table->addCell($colWidths[0])->addText($index + 1, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $table->addCell($colWidths[1])->addText($record['permanent_user_id'] ?? 'N/A', $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $table->addCell($colWidths[2])->addText($formattedName, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::LEFT, 'spaceAfter' => 0]);
+                $table->addCell($colWidths[3])->addText($record['zone_purok'] ?? 'N/A', $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $table->addCell($colWidths[4])->addText($amTimeIn, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $table->addCell($colWidths[5])->addText($amTimeOut, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $table->addCell($colWidths[6])->addText($amStatus, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $table->addCell($colWidths[7])->addText($pmTimeIn, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $table->addCell($colWidths[8])->addText($pmTimeOut, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $table->addCell($colWidths[9])->addText($pmStatus, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             }
             
             // Save the document
@@ -1717,7 +1728,7 @@ class AttendanceController extends BaseController
             }
             
             $eventTitle = preg_replace('/[^a-zA-Z0-9_-]/', '_', $event['title']);
-            $fileName = 'Attendance_Report_' . $eventTitle . '_' . date('Y-m-d_H-i-s') . '.docx';
+            $fileName = $eventTitle . '_Attendance_Report_' . date('Y-m-d') . '.docx';
             $outputPath = $outputDir . $fileName;
             
             $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
@@ -1785,7 +1796,10 @@ class AttendanceController extends BaseController
             // Get attendance records for this event
             $attendanceRecords = $attendanceModel->where('event_id', $eventId)->findAll();
             
-            $barangayName = null;
+            // FIXED: Get barangay name from SK session, not from first user's address
+            $session = session();
+            $skBarangay = $session->get('sk_barangay');
+            $barangayName = $skBarangay ? BarangayHelper::getBarangayName($skBarangay) : null;
             
             // Enhance records with user information
             foreach ($attendanceRecords as &$record) {
@@ -1800,11 +1814,7 @@ class AttendanceController extends BaseController
                         $address = $addressModel->where('user_id', $user['id'])->first();
                         if ($address) {
                             $record['zone_purok'] = $address['zone_purok'];
-                            // Store the first barangay name found for document header - FIXED: Convert ID to name
-                            if (!$barangayName && !empty($address['barangay'])) {
-                                $barangayName = BarangayHelper::getBarangayName($address['barangay']);
-                            }
-                            // Also store barangay name in record for table display
+                            // Store barangay name for table display (individual user's barangay)
                             $record['barangay_name'] = BarangayHelper::getBarangayName($address['barangay']);
                         }
                     }

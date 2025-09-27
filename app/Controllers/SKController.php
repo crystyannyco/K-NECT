@@ -1655,8 +1655,9 @@ class SKController extends BaseController
         }
         
         @page {
-            size: A4 landscape;
-            margin: 15mm 10mm;
+            /* 13 x 8.5 inches in mm: 13in = 330.2mm, 8.5in = 215.9mm */
+            size: 330.2mm 215.9mm;
+            margin: 0.5in; /* narrow margin: 0.5 inch */
         }
         
         @media print {
@@ -1848,10 +1849,10 @@ class SKController extends BaseController
         $properties->setCategory('Government Document');
         $properties->setSubject('KK Youth Profile');
         
-        // Add section - Legal landscape with narrow 0.5in margins
+        // Add section - Custom 13 x 8.5 inches landscape with narrow 0.5in margins
         $section = $phpWord->addSection([
             'orientation' => 'landscape',
-            'pageSizeW' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(14.0),
+            'pageSizeW' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(13.0),
             'pageSizeH' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(8.5),
             'marginLeft' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(0.5),
             'marginRight' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(0.5),
@@ -2306,7 +2307,7 @@ class SKController extends BaseController
             $sheet->getStyle('M' . $currentRow)->getFont()->setBold(true);
 
             // Generate filename and save
-            $filename = 'KK_List_' . str_replace(' ', '_', $barangayName) . '_' . date('Y-m-d_H-i-s') . '.xlsx';
+            $filename = 'KK_List_' . str_replace(' ', '_', $barangayName) . '_' . date('Y-m-d') . '.xlsx';
             $outputPath = FCPATH . 'uploads/generated/' . $filename;
 
             // Ensure the directory exists
@@ -2489,7 +2490,8 @@ class SKController extends BaseController
 
             // Load HTML and render PDF
             $dompdf->loadHtml($html);
-            $dompdf->setPaper('legal', 'landscape');
+            // Set custom paper size: 13in x 8.5in -> points (1in = 72pt)
+            $dompdf->setPaper([936, 612], 'landscape');
             $dompdf->render();
 
             // Save the document
@@ -2926,7 +2928,7 @@ class SKController extends BaseController
                 mkdir($outputDir, 0755, true);
             }
             
-            $fileName = 'Attendance_Report_' . date('Y-m-d_H-i-s') . '.xlsx';
+            $fileName = 'Attendance_Report_' . date('Y-m-d') . '.xlsx';
             $outputPath = $outputDir . $fileName;
             
             $objWriter = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
@@ -3161,7 +3163,8 @@ class SKController extends BaseController
             ]);
             
             $dompdf->loadHtml($html);
-            $dompdf->setPaper('A4', 'landscape');
+            // Set custom paper size: 13in x 8.5in -> points (1in = 72pt)
+            $dompdf->setPaper([936, 612], 'landscape');
             $dompdf->render();
 
             // Save PDF file
@@ -3170,7 +3173,7 @@ class SKController extends BaseController
                 mkdir($outputDir, 0755, true);
             }
             
-            $fileName = 'Attendance_Report_' . date('Y-m-d_H-i-s') . '.pdf';
+            $fileName = 'Attendance_Report_' . date('Y-m-d') . '.pdf';
             $outputPath = $outputDir . $fileName;
             
             file_put_contents($outputPath, $dompdf->output());
@@ -3267,13 +3270,15 @@ class SKController extends BaseController
             $properties->setCategory('Government Document');
             $properties->setSubject('Attendance Report');
             
-            // Add section with landscape orientation
+            // Add section with landscape orientation and custom 13x8.5in size
             $section = $phpWord->addSection([
                 'orientation' => 'landscape',
-                'marginLeft' => 720,
-                'marginRight' => 720,
-                'marginTop' => 720,
-                'marginBottom' => 720
+                'pageSizeW' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(13.0),
+                'pageSizeH' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(8.5),
+                'marginLeft' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(0.5),
+                'marginRight' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(0.5),
+                'marginTop' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(0.5),
+                'marginBottom' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(0.5)
             ]);
             
             // Header styles
@@ -3433,7 +3438,7 @@ class SKController extends BaseController
                 mkdir($outputDir, 0755, true);
             }
             
-            $fileName = 'Attendance_Report_' . date('Y-m-d_H-i-s') . '.docx';
+            $fileName = 'Attendance_Report_' . date('Y-m-d') . '.docx';
             $outputPath = $outputDir . $fileName;
             
             $objWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');

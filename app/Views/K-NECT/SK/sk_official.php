@@ -74,6 +74,14 @@
                         <p class="text-sm text-gray-600 mt-1">Barangay <span class="font-semibold text-blue-600"><?= esc($barangay_name) ?></span></p>
                         <?php endif; ?>
                     </div>
+                    <div class="flex items-center gap-3">
+                        <button id="downloadCredentialsBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow transition-colors duration-200 flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Download Credentials
+                        </button>
+                    </div>
                 </div>
                 
                 <!-- Filter Tabs and Barangay Selector -->
@@ -151,7 +159,12 @@
                                         <?php foreach ($user_list as $user): ?>
                                             <tr class="hover:bg-gray-50"
                                                 data-sk_username="<?= isset($user['sk_username']) ? esc($user['sk_username']) : '' ?>"
-                                                data-sk_password="<?= isset($user['sk_password']) ? esc($user['sk_password']) : '' ?>"
+                                                <?php
+                                                    $sk_pw = $user['sk_password'] ?? '';
+                                                    $is_temp = $sk_pw && !password_get_info($sk_pw)['algo'];
+                                                    $sk_pw_output = $is_temp ? esc($sk_pw) : ($sk_pw ? '******' : '');
+                                                ?>
+                                                data-sk_password="<?= $sk_pw_output ?>"
                                                 data-ped_username="<?= isset($user['ped_username']) ? esc($user['ped_username']) : '' ?>"
                                                 data-ped_password="<?= isset($user['ped_password']) ? esc($user['ped_password']) : '' ?>"
                                                 data-user_id="<?= esc($user['id']) ?>"
@@ -503,6 +516,11 @@
         
         // Current user data for restrictions
         const currentUserId = <?= json_encode($current_user_id ?? null) ?>;
+        
+        // Helper function to get barangay name
+        function getBarangayName(barangayId) {
+            return barangayMap[barangayId] || barangayId || '';
+        }
         
         function showNotification(message, type = 'info') {
             // Ensure toast container exists and is styled for stacking
@@ -1151,10 +1169,289 @@
                 $('#userDetailModal .bg-white').on('click', function(e) {
                     e.stopPropagation();
             });
+            
+            // ==================== CREDENTIALS DOWNLOAD FUNCTIONALITY ==================== //
+            
+            // Event listener for credentials download
+            $('#downloadCredentialsBtn').on('click', function() {
+                openCredentialsPreviewModal();
+            });
+            
+            // Close credentials modal when clicking outside
+            $('#credentialsPreviewModal').on('click', function(e) {
+                if (e.target === this) {
+                    closeCredentialsPreviewModal();
+                }
+            });
         });
+
+        // ==================== CREDENTIALS PREVIEW MODAL FUNCTIONALITY ==================== //
+        
+        function openCredentialsPreviewModal() {
+            $('#credentialsPreviewModal').removeClass('hidden').css('display', 'flex');
+            $('#credentialsLoading').show();
+            $('#credentialsContent').addClass('hidden');
+            loadCredentialsData();
+        }
+
+        function loadCredentialsData() {
+            $.ajax({
+                url: '<?= base_url('sk/credentials-data') ?>',
+                type: 'GET',
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        populateCredentialsTable(response.data);
+                        $('#credentialsLoading').hide();
+                        $('#credentialsContent').removeClass('hidden');
+                    } else {
+                        console.error('Failed to load credentials data:', response.message);
+                        showNotification('Failed to load credentials data: ' + (response.message || 'Unknown error'), 'error');
+                        $('#credentialsLoading').hide();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX Error:', status, error);
+                    showNotification('Error loading credentials data. Please try again.', 'error');
+                    $('#credentialsLoading').hide();
+                }
+            });
+        }
+
+        function populateCredentialsTable(data) {
+            const tableBody = $('#credentialsTableBody');
+            tableBody.empty();
+
+            // Combine SK officials and chairpersons into one list
+            let allCredentials = [];
+            if (data.sk_officials && Array.isArray(data.sk_officials)) {
+                allCredentials = allCredentials.concat(data.sk_officials);
+            }
+            if (data.chairpersons && Array.isArray(data.chairpersons)) {
+                allCredentials = allCredentials.concat(data.chairpersons);
+            }
+
+            // Remove duplicates based on user ID
+            const uniqueCredentials = allCredentials.filter((credential, index, self) => 
+                index === self.findIndex((c) => c.user_id === credential.user_id)
+            );
+
+            if (!uniqueCredentials || uniqueCredentials.length === 0) {
+                tableBody.append(`
+                    <tr>
+                        <td colspan="6" class="border border-gray-300 px-4 py-8 text-center text-gray-500">
+                            No SK officials with credentials found
+                        </td>
+                    </tr>
+                `);
+                return;
+            }
+
+            uniqueCredentials.forEach(function(credential) {
+                const barangayName = getBarangayName(credential.barangay_id);
+                const positionText = getPositionText(credential.position);
+                
+                // Mask password if it's not temporary (i.e., if it's hashed)
+                const displayPassword = credential.is_temp_password ? credential.sk_password : '******';
+                
+                tableBody.append(`
+                    <tr class="hover:bg-gray-50">
+                        <td class="border border-gray-300 px-3 py-2 text-center text-xs text-gray-900">${credential.user_id || ''}</td>
+                        <td class="border border-gray-300 px-3 py-2 text-center text-xs text-gray-900">${credential.full_name}</td>
+                        <td class="border border-gray-300 px-3 py-2 text-center text-xs text-gray-700">${barangayName}</td>
+                        <td class="border border-gray-300 px-3 py-2 text-center text-xs text-gray-700">${positionText}</td>
+                        <td class="border border-gray-300 px-3 py-2 text-center text-xs font-mono text-gray-900 bg-gray-50">${credential.sk_username}</td>
+                        <td class="border border-gray-300 px-3 py-2 text-center text-xs font-mono text-gray-900 bg-gray-50">${displayPassword}</td>
+                    </tr>
+                `);
+            });
+        }
+
+        function getPositionText(position) {
+            const positions = {
+                1: 'SK Chairperson',
+                2: 'Secretary', 
+                3: 'Treasurer',
+                4: 'SK Kagawad',
+                5: 'KK Member',
+                6: 'SK Member'
+            };
+            return positions[position] || 'SK Member';
+        }
+
+        // ==================== CREDENTIALS DOWNLOAD FUNCTIONS ==================== //
+
+        function downloadCredentialsFormat(format) {
+            showNotification(`Generating ${format.toUpperCase()} credentials document...`, 'info');
+            
+            $.ajax({
+                url: `<?= base_url('sk/generate-credentials-') ?>${format}`,
+                type: 'POST',
+                data: {
+                    type: 'all',
+                    '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
+                },
+                xhrFields: {
+                    responseType: 'blob'
+                },
+                success: function(data, status, xhr) {
+                    const filename = xhr.getResponseHeader('Content-Disposition')?.match(/filename="(.+)"/)?.[1] || 
+                                   `sk-credentials-all-${new Date().toISOString().split('T')[0]}.${format === 'word' ? 'docx' : format}`;
+                    
+                    const blob = new Blob([data], {
+                        type: format === 'pdf' ? 'application/pdf' : 
+                             format === 'word' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' :
+                             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                    });
+                    
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    
+                    showNotification(`${format.toUpperCase()} credentials downloaded successfully!`, 'success');
+                },
+                error: function(xhr, status, error) {
+                    console.error('Download Error:', status, error);
+                    showNotification(`Error generating ${format.toUpperCase()}: Please try again.`, 'error');
+                }
+            });
+        }
+
+        function closeCredentialsPreviewModal() {
+            $('#credentialsPreviewModal').addClass('hidden').css('display', 'none');
+        }
     </script>
 
+    <!-- Credentials Preview Modal -->
+    <div id="credentialsPreviewModal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-7xl max-h-[90vh] relative overflow-hidden flex flex-col">
+            <!-- Modal Header -->
+            <div class="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">SK Credentials</h2>
+                        <p class="text-sm text-gray-600 mt-1">Download login credentials for SK officials</p>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <!-- Download Format Buttons -->
+                        <div class="flex gap-2">
+                            <button onclick="downloadCredentialsFormat('pdf')" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg shadow transition-colors duration-200 flex items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                PDF
+                            </button>
+                            <button onclick="downloadCredentialsFormat('word')" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow transition-colors duration-200 flex items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                Word
+                            </button>
+                            <button onclick="downloadCredentialsFormat('excel')" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg shadow transition-colors duration-200 flex items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                Excel
+                            </button>
+                        </div>
+                        <!-- Close Button -->
+                        <button onclick="closeCredentialsPreviewModal()" class="text-gray-400 hover:text-gray-600 focus:outline-none">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
 
+            <!-- Modal Content -->
+            <div class="flex-1 overflow-y-auto p-6">
+                <!-- Document Header - Hidden in preview, shown in print -->
+                <div class="bg-white hidden print:block" style="font-family: Arial, sans-serif;">
+                    <!-- Header Section with Logos -->
+                    <div class="text-center mb-6 print:mb-4" style="font-family: Arial, sans-serif;">
+                        <div class="flex items-center justify-center mb-4">
+                            <!-- SK Logo (Left) -->
+                            <div class="flex-shrink-0 mr-8">
+                                <div id="credentials-sk-logo" class="w-16 h-16 rounded flex items-center justify-center">
+                                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            
+                            <!-- Center Text -->
+                            <div class="text-center" style="font-family: Arial, sans-serif;">
+                                <h2 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 0; line-height: 1.2;">REPUBLIC OF THE PHILIPPINES</h2>
+                                <h3 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 0; line-height: 1.2;">PROVINCE OF CAMARINES SUR</h3>
+                                <h3 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 0; line-height: 1.2;">CITY OF IRIGA</h3>
+                                <h4 style="font-family: Arial, sans-serif; font-size: 9pt; font-weight: normal; color: black; margin: 0; line-height: 1.2;">SANGGUNIANG KABATAAN</h4>
+                            </div>
+                            
+                            <!-- Iriga City Logo (Right) -->
+                            <div class="flex-shrink-0 ml-8">
+                                <div id="credentials-iriga-logo" class="w-16 h-16 rounded flex items-center justify-center">
+                                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr class="border-gray-300 mb-4">
+                        
+                        <h2 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 16px 0 24px 0;">SANGGUNIANG KABATAAN OFFICIALS</h2>
+                        <h3 style="font-family: Arial, sans-serif; font-size: 10pt; font-weight: bold; color: black; margin: 8px 0 16px 0;">OFFICIALS CREDENTIALS</h3>
+                    </div>
+                </div>
+
+                <div id="credentialsLoading" class="text-center py-12">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <p class="mt-3 text-gray-600 font-medium">Loading credentials...</p>
+                </div>
+
+                <div id="credentialsContent" class="hidden">
+                    <!-- SK Credentials Table -->
+                    <div id="skCredentialsSection" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <div class="mb-4">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                                </svg>
+                                <h4 class="text-lg font-semibold text-gray-900">SK Officials Login Credentials</h4>
+                            </div>
+                            <p class="text-sm text-gray-600">Login information for all SK Chairpersons, Kagawads and other positions</p>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <div class="border-2 border-gray-400 rounded-lg overflow-hidden">
+                                <table class="w-full border-collapse border border-gray-300 rounded-lg overflow-hidden">
+                                    <thead>
+                                        <tr class="bg-gray-50">
+                                            <th class="border border-gray-300 text-center font-bold py-3 px-3 text-gray-700 text-xs">User ID</th>
+                                            <th class="border border-gray-300 text-center font-bold py-3 px-3 text-gray-700 text-xs">Full Name</th>
+                                            <th class="border border-gray-300 text-center font-bold py-3 px-3 text-gray-700 text-xs">Barangay</th>
+                                            <th class="border border-gray-300 text-center font-bold py-3 px-3 text-gray-700 text-xs">Position</th>
+                                            <th class="border border-gray-300 text-center font-bold py-3 px-3 text-gray-700 text-xs">SK Username</th>
+                                            <th class="border border-gray-300 text-center font-bold py-3 px-3 text-gray-700 text-xs">SK Password</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="credentialsTableBody">
+                                        <!-- SK credentials data will be populated here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
 </body>
 </html>

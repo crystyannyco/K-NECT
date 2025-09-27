@@ -120,6 +120,12 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('sk/account-settings/password', 'SKController::updatePassword');
     $routes->get('sk/account-settings/check-email', 'SKController::checkEmail');
     $routes->get('sk/user-management', 'SKController::userManagement');
+    // SK Credentials
+    $routes->get('sk/credentials-data', 'SKController::getCredentialsData');
+    $routes->post('sk/generate-credentials', 'SKController::generateCredentials');
+    $routes->post('sk/generate-credentials-pdf', 'SKController::generateCredentialsPDF');
+    $routes->post('sk/generate-credentials-word', 'SKController::generateCredentialsWord');
+    $routes->post('sk/generate-credentials-excel', 'SKController::generateCredentialsExcel');
 
     // ================= USER TYPE: Pederasyon ================= //
     // Module: Pederasyon

@@ -357,48 +357,7 @@
                 setTimeout(() => { note.classList.add('translate-x-full'); setTimeout(() => note.remove(), 350); }, 4800);
             }
 
-            // Intercept logout to enforce credentials download requirement
-            if (logoutForm && logoutBtn) {
-                logoutForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    fetch('<?= base_url('pederasyon/credential-download-status') ?>', { credentials: 'same-origin' })
-                        .then(r => r.json())
-                        .then(st => {
-                            if (st && st.success && st.require) {
-                                const needSk = !st.sk;
-                                const needPed = !st.pederasyon;
-                                const msgs = [];
-                                if (needSk) msgs.push('Credentials download required: SK');
-                                if (needPed) msgs.push('Credentials download required: Pederasyon');
-                                if (msgs.length) {
-                                    msgs.forEach(m => showHeaderToast(m, 'warning'));
-                                    // Redirect to Pederasyon Youth List to use credentials modal
-                                    setTimeout(() => { window.location.href = '<?= base_url('pederasyon/youthlist') ?>'; }, 700);
-                                    return;
-                                }
-                            }
-                            // Allowed to logout
-                            logoutForm.submit();
-                        })
-                        .catch(() => showHeaderToast('Unable to verify credential downloads. Please try again.', 'error'));
-                });
-            }
-
-            // On-load reminder if required
-            try {
-                fetch('<?= base_url('pederasyon/credential-download-status') ?>', { credentials: 'same-origin' })
-                    .then(r => r.ok ? r.json() : Promise.reject(new Error('Network error')))
-                    .then(st => {
-                        if (st && st.success && st.require) {
-                            const needSk = !st.sk;
-                            const needPed = !st.pederasyon;
-                            if (needSk || needPed) {
-                                showHeaderToast('Please download updated credentials. Logout is disabled until both SK and Pederasyon are downloaded.', 'warning');
-                            }
-                        }
-                    })
-                    .catch(() => {});
-            } catch (e) {}
+            // SK context - no credential download enforcement needed
 
             // Sidebar toggle functionality
             const sidebarToggle = document.getElementById('sidebarToggle');

@@ -320,7 +320,12 @@
                                         <?php foreach ($user_list as $user): ?>
                                             <tr class="hover:bg-gray-50"
                                                 data-sk_username="<?= isset($user['sk_username']) ? esc($user['sk_username']) : '' ?>"
-                                                data-sk_password="<?= isset($user['sk_password']) ? esc($user['sk_password']) : '' ?>"
+                                                <?php
+                                                    $sk_pw = $user['sk_password'] ?? '';
+                                                    $is_temp = $sk_pw && !password_get_info($sk_pw)['algo'];
+                                                    $sk_pw_output = $is_temp ? esc($sk_pw) : ($sk_pw ? '******' : '');
+                                                ?>
+                                                data-sk_password="<?= $sk_pw_output ?>"
                                                 data-ped_username="<?= isset($user['ped_username']) ? esc($user['ped_username']) : '' ?>"
                                                 data-ped_password="<?= isset($user['ped_password']) ? esc($user['ped_password']) : '' ?>"
                                                 data-status="<?= isset($user['status']) ? (int)$user['status'] : 1 ?>"

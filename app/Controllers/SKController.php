@@ -2491,7 +2491,11 @@ class SKController extends BaseController
             // Load HTML and render PDF
             $dompdf->loadHtml($html);
             // Set custom paper size: 13in x 8.5in -> points (1in = 72pt)
-            $dompdf->setPaper([936, 612], 'landscape');
+            // Provide portrait-oriented box [0,0,height_in_pt,width_in_pt] and request 'landscape'
+            // Dompdf will swap the width/height when landscape is requested.
+            // 13in x 8.5in in points => 13*72=936, 8.5*72=612; pass [0,0,612,936] and 'landscape' so
+            // Dompdf returns [0,0,936,612] internally.
+            $dompdf->setPaper([0, 0, 612, 936], 'landscape');
             $dompdf->render();
 
             // Save the document
@@ -3164,7 +3168,8 @@ class SKController extends BaseController
             
             $dompdf->loadHtml($html);
             // Set custom paper size: 13in x 8.5in -> points (1in = 72pt)
-            $dompdf->setPaper([936, 612], 'landscape');
+            // Use a portrait-oriented box and request 'landscape'. This yields a 13" x 8.5" landscape page.
+            $dompdf->setPaper([0, 0, 612, 936], 'landscape');
             $dompdf->render();
 
             // Save PDF file
@@ -3540,6 +3545,918 @@ class SKController extends BaseController
             log_message('error', 'Error fetching logos: ' . $e->getMessage());
             return [];
         }
+    }
+
+    // ==================== CREDENTIALS FUNCTIONALITY ==================== //
+
+    public function getCredentialsData()
+    {
+        $session = session();
+        $barangayId = $session->get('sk_barangay') ?? $session->get('barangay_id');
+        
+        if (!$barangayId) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Barangay not found'
+            ]);
+        }
+
+        try {
+            $userModel = new UserModel();
+            $addressModel = new AddressModel();
+
+            // Get all users in this barangay who have SK credentials (include all positions/user types)
+            $skOfficials = $userModel->select('user.id, user.user_id, user.first_name, user.middle_name, user.last_name, user.suffix, user.position, user.sk_username, user.sk_password')
+                ->join('address', 'address.user_id = user.id', 'inner')
+                ->where('address.barangay', $barangayId)
+                ->where('user.status', 2) // Approved
+                ->where('user.sk_username IS NOT NULL')
+                ->where('user.sk_password IS NOT NULL')
+                ->findAll();
+
+            // Get only chairpersons in this barangay with credentials (position = 1) - include regardless of user_type
+            $chairpersons = $userModel->select('user.id, user.user_id, user.first_name, user.middle_name, user.last_name, user.suffix, user.position, user.sk_username, user.sk_password')
+                ->join('address', 'address.user_id = user.id', 'inner')
+                ->where('address.barangay', $barangayId)
+                ->where('user.position', 1) // Chairperson
+                ->where('user.status', 2) // Approved
+                ->where('user.sk_username IS NOT NULL')
+                ->where('user.sk_password IS NOT NULL')
+                ->findAll();
+
+            // Process the data
+            $processedSK = $this->processCredentialsData($skOfficials, $barangayId);
+            $processedChairpersons = $this->processCredentialsData($chairpersons, $barangayId);
+
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => [
+                    'sk_officials' => $processedSK,
+                    'chairpersons' => $processedChairpersons
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error getting credentials data: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error loading credentials data'
+            ]);
+        }
+    }
+
+    private function processCredentialsData($users, $barangayId)
+    {
+        $processed = [];
+        foreach ($users as $user) {
+            // Build full name
+            $nameParts = [$user['first_name']];
+            if (!empty($user['middle_name'])) {
+                $nameParts[] = $user['middle_name'];
+            }
+            $nameParts[] = $user['last_name'];
+            if (!empty($user['suffix'])) {
+                $nameParts[] = $user['suffix'];
+            }
+            $fullName = implode(' ', $nameParts);
+
+            // Check if password is temporary (not a bcrypt hash)
+            $isTemporary = !password_get_info($user['sk_password'])['algo'];
+            
+            $processed[] = [
+                'id' => $user['id'],
+                'user_id' => $user['user_id'],
+                'full_name' => $fullName,
+                'first_name' => $user['first_name'],
+                'middle_name' => $user['middle_name'] ?? '',
+                'last_name' => $user['last_name'],
+                'suffix' => $user['suffix'] ?? '',
+                'position' => $user['position'],
+                'barangay_id' => $barangayId,
+                'sk_username' => $user['sk_username'],
+                'sk_password' => $user['sk_password'],
+                'is_temp_password' => $isTemporary
+            ];
+        }
+        return $processed;
+    }
+
+    public function generateCredentialsPDF()
+    {
+        try {
+            log_message('info', 'Starting SK Credentials PDF generation...');
+            
+            $credentialsData = $this->getCredentialsDataForGeneration();
+            
+            if (!$credentialsData['success']) {
+                return $this->response->setJSON(['success' => false, 'message' => $credentialsData['message']]);
+            }
+
+            // Combine all credentials into one list
+            $skOfficials = $credentialsData['data']['sk_officials'] ?? [];
+            $chairpersons = $credentialsData['data']['chairpersons'] ?? [];
+            $combined = array_merge($skOfficials, $chairpersons);
+            
+            // Remove duplicates by user_id
+            $seen = [];
+            $officials = [];
+            foreach ($combined as $credential) {
+                if (!isset($seen[$credential['user_id']])) {
+                    $seen[$credential['user_id']] = true;
+                    $officials[] = $credential;
+                }
+            }
+
+            if (empty($officials)) {
+                return $this->response->setJSON(['success' => false, 'message' => 'No SK officials found for credentials PDF generation']);
+            }
+
+            // Generate credentials PDF document
+            $outputPdfFile = $this->generateCredentialsPDFDocument($officials);
+            
+            if ($outputPdfFile && file_exists($outputPdfFile)) {
+                // Return the file directly for download
+                $fileName = 'SK_Officials_Credentials_' . date('Y-m-d') . '.pdf';
+                
+                $this->response->setHeader('Content-Type', 'application/pdf');
+                $this->response->setHeader('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+                $this->response->setHeader('Content-Length', filesize($outputPdfFile));
+                
+                log_message('info', 'SK Credentials PDF document ready for download: ' . $fileName);
+                
+                // Read and return file content
+                $fileContent = file_get_contents($outputPdfFile);
+                
+                // Clean up the temporary file
+                unlink($outputPdfFile);
+                
+                return $this->response->setBody($fileContent);
+            } else {
+                log_message('error', 'SK Credentials PDF document file not created or does not exist');
+                return $this->response->setJSON([
+                    'success' => false, 
+                    'message' => 'Error generating SK credentials PDF document - file not created'
+                ]);
+            }
+        } catch (\Exception $e) {
+            log_message('error', 'Error in generateCredentialsPDF: ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+            return $this->response->setJSON([
+                'success' => false, 
+                'message' => 'Server error: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    private function generateCredentialsPDFDocument($officials)
+    {
+        try {
+            log_message('info', 'Starting SK Credentials PDF document creation...');
+            
+            // Get logos for the PDF document
+            $logos = $this->getLogosForDocument();
+            
+            // Create HTML content matching attendance report format exactly
+            $html = '<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 15px;
+            font-size: 10px;
+            line-height: 1.2;
+        }
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .logo {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+        }
+        .header-text {
+            text-align: center;
+            vertical-align: middle;
+            font-weight: bold;
+        }
+        .header-text .line1 { font-size: 12px; margin-bottom: 2px; }
+        .header-text .line2 { font-size: 12px; margin-bottom: 2px; }
+        .header-text .line3 { font-size: 12px; margin-bottom: 2px; }
+        .header-text .line4 { font-size: 10px; margin-bottom: 1px; }
+        .title {
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        .subtitle {
+            text-align: center;
+            font-size: 10px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        table.credentials-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table.credentials-table th,
+        table.credentials-table td {
+            border: 0.1px solid black;
+            padding: 4px;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 7px;
+        }
+        table.credentials-table th {
+            background-color: white;
+            font-weight: bold;
+            font-size: 8px;
+        }
+        .name-cell {
+            text-align: left !important;
+        }
+    </style>
+</head>
+<body>';
+
+            // Header with logos (matching attendance report layout exactly)
+            $html .= '<table class="header-table">
+                <tr>
+                    <td width="15%" style="text-align: left; vertical-align: middle;">';
+
+            if (isset($logos['sk']) && file_exists(FCPATH . $logos['sk']['file_path'])) {
+                $logoMimeType = mime_content_type(FCPATH . $logos['sk']['file_path']);
+                $logoBase64 = base64_encode(file_get_contents(FCPATH . $logos['sk']['file_path']));
+                $html .= '<img src="data:' . $logoMimeType . ';base64,' . $logoBase64 . '" class="logo">';
+            } else {
+                $html .= '<div style="width: 60px; height: 60px;"></div>';
+            }
+
+            $html .= '</td>
+                    <td width="70%" class="header-text">
+                        <div class="line1">REPUBLIC OF THE PHILIPPINES</div>
+                        <div class="line2">PROVINCE OF CAMARINES SUR</div>
+                        <div class="line3">CITY OF IRIGA</div>
+                        <div class="line4">SANGGUNIANG KABATAAN</div>';
+
+            // Add barangay name if available
+            $session = session();
+            $skBarangay = $session->get('sk_barangay');
+            $barangayName = \App\Libraries\BarangayHelper::getBarangayName($skBarangay);
+            if ($barangayName) {
+                $html .= '<div class="line4">NG BARANGAY ' . strtoupper(esc($barangayName)) . '</div>';
+            }
+
+            $html .= '</td>
+                    <td width="15%" style="text-align: right; vertical-align: middle;">';
+
+            if (isset($logos['iriga_city']) && file_exists(FCPATH . $logos['iriga_city']['file_path'])) {
+                $logoMimeType = mime_content_type(FCPATH . $logos['iriga_city']['file_path']);
+                $logoBase64 = base64_encode(file_get_contents(FCPATH . $logos['iriga_city']['file_path']));
+                $html .= '<img src="data:' . $logoMimeType . ';base64,' . $logoBase64 . '" class="logo">';
+            } else {
+                $html .= '<div style="width: 60px; height: 60px;"></div>';
+            }
+
+            $html .= '</td>
+                </tr>
+            </table>';
+
+            // Title (matching attendance report format)
+            $html .= '<div class="title">OFFICIALS CREDENTIALS</div>';
+
+            // Subtitle
+            $html .= '<div class="subtitle">SANGGUNIANG KABATAAN OFFICIALS LOGIN CREDENTIALS</div>';
+
+            // Table with attendance report styling
+            $html .= '<table class="credentials-table">
+                <thead>
+                    <tr>
+                        <th style="width: 8%;">No.</th>
+                        <th style="width: 30%;">Full Name</th>
+                        <th style="width: 20%;">Position</th>
+                        <th style="width: 20%;">SK Username</th>
+                        <th style="width: 22%;">SK Password</th>
+                    </tr>
+                </thead>
+                <tbody>';
+
+            foreach ($officials as $index => $official) {
+                $fullName = trim(($official['first_name'] ?? '') . ' ' . ($official['middle_name'] ?? '') . ' ' . ($official['last_name'] ?? ''));
+                $positionText = $this->getPositionText($official['position']);
+                $displayPassword = ($official['is_temp_password'] ?? false) ? 
+                    esc($official['sk_password'] ?? 'Not Set') : '******';
+
+                $html .= '<tr>
+                    <td>' . ($index + 1) . '</td>
+                    <td class="name-cell">' . esc($fullName) . '</td>
+                    <td>' . esc($positionText) . '</td>
+                    <td>' . esc($official['sk_username'] ?? 'N/A') . '</td>
+                    <td>' . $displayPassword . '</td>
+                </tr>';
+            }
+
+            $html .= '</tbody></table>';
+            $html .= '</body></html>';
+
+            // Use DomPDF with attendance report page setup
+            require_once FCPATH . '../vendor/autoload.php';
+            
+            $dompdf = new \Dompdf\Dompdf([
+                'isRemoteEnabled' => true,
+                'chroot' => FCPATH,
+                'defaultFont' => 'Arial'
+            ]);
+            
+            $dompdf->loadHtml($html);
+            // Use custom paper size: 13in x 8.5in -> points (1in = 72pt) - landscape like attendance report
+            // Use a portrait-oriented box and request 'landscape'. This yields a 13" x 8.5" landscape page.
+            $dompdf->setPaper([0, 0, 612, 936], 'landscape');
+            $dompdf->render();
+
+            // Save PDF file
+            $outputDir = FCPATH . 'uploads/generated/';
+            if (!is_dir($outputDir)) {
+                mkdir($outputDir, 0755, true);
+            }
+            
+            $fileName = 'SK_Officials_Credentials_' . date('Y-m-d') . '.pdf';
+            $outputPath = $outputDir . $fileName;
+            
+            file_put_contents($outputPath, $dompdf->output());
+            
+            log_message('info', 'SK Credentials PDF document saved to: ' . $outputPath);
+            return $outputPath;
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error in generateCredentialsPDFDocument: ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+            throw $e;
+        }
+    }
+
+    public function generateCredentialsWord()
+    {
+        try {
+            log_message('info', 'Starting SK Credentials Word generation...');
+            
+            $credentialsData = $this->getCredentialsDataForGeneration();
+            
+            if (!$credentialsData['success']) {
+                return $this->response->setJSON(['success' => false, 'message' => $credentialsData['message']]);
+            }
+
+            // Combine all credentials into one list
+            $skOfficials = $credentialsData['data']['sk_officials'] ?? [];
+            $chairpersons = $credentialsData['data']['chairpersons'] ?? [];
+            $combined = array_merge($skOfficials, $chairpersons);
+            
+            // Remove duplicates by user_id
+            $seen = [];
+            $officials = [];
+            foreach ($combined as $credential) {
+                if (!isset($seen[$credential['user_id']])) {
+                    $seen[$credential['user_id']] = true;
+                    $officials[] = $credential;
+                }
+            }
+
+            if (empty($officials)) {
+                return $this->response->setJSON(['success' => false, 'message' => 'No SK officials found for credentials Word generation']);
+            }
+
+            // Generate credentials Word document
+            $outputWordFile = $this->generateCredentialsWordDocument($officials);
+            
+            if ($outputWordFile && file_exists($outputWordFile)) {
+                // Return the file directly for download
+                $fileName = 'SK_Officials_Credentials_' . date('Y-m-d') . '.docx';
+                
+                $this->response->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+                $this->response->setHeader('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+                $this->response->setHeader('Content-Length', filesize($outputWordFile));
+                
+                log_message('info', 'SK Credentials Word document ready for download: ' . $fileName);
+                
+                // Read and return file content
+                $fileContent = file_get_contents($outputWordFile);
+                
+                // Clean up the temporary file
+                unlink($outputWordFile);
+                
+                return $this->response->setBody($fileContent);
+            } else {
+                log_message('error', 'SK Credentials Word document file not created or does not exist');
+                return $this->response->setJSON([
+                    'success' => false, 
+                    'message' => 'Error generating SK credentials Word document - file not created'
+                ]);
+            }
+        } catch (\Exception $e) {
+            log_message('error', 'Error in generateCredentialsWord: ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+            return $this->response->setJSON([
+                'success' => false, 
+                'message' => 'Server error: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    private function generateCredentialsWordDocument($officials)
+    {
+        try {
+            // Get logos for the document header
+            $logos = $this->getLogosForDocument();
+
+            $phpWord = new \PhpOffice\PhpWord\PhpWord();
+            
+            // Set document properties
+            $properties = $phpWord->getDocInfo();
+            $properties->setCreator('K-NECT System');
+            $properties->setCompany('Barangay System');
+            $properties->setTitle('SK Officials Login Credentials');
+            $properties->setDescription('Sangguniang Kabataan Officials Login Credentials Report');
+
+            // Add section with landscape orientation (matching attendance report)
+            $section = $phpWord->addSection([
+                'orientation' => 'landscape',
+                'marginLeft' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(0.5),
+                'marginRight' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(0.5),
+                'marginTop' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(0.5),
+                'marginBottom' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(0.5),
+                'pageSizeW' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(13),
+                'pageSizeH' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(8.5),
+            ]);
+
+            // Header styles (matching attendance report)
+            $headerStyle = ['name' => 'Arial', 'size' => 12, 'bold' => true];
+            $subHeaderStyle = ['name' => 'Arial', 'size' => 10, 'bold' => false];
+            $titleStyle = ['name' => 'Arial', 'size' => 14, 'bold' => true];
+            $tableHeaderStyle = ['name' => 'Arial', 'size' => 8, 'bold' => true];
+
+            // Create header table (matching attendance report)
+            $headerTable = $section->addTable([
+                'borderSize' => 0,
+                'borderColor' => 'FFFFFF',
+                'cellMargin' => 20,
+                'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER,
+            ]);
+
+            $headerTable->addRow();
+
+            // Left logo (SK)
+            $leftCell = $headerTable->addCell(2000, ['valign' => 'center']);
+            if (!empty($logos['sk']) && file_exists(FCPATH . $logos['sk']['file_path'])) {
+                $leftCell->addImage(FCPATH . $logos['sk']['file_path'], [
+                    'width' => 60,
+                    'height' => 60,
+                    'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER,
+                ]);
+            }
+
+            // Center content (matching attendance report format exactly)
+            $centerCell = $headerTable->addCell(6000, ['valign' => 'center']);
+            $centerCell->addText('REPUBLIC OF THE PHILIPPINES', $headerStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $centerCell->addText('PROVINCE OF CAMARINES SUR', $headerStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $centerCell->addText('CITY OF IRIGA', $headerStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $centerCell->addText('SANGGUNIANG KABATAAN', $subHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+
+            // Add barangay name if available
+            $session = session();
+            $skBarangay = $session->get('sk_barangay');
+            $barangayName = \App\Libraries\BarangayHelper::getBarangayName($skBarangay);
+            if ($barangayName) {
+                $centerCell->addText('NG BARANGAY ' . strtoupper($barangayName), $subHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            }
+
+            // Right logo (Iriga City)
+            $rightCell = $headerTable->addCell(2000, ['valign' => 'center']);
+            if (!empty($logos['iriga_city']) && file_exists(FCPATH . $logos['iriga_city']['file_path'])) {
+                $rightCell->addImage(FCPATH . $logos['iriga_city']['file_path'], [
+                    'width' => 60,
+                    'height' => 60,
+                    'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER,
+                ]);
+            }
+
+            // Add title (matching attendance report)
+            $section->addTextBreak();
+            $section->addText('OFFICIALS CREDENTIALS', $titleStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $section->addTextBreak();
+
+            // Create credentials table (matching attendance report style)
+            $table = $section->addTable([
+                'borderSize' => 4,
+                'borderColor' => '000000',
+                'cellMargin' => 20,
+                'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER
+            ]);
+
+            // Calculate proportional column widths for 13" landscape page
+            $printableWidth = \PhpOffice\PhpWord\Shared\Converter::inchToTwip(12.0);
+            $colRel = [800, 3000, 2000, 2000, 2000]; // No, Full Name, Position, Username, Password
+            $totalRel = array_sum($colRel);
+            $colWidths = array_map(function($r) use ($printableWidth, $totalRel) {
+                return (int) floor(($r / $totalRel) * $printableWidth);
+            }, $colRel);
+
+            // Add table header (matching attendance report styling)
+            $table->addRow();
+            $table->addCell($colWidths[0], ['bgColor' => 'FFFFFF'])->addText('No.', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $table->addCell($colWidths[1], ['bgColor' => 'FFFFFF'])->addText('Full Name', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $table->addCell($colWidths[2], ['bgColor' => 'FFFFFF'])->addText('Position', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $table->addCell($colWidths[3], ['bgColor' => 'FFFFFF'])->addText('SK Username', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $table->addCell($colWidths[4], ['bgColor' => 'FFFFFF'])->addText('SK Password', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+
+            // Add data rows (matching attendance report style)
+            foreach ($officials as $index => $official) {
+                $fullName = trim(($official['first_name'] ?? '') . ' ' . ($official['middle_name'] ?? '') . ' ' . ($official['last_name'] ?? ''));
+                $positionText = $this->getPositionText($official['position']);
+                $displayPassword = ($official['is_temp_password'] ?? false) ? $official['sk_password'] : '******';
+                
+                $table->addRow();
+                $table->addCell($colWidths[0], ['bgColor' => 'FFFFFF'])->addText($index + 1, ['name' => 'Arial', 'size' => 7], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $table->addCell($colWidths[1], ['bgColor' => 'FFFFFF'])->addText($fullName, ['name' => 'Arial', 'size' => 7], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::LEFT, 'spaceAfter' => 0]);
+                $table->addCell($colWidths[2], ['bgColor' => 'FFFFFF'])->addText($positionText, ['name' => 'Arial', 'size' => 7], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $table->addCell($colWidths[3], ['bgColor' => 'FFFFFF'])->addText($official['sk_username'] ?? 'N/A', ['name' => 'Arial', 'size' => 7], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $table->addCell($colWidths[4], ['bgColor' => 'FFFFFF'])->addText($displayPassword, ['name' => 'Arial', 'size' => 7], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            }
+
+            // Save the document
+            $uploadsPath = WRITEPATH . 'uploads/generated/';
+            if (!is_dir($uploadsPath)) {
+                mkdir($uploadsPath, 0755, true);
+            }
+
+            $filename = 'SK-Officials-Credentials-' . date('Y-m-d-H-i-s') . '.docx';
+            $outputFile = $uploadsPath . $filename;
+
+            $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
+            $writer->save($outputFile);
+
+            log_message('info', 'SK Credentials Word document generated: ' . $filename);
+            return $outputFile;
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error generating SK credentials Word document: ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+            throw $e;
+        }
+    }
+
+    public function generateCredentialsExcel()
+    {
+        try {
+            log_message('info', 'Starting SK Credentials Excel generation...');
+            
+            $credentialsData = $this->getCredentialsDataForGeneration();
+            
+            if (!$credentialsData['success']) {
+                return $this->response->setJSON(['success' => false, 'message' => $credentialsData['message']]);
+            }
+
+            // Combine all credentials into one list
+            $skOfficials = $credentialsData['data']['sk_officials'] ?? [];
+            $chairpersons = $credentialsData['data']['chairpersons'] ?? [];
+            $combined = array_merge($skOfficials, $chairpersons);
+            
+            // Remove duplicates by user_id
+            $seen = [];
+            $officials = [];
+            foreach ($combined as $credential) {
+                if (!isset($seen[$credential['user_id']])) {
+                    $seen[$credential['user_id']] = true;
+                    $officials[] = $credential;
+                }
+            }
+
+            if (empty($officials)) {
+                return $this->response->setJSON(['success' => false, 'message' => 'No SK officials found for credentials Excel generation']);
+            }
+
+            // Generate credentials Excel document
+            $outputExcelFile = $this->generateCredentialsExcelDocument($officials);
+            
+            if ($outputExcelFile && file_exists($outputExcelFile)) {
+                // Return the file directly for download
+                $fileName = 'SK_Officials_Credentials_' . date('Y-m-d') . '.xlsx';
+                
+                $this->response->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                $this->response->setHeader('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+                $this->response->setHeader('Content-Length', filesize($outputExcelFile));
+                
+                log_message('info', 'SK Credentials Excel document ready for download: ' . $fileName);
+                
+                // Read and return file content
+                $fileContent = file_get_contents($outputExcelFile);
+                
+                // Clean up the temporary file
+                unlink($outputExcelFile);
+                
+                return $this->response->setBody($fileContent);
+            } else {
+                log_message('error', 'SK Credentials Excel document file not created or does not exist');
+                return $this->response->setJSON([
+                    'success' => false, 
+                    'message' => 'Error generating SK credentials Excel document - file not created'
+                ]);
+            }
+        } catch (\Exception $e) {
+            log_message('error', 'Error in generateCredentialsExcel: ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+            return $this->response->setJSON([
+                'success' => false, 
+                'message' => 'Server error: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    private function generateCredentialsExcelDocument($officials)
+    {
+        try {
+            // Get logos for the document header
+            $logos = $this->getLogosForDocument();
+
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+
+            // Set document properties
+            $spreadsheet->getProperties()
+                ->setCreator('K-NECT System')
+                ->setLastModifiedBy('K-NECT System') 
+                ->setTitle('SK Officials Login Credentials')
+                ->setSubject('Sangguniang Kabataan Officials Login Credentials Report')
+                ->setDescription('Generated SK Officials Login Credentials Report')
+                ->setKeywords('SK Officials Credentials Login')
+                ->setCategory('Report');
+
+            // Set page setup to match attendance report (landscape, custom size: 13" x 8.5")
+            $sheet->getPageSetup()->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE);
+            $sheet->getPageSetup()->setPaperSize(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::PAPERSIZE_LEGAL);
+            $sheet->getPageSetup()->setFitToPage(true);
+            $sheet->getPageSetup()->setFitToWidth(1);
+            $sheet->getPageSetup()->setFitToHeight(0);
+            
+            $currentRow = 1;
+            
+            // Header text (matching attendance report format exactly - merge across 5 columns for credentials)
+            $sheet->setCellValue('A' . $currentRow, 'REPUBLIC OF THE PHILIPPINES');
+            $sheet->mergeCells('A' . $currentRow . ':E' . $currentRow);
+            $sheet->getStyle('A' . $currentRow)->getFont()->setBold(true)->setSize(12);
+            $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $currentRow++;
+            
+            $sheet->setCellValue('A' . $currentRow, 'PROVINCE OF CAMARINES SUR');
+            $sheet->mergeCells('A' . $currentRow . ':E' . $currentRow);
+            $sheet->getStyle('A' . $currentRow)->getFont()->setBold(true)->setSize(12);
+            $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $currentRow++;
+            
+            $sheet->setCellValue('A' . $currentRow, 'CITY OF IRIGA');
+            $sheet->mergeCells('A' . $currentRow . ':E' . $currentRow);
+            $sheet->getStyle('A' . $currentRow)->getFont()->setBold(true)->setSize(12);
+            $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $currentRow++;
+            
+            $sheet->setCellValue('A' . $currentRow, 'SANGGUNIANG KABATAAN');
+            $sheet->mergeCells('A' . $currentRow . ':E' . $currentRow);
+            $sheet->getStyle('A' . $currentRow)->getFont()->setBold(false)->setSize(10);
+            $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $currentRow++;
+            
+            // Add barangay name if available
+            $session = session();
+            $skBarangay = $session->get('sk_barangay');
+            $barangayName = \App\Libraries\BarangayHelper::getBarangayName($skBarangay);
+            if ($barangayName) {
+                $sheet->setCellValue('A' . $currentRow, 'NG BARANGAY ' . strtoupper($barangayName));
+                $sheet->mergeCells('A' . $currentRow . ':E' . $currentRow);
+                $sheet->getStyle('A' . $currentRow)->getFont()->setBold(false)->setSize(10);
+                $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $currentRow++;
+            }
+            $currentRow++;
+            
+            // Title (matching attendance report)
+            $sheet->setCellValue('A' . $currentRow, 'OFFICIALS CREDENTIALS');
+            $sheet->mergeCells('A' . $currentRow . ':E' . $currentRow);
+            $sheet->getStyle('A' . $currentRow)->getFont()->setBold(true)->setSize(14);
+            $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $currentRow += 2;
+            
+            // Subtitle
+            $sheet->setCellValue('A' . $currentRow, 'SANGGUNIANG KABATAAN OFFICIALS LOGIN CREDENTIALS');
+            $sheet->mergeCells('A' . $currentRow . ':E' . $currentRow);
+            $sheet->getStyle('A' . $currentRow)->getFont()->setBold(true)->setSize(12);
+            $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $currentRow += 2;
+            
+            // Table headers (matching attendance report style)
+            $headers = [
+                'A' => 'No.',
+                'B' => 'Full Name', 
+                'C' => 'Position',
+                'D' => 'SK Username',
+                'E' => 'SK Password'
+            ];
+            
+            // Add and style headers
+            $headerRowNum = $currentRow;
+            foreach ($headers as $col => $header) {
+                $sheet->setCellValue($col . $currentRow, $header);
+                $sheet->getStyle($col . $currentRow)->getFont()->setBold(true)->setSize(10);
+                $sheet->getStyle($col . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle($col . $currentRow)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID);
+                $sheet->getStyle($col . $currentRow)->getFill()->getStartColor()->setRGB('E8E8E8');
+                $sheet->getStyle($col . $currentRow)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+            }
+            $currentRow++;
+            
+            // Add data rows (matching attendance report format)
+            foreach ($officials as $index => $official) {
+                $fullName = trim(($official['first_name'] ?? '') . ' ' . ($official['middle_name'] ?? '') . ' ' . ($official['last_name'] ?? ''));
+                $positionText = $this->getPositionText($official['position']);
+                $displayPassword = ($official['is_temp_password'] ?? false) ? $official['sk_password'] : '******';
+                
+                $sheet->setCellValue('A' . $currentRow, $index + 1);
+                $sheet->setCellValue('B' . $currentRow, $fullName);
+                $sheet->setCellValue('C' . $currentRow, $positionText);
+                $sheet->setCellValue('D' . $currentRow, $official['sk_username'] ?? 'N/A');
+                $sheet->setCellValue('E' . $currentRow, $displayPassword);
+                
+                // Style data rows (matching attendance report)
+                $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('B' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
+                $sheet->getStyle('C' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('D' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('E' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                
+                // Apply borders
+                $sheet->getStyle('A' . $currentRow . ':E' . $currentRow)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+                $currentRow++;
+            }
+            
+            // Set column widths (proportional to content like attendance report)
+            $sheet->getColumnDimension('A')->setWidth(8);
+            $sheet->getColumnDimension('B')->setWidth(30);
+            $sheet->getColumnDimension('C')->setWidth(20);
+            $sheet->getColumnDimension('D')->setWidth(20);
+            $sheet->getColumnDimension('E')->setWidth(20);
+            
+            // Set row heights for header area
+            for ($i = 1; $i <= 8; $i++) {
+                $sheet->getRowDimension($i)->setRowHeight(20);
+            }
+
+            // Save the document
+            $uploadsPath = WRITEPATH . 'uploads/generated/';
+            if (!is_dir($uploadsPath)) {
+                mkdir($uploadsPath, 0755, true);
+            }
+
+            $filename = 'SK-Officials-Credentials-' . date('Y-m-d-H-i-s') . '.xlsx';
+            $outputFile = $uploadsPath . $filename;
+
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save($outputFile);
+
+            log_message('info', 'SK Credentials Excel document generated: ' . $filename);
+            return $outputFile;
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error generating SK credentials Excel document: ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+            throw $e;
+        }
+    }
+
+    private function getCredentialsDataForGeneration()
+    {
+        $session = session();
+        $barangayId = $session->get('sk_barangay') ?? $session->get('barangay_id');
+        
+        if (!$barangayId) {
+            return ['success' => false, 'message' => 'Barangay not found'];
+        }
+
+        try {
+            $userModel = new UserModel();
+
+            // Get all users in this barangay who have SK credentials (include all positions/user types)
+            $skOfficials = $userModel->select('user.id, user.user_id, user.first_name, user.middle_name, user.last_name, user.suffix, user.position, user.sk_username, user.sk_password')
+                ->join('address', 'address.user_id = user.id', 'inner')
+                ->where('address.barangay', $barangayId)
+                ->where('user.status', 2) // Approved
+                ->where('user.sk_username IS NOT NULL')
+                ->where('user.sk_password IS NOT NULL')
+                ->findAll();
+
+            // Get only chairpersons in this barangay with credentials (position = 1) - include regardless of user_type
+            $chairpersons = $userModel->select('user.id, user.user_id, user.first_name, user.middle_name, user.last_name, user.suffix, user.position, user.sk_username, user.sk_password')
+                ->join('address', 'address.user_id = user.id', 'inner')
+                ->where('address.barangay', $barangayId)
+                ->where('user.position', 1) // Chairperson
+                ->where('user.status', 2) // Approved
+                ->where('user.sk_username IS NOT NULL')
+                ->where('user.sk_password IS NOT NULL')
+                ->findAll();
+
+            // Process the data
+            $processedSK = $this->processCredentialsData($skOfficials, $barangayId);
+            $processedChairpersons = $this->processCredentialsData($chairpersons, $barangayId);
+
+            return [
+                'success' => true,
+                'data' => [
+                    'sk_officials' => $processedSK,
+                    'chairpersons' => $processedChairpersons
+                ]
+            ];
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error getting credentials data for generation: ' . $e->getMessage());
+            return ['success' => false, 'message' => 'Error loading credentials data'];
+        }
+    }
+
+    private function generateCredentialsHTML($data, $type)
+    {
+        $titleText = $type === 'all' ? 'SK Officials Login Credentials' :
+                    ($type === 'chairperson' ? 'SK Chairpersons Login Credentials' : 'SK Officials Login Credentials');
+        
+        $html = '
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>' . $titleText . '</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                h1 { text-align: center; color: #333; margin-bottom: 30px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+                th { background-color: #f0f0f0; font-weight: bold; }
+                .center { text-align: center; }
+            </style>
+        </head>
+        <body>
+            <h1>' . $titleText . '</h1>
+            <table>
+                <thead>
+                    <tr>
+                        <th>User ID</th>
+                        <th>Name</th>
+                        <th>Position</th>
+                        <th>Barangay</th>
+                        <th>Username</th>
+                        <th>Password</th>
+                    </tr>
+                </thead>
+                <tbody>';
+
+        foreach ($data as $credential) {
+            $barangayName = BarangayHelper::getBarangayName($credential['barangay_id']);
+            $positionText = $this->getPositionText($credential['position']);
+            
+            // Mask password if not temporary
+            $displayPassword = ($credential['is_temp_password'] ?? false) ? $credential['sk_password'] : '******';
+            
+            $html .= '
+                    <tr>
+                        <td>' . htmlspecialchars($credential['user_id'] ?? '') . '</td>
+                        <td>' . htmlspecialchars($credential['full_name']) . '</td>
+                        <td>' . htmlspecialchars($positionText) . '</td>
+                        <td>' . htmlspecialchars($barangayName) . '</td>
+                        <td>' . htmlspecialchars($credential['sk_username']) . '</td>
+                        <td>' . htmlspecialchars($displayPassword) . '</td>
+                    </tr>';
+        }
+
+        $html .= '
+                </tbody>
+            </table>
+        </body>
+        </html>';
+
+        return $html;
+    }
+
+    private function getPositionText($position)
+    {
+        $positions = [
+            1 => 'SK Chairperson',
+            2 => 'Secretary', 
+            3 => 'Treasurer',
+            4 => 'SK Kagawad',
+            5 => 'KK Member',
+            6 => 'SK Member'
+        ];
+        return $positions[$position] ?? 'SK Member';
     }
    
 }

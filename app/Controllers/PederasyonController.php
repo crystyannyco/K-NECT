@@ -1300,15 +1300,16 @@ class PederasyonController extends BaseController
             $users = $profileController->getAllUsersWithExtendedInfo();
             $users = $profileController->processUsersForMemberListing($users, 'pederasyon');
             
-            // Filter only officials (SK Chairperson and Pederasyon Officers with Accepted status)
+            // Filter only SK Chairpersons (user_type=2 AND position=1 with Accepted status)
             $officials = array_filter($users, function($user) {
                 $userType = isset($user['user_type']) ? (int)$user['user_type'] : 1;
+                $position = isset($user['position']) ? (int)$user['position'] : 0;
                 $status = isset($user['status']) ? (int)$user['status'] : 1;
-                return ($userType === 2 || $userType === 3) && $status === 2; // SK Chairperson or Pederasyon Officer, Accepted
+                return $userType === 2 && $position === 1 && $status === 2; // Only SK Chairpersons, Accepted
             });
 
             if (empty($officials)) {
-                return $this->response->setJSON(['success' => false, 'message' => 'No officials found for credentials generation']);
+                return $this->response->setJSON(['success' => false, 'message' => 'No SK Chairpersons found for credentials generation']);
             }
 
             // Generate credentials document
@@ -1572,18 +1573,17 @@ class PederasyonController extends BaseController
             $users = $profileController->getAllUsersWithExtendedInfo();
             $users = $profileController->processUsersForMemberListing($users, 'pederasyon');
             
-            // Filter only officials (SK Chairperson and Pederasyon Officers with Accepted status)
+            // Filter only SK Chairpersons (user_type=2 AND position=1 with Accepted status)
             $officials = array_filter($users, function($user) {
                 $userType = isset($user['user_type']) ? (int)$user['user_type'] : 1;
+                $position = isset($user['position']) ? (int)$user['position'] : 0;
                 $status = isset($user['status']) ? (int)$user['status'] : 1;
-                return ($userType === 2 || $userType === 3) && $status === 2; // SK Chairperson or Pederasyon Officer, Accepted
+                return $userType === 2 && $position === 1 && $status === 2; // Only SK Chairpersons, Accepted
             });
 
             $skCredentials = [];
-            $pederasyonCredentials = [];
 
             foreach ($officials as $official) {
-                $userType = (int)$official['user_type'];
                 $userId = $official['user_id'] ?: '';
                 $barangay = \App\Libraries\BarangayHelper::getBarangayName($official['barangay']);
                 
@@ -1595,7 +1595,7 @@ class PederasyonController extends BaseController
                     $fullName .= ' ' . esc($official['middle_name']);
                 }
 
-                // SK Credentials (both SK Chairperson and Pederasyon Officers get SK credentials)
+                // SK Credentials (only for SK Chairpersons)
                 $skUsername = $official['sk_username'] ?? '';
                 $skPassword = $official['sk_password'] ?? '';
                 
@@ -1609,50 +1609,20 @@ class PederasyonController extends BaseController
                         'password' => $skPassword
                     ];
                 }
-
-                // Pederasyon Credentials (only for Pederasyon Officers)
-                if ($userType === 3) {
-                    $pedUsername = $official['ped_username'] ?? '';
-                    $pedPassword = $official['ped_password'] ?? '';
-                    
-                    if ($pedUsername && $pedPassword) {
-                        // Determine specific position
-                        $position = 'Pederasyon Officer | SK Chairperson';
-                        $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : 0;
-                        switch($pedPosition) {
-                            case 1: $position = 'Pederasyon President'; break;
-                            case 2: $position = 'Pederasyon Vice President'; break;
-                            case 3: $position = 'Pederasyon Secretary'; break;
-                            case 4: $position = 'Pederasyon Treasurer'; break;
-                            case 5: $position = 'Pederasyon Auditor'; break;
-                            case 6: $position = 'Pederasyon Public Information Officer'; break;
-                            case 7: $position = 'Pederasyon Sergeant at Arms'; break;
-                        }
-
-                        $pederasyonCredentials[] = [
-                            'userId' => $userId,
-                            'name' => $fullName,
-                            'barangay' => $barangay,
-                            'position' => $position,
-                            'username' => $pedUsername,
-                            'password' => $pedPassword
-                        ];
-                    }
-                }
             }
 
-            log_message('info', 'Found ' . count($skCredentials) . ' SK credentials and ' . count($pederasyonCredentials) . ' Pederasyon credentials');
+            log_message('info', 'Found ' . count($skCredentials) . ' SK Chairperson credentials');
 
             return $this->response->setJSON([
                 'success' => true,
                 'data' => [
                     'sk' => $skCredentials,
-                    'pederasyon' => $pederasyonCredentials
+                    'pederasyon' => []
                 ],
                 'counts' => [
                     'sk' => count($skCredentials),
-                    'pederasyon' => count($pederasyonCredentials),
-                    'total' => count($skCredentials) + count($pederasyonCredentials)
+                    'pederasyon' => 0,
+                    'total' => count($skCredentials)
                 ]
             ]);
 
@@ -1676,15 +1646,16 @@ class PederasyonController extends BaseController
             $users = $profileController->getAllUsersWithExtendedInfo();
             $users = $profileController->processUsersForMemberListing($users, 'pederasyon');
             
-            // Filter only officials (SK Chairperson and Pederasyon Officers with Accepted status)
+            // Filter only SK Chairpersons (user_type=2 AND position=1 with Accepted status)
             $officials = array_filter($users, function($user) {
                 $userType = isset($user['user_type']) ? (int)$user['user_type'] : 1;
+                $position = isset($user['position']) ? (int)$user['position'] : 0;
                 $status = isset($user['status']) ? (int)$user['status'] : 1;
-                return ($userType === 2 || $userType === 3) && $status === 2; // SK Chairperson or Pederasyon Officer, Accepted
+                return $userType === 2 && $position === 1 && $status === 2; // Only SK Chairpersons, Accepted
             });
 
             if (empty($officials)) {
-                return $this->response->setJSON(['success' => false, 'message' => 'No officials found for credentials PDF generation']);
+                return $this->response->setJSON(['success' => false, 'message' => 'No SK Chairpersons found for credentials PDF generation']);
             }
 
             // Generate credentials PDF document
@@ -2071,21 +2042,13 @@ class PederasyonController extends BaseController
             $users = $profileController->getAllUsersWithExtendedInfo();
             $users = $profileController->processUsersForMemberListing($users, 'pederasyon');
             
-        // Filter only officials based on active tab
-        $officials = array_filter($users, function($user) use ($activeTab) {
+        // Filter only SK Chairpersons (user_type=2 AND position=1 with Accepted status)
+        $officials = array_filter($users, function($user) {
                 $userType = isset($user['user_type']) ? (int)$user['user_type'] : 1;
+                $position = isset($user['position']) ? (int)$user['position'] : 0;
                 $status = isset($user['status']) ? (int)$user['status'] : 1;
                 
-                if ($status !== 2) return false; // Must be Accepted
-                
-                if ($activeTab === 'sk') {
-            // Show SK credentials for both SK (2) and Pederasyon (3)
-            return ($userType === 2 || $userType === 3);
-                } elseif ($activeTab === 'pederasyon') {
-                    return $userType === 3; // Only Pederasyon Officers
-                }
-                
-                return ($userType === 2 || $userType === 3); // Fallback: both types
+                return $userType === 2 && $position === 1 && $status === 2; // Only SK Chairpersons, Accepted
             });
 
             if (empty($officials)) {
@@ -2383,24 +2346,17 @@ class PederasyonController extends BaseController
             $users = $profileController->getAllUsersWithExtendedInfo();
             $users = $profileController->processUsersForMemberListing($users, 'pederasyon');
             
-        // Filter only officials based on active tab
-        $officials = array_filter($users, function($user) use ($activeTab) {
+        // Filter only SK Chairpersons (user_type=2 AND position=1 with Accepted status)
+        $officials = array_filter($users, function($user) {
                 $userType = isset($user['user_type']) ? (int)$user['user_type'] : 1;
+                $position = isset($user['position']) ? (int)$user['position'] : 0;
                 $status = isset($user['status']) ? (int)$user['status'] : 1;
                 
-                if ($status !== 2) return false; // Must be Accepted
-                
-                if ($activeTab === 'sk') {
-            return ($userType === 2 || $userType === 3);
-                } elseif ($activeTab === 'pederasyon') {
-                    return $userType === 3; // Only Pederasyon Officers
-                }
-                
-                return ($userType === 2 || $userType === 3); // Fallback: both types
+                return $userType === 2 && $position === 1 && $status === 2; // Only SK Chairpersons, Accepted
             });
 
             if (empty($officials)) {
-                return $this->response->setJSON(['success' => false, 'message' => 'No officials found for credentials Excel generation']);
+                return $this->response->setJSON(['success' => false, 'message' => 'No SK Chairpersons found for credentials Excel generation']);
             }
 
             // Generate Excel document

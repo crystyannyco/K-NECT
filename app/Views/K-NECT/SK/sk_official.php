@@ -208,7 +208,15 @@
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     <?php
                                                         $position = isset($user['position']) ? (int)$user['position'] : 5;
-                                                        echo $position == 1 ? 'SK Chairperson' : ($position == 2 ? 'SK Kagawad' : ($position == 3 ? 'Secretary' : ($position == 4 ? 'Treasurer' : 'SK Member')));
+                                                        // Map positions to labels (1 => Chairperson, 2 => Secretary, 3 => Treasurer, 4 => SK Councilor)
+                                                        $positionLabels = [
+                                                            1 => 'Chairperson',
+                                                            2 => 'Secretary',
+                                                            3 => 'Treasurer',
+                                                            4 => 'SK Councilor',
+                                                            5 => 'KK Member'
+                                                        ];
+                                                        echo isset($positionLabels[$position]) ? $positionLabels[$position] : 'KK Member';
                                                     ?>
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap">
@@ -265,10 +273,10 @@
             <div class="mb-6">
                 <label for="bulkNewPosition" class="block text-sm font-medium text-gray-700 mb-2">Select New Position</label>
                 <select id="bulkNewPosition" class="w-full border border-gray-300 rounded-md px-2 py-2 text-base focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
-                    <option value="1" disabled style="color: #888;">SK Chairperson (Cannot be assigned in bulk)</option>
-                    <option value="2" selected>SK Kagawad</option>
-                    <option value="3">Secretary</option>
-                    <option value="4">Treasurer</option>
+                    <option value="1" disabled style="color: #888;">Chairperson (Cannot be assigned in bulk)</option>
+                    <option value="2" selected>Secretary</option>
+                    <option value="3">Treasurer</option>
+                    <option value="4">SK Councilor</option>
                     <option value="5">KK Member</option>
                 </select>
             </div>
@@ -338,10 +346,10 @@
                             <label class="text-sm font-semibold text-gray-700">Position</label>
                         </div>
                         <select id="modalUserType" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-3">
-                            <option value="1">SK Chairperson</option>
-                            <option value="2">SK Kagawad</option>
-                            <option value="3">Secretary</option>
-                            <option value="4">Treasurer</option>
+                            <option value="1">Chairperson</option>
+                            <option value="2">Secretary</option>
+                            <option value="3">Treasurer</option>
+                            <option value="4">SK Councilor</option>
                             <option value="5">KK Member</option>
                         </select>
                         <button id="saveUserTypeBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm">
@@ -1231,9 +1239,10 @@
                 allCredentials = allCredentials.concat(data.chairpersons);
             }
 
-            // Remove duplicates based on user ID
+            // Remove duplicates based on user ID and exclude KK Members (position 5)
             const uniqueCredentials = allCredentials.filter((credential, index, self) => 
-                index === self.findIndex((c) => c.user_id === credential.user_id)
+                index === self.findIndex((c) => c.user_id === credential.user_id) &&
+                credential.position !== 5 // Exclude KK Members
             );
 
             if (!uniqueCredentials || uniqueCredentials.length === 0) {
@@ -1269,14 +1278,13 @@
 
         function getPositionText(position) {
             const positions = {
-                1: 'SK Chairperson',
+                1: 'Chairperson',
                 2: 'Secretary', 
                 3: 'Treasurer',
-                4: 'SK Kagawad',
-                5: 'KK Member',
-                6: 'SK Member'
+                4: 'SK Councilor',
+                5: 'KK Member'
             };
-            return positions[position] || 'SK Member';
+            return positions[position] || 'KK Member';
         }
 
         // ==================== CREDENTIALS DOWNLOAD FUNCTIONS ==================== //

@@ -669,16 +669,16 @@ class SKController extends BaseController
             // Set position text
             switch($position) {
                 case 1:
-                    $u['position_text'] = 'SK Chairperson';
+                    $u['position_text'] = 'Chairperson';
                     break;
                 case 2:
-                    $u['position_text'] = 'SK Councilor';
-                    break;
-                case 3:
                     $u['position_text'] = 'Secretary';
                     break;
-                case 4:
+                case 3:
                     $u['position_text'] = 'Treasurer';
+                    break;
+                case 4:
+                    $u['position_text'] = 'SK Councilor';
                     break;
                 default:
                     $u['position_text'] = 'KK Member';
@@ -970,7 +970,7 @@ class SKController extends BaseController
                     1 => 'Chairperson',
                     2 => 'Secretary',
                     3 => 'Treasurer',
-                    4 => 'Member'
+                    4 => 'SK Councilor'
                 ];
                 $u['position_text'] = $skPositions[$u['position']] ?? 'Member';
             } else {
@@ -3565,11 +3565,12 @@ class SKController extends BaseController
             $userModel = new UserModel();
             $addressModel = new AddressModel();
 
-            // Get all users in this barangay who have SK credentials (include all positions/user types)
+            // Get all users in this barangay who have SK credentials (exclude KK members - position 5)
             $skOfficials = $userModel->select('user.id, user.user_id, user.first_name, user.middle_name, user.last_name, user.suffix, user.position, user.sk_username, user.sk_password')
                 ->join('address', 'address.user_id = user.id', 'inner')
                 ->where('address.barangay', $barangayId)
                 ->where('user.status', 2) // Approved
+                ->where('user.position !=', 5) // Exclude KK Members
                 ->where('user.sk_username IS NOT NULL')
                 ->where('user.sk_password IS NOT NULL')
                 ->findAll();
@@ -4347,11 +4348,12 @@ class SKController extends BaseController
         try {
             $userModel = new UserModel();
 
-            // Get all users in this barangay who have SK credentials (include all positions/user types)
+            // Get all users in this barangay who have SK credentials (exclude KK members - position 5)
             $skOfficials = $userModel->select('user.id, user.user_id, user.first_name, user.middle_name, user.last_name, user.suffix, user.position, user.sk_username, user.sk_password')
                 ->join('address', 'address.user_id = user.id', 'inner')
                 ->where('address.barangay', $barangayId)
                 ->where('user.status', 2) // Approved
+                ->where('user.position !=', 5) // Exclude KK Members
                 ->where('user.sk_username IS NOT NULL')
                 ->where('user.sk_password IS NOT NULL')
                 ->findAll();

@@ -25,9 +25,8 @@
         <!-- Featured mosaic -->
         <?php if (!empty($featured_posts)): ?>
     <div class="px-6">
-            <div class="flex items-center justify-between mb-4">
-                <!-- Featured Posts heading removed per request -->
-                <a href="#all-posts" class="inline-flex items-center px-3 py-2 rounded-md bg-white text-blue-700 border border-blue-200 hover:bg-blue-50 text-sm">View all posts</a>
+            <div class="flex items-center mb-4">
+                <!-- Featured Posts heading intentionally minimal (button removed) -->
             </div>
             <?php $primary = $featured_posts[0]; $others = array_slice($featured_posts, 1, 4); ?>
             <div class="grid grid-cols-1 lg:grid-cols-3 lg:auto-rows-[220px] gap-5">

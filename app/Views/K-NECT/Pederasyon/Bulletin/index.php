@@ -5,37 +5,7 @@
 
     <!-- System-wide Stats removed per request -->
 
-    <!-- Urgent Posts Section -->
-    <?php if (!empty($urgent_posts)): ?>
-    <div class="py-4 px-6">
-        <div class="bg-red-50 border border-red-200 p-4 rounded-lg shadow-sm">
-            <div class="flex items-center">
-                <div class="flex-shrink-0">
-                    <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                    </svg>
-                </div>
-                <div class="ml-3">
-                    <h3 class="text-sm font-semibold text-red-900">Urgent Announcements</h3>
-                    <div class="mt-2">
-                        <?php foreach ($urgent_posts as $urgent): ?>
-                        <div class="text-sm text-red-700 mb-1 flex items-center justify-between">
-                            <a href="<?= base_url('/bulletin/view/' . $urgent['id']) ?>" class="font-medium hover:text-red-900">
-                                <?= esc($urgent['title']) ?>
-                            </a>
-                            <a href="<?= base_url('/bulletin/edit/' . $urgent['id']) ?>" class="text-red-600 hover:text-red-800 ml-4">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                </svg>
-                            </a>
-                        </div>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <?php endif; ?>
+    <!-- Urgent section removed (simplified to match SK compact design) -->
 
     <!-- Main Content Grid -->
     <div class="py-6 px-6">
@@ -117,178 +87,36 @@
                 </div>
                 <?php endif; ?>
 
-                <!-- Upcoming Events Preview -->
-                <?php if (!empty($recent_events)): ?>
-                <div class="mb-8">
-                    <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                        <i class="fa-regular fa-calendar-days text-blue-600 mr-2"></i>
-                        Upcoming Events
-                    </h2>
-                    <div class="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                        <?php foreach ($recent_events as $event): ?>
-                            <?php 
-                                $date = !empty($event['event_date']) ? strtotime($event['event_date']) : null;
-                                $month = $date ? date('M', $date) : '';
-                                $day = $date ? date('d', $date) : '';
-                                $banner = !empty($event['event_banner']) ? base_url('uploads/event/' . $event['event_banner']) : null;
-                            ?>
-                            <article class="overflow-hidden rounded-xl border bg-white shadow-sm hover:shadow-md transition">
-                                <div class="relative h-36 w-full text-white">
-                                    <?php if ($banner): ?>
-                                        <img src="<?= $banner ?>" alt="<?= esc($event['title'] ?? 'Event') ?>" class="w-full h-full object-cover">
-                                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                                    <?php else: ?>
-                                        <div class="absolute inset-0 bg-gradient-to-br from-blue-600 to-blue-400"></div>
-                                        <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(circle at 20% 20%, rgba(255,255,255,.2), transparent 40%), radial-gradient(circle at 80% 30%, rgba(255,255,255,.2), transparent 40%);"></div>
-                                    <?php endif; ?>
-                                    <div class="absolute top-3 left-3 text-center bg-white/10 rounded-lg px-2 py-1">
-                                        <div class="text-xs uppercase tracking-wide text-white/90"><?= esc($month) ?></div>
-                                        <div class="text-lg font-bold -mt-1"><?= esc($day) ?></div>
-                                    </div>
-                                    <div class="absolute bottom-3 left-3 right-3">
-                                        <p class="text-sm font-semibold line-clamp-2"><?= esc($event['title'] ?? 'Scheduled Event') ?></p>
-                                    </div>
-                                </div>
-                                <div class="p-4">
-                                    <div class="flex items-center justify-between text-xs text-gray-600">
-                                        <span><i class="fa-regular fa-clock mr-1"></i><?= $date ? date('M d, Y g:i A', $date) : '' ?></span>
-                                        <span class="inline-flex items-center gap-1 text-blue-700"><i class="fa-regular fa-star"></i>Upcoming</span>
-                                    </div>
-                                </div>
-                            </article>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-                <?php endif; ?>
+                <!-- Upcoming events preview removed (simplified) -->
                 <!-- Featured Posts (original block removed; moved above) -->
 
                 <!-- Uploaded Documents Preview (carousel) -->
-                <?php if (!empty($recent_documents)): ?>
-                <div class="mb-8 px-0">
-                    <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                        <i class="fa-regular fa-folder-open text-blue-600 mr-2"></i>
-                        Uploaded Documents
-                    </h2>
-                    <div class="doc-carousel relative">
-                        <button type="button" aria-label="Previous documents" class="doc-carousel-btn prev disabled:opacity-40 disabled:cursor-not-allowed absolute left-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white shadow flex items-center justify-center text-gray-600 hover:text-blue-600 hover:shadow-md transition"><i class="fa-solid fa-chevron-left"></i></button>
-                        <div class="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-white to-transparent hidden md:block"></div>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-white to-transparent hidden md:block"></div>
-                        <div class="doc-carousel-viewport overflow-x-auto">
-                            <div class="doc-carousel-track flex gap-5">
-                                <?php foreach ($recent_documents as $doc): ?>
-                                    <?php 
-                                        $filePath = $doc['file_path'] ?? '';
-                                        $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-                                        $isImage = in_array($ext, ['jpg','jpeg','png','gif','webp']);
-                                        $docUrl = base_url($filePath);
-                                        $icon = 'fa-file-lines text-gray-500';
-                                        if ($ext === 'pdf') $icon = 'fa-file-pdf text-red-500';
-                                        elseif (in_array($ext,['doc','docx'])) $icon = 'fa-file-word text-blue-500';
-                                        elseif (in_array($ext,['xls','xlsx','csv'])) $icon = 'fa-file-excel text-green-600';
-                                        elseif (in_array($ext,['ppt','pptx'])) $icon = 'fa-file-powerpoint text-orange-500';
-                                    ?>
-                                    <article class="w-64 sm:w-72 flex-shrink-0 bg-white rounded-xl border shadow-sm overflow-hidden hover:shadow-md transition">
-                                        <div class="relative h-36 w-full overflow-hidden bg-gray-100 flex items-center justify-center">
-                                            <?php if ($isImage): ?>
-                                                <img src="<?= $docUrl ?>" alt="<?= esc($doc['filename'] ?? 'Document') ?>" class="w-full h-full object-cover">
-                                                <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
-                                            <?php else: ?>
-                                                <i class="fa-regular <?= $icon ?> text-5xl"></i>
-                                            <?php endif; ?>
-                                            <div class="absolute top-3 left-3">
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white text-gray-800"><?= strtoupper($ext ?: 'FILE') ?></span>
-                                            </div>
-                                            <div class="absolute bottom-3 right-3">
-                                                <button onclick="previewDocument('<?= esc($docUrl) ?>', <?= $isImage ? 'true':'false' ?>)" class="inline-flex items-center px-3 py-1.5 rounded-md bg-white/90 text-gray-800 text-xs font-medium hover:bg-white">
-                                                    <i class="fa-regular fa-eye mr-1"></i> Preview
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div class="p-4">
-                                            <h3 class="text-sm font-semibold text-gray-900 truncate" title="<?= esc($doc['filename'] ?? 'Untitled Document') ?>">
-                                                <?= esc($doc['filename'] ?? 'Untitled Document') ?>
-                                            </h3>
-                                            <div class="mt-2 flex items-center justify-between text-xs text-gray-500">
-                                                <span><?= !empty($doc['created_at']) ? date('M d, Y', strtotime($doc['created_at'])) : '' ?></span>
-                                                <a href="<?= esc($docUrl) ?>" target="_blank" class="text-blue-600 hover:text-blue-700">Open</a>
-                                            </div>
-                                        </div>
-                                    </article>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-                        <button type="button" aria-label="Next documents" class="doc-carousel-btn next disabled:opacity-40 disabled:cursor-not-allowed absolute right-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white shadow flex items-center justify-center text-gray-600 hover:text-blue-600 hover:shadow-md transition"><i class="fa-solid fa-chevron-right"></i></button>
-                    </div>
-                </div>
-                <?php endif; ?>
+                <!-- Uploaded documents carousel removed (simplified) -->
 
-                <!-- Reintroduced compact hero header under Documents -->
-                <div class="px-0 py-4 bulletin-wrap">
-                    <div class="mx-auto">
-                        <div class="p-4 md:p-5 rounded-2xl shadow-md border border-gray-200 bg-white flex flex-col gap-3 animate-fade-in bulletin-header">
-                            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-1">
-                                <div class="min-w-0">
-                                    <?php $welcomeName = $currentUser['first_name'] ?? session('first_name') ?? ($currentUser['full_name'] ?? session('full_name') ?? 'Admin'); ?>
-                                    <div class="text-[1.4rem] md:text-[1.6rem] font-extrabold text-gray-900 leading-tight tracking-tight animate-slide-up truncate">
-                                        Welcome, <span class="text-blue-700 drop-shadow-[0_1px_0_rgba(59,130,246,0.25)]"><?= esc($welcomeName) ?></span>
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <a href="<?= base_url('/bulletin/categories') ?>" class="inline-flex items-center justify-center gap-2 text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:ring-offset-1 focus:ring-offset-white px-3.5 py-2 rounded-lg text-sm font-medium shadow-sm border border-gray-200">
-                                        <i class="fa-regular fa-folder-open"></i>
-                                        <span class="whitespace-nowrap">Manage Categories</span>
-                                    </a>
-                                    <a href="<?= base_url('/bulletin/create') ?>" class="inline-flex items-center justify-center gap-2 text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:ring-offset-1 focus:ring-offset-white px-3.5 py-2 rounded-lg text-sm font-semibold shadow-sm">
-                                        <i class="fa-solid fa-plus"></i>
-                                        <span class="whitespace-nowrap">Create Post</span>
-                                    </a>
-                                    <button type="button" onclick="window.location.reload()" class="inline-flex items-center justify-center gap-2 text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:ring-offset-1 focus:ring-offset-white px-3.5 py-2 rounded-lg text-sm font-semibold shadow-sm">
-                                        <i class="fa-solid fa-rotate"></i>
-                                        <span class="whitespace-nowrap">Refresh</span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <form id="headerSearchForm" class="flex flex-col sm:flex-row gap-2.5 w-full items-center bg-gradient-to-r from-blue-50 to-indigo-50/70 rounded-2xl shadow-sm p-3.5 md:p-4 border border-blue-100 transition-all duration-300 hover:shadow-md">
-                                <div class="relative flex-1 w-full">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <i class="fa-solid fa-magnifying-glass text-gray-400"></i>
-                                    </div>
-                                    <input type="text" id="header-search" placeholder="Search posts..." class="block w-full pl-10 pr-3 h-10 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500 bg-white text-gray-900 placeholder-gray-400 text-sm shadow-sm" />
-                                </div>
-
-                                <select id="header-category" class="w-full sm:w-auto h-10 border border-gray-200 rounded-lg px-3.5 text-sm focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500 bg-white text-gray-900 shadow-sm">
-                                    <option value="">All Categories</option>
-                                    <?php foreach (($categories ?? []) as $cat): ?>
-                                        <option value="<?= $cat['id'] ?>"><?= esc($cat['name']) ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-
-                                <select id="header-status" class="w-full sm:w-auto h-10 border border-gray-200 rounded-lg px-3.5 text-sm focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500 bg-white text-gray-900 shadow-sm">
-                                    <option value="all">All Status</option>
-                                    <option value="featured">Featured</option>
-                                    <option value="urgent">Urgent</option>
-                                </select>
-
-                                <button id="header-search-btn" type="submit" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-10 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 rounded-lg text-sm font-semibold shadow-sm hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:ring-offset-1 focus:ring-offset-white transition">
-                                    <i class="fa-solid fa-magnifying-glass"></i>
-                                    <span>Search</span>
-                                </button>
-
-                                <button id="header-clear-btn" type="button" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-10 bg-white text-gray-700 px-4 rounded-lg text-sm font-semibold shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:ring-offset-1 focus:ring-offset-white border border-gray-200">
-                                    <i class="fa-regular fa-circle-xmark"></i>
-                                    <span>Clear</span>
-                                </button>
-                            </form>
-
-                            <div class="flex flex-wrap items-center gap-2">
-                                <button type="button" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-sm font-medium bg-white text-gray-700 border-gray-200 hover:border-blue-200 hover:bg-blue-50/60" data-kk-chip="all">All</button>
-                                <button type="button" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-sm font-medium bg-yellow-50 text-yellow-800 border-yellow-200 hover:bg-yellow-100" data-kk-chip="featured">Featured</button>
-                                <button type="button" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-sm font-medium bg-red-50 text-red-700 border-red-200 hover:bg-red-100" data-kk-chip="urgent">Urgent</button>
-                            </div>
+                <!-- Compact Hero Header (aligned with SK compact variant) -->
+                <section class="relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-md p-4 sm:p-5 mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                    <div class="space-y-2 max-w-2xl relative z-10">
+                        <?php $welcomeName = $currentUser['first_name'] ?? session('first_name') ?? ($currentUser['full_name'] ?? session('full_name') ?? 'Admin'); ?>
+                        <h1 class="text-xl md:text-2xl font-extrabold tracking-tight flex items-center gap-2 text-blue-900">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            Bulletin Management
+                        </h1>
+                        <div class="text-xs sm:text-sm text-blue-700/80 font-medium">Curate federation-wide announcements efficiently.</div>
+                        <p class="text-[11px] sm:text-xs text-gray-600 leading-relaxed">Featured posts appear first. Category, visibility, and status chips help scanning quickly.</p>
+                        <div class="flex flex-wrap gap-2 pt-1">
+                            <a href="<?= base_url('/bulletin/create') ?>" class="bg-gradient-to-r from-blue-600 to-blue-500 text-white px-4 py-1.5 rounded-lg font-semibold shadow-sm hover:from-blue-700 hover:to-blue-600 transition-all text-xs flex items-center gap-1.5 border border-blue-200 hover:border-blue-300 focus:ring-2 focus:ring-blue-200 outline-none"><i class="fa-solid fa-plus text-[11px]"></i><span>New</span></a>
+                            <a href="<?= base_url('/bulletin/categories') ?>" class="bg-white px-4 py-1.5 rounded-lg font-semibold shadow-sm text-blue-700 border border-blue-200 hover:bg-blue-50 hover:border-blue-300 transition-all text-xs flex items-center gap-1.5"><i class="fa-regular fa-folder-open text-[11px]"></i><span>Categories</span></a>
+                            <button type="button" onclick="window.location.reload()" class="bg-gray-100 px-4 py-1.5 rounded-lg font-semibold shadow-sm text-gray-700 border border-gray-200 hover:bg-gray-200 hover:border-gray-300 transition-all text-xs flex items-center gap-1.5"><i class="fa-solid fa-rotate text-[11px]"></i><span>Refresh</span></button>
                         </div>
                     </div>
-                </div>
+                    <div class="md:self-stretch flex items-center relative">
+                        <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl bg-gradient-to-br from-blue-50 via-white to-blue-100 border border-blue-100 flex items-center justify-center">
+                            <i class="fa-solid fa-newspaper text-3xl sm:text-4xl text-blue-600"></i>
+                        </div>
+                        <div class="absolute -right-5 -top-5 w-24 h-24 bg-blue-100/40 rounded-full blur-xl pointer-events-none"></div>
+                    </div>
+                    <span class="absolute top-2 right-2 inline-flex items-center px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 text-[9px] font-semibold border border-blue-200">Hero</span>
+                </section>
 
                 <!-- All Posts Grid - Visible by default, sleek header -->
                 <div id="allPostsSection" class="mt-6">

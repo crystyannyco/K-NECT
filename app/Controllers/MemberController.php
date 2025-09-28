@@ -209,103 +209,160 @@ class MemberController extends BaseController
             return $this->response->setStatusCode(400)->setJSON(['success' => false, 'message' => 'Missing user_id or position']);
         }
         
-        // Get current user's database ID from session
-        $session = session();
-        $currentUserPermanentId = $session->get('user_id');
+        // Validate position value
+        if (!in_array($position, ['1', '2', '3', '4', '5'])) {
+            return $this->response->setStatusCode(400)->setJSON(['success' => false, 'message' => 'Invalid position value']);
+        }
+        
         $userModel = new UserModel();
-        $currentUser = $userModel->where('user_id', $currentUserPermanentId)->first();
-        $currentUserId = $currentUser ? $currentUser['id'] : null;
         
-        $user = $userModel->find($userId);
-        
-        if (!$user) {
-            return $this->response->setStatusCode(404)->setJSON(['success' => false, 'message' => 'User not found']);
-        }
-
-        // Check restrictions: current user or SK Chairperson (position 1)
-        $isCurrentUser = ($user['id'] == $currentUserId);
-        $isChairperson = ($user['position'] == 1);
-        
-        if ($isCurrentUser) {
-            return $this->response->setStatusCode(403)->setJSON(['success' => false, 'message' => 'You cannot change your own position']);
-        }
-        
-        if ($isChairperson) {
-            return $this->response->setStatusCode(403)->setJSON(['success' => false, 'message' => 'SK Chairperson position cannot be changed']);
-        }
-
-        // Check position limits - ensure only 1 person per position (except position 5 - KK Member)
-        if ($position != 5) {
-            $existingUserWithPosition = $userModel->where('position', $position)
-                                                   ->where('id !=', $userId)
-                                                   ->first();
+        try {
+            // Get current user's database ID from session
+            $session = session();
+            $currentUserPermanentId = $session->get('user_id');
+            $currentUser = $userModel->where('user_id', $currentUserPermanentId)->first();
+            $currentUserId = $currentUser ? $currentUser['id'] : null;
             
-            if ($existingUserWithPosition) {
-                $positionNames = [
-                    1 => 'SK Chairperson',
-                    2 => 'SK Kagawad', 
-                    3 => 'Secretary',
-                    4 => 'Treasurer',
-                    5 => 'KK Member'
-                ];
+            $user = $userModel->find($userId);
+            
+            if (!$user) {
+                return $this->response->setStatusCode(404)->setJSON(['success' => false, 'message' => 'User not found']);
+            }
+
+            // Check restrictions: current user or SK Chairperson (position 1)
+            $isCurrentUser = ($user['id'] == $currentUserId);
+            $isChairperson = ($user['position'] == 1);
+            
+            if ($isCurrentUser) {
+                return $this->response->setStatusCode(403)->setJSON(['success' => false, 'message' => 'You cannot change your own position']);
+            }
+            
+            if ($isChairperson) {
+                return $this->response->setStatusCode(403)->setJSON(['success' => false, 'message' => 'SK Chairperson position cannot be changed']);
+            }
+
+            // Check position limits per barangay - ensure only 1 person per position per barangay (except positions 4 and 5)
+            // Position 4 (SK Councilor) allows up to 7 people per barangay
+            // Position 5 (KK Member) allows unlimited people per barangay
+            if ($position != 5 && $position != 4) {
+                // Get user's barangay
+                $addressModel = new AddressModel();
+                $userAddress = $addressModel->where('user_id', $user['id'])->first();
+                $userBarangay = $userAddress['barangay'] ?? null;
                 
-                $positionName = $positionNames[$position] ?? 'Unknown Position';
-                $currentHolderName = $existingUserWithPosition['first_name'] . ' ' . $existingUserWithPosition['last_name'];
+                if ($userBarangay !== null) {
+                    // Check if position already exists in the same barangay
+                    $existingUserWithPosition = $userModel
+                        ->select('user.id, user.first_name, user.last_name, user.position')
+                        ->join('address', 'address.user_id = user.id', 'inner')
+                        ->where('user.position', $position)
+                        ->where('address.barangay', $userBarangay)
+                        ->where('user.id !=', $userId)
+                        ->where('user.status', 2) // Only check approved users
+                        ->first();
+                    
+                    if ($existingUserWithPosition) {
+                        $positionNames = [
+                            1 => 'SK Chairperson',
+                            2 => 'SK Secretary', 
+                            3 => 'SK Treasurer',
+                            4 => 'SK Councilor',
+                            5 => 'KK Member'
+                        ];
+                        
+                        $positionName = $positionNames[$position] ?? 'Unknown Position';
+                        $currentHolderName = $existingUserWithPosition['first_name'] . ' ' . $existingUserWithPosition['last_name'];
+                        
+                        return $this->response->setStatusCode(400)->setJSON([
+                            'success' => false, 
+                            'message' => "Position '{$positionName}' is already occupied by {$currentHolderName} in this barangay. Only one person can hold this position per barangay."
+                        ]);
+                    }
+                }
+            } elseif ($position == 4) {
+                // Special validation for SK Councilor - maximum 7 per barangay
+                $addressModel = new AddressModel();
+                $userAddress = $addressModel->where('user_id', $user['id'])->first();
+                $userBarangay = $userAddress['barangay'] ?? null;
                 
-                return $this->response->setStatusCode(400)->setJSON([
-                    'success' => false, 
-                    'message' => "Position '{$positionName}' is already occupied by {$currentHolderName}. Only one person can hold this position at a time."
-                ]);
+                if ($userBarangay !== null) {
+                    $councilorsCount = $userModel
+                        ->select('user.id')
+                        ->join('address', 'address.user_id = user.id', 'inner')
+                        ->where('user.position', 4) // SK Councilor
+                        ->where('address.barangay', $userBarangay)
+                        ->where('user.id !=', $userId)
+                        ->where('user.status', 2) // Only check approved users
+                        ->countAllResults();
+                    
+                    if ($councilorsCount >= 7) {
+                        return $this->response->setStatusCode(400)->setJSON([
+                            'success' => false, 
+                            'message' => "Maximum of 7 SK Councilors allowed per barangay. This barangay already has {$councilorsCount} SK Councilors."
+                        ]);
+                    }
+                }
             }
-        }
 
-        $updateData = ['position' => $position];
+            $updateData = ['position' => (int)$position];
 
-        // Update user_type based on position
-        if ($position == 1) { // SK Chairperson
-            $updateData['user_type'] = 2; // SK Chairperson is considered SK Official
-            
-            // Generate SK credentials if missing
-            if (empty($user['sk_username']) || empty($user['sk_password'])) {
-                $updateData['sk_username'] = UserHelper::generateSKUsername($user['first_name'], $user['last_name']);
-                $updateData['sk_password'] = UserHelper::generatePassword(8);
+            // Update user_type based on position
+            if ($position == 1) { // SK Chairperson
+                $updateData['user_type'] = 2; // SK Chairperson is considered SK Official
+                
+                // Generate SK credentials if missing
+                if (empty($user['sk_username']) || empty($user['sk_password'])) {
+                    $updateData['sk_username'] = UserHelper::generateSKUsername($user['first_name'], $user['last_name']);
+                    $updateData['sk_password'] = UserHelper::generatePassword(8);
+                }
+            } elseif ($position == 2) { // SK Secretary
+                $updateData['user_type'] = 2;
+                
+                // Generate Secretary credentials with SEC_ prefix if missing
+                if (empty($user['sk_username']) || empty($user['sk_password'])) {
+                    $updateData['sk_username'] = UserHelper::generateSecretaryUsername($user['first_name'], $user['last_name']);
+                    $updateData['sk_password'] = UserHelper::generatePassword(8);
+                }
+            } elseif ($position == 3) { // SK Treasurer
+                $updateData['user_type'] = 2;
+                
+                // Generate SK credentials if missing
+                if (empty($user['sk_username']) || empty($user['sk_password'])) {
+                    $updateData['sk_username'] = UserHelper::generateSKUsername($user['first_name'], $user['last_name']);
+                    $updateData['sk_password'] = UserHelper::generatePassword(8);
+                }
+            } elseif ($position == 4) { // SK Councilor
+                $updateData['user_type'] = 2;
+                
+                // Generate SK credentials if missing
+                if (empty($user['sk_username']) || empty($user['sk_password'])) {
+                    $updateData['sk_username'] = UserHelper::generateSKUsername($user['first_name'], $user['last_name']);
+                    $updateData['sk_password'] = UserHelper::generatePassword(8);
+                }
+            } elseif ($position == 5) { // KK Member
+                $updateData['user_type'] = 1;
+                // When selecting "KK Member", clear SK credentials
+                $updateData['sk_username'] = null;
+                $updateData['sk_password'] = null;
+                $updateData['ped_position'] = null;
             }
-        } elseif ($position == 2) { // SK Kagawad
-            $updateData['user_type'] = 2;
-            
-            // Generate SK credentials if missing
-            if (empty($user['sk_username']) || empty($user['sk_password'])) {
-                $updateData['sk_username'] = UserHelper::generateSKUsername($user['first_name'], $user['last_name']);
-                $updateData['sk_password'] = UserHelper::generatePassword(8);
-            }
-        } elseif ($position == 3) { // Secretary
-            $updateData['user_type'] = 2;
-            
-            // Generate Secretary credentials with SEC_ prefix if missing
-            if (empty($user['sk_username']) || empty($user['sk_password'])) {
-                $updateData['sk_username'] = UserHelper::generateSecretaryUsername($user['first_name'], $user['last_name']);
-                $updateData['sk_password'] = UserHelper::generatePassword(8);
-            }
-        } elseif ($position == 4) { // Treasurer (Pederasyon officer)
-            $updateData['user_type'] = 3;
-            
-            // Generate PED credentials if missing
-            if (empty($user['ped_username']) || empty($user['ped_password'])) {
-                $updateData['ped_username'] = UserHelper::generatePEDUsername($user['first_name'], $user['last_name']);
-                $updateData['ped_password'] = UserHelper::generatePassword(8);
-            }
-        } elseif ($position == 5) { // SK Pederasyon Member (KK Member)
-            $updateData['user_type'] = 1;
-            // When selecting "SK pederasyon member", set ped_position to null
-            $updateData['ped_position'] = null;
-        }
 
-        $result = $userModel->update($userId, $updateData);
-        
-        if ($result) {
-            return $this->response->setJSON(['success' => true, 'message' => 'User position updated successfully']);
-        } else {
-            return $this->response->setStatusCode(500)->setJSON(['success' => false, 'message' => 'Failed to update user position']);
+            $result = $userModel->update($userId, $updateData);
+            
+            if ($result) {
+                return $this->response->setJSON(['success' => true, 'message' => 'User position updated successfully']);
+            } else {
+                $errors = $userModel->errors();
+                $errorMsg = 'Failed to update user position';
+                if (!empty($errors)) {
+                    $errorMsg .= ': ' . implode(', ', array_values($errors));
+                }
+                return $this->response->setStatusCode(500)->setJSON(['success' => false, 'message' => $errorMsg]);
+            }
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error updating user position: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON(['success' => false, 'message' => 'Database error occurred while updating position']);
         }
     }
 
@@ -488,64 +545,158 @@ class MemberController extends BaseController
             return $this->response->setStatusCode(400)->setJSON(['success' => false, 'message' => 'Missing user_ids or position']);
         }
         
+        // Validate position value
+        if (!in_array($position, ['2', '3', '4', '5'])) {
+            return $this->response->setStatusCode(400)->setJSON(['success' => false, 'message' => 'Invalid position value']);
+        }
+        
         // Prevent bulk assignment of SK Chairperson position
         if ($position == 1) {
             return $this->response->setStatusCode(400)->setJSON(['success' => false, 'message' => 'SK Chairperson position cannot be assigned in bulk']);
         }
         
-        // Check position limits - ensure only 1 person per position (except position 5 - KK Member)
         $userModel = new UserModel();
-        if ($position != 5) {
-            $existingUserWithPosition = $userModel->where('position', $position)
-                                                   ->whereNotIn('id', $userIds)
-                                                   ->first();
-            
-            if ($existingUserWithPosition) {
-                $positionNames = [
-                    2 => 'SK Kagawad', 
-                    3 => 'Secretary',
-                    4 => 'Treasurer'
-                ];
+        
+        try {
+            // Check position limits per barangay - ensure only 1 person per position per barangay (except positions 4 and 5)
+            if ($position != 5 && $position != 4) {
+                $addressModel = new AddressModel();
                 
-                $positionName = $positionNames[$position] ?? 'Unknown Position';
-                $currentHolderName = $existingUserWithPosition['first_name'] . ' ' . $existingUserWithPosition['last_name'];
+                // Get barangays of selected users to validate per-barangay restrictions
+                $selectedUsersData = $userModel
+                    ->select('user.id, user.first_name, user.last_name, address.barangay')
+                    ->join('address', 'address.user_id = user.id', 'inner')
+                    ->whereIn('user.id', $userIds)
+                    ->findAll();
                 
-                return $this->response->setStatusCode(400)->setJSON([
-                    'success' => false, 
-                    'message' => "Position '{$positionName}' is already occupied by {$currentHolderName}. Only one person can hold this position at a time. Please remove them from the position first or select multiple users including the current holder."
-                ]);
+                if (empty($selectedUsersData)) {
+                    return $this->response->setStatusCode(400)->setJSON([
+                        'success' => false, 
+                        'message' => 'No valid users found with address information.'
+                    ]);
+                }
+                
+                // Group users by barangay
+                $usersByBarangay = [];
+                foreach ($selectedUsersData as $userData) {
+                    $barangay = $userData['barangay'];
+                    if (!isset($usersByBarangay[$barangay])) {
+                        $usersByBarangay[$barangay] = [];
+                    }
+                    $usersByBarangay[$barangay][] = $userData;
+                }
+                
+                // Check each barangay for existing position holders and validate bulk assignments
+                foreach ($usersByBarangay as $barangay => $users) {
+                    // Check if more than 1 user from same barangay is selected for positions 2 or 3
+                    if (count($users) > 1) {
+                        $positionNames = [
+                            2 => 'SK Secretary', 
+                            3 => 'SK Treasurer'
+                        ];
+                        
+                        $positionName = $positionNames[$position] ?? 'Unknown Position';
+                        
+                        return $this->response->setStatusCode(400)->setJSON([
+                            'success' => false, 
+                            'message' => "Cannot assign multiple users from the same barangay to '{$positionName}' position. Only one person per barangay can hold this position."
+                        ]);
+                    }
+                    
+                    // Check if position already exists in this barangay
+                    $existingUserWithPosition = $userModel
+                        ->select('user.id, user.first_name, user.last_name, user.position, address.barangay')
+                        ->join('address', 'address.user_id = user.id', 'inner')
+                        ->where('user.position', $position)
+                        ->where('address.barangay', $barangay)
+                        ->where('user.status', 2) // Only check approved users
+                        ->whereNotIn('user.id', $userIds)
+                        ->first();
+                    
+                    if ($existingUserWithPosition) {
+                        $positionNames = [
+                            2 => 'SK Secretary', 
+                            3 => 'SK Treasurer'
+                        ];
+                        
+                        $positionName = $positionNames[$position] ?? 'Unknown Position';
+                        $currentHolderName = $existingUserWithPosition['first_name'] . ' ' . $existingUserWithPosition['last_name'];
+                        
+                        return $this->response->setStatusCode(400)->setJSON([
+                            'success' => false, 
+                            'message' => "Position '{$positionName}' is already occupied by {$currentHolderName} in this barangay. Only one person per barangay can hold this position."
+                        ]);
+                    }
+                }
+            } elseif ($position == 4) {
+                // Special validation for SK Councilor bulk assignment - maximum 7 per barangay total
+                $addressModel = new AddressModel();
+                
+                // Get barangays of selected users
+                $selectedUsersData = $userModel
+                    ->select('user.id, user.first_name, user.last_name, address.barangay')
+                    ->join('address', 'address.user_id = user.id', 'inner')
+                    ->whereIn('user.id', $userIds)
+                    ->findAll();
+                
+                if (empty($selectedUsersData)) {
+                    return $this->response->setStatusCode(400)->setJSON([
+                        'success' => false, 
+                        'message' => 'No valid users found with address information.'
+                    ]);
+                }
+                
+                // Group users by barangay and validate SK Councilor limits
+                $usersByBarangay = [];
+                foreach ($selectedUsersData as $userData) {
+                    $barangay = $userData['barangay'];
+                    if (!isset($usersByBarangay[$barangay])) {
+                        $usersByBarangay[$barangay] = [];
+                    }
+                    $usersByBarangay[$barangay][] = $userData;
+                }
+                
+                foreach ($usersByBarangay as $barangay => $users) {
+                    // Count existing SK Councilors in this barangay
+                    $existingCouncilorsCount = $userModel
+                        ->select('user.id')
+                        ->join('address', 'address.user_id = user.id', 'inner')
+                        ->where('user.position', 4) // SK Councilor
+                        ->where('address.barangay', $barangay)
+                        ->where('user.status', 2) // Only check approved users
+                        ->whereNotIn('user.id', $userIds) // Exclude selected users
+                        ->countAllResults();
+                    
+                    $newCouncilorsCount = count($users);
+                    $totalAfterAssignment = $existingCouncilorsCount + $newCouncilorsCount;
+                    
+                    if ($totalAfterAssignment > 7) {
+                        return $this->response->setStatusCode(400)->setJSON([
+                            'success' => false, 
+                            'message' => "Cannot assign {$newCouncilorsCount} SK Councilors to this barangay. It already has {$existingCouncilorsCount} SK Councilors. Maximum allowed is 7 per barangay."
+                        ]);
+                    }
+                }
             }
             
-            // Also check if more than 1 user is selected for positions 2, 3, or 4
-            if (count($userIds) > 1) {
-                $positionNames = [
-                    2 => 'SK Kagawad', 
-                    3 => 'Secretary',
-                    4 => 'Treasurer'
-                ];
-                
-                $positionName = $positionNames[$position] ?? 'Unknown Position';
-                
-                return $this->response->setStatusCode(400)->setJSON([
-                    'success' => false, 
-                    'message' => "Cannot assign multiple users to '{$positionName}' position. Only one person can hold this position at a time."
-                ]);
-            }
-        }
-        
-        // Get current user's database ID from session
-        $session = session();
-        $currentUserPermanentId = $session->get('user_id');
-        $currentUser = $userModel->where('user_id', $currentUserPermanentId)->first();
-        $currentUserId = $currentUser ? $currentUser['id'] : null;
-        
-        $updated = 0;
-        $restricted = [];
-        
-        foreach ($userIds as $id) {
-            $user = $userModel->find($id);
+            // Get current user's database ID from session
+            $session = session();
+            $currentUserPermanentId = $session->get('user_id');
+            $currentUser = $userModel->where('user_id', $currentUserPermanentId)->first();
+            $currentUserId = $currentUser ? $currentUser['id'] : null;
             
-            if ($user) {
+            $updated = 0;
+            $restricted = [];
+            $errors = [];
+            
+            foreach ($userIds as $id) {
+                $user = $userModel->find($id);
+                
+                if (!$user) {
+                    $errors[] = "User with ID {$id} not found";
+                    continue;
+                }
+                
                 // Check restrictions: current user or SK Chairperson (position 1)
                 $isCurrentUser = ($user['id'] == $currentUserId);
                 $isChairperson = ($user['position'] == 1);
@@ -556,18 +707,10 @@ class MemberController extends BaseController
                     continue;
                 }
                 
-                $updateData = ['position' => $position];
+                $updateData = ['position' => (int)$position];
 
                 // Update user_type based on position
-                if ($position == 2) { // SK Kagawad
-                    $updateData['user_type'] = 2;
-                    
-                    // Generate SK credentials if missing
-                    if (empty($user['sk_username']) || empty($user['sk_password'])) {
-                        $updateData['sk_username'] = UserHelper::generateSKUsername($user['first_name'], $user['last_name']);
-                        $updateData['sk_password'] = UserHelper::generatePassword(8);
-                    }
-                } elseif ($position == 3) { // Secretary
+                if ($position == 2) { // SK Secretary
                     $updateData['user_type'] = 2;
                     
                     // Generate Secretary credentials with SEC_ prefix if missing
@@ -575,40 +718,66 @@ class MemberController extends BaseController
                         $updateData['sk_username'] = UserHelper::generateSecretaryUsername($user['first_name'], $user['last_name']);
                         $updateData['sk_password'] = UserHelper::generatePassword(8);
                     }
-                } elseif ($position == 4) { // Treasurer (Pederasyon officer)
-                    $updateData['user_type'] = 3;
+                } elseif ($position == 3) { // SK Treasurer
+                    $updateData['user_type'] = 2;
                     
-                    // Generate PED credentials if missing
-                    if (empty($user['ped_username']) || empty($user['ped_password'])) {
-                        $updateData['ped_username'] = UserHelper::generatePEDUsername($user['first_name'], $user['last_name']);
-                        $updateData['ped_password'] = UserHelper::generatePassword(8);
+                    // Generate SK credentials if missing
+                    if (empty($user['sk_username']) || empty($user['sk_password'])) {
+                        $updateData['sk_username'] = UserHelper::generateSKUsername($user['first_name'], $user['last_name']);
+                        $updateData['sk_password'] = UserHelper::generatePassword(8);
                     }
-                } elseif ($position == 5) { // SK Pederasyon Member (KK Member)
+                } elseif ($position == 4) { // SK Councilor
+                    $updateData['user_type'] = 2;
+                    
+                    // Generate SK credentials if missing
+                    if (empty($user['sk_username']) || empty($user['sk_password'])) {
+                        $updateData['sk_username'] = UserHelper::generateSKUsername($user['first_name'], $user['last_name']);
+                        $updateData['sk_password'] = UserHelper::generatePassword(8);
+                    }
+                } elseif ($position == 5) { // KK Member
                     $updateData['user_type'] = 1;
-                    // When selecting "SK pederasyon member", set ped_position to null
+                    // When selecting "KK Member", clear SK credentials
+                    $updateData['sk_username'] = null;
+                    $updateData['sk_password'] = null;
                     $updateData['ped_position'] = null;
                 }
 
-                $userModel->update($id, $updateData);
-                $updated++;
+                $result = $userModel->update($id, $updateData);
+                if ($result) {
+                    $updated++;
+                } else {
+                    $modelErrors = $userModel->errors();
+                    if (!empty($modelErrors)) {
+                        $errors[] = "Failed to update " . $user['first_name'] . ' ' . $user['last_name'] . ': ' . implode(', ', array_values($modelErrors));
+                    }
+                }
             }
-        }
-        
-        // Prepare response message
-        $message = '';
-        if ($updated > 0) {
-            $message = "Updated {$updated} user positions successfully";
-        }
-        
-        if (!empty($restricted)) {
-            $restrictedMessage = "Could not update " . implode(', ', $restricted);
-            $message = $message ? $message . '. ' . $restrictedMessage : $restrictedMessage;
-        }
-        
-        if ($updated > 0) {
-            return $this->response->setJSON(['success' => true, 'message' => $message]);
-        } else {
-            return $this->response->setStatusCode(400)->setJSON(['success' => false, 'message' => $message ?: 'No users found to update']);
+            
+            // Prepare response message
+            $message = '';
+            if ($updated > 0) {
+                $message = "Updated {$updated} user position(s) successfully";
+            }
+            
+            if (!empty($restricted)) {
+                $restrictedMessage = "Could not update " . implode(', ', $restricted);
+                $message = $message ? $message . '. ' . $restrictedMessage : $restrictedMessage;
+            }
+            
+            if (!empty($errors)) {
+                $errorMessage = "Errors: " . implode('; ', $errors);
+                $message = $message ? $message . '. ' . $errorMessage : $errorMessage;
+            }
+            
+            if ($updated > 0) {
+                return $this->response->setJSON(['success' => true, 'message' => $message]);
+            } else {
+                return $this->response->setStatusCode(400)->setJSON(['success' => false, 'message' => $message ?: 'No users were updated']);
+            }
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error in bulk update user position: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON(['success' => false, 'message' => 'Database error occurred while updating positions']);
         }
     }
 

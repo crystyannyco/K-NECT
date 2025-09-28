@@ -940,16 +940,25 @@
                     data: { user_ids: selectedIds, position: newType },
                     success: function(response) {
                         if (response.success) {
-                            showNotification(response.message, 'success');
+                            showNotification(response.message || 'Positions updated successfully', 'success');
                         } else {
                             showNotification(response.message || 'Update failed', 'error');
                         }
                         setTimeout(() => location.reload(), 1200);
                     },
                     error: function(xhr) {
-                        var errorMessage = 'Failed to update user positions.';
-                        if (xhr.responseJSON && xhr.responseJSON.message) {
-                            errorMessage = xhr.responseJSON.message;
+                        let errorMessage = 'Failed to update user positions.';
+                        try {
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMessage = xhr.responseJSON.message;
+                            } else if (xhr.responseText) {
+                                const errorData = JSON.parse(xhr.responseText);
+                                if (errorData.message) {
+                                    errorMessage = errorData.message;
+                                }
+                            }
+                        } catch (e) {
+                            // Keep default error message if parsing fails
                         }
                         showNotification(errorMessage, 'error');
                     }
@@ -1149,23 +1158,47 @@
             $('#confirmRoleChangeBtn').on('click', function() {
                 const userId = pendingUserTypeChange.userId;
                 const newType = pendingUserTypeChange.newType;
-                    $.ajax({
-                        url: '/updateUserPosition',
-                        method: 'POST',
-                        data: { user_id: userId, position: parseInt(newType, 10) },
-                        success: function(response) {
-                            showNotification('User position updated successfully!', 'success');
+                
+                // Validate inputs
+                if (!userId || !newType) {
+                    showNotification('Invalid user or position data', 'error');
+                    return;
+                }
+                
+                $.ajax({
+                    url: '/updateUserPosition',
+                    method: 'POST',
+                    data: { user_id: userId, position: parseInt(newType, 10) },
+                    success: function(response) {
+                        if (response.success) {
+                            showNotification(response.message || 'User position updated successfully!', 'success');
                             setTimeout(() => location.reload(), 1200);
-                        },
-                        error: function() {
-                            showNotification('Failed to update user position.', 'error');
+                        } else {
+                            showNotification(response.message || 'Failed to update user position', 'error');
                         }
-                    });
+                    },
+                    error: function(xhr) {
+                        let errorMessage = 'Failed to update user position.';
+                        try {
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMessage = xhr.responseJSON.message;
+                            } else if (xhr.responseText) {
+                                const errorData = JSON.parse(xhr.responseText);
+                                if (errorData.message) {
+                                    errorMessage = errorData.message;
+                                }
+                            }
+                        } catch (e) {
+                            // Keep default error message if parsing fails
+                        }
+                        showNotification(errorMessage, 'error');
+                    }
+                });
                 // Close both modals
                 $('#roleChangeModal').addClass('hidden');
                 $('#roleChangeModal').css('display', 'none');
-                    $('#userDetailModal').addClass('hidden');
-                });
+                $('#userDetailModal').addClass('hidden');
+            });
 
             // Cancel role change
             $('#cancelRoleChangeBtn').on('click', function() {

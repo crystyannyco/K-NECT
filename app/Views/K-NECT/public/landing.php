@@ -10,7 +10,7 @@
     <meta property="og:title" content="<?= esc($page_title ?? 'K-NECT Youth Engagement') ?>" />
     <meta property="og:description" content="<?= esc($pageDescription ?? '') ?>" />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="<?= esc($siteLogoUrl ?? base_url('/assets/images/Logo.png')) ?>" />
+    <meta property="og:image" content="<?= esc($siteLogoUrl ?? base_url('/assets/images/K-Nect-Logo.png')) ?>" />
     <meta property="og:url" content="<?= esc($canonicalUrl ?? current_url()) ?>" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -46,7 +46,7 @@
         /* Header */
         header{position:sticky;top:0;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);z-index:60}
     .nav{display:flex;align-items:center;gap:1rem;height:78px}
-    .brand img{height:68px;width:auto}
+    .brand img{height:25px;width:auto;padding-left:50px}
         .nav-links{display:flex;gap:1rem;margin-left:auto;font-size:.9rem;font-weight:600}
         .nav-links a{position:relative;padding:.25rem 0;color:var(--ink)}
         .nav-links a:after{content:"";position:absolute;left:0;bottom:-3px;height:2px;width:0;background:var(--primary);transition:.3s;border-radius:2px}
@@ -382,7 +382,7 @@
     <header>
         <div class="container nav" role="navigation" aria-label="Primary">
             <a class="brand" href="<?= base_url('/') ?>" aria-label="K-NECT home">
-                <img src="<?= esc($siteLogoUrl ?? base_url('/assets/images/K-Nect-Logo.png')) ?>" alt="K-NECT logo" width="176" height="68" loading="eager" decoding="async" />
+                <img src="<?= esc($siteLogoUrl ?? base_url('/assets/images/K-Nect-Logo.png')) ?>" alt="K-NECT logo" width="25" loading="eager" decoding="async" />
             </a>
             <nav class="nav-links" aria-label="In-page sections">
                 <a href="#programs">Programs</a>
@@ -455,7 +455,7 @@
                         <span class="logo-flame">
                             <span class="flame-sparks s1" aria-hidden="true"></span>
                             <span class="flame-sparks s2" aria-hidden="true"></span>
-                            <img src="<?= base_url('uploads/logos/pederasyon_logo_1757677686.png') ?>" alt="Pederasyon logo" width="240" height="240" style="max-width:240px;width:100%;height:auto;object-fit:contain;" />
+                            <img src="<?= base_url('/assets/images/SK-pederasyon-Logo.png') ?>" alt="Pederasyon logo" width="240" height="240" style="max-width:240px;width:100%;height:auto;object-fit:contain;" />
                         </span>
                     </div>
                     <div class="carousel" aria-roledescription="carousel" aria-label="Programs carousel">

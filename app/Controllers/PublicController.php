@@ -70,32 +70,8 @@ class PublicController extends BaseController
             ['title'=>'Analytics Overview','desc'=>'Understand key demographic trends.','icon'=>'fa-chart-pie'],
         ];
 
-        // Determine site logo URL (fallback to first available logo if logo.png is missing)
-        try {
-            $logoRelPath = 'uploads/logos/logo.png';
-            $logoFsPath = FCPATH . $logoRelPath; // FCPATH = public/ path
-            if (is_file($logoFsPath)) {
-                $siteLogoUrl = base_url($logoRelPath);
-            } else {
-                $logosDir = FCPATH . 'uploads/logos/';
-                if (is_dir($logosDir)) {
-                    $files = scandir($logosDir);
-                    foreach ($files as $f) {
-                        if ($f === '.' || $f === '..') { continue; }
-                        $ext = strtolower(pathinfo($f, PATHINFO_EXTENSION));
-                        if (in_array($ext, ['png','jpg','jpeg','webp'])) {
-                            $siteLogoUrl = base_url('uploads/logos/' . $f);
-                            break;
-                        }
-                    }
-                }
-            }
-        } catch (\Throwable $e) {
-            // noop, fallback below
-        }
-        if (!$siteLogoUrl) {
-            $siteLogoUrl = base_url('favicon.ico');
-        }
+        // Use K-NECT logo for the public landing page
+        $siteLogoUrl = base_url('assets/images/K-Nect-Logo.png');
 
         $data = [
             'page_title' => 'K-NECT Youth Engagement Platform',
@@ -168,27 +144,8 @@ class PublicController extends BaseController
                 ->where('e.status','Published')
                 ->limit(1);
             $event = $builder->get()->getRowArray();
-            // Determine site logo (same fallback as landing)
-            try {
-                $logoRelPath = 'uploads/logos/logo.png';
-                $logoFsPath = FCPATH . $logoRelPath;
-                if (is_file($logoFsPath)) {
-                    $siteLogoUrl = base_url($logoRelPath);
-                } else {
-                    $logosDir = FCPATH . 'uploads/logos/';
-                    if (is_dir($logosDir)) {
-                        $files = scandir($logosDir);
-                        foreach ($files as $f) {
-                            if ($f === '.' || $f === '..') { continue; }
-                            $ext = strtolower(pathinfo($f, PATHINFO_EXTENSION));
-                            if (in_array($ext, ['png','jpg','jpeg','webp'])) {
-                                $siteLogoUrl = base_url('uploads/logos/' . $f);
-                                break;
-                            }
-                        }
-                    }
-                }
-            } catch (\Throwable $ie) { /* ignore logo errors */ }
+            // Use K-NECT logo for public event pages
+            $siteLogoUrl = base_url('assets/images/K-Nect-Logo.png');
         } catch (\Throwable $e) {
             log_message('error','Public event detail query error: '.$e->getMessage());
         }

@@ -15,6 +15,12 @@ class App extends BaseConfig
      * WITH a trailing slash:
      *
      * E.g., http://example.com/
+     * 
+     * IMPORTANT FOR HOSTINGER HOSTING:
+     * Update this to your actual domain URL for production:
+     * public string $baseURL = 'https://yourdomain.com/';
+     * or for subdirectory hosting:
+     * public string $baseURL = 'https://yourdomain.com/k-nect/';
      */
     public string $baseURL = 'http://localhost:8080/';
 

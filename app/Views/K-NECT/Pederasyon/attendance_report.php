@@ -469,7 +469,8 @@ function downloadAttendancePDF() {
     }
     
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('l', 'mm', 'a4'); // landscape orientation
+    // Use custom page size: 13 x 8.5 inches -> expressed in mm: 13*25.4 = 330.2, 8.5*25.4 = 215.9
+    const doc = new jsPDF('l', 'mm', [330.2, 215.9]); // landscape, custom size in mm
     
     // First fetch logos to include in PDF if available
     fetch('<?= base_url('documents/logos') ?>')
@@ -534,8 +535,11 @@ function generateAttendancePDFWithLogos(doc, pederasyonLogo, irigaLogo, button, 
         let yPosition = 15;
         
         // Layout: Logo - 20% space - Header text - 20% space - Logo
-        const pageWidth = doc.internal.pageSize.getWidth(); // ~297mm for A4 landscape
+        const pageWidth = doc.internal.pageSize.getWidth(); // ~330.2mm for 13x8.5 landscape
         const centerX = pageWidth / 2; // Center of page
+        // Safe printable margin: 0.5 inch = 12.7 mm
+        const safeMargin = 12.7;
+        const tableWidth = pageWidth - (safeMargin * 2);
         const logoSize = 20; // 20mm logos
         const spaceWidth = pageWidth * 0.2; // 20% of page width for spacing
         
@@ -558,27 +562,11 @@ function generateAttendancePDFWithLogos(doc, pederasyonLogo, irigaLogo, button, 
         doc.text('CITY OF IRIGA', centerX, yPosition + 15, { align: 'center' });
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
-        doc.text('SANGGUNIANG KABATAAN PEDERASYON', centerX, yPosition + 20, { align: 'center' });
+        doc.text('PANLUNGSOD NA PEDERASYON NG MGA', centerX, yPosition + 20, { align: 'center' });
+        doc.text('SANGGUNIANG KABATAAN', centerX, yPosition + 25, { align: 'center' });
         
-        // Add barangay name if available - FIXED: Use barangay_name from controller or fallback to records
-        <?php
-        // Try to get barangay name from controller data first, then from records
-        $barangayName = $barangay_name ?? '';
-        if (!$barangayName && !empty($attendance_records)) {
-            foreach ($attendance_records as $record) {
-                if (!empty($record['barangay_name'])) {
-                    $barangayName = $record['barangay_name'];
-                    break;
-                }
-            }
-        }
-        ?>
-        <?php if ($barangayName): ?>
-        doc.text('NG BARANGAY <?= strtoupper(addslashes($barangayName)) ?>', centerX, yPosition + 25, { align: 'center' });
+        // No barangay line for Pederasyon documents - header intentionally shows city + Panlungsod Pederasyon only
         yPosition += 40;
-        <?php else: ?>
-        yPosition += 35;
-        <?php endif; ?>
         
         // Title
         doc.setFontSize(14);
@@ -587,14 +575,15 @@ function generateAttendancePDFWithLogos(doc, pederasyonLogo, irigaLogo, button, 
         
         yPosition += 15;
         
-        // Event details
+        // Event details - align to table's left edge
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
-        doc.text('Event: ' + eventData.title, 20, yPosition);
-        doc.text('Date: ' + eventData.date, 20, yPosition + 5);
-        doc.text('Time: ' + eventData.time, 20, yPosition + 10);
+        const effectiveLeft = Math.max(safeMargin, (pageWidth - tableWidth) / 2);
+        doc.text('Event: ' + eventData.title, effectiveLeft, yPosition);
+        doc.text('Date: ' + eventData.date, effectiveLeft, yPosition + 5);
+        doc.text('Time: ' + eventData.time, effectiveLeft, yPosition + 10);
         if (eventData.location) {
-            doc.text('Location: ' + eventData.location, 20, yPosition + 15);
+            doc.text('Location: ' + eventData.location, effectiveLeft, yPosition + 15);
             yPosition += 5;
         }
         
@@ -677,64 +666,61 @@ function generateAttendancePDFWithLogos(doc, pederasyonLogo, irigaLogo, button, 
         });
         
         // Add table with proper safe area margins and perfect centering
-        const safeMargin = 15; // 15mm safe margins from edges
-        const tableWidth = pageWidth - (safeMargin * 2); // Full width minus safe margins
-        
+        // Compute proportional column widths so the table fills the printable width
+        const colWeights = [6, 10, 36, 10, 8, 8, 8, 8, 8, 8]; // relative weights for columns
+        const totalWeight = colWeights.reduce((a, b) => a + b, 0);
+        const columnStyles = {};
+        colWeights.forEach((w, i) => {
+            columnStyles[i] = {
+                cellWidth: (tableWidth * (w / totalWeight)),
+                halign: (i === 2 ? 'left' : 'center')
+            };
+        });
+
         doc.autoTable({
             head: [['No.', 'KK Number', 'Name', 'Zone', 'AM Time-In', 'AM Time-Out', 'AM Status', 'PM Time-In', 'PM Time-Out', 'PM Status']],
             body: tableData,
             startY: yPosition,
             margin: { left: safeMargin, right: safeMargin }, // Safe area margins
-            tableWidth: 'wrap', // Let autoTable calculate optimal width
-            horizontalPageBreak: true,
-            styles: {
-                fontSize: 7,
-                cellPadding: 1.5,
-                overflow: 'linebreak',
-                lineColor: [0, 0, 0],
-                lineWidth: 0.1,  // Thin borders
-                halign: 'center',
-                valign: 'middle'
-            },
-            headStyles: {
-                fillColor: [255, 255, 255],  // White background
-                textColor: [0, 0, 0],        // Black text
-                fontStyle: 'bold',
-                fontSize: 8,
-                lineColor: [0, 0, 0],
-                lineWidth: 0.1,  // Thin borders
-                halign: 'center',
-                valign: 'middle'
-            },
-            bodyStyles: {
-                fillColor: [255, 255, 255],  // White background
-                textColor: [0, 0, 0],        // Black text
-                lineColor: [0, 0, 0],
-                lineWidth: 0.1,  // Thin borders
-                halign: 'center',
-                valign: 'middle'
-            },
-            columnStyles: {
-                0: { cellWidth: 20, halign: 'center' },  // No.
-                1: { cellWidth: 25, halign: 'center' },  // KK Number
-                2: { cellWidth: 55, halign: 'left' },    // Name (left aligned for readability)
-                3: { cellWidth: 20, halign: 'center' },  // Zone
-                4: { cellWidth: 25, halign: 'center' },  // AM Time-In
-                5: { cellWidth: 25, halign: 'center' },  // AM Time-Out
-                6: { cellWidth: 22, halign: 'center' },  // AM Status
-                7: { cellWidth: 25, halign: 'center' },  // PM Time-In
-                8: { cellWidth: 25, halign: 'center' },  // PM Time-Out
-                9: { cellWidth: 22, halign: 'center' }   // PM Status
-            },
-            theme: 'grid',  // Clean grid theme with borders only
-            didDrawPage: function (data) {
-                // Center the table on each page
-                const tableWidth = data.table.width;
-                const pageWidth = doc.internal.pageSize.getWidth();
-                const marginLeft = (pageWidth - tableWidth) / 2;
-                data.settings.margin.left = Math.max(marginLeft, safeMargin);
-            }
-        });
+            tableWidth: tableWidth, // Use computed printable width
+        horizontalPageBreak: true,
+        styles: {
+            fontSize: 7,
+            cellPadding: 1.5,
+            overflow: 'linebreak',
+            lineColor: [0, 0, 0],
+            lineWidth: 0.1,  // Thin borders
+            halign: 'center',
+            valign: 'middle'
+        },
+        headStyles: {
+            fillColor: [255, 255, 255],  // White background
+            textColor: [0, 0, 0],        // Black text
+            fontStyle: 'bold',
+            fontSize: 8,
+            lineColor: [0, 0, 0],
+            lineWidth: 0.1,  // Thin borders
+            halign: 'center',
+            valign: 'middle'
+        },
+        bodyStyles: {
+            fillColor: [255, 255, 255],  // White background
+            textColor: [0, 0, 0],        // Black text
+            lineColor: [0, 0, 0],
+            lineWidth: 0.1,  // Thin borders
+            halign: 'center',
+            valign: 'middle'
+        },
+        columnStyles: columnStyles,
+        theme: 'grid',  // Clean grid theme with borders only
+        didDrawPage: function (data) {
+            // Center the table on each page
+            const tableW = data.table.width;
+            const pageW = doc.internal.pageSize.getWidth();
+            const marginLeft = (pageW - tableW) / 2;
+            data.settings.margin.left = Math.max(marginLeft, safeMargin);
+        }
+    });
         
         // Save and download
         const fileName = `Pederasyon_Attendance_Report_${eventData.title.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
@@ -845,437 +831,6 @@ function toggleDescription(button) {
     }
 }
 </script>
-
-<!-- ===== MAIN CONTENT AREA ===== -->
-<div class="flex-1 flex flex-col min-h-0 ml-64 pt-16">
-    <main class="flex-1 overflow-auto p-6 bg-gray-50">
-        <!-- Header Section -->
-        <div class="flex items-center justify-between mb-6">
-            <div>
-                <h3 class="text-2xl font-bold text-gray-900">Attendance Report</h3>
-                <p class="text-sm text-gray-600 mt-1">View attendance details for completed events</p>
-            </div>
-            <a href="<?= base_url('pederasyon/attendance') ?>" 
-               class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                </svg>
-                Back to Events
-            </a>
-        </div>
-
-        <!-- Event Details Card -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
-            <div class="px-6 py-4 border-b border-gray-200">
-                <h4 class="text-lg font-semibold text-gray-900 flex items-center">
-                    <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                    </svg>
-                    <?= esc($event['title']) ?>
-                </h4>
-            </div>
-            <div class="p-6">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- Event Information -->
-                    <div class="lg:col-span-2">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <?php if ($event['description']): ?>
-                            <div class="md:col-span-2">
-                                <div class="flex items-start">
-                                    <svg class="w-4 h-4 mr-2 mt-0.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                    </svg>
-                                    <div>
-                                        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Description</p>
-                                        <p class="text-sm text-gray-900 mt-1"><?= esc($event['description']) ?></p>
-                                    </div>
-                                </div>
-                            </div>
-                            <?php endif; ?>
-                            
-                            <div class="flex items-start">
-                                <svg class="w-4 h-4 mr-2 mt-0.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                </svg>
-                                <div>
-                                    <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Date</p>
-                                    <p class="text-sm font-medium text-gray-900 mt-1"><?= date('F j, Y', strtotime($event['start_datetime'])) ?></p>
-                                </div>
-                            </div>
-                            
-                            <div class="flex items-start">
-                                <svg class="w-4 h-4 mr-2 mt-0.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                </svg>
-                                <div>
-                                    <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Time</p>
-                                    <p class="text-sm font-medium text-gray-900 mt-1"><?= date('g:i A', strtotime($event['start_datetime'])) ?> - <?= date('g:i A', strtotime($event['end_datetime'])) ?></p>
-                                </div>
-                            </div>
-                            
-                            <?php if ($event['location']): ?>
-                            <div class="flex items-start">
-                                <svg class="w-4 h-4 mr-2 mt-0.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                </svg>
-                                <div>
-                                    <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Location</p>
-                                    <p class="text-sm font-medium text-gray-900 mt-1"><?= esc($event['location']) ?></p>
-                                </div>
-                            </div>
-                            <?php endif; ?>
-                            
-                            <?php if ($event['category']): ?>
-                            <div class="flex items-start">
-                                <svg class="w-4 h-4 mr-2 mt-0.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
-                                </svg>
-                                <div>
-                                    <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Category</p>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mt-1">
-                                        <?= esc(ucfirst($event['category'])) ?>
-                                    </span>
-                                </div>
-                            </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                    
-                    <!-- Attendance Statistics -->
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <h5 class="text-sm font-semibold text-gray-900 mb-3 flex items-center">
-                            <svg class="w-4 h-4 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                            </svg>
-                            Attendance Summary
-                        </h5>
-                        <div class="space-y-3">
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600">Total Attendees</span>
-                                <span class="text-lg font-bold text-blue-600"><?= count($attendance_records) ?></span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600">Morning Session</span>
-                                <span class="text-sm font-semibold text-green-600"><?= count(array_filter($attendance_records, function($r) { return !empty($r['time-in_am']); })) ?></span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600">Afternoon Session</span>
-                                <span class="text-sm font-semibold text-blue-600"><?= count(array_filter($attendance_records, function($r) { return !empty($r['time-in_pm']); })) ?></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Attendance Records Table -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div class="px-6 py-4 border-b border-gray-200">
-                <div class="flex items-center justify-between">
-                    <h4 class="text-lg font-semibold text-gray-900 flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
-                        </svg>
-                        Attendance Records
-                    </h4>
-                        <div class="flex items-center text-sm text-gray-500">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-                        </svg>
-                        <?= count($attendance_records) ?> total records
-                    </div>
-                </div>
-            </div>
-            <div class="overflow-x-auto">
-                <table id="attendanceTable" class="min-w-full">
-                    <thead>
-                        <tr class="bg-gray-50 border-b border-gray-200">
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                <div class="flex items-center">
-                                    <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/>
-                                    </svg>
-                                    No.
-                                </div>
-                            </th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                <div class="flex items-center">
-                                    <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                                    </svg>
-                                    Name
-                                </div>
-                            </th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                <div class="flex items-center">
-                                    <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                    </svg>
-                                    Barangay
-                                </div>
-                            </th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                <div class="flex items-center">
-                                    <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                    </svg>
-                                    Age
-                                </div>
-                            </th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                <div class="flex items-center">
-                                    <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
-                                    </svg>
-                                    Sex
-                                </div>
-                            </th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                <div class="flex items-center">
-                                    <svg class="w-4 h-4 mr-2 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
-                                    </svg>
-                                    Time In (AM)
-                                </div>
-                            </th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                <div class="flex items-center">
-                                    <svg class="w-4 h-4 mr-2 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
-                                    </svg>
-                                    Time Out (AM)
-                                </div>
-                            </th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                <div class="flex items-center">
-                                    <svg class="w-4 h-4 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
-                                    </svg>
-                                    Time In (PM)
-                                </div>
-                            </th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                <div class="flex items-center">
-                                    <svg class="w-4 h-4 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
-                                    </svg>
-                                    Time Out (PM)
-                                </div>
-                            </th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                <div class="flex items-center">
-                                    <svg class="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                    </svg>
-                                    AM Status
-                                </div>
-                            </th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                <div class="flex items-center">
-                                    <svg class="w-4 h-4 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                    </svg>
-                                    PM Status
-                                </div>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white">
-                        <?php if (!empty($attendance_records)): ?>
-                            <?php foreach ($attendance_records as $index => $record): ?>
-                                <tr class="border-b border-gray-100 hover:bg-blue-50 transition-colors duration-150">
-                                    <td class="px-6 py-4 text-sm font-medium text-gray-900">
-                                        <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-800 text-xs font-semibold">
-                                            <?= $index + 1 ?>
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center">
-                                            <div class="flex-shrink-0 h-8 w-8">
-                                                <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                                                    <span class="text-sm font-medium text-blue-800">
-                                                        <?= strtoupper(substr($record['user_name'], 0, 2)) ?>
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div class="ml-3">
-                                                <div class="text-sm font-medium text-gray-900">
-                                                    <?= esc($record['user_name']) ?>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-600">
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                            <?= esc($record['barangay']) ?>
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-600 text-center">
-                                        <?= esc($record['age']) ?>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-center">
-                                        <?php if (strtolower($record['sex']) === 'male'): ?>
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6z"/>
-                                                </svg>
-                                                Male
-                                            </span>
-                                        <?php else: ?>
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800">
-                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6z"/>
-                                                </svg>
-                                                Female
-                                            </span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <?php if (!empty($record['time_in_am'])): ?>
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-yellow-50 text-yellow-700 border border-yellow-200">
-                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
-                                                </svg>
-                                                <?= date('h:i A', strtotime($record['time_in_am'])) ?>
-                                            </span>
-                                        <?php else: ?>
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-500 border border-gray-200">
-                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/>
-                                                </svg>
-                                                No Record
-                                            </span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <?php if (!empty($record['time_out_am'])): ?>
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-yellow-50 text-yellow-700 border border-yellow-200">
-                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
-                                                </svg>
-                                                <?= date('h:i A', strtotime($record['time_out_am'])) ?>
-                                            </span>
-                                        <?php else: ?>
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-500 border border-gray-200">
-                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/>
-                                                </svg>
-                                                No Record
-                                            </span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <?php if (!empty($record['time_in_pm'])): ?>
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-orange-50 text-orange-700 border border-orange-200">
-                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
-                                                </svg>
-                                                <?= date('h:i A', strtotime($record['time_in_pm'])) ?>
-                                            </span>
-                                        <?php else: ?>
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-500 border border-gray-200">
-                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/>
-                                                </svg>
-                                                No Record
-                                            </span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <?php if (!empty($record['time_out_pm'])): ?>
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-orange-50 text-orange-700 border border-orange-200">
-                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
-                                                </svg>
-                                                <?= date('h:i A', strtotime($record['time_out_pm'])) ?>
-                                            </span>
-                                        <?php else: ?>
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-500 border border-gray-200">
-                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/>
-                                                </svg>
-                                                No Record
-                                            </span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <?php
-                                        $am_status = $record['status_am'] ?? 'No Record';
-                                        $am_icon = '';
-                                        $am_color = '';
-                                        switch(strtolower($am_status)) {
-                                            case 'present':
-                                                $am_color = 'bg-green-50 text-green-700 border-green-200';
-                                                $am_icon = '<svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>';
-                                                break;
-                                            case 'absent':
-                                                $am_color = 'bg-red-50 text-red-700 border-red-200';
-                                                $am_icon = '<svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>';
-                                                break;
-                                            case 'late':
-                                                $am_color = 'bg-yellow-50 text-yellow-700 border-yellow-200';
-                                                $am_icon = '<svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>';
-                                                break;
-                                            default:
-                                                $am_color = 'bg-gray-50 text-gray-600 border-gray-200';
-                                                $am_icon = '<svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>';
-                                        }
-                                        ?>
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border <?= $am_color ?>">
-                                            <?= $am_icon ?>
-                                            <?= esc($am_status) ?>
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <?php
-                                        $pm_status = $record['status_pm'] ?? 'No Record';
-                                        $pm_icon = '';
-                                        $pm_color = '';
-                                        switch(strtolower($pm_status)) {
-                                            case 'present':
-                                                $pm_color = 'bg-green-50 text-green-700 border-green-200';
-                                                $pm_icon = '<svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>';
-                                                break;
-                                            case 'absent':
-                                                $pm_color = 'bg-red-50 text-red-700 border-red-200';
-                                                $pm_icon = '<svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>';
-                                                break;
-                                            case 'late':
-                                                $pm_color = 'bg-yellow-50 text-yellow-700 border-yellow-200';
-                                                $pm_icon = '<svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>';
-                                                break;
-                                            default:
-                                                $pm_color = 'bg-gray-50 text-gray-600 border-gray-200';
-                                                $pm_icon = '<svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>';
-                                        }
-                                        ?>
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border <?= $pm_color ?>">
-                                            <?= $pm_icon ?>
-                                            <?= esc($pm_status) ?>
-                                        </span>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <tr>
-                                <td colspan="11" class="px-6 py-12 text-center">
-                                    <div class="flex flex-col items-center">
-                                        <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                                        </svg>
-                                        <p class="text-sm text-gray-500">No attendance records found for this event.</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </main>
-</div>
 
 <script>
 $(document).ready(function() {

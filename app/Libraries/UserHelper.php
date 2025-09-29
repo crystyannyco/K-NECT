@@ -95,7 +95,7 @@ class UserHelper
                 1 => 'Chairperson',
                 2 => 'Secretary',
                 3 => 'Treasurer',
-                4 => 'Member'
+                4 => 'SK Councilor',
             ];
             $positionText = $positions[$user['position']] ?? 'Member';
         } elseif ($userType === 'pederasyon') {

@@ -183,13 +183,17 @@ class ProfilingController extends BaseController
             if ($age < 15 && !$isTurning15Soon) {
                 session()->set('profiling_step', 2);
                 session()->set('profile_data', $userData + $genderData + ['region' => 'Region V', 'province' => 'Camarines Sur', 'municipality' => 'Iriga City', 'barangay' => $addressData['barangay'], 'zone_purok' => $addressData['zone_purok'], 'age_group' => $ageGroup]);
-                return redirect()->back()->withInput()->with('validation_user', $userModel->validation)
+                $postData = $this->request->getPost();
+                session()->setFlashdata('_ci_old_input', $postData);
+                return redirect()->back()->with('validation_user', $userModel->validation)
                     ->with('age_error', 'Only users who are at least 15 years old (or turning 15 within 1 month) are allowed.');
             }
             if ($age > 30) {
                 session()->set('profiling_step', 2);
                 session()->set('profile_data', $userData + $genderData + ['region' => 'Region V', 'province' => 'Camarines Sur', 'municipality' => 'Iriga City', 'barangay' => $addressData['barangay'], 'zone_purok' => $addressData['zone_purok'], 'age_group' => $ageGroup]);
-                return redirect()->back()->withInput()->with('validation_user', $userModel->validation)
+                $postData = $this->request->getPost();
+                session()->setFlashdata('_ci_old_input', $postData);
+                return redirect()->back()->with('validation_user', $userModel->validation)
                     ->with('age_error', 'Only users aged between 15 to 30 years old are allowed.');
             }
             // Calculate age group
@@ -206,7 +210,9 @@ class ProfilingController extends BaseController
             session()->set('profiling_step', 2);
             session()->set('profile_data', $userData + ['region' => 'Region V', 'province' => 'Camarines Sur', 'municipality' => 'Iriga City', 'barangay' => $addressData['barangay'], 'zone_purok' => $addressData['zone_purok'], 'age_group' => $ageGroup]);
             
-            return redirect()->back()->withInput()
+            $postData = $this->request->getPost();
+            session()->setFlashdata('_ci_old_input', $postData);
+            return redirect()->back()
                 ->with('validation_user', $userModel->validation)
                 ->with('validation_address', $addressModel->validation);
         }
@@ -242,7 +248,7 @@ class ProfilingController extends BaseController
     // Handle file uploads with validation
         $birthCertFile = $this->request->getFile('birth_certificate');
     $uploadIdFile = $this->request->getFile('upload_id');
-    $uploadIdBackFile = $this->request->getFile('upload_id_back');
+    $uploadIdBackFile = $this->request->getFile('upload_id-back');
         $certificatePath = FCPATH . 'uploads/certificate/';
         $idPath = FCPATH . 'uploads/id/';
         // Ensure directories exist
@@ -325,9 +331,9 @@ class ProfilingController extends BaseController
             $fileName = $uploadIdBackFile->getClientName();
             $fileSize = round($uploadIdBackFile->getSize() / (1024 * 1024), 2); // Size in MB
             if (!in_array($uploadIdBackFile->getMimeType(), $allowedTypes)) {
-                $fileErrors['upload_id_back'] = "Invalid file type for '{$fileName}'. Allowed formats: JPG, PNG, GIF, WEBP, PDF.";
+                $fileErrors['upload_id-back'] = "Invalid file type for '{$fileName}'. Allowed formats: JPG, PNG, GIF, WEBP, PDF.";
             } elseif ($uploadIdBackFile->getSize() > $maxSize) {
-                $fileErrors['upload_id_back'] = "Valid ID (Back) file '{$fileName}' is too large ({$fileSize} MB). Maximum allowed size is 5MB.";
+                $fileErrors['upload_id-back'] = "Valid ID (Back) file '{$fileName}' is too large ({$fileSize} MB). Maximum allowed size is 5MB.";
             } else {
                 $newName = 'tmp_idback_' . (method_exists(session(), 'getId') ? session()->getId() : session_id()) . '_' . uniqid() . '.' . $uploadIdBackFile->getExtension();
                 $uploadIdBackFile->move($idPath, $newName);
@@ -342,7 +348,7 @@ class ProfilingController extends BaseController
             // Check if a file was attempted to be uploaded but failed
             if ($uploadIdBackFile && $uploadIdBackFile->getError() !== UPLOAD_ERR_NO_FILE) {
                 $fileName = $uploadIdBackFile->getClientName() ?: 'Unknown file';
-                $fileErrors['upload_id_back'] = "Failed to upload Valid ID (Back) '{$fileName}'. Please try again.";
+                $fileErrors['upload_id-back'] = "Failed to upload Valid ID (Back) '{$fileName}'. Please try again.";
             }
             $prevBack = session('demographic_data')['upload_id-back'] ?? '';
             if (!empty($prevBack)) {
@@ -355,7 +361,9 @@ class ProfilingController extends BaseController
     if (!empty($fileErrors) || !$userExtInfoModel->validate($demo)) {
             session()->set('profiling_step', 3);
             session()->set('demographic_data', $demo);
-            return redirect()->back()->withInput()
+            $postData = $this->request->getPost();
+            session()->setFlashdata('_ci_old_input', $postData);
+            return redirect()->back()
                 ->with('validation', $userExtInfoModel->validation)
                 ->with('file_errors', $fileErrors);
         }
@@ -371,7 +379,9 @@ class ProfilingController extends BaseController
     if (!empty($fileErrors)) {
             session()->set('profiling_step', 3);
             session()->set('demographic_data', $demo);
-            return redirect()->back()->withInput()
+            $postData = $this->request->getPost();
+            session()->setFlashdata('_ci_old_input', $postData);
+            return redirect()->back()
                 ->with('file_errors', $fileErrors);
         }
 
@@ -484,7 +494,9 @@ class ProfilingController extends BaseController
             $account['profile_picture'] = $profile_picture;
             session()->set('account_data', $account);
             // Pass errors as array for the view
-            return redirect()->back()->withInput()
+            $postData = $this->request->getPost();
+            session()->setFlashdata('_ci_old_input', $postData);
+            return redirect()->back()
                 ->with('validation_account_errors', $validation->getErrors())
                 ->with('file_errors', ['profile_picture' => $fileError]);
         }
@@ -501,7 +513,7 @@ class ProfilingController extends BaseController
         $profile = session('profile_data') ?? [];
         session()->set('profiling_step', 2);
         session()->set('profile_data', $profile);
-        return redirect()->to(base_url('profiling'))->withInput();
+        return redirect()->to(base_url('profiling'));
     }
 
     public function backToStep3()
@@ -511,7 +523,7 @@ class ProfilingController extends BaseController
         session()->set('profiling_step', 3);
         session()->set('demographic_data', $demo);
         
-        return redirect()->to(base_url('profiling'))->withInput();
+        return redirect()->to(base_url('profiling'));
     }
 
     public function backToStep4()
@@ -529,7 +541,7 @@ class ProfilingController extends BaseController
         session()->set('account_data', $account);
         session()->set('demographic_data', $demo);
         
-        return redirect()->to(base_url('profiling'))->withInput();
+        return redirect()->to(base_url('profiling'));
     }
 
     public function profilingSubmit()
@@ -718,7 +730,7 @@ class ProfilingController extends BaseController
         ];
         session()->set('demographic_data', $demo);
         session()->set('profiling_step', 1);
-        return redirect()->to(base_url('profiling'))->withInput();
+        return redirect()->to(base_url('profiling'));
     }
 
     public function reuploadById($userId)

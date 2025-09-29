@@ -365,16 +365,6 @@ class EventController extends BaseController
                 return redirect()->back()->withInput()->with('error', 'Please select at least one recipient role for SMS notifications.');
             }
             
-            // Validate that if "All SK Officials" is selected, individual roles are not selected
-            if (in_array('all_officials', $recipientRoles)) {
-                $individualRoles = ['chairman', 'secretary', 'treasurer'];
-                foreach ($individualRoles as $role) {
-                    if (in_array($role, $recipientRoles)) {
-                        return redirect()->back()->withInput()->with('error', 'Cannot select "All SK Officials" and individual SK roles at the same time.');
-                    }
-                }
-            }
-            
             $data['sms_recipient_roles'] = json_encode($recipientRoles);
         } elseif ($smsNotificationEnabled && $isDraft) {
             // For drafts, just save the SMS settings without validation
@@ -552,7 +542,7 @@ class EventController extends BaseController
             
             // Send SMS notifications if enabled
             if ($smsNotificationEnabled) {
-                $this->sendSmsNotifications($event);
+                $this->sendSmsNotifications($event, 'add');
             }
         }
 
@@ -769,16 +759,6 @@ class EventController extends BaseController
                 return $this->handleErrorResponse('Please select at least one recipient role for SMS notifications.');
             }
             
-            // Validate that if "All SK Officials" is selected, individual roles are not selected
-            if (in_array('all_officials', $recipientRoles)) {
-                $individualRoles = ['chairman', 'secretary', 'treasurer'];
-                foreach ($individualRoles as $role) {
-                    if (in_array($role, $recipientRoles)) {
-                        return $this->handleErrorResponse('Cannot select "All SK Officials" and individual SK roles at the same time.');
-                    }
-                }
-            }
-            
             $data['sms_recipient_roles'] = json_encode($recipientRoles);
         } elseif ($smsNotificationEnabled && $isDraft) {
             // For drafts, just save the SMS settings without validation
@@ -989,7 +969,7 @@ class EventController extends BaseController
             
             // Send SMS notifications if enabled
             if ($smsNotificationEnabled) {
-                $this->sendSmsNotifications($updatedEvent);
+                $this->sendSmsNotifications($updatedEvent, 'update');
             }
         }
 
@@ -1132,19 +1112,8 @@ class EventController extends BaseController
         
         // Send SMS notifications
         try {
-            if ($event['barangay_id'] == 0) {
-                $startDate = (new \DateTime($event['start_datetime']))->format('F d, Y');
-                $sms = "SK Pederasyon - Iriga City\n\nEVENT CANCELLED\n\nWe regret to inform you that the {$event['title']} on $startDate has been cancelled.";
-                $this->notifyAllUsers($sms);
-            } else {
-                // Barangay-specific SMS
-                $barangayModel = new \App\Models\BarangayModel();
-                $barangay = $barangayModel->find($event['barangay_id']);
-                $barangayName = $barangay['name'] ?? 'Barangay';
-                $startDate = (new \DateTime($event['start_datetime']))->format('F d, Y');
-                $sms = "SK $barangayName\n\nEVENT CANCELLED\n\nWe regret to inform you that the {$event['title']} on $startDate has been cancelled.";
-                $this->notifyAllUsers($sms, $event['barangay_id']);
-            }
+            // Use the standard SMS notification system with cancel action
+            $this->sendSmsNotifications($event, 'cancel');
         } catch (\Exception $e) {
             log_message('error', 'SMS notification error: ' . $e->getMessage());
             // Don't fail the delete if SMS fails
@@ -1257,97 +1226,330 @@ class EventController extends BaseController
         }
     }
 
-    private function sendSmsNotifications($event) {
+    private function sendSmsNotifications($event, $action = 'add') {
         $userModel = new UserModel();
+        $smsLogModel = new \App\Models\SMSLogModel();
+        
         $recipients = $this->getSmsRecipients($event, $userModel);
         
         if (empty($recipients)) {
             log_message('info', 'No SMS recipients found for event: ' . $event['title']);
-            return;
+            return [
+                'success' => false,
+                'message' => 'No recipients found',
+                'sent' => 0,
+                'failed' => 0
+            ];
         }
         
-        $message = $this->formatSmsMessage($event);
+        $message = $this->formatSmsMessage($event, $action);
+        $sentCount = 0;
+        $failedCount = 0;
+        $results = [];
+        
+        log_message('info', "Starting SMS notifications for event '{$event['title']}' to " . count($recipients) . " recipients");
         
         foreach ($recipients as $recipient) {
             if (!empty($recipient['phone_number'])) {
                 try {
-                    send_sms($recipient['phone_number'], $message);
-                    log_message('info', "SMS sent to: {$recipient['phone_number']}");
+                    $result = send_sms($recipient['phone_number'], $message);
+                    
+                    if ($result && !isset($result['error'])) {
+                        $sentCount++;
+                        $status = 'sent';
+                        $response = is_array($result) ? json_encode($result) : $result;
+                        log_message('info', "SMS sent to: {$recipient['phone_number']} ({$recipient['first_name']} {$recipient['last_name']})");
+                    } else {
+                        $failedCount++;
+                        $status = 'failed';
+                        $response = is_array($result) ? json_encode($result) : $result;
+                        log_message('error', "Failed to send SMS to: {$recipient['phone_number']} - " . $response);
+                    }
+                    
+                    // Log to database using SMS log model
+                    $smsLogModel->logEventSMS(
+                        $event['event_id'],
+                        $recipient['phone_number'],
+                        $message,
+                        $status,
+                        $response,
+                        session('user_id')
+                    );
+                    
+                    $results[] = [
+                        'phone' => $recipient['phone_number'],
+                        'name' => $recipient['first_name'] . ' ' . $recipient['last_name'],
+                        'status' => $status,
+                        'response' => $response
+                    ];
+                    
                 } catch (\Exception $e) {
-                    log_message('error', "Failed to send SMS to {$recipient['phone_number']}: " . $e->getMessage());
+                    $failedCount++;
+                    $errorMessage = $e->getMessage();
+                    
+                    log_message('error', "Exception sending SMS to {$recipient['phone_number']}: " . $errorMessage);
+                    
+                    // Log failed attempt
+                    $smsLogModel->logEventSMS(
+                        $event['event_id'],
+                        $recipient['phone_number'],
+                        $message,
+                        'failed',
+                        $errorMessage,
+                        session('user_id')
+                    );
+                    
+                    $results[] = [
+                        'phone' => $recipient['phone_number'],
+                        'name' => $recipient['first_name'] . ' ' . $recipient['last_name'],
+                        'status' => 'failed',
+                        'error' => $errorMessage
+                    ];
                 }
+            } else {
+                $failedCount++;
+                log_message('warning', "Recipient {$recipient['first_name']} {$recipient['last_name']} has no phone number");
+                
+                $results[] = [
+                    'phone' => 'N/A',
+                    'name' => $recipient['first_name'] . ' ' . $recipient['last_name'],
+                    'status' => 'failed',
+                    'error' => 'No phone number'
+                ];
             }
         }
+        
+        $totalRecipients = count($recipients);
+        log_message('info', "SMS notification summary for event '{$event['title']}': {$sentCount} sent, {$failedCount} failed out of {$totalRecipients} recipients");
+        
+        return [
+            'success' => $sentCount > 0,
+            'message' => "SMS sent: {$sentCount}, Failed: {$failedCount}",
+            'sent' => $sentCount,
+            'failed' => $failedCount,
+            'total' => $totalRecipients,
+            'details' => $results
+        ];
     }
     
     private function getSmsRecipients($event, $userModel) {
         $recipients = [];
         $recipientRoles = json_decode($event['sms_recipient_roles'], true) ?? [];
         
-        // Build query based on recipient scope and roles
-        $query = $userModel->select('user.*, barangay.name as barangay_name')
-                          ->join('barangay', 'barangay.barangay_id = user.barangay_id', 'left');
+        log_message('debug', 'getSmsRecipients called for event: ' . $event['title']);
+        log_message('debug', 'Event barangay_id: ' . $event['barangay_id']);
+        log_message('debug', 'Recipient roles: ' . json_encode($recipientRoles));
         
-        // Handle recipient scope for superadmin
-        if ($event['barangay_id'] == 0 && $event['sms_recipient_scope']) {
-            if ($event['sms_recipient_scope'] === 'specific_barangays') {
-                $selectedBarangays = json_decode($event['sms_recipient_barangays'], true) ?? [];
-                if (!empty($selectedBarangays)) {
-                    $query->whereIn('user.barangay_id', $selectedBarangays);
-                }
+        // Separate City-Level Officials from Barangay-Level roles
+        $cityLevelRoles = [];
+        $barangayLevelRoles = [];
+        
+        foreach ($recipientRoles as $role) {
+            if (in_array($role, [
+                'all_pederasyon_officials', 
+                'pederasyon_members', // Add this - they are SK Chairpersons from all barangays
+                'pederasyon_president', 
+                'pederasyon_vice_president',
+                'pederasyon_secretary', 
+                'pederasyon_treasurer', 
+                'pederasyon_auditor',
+                'pederasyon_pro', 
+                'pederasyon_sergeant'
+            ])) {
+                $cityLevelRoles[] = $role;
+            } else {
+                $barangayLevelRoles[] = $role;
             }
-            // For 'all_barangays', no additional filter needed
-        } else {
-            // For regular events, only include users from the same barangay
-            $query->where('user.barangay_id', $event['barangay_id']);
         }
         
-        // Filter by roles
-        if (!empty($recipientRoles)) {
-            $roleConditions = [];
-            foreach ($recipientRoles as $role) {
+        log_message('debug', 'City-Level roles: ' . json_encode($cityLevelRoles));
+        log_message('debug', 'Barangay-Level roles: ' . json_encode($barangayLevelRoles));
+        
+        // 1. Handle City-Level Officials (Pederasyon) - No barangay filtering
+        if (!empty($cityLevelRoles)) {
+            log_message('debug', 'Processing City-Level Officials...');
+            
+            $cityQuery = $userModel->select('user.*, address.barangay as barangay_id, barangay.name as barangay_name')
+                                  ->join('address', 'address.user_id = user.id', 'left')
+                                  ->join('barangay', 'barangay.barangay_id = address.barangay', 'left');
+            
+            $cityRoleConditions = [];
+            foreach ($cityLevelRoles as $role) {
                 switch ($role) {
                     case 'all_pederasyon_officials':
-                        $roleConditions[] = "user.position LIKE '%Pederasyon%'";
-                        break;
-                    case 'pederasyon_officers':
-                        $roleConditions[] = "(user.position LIKE '%Pederasyon President%' OR user.position LIKE '%Pederasyon Vice President%' OR user.position LIKE '%Pederasyon Secretary%' OR user.position LIKE '%Pederasyon Treasurer%' OR user.position LIKE '%Pederasyon Auditor%' OR user.position LIKE '%Pederasyon Public Information Officer%' OR user.position LIKE '%Pederasyon Sergeant at Arms%')";
+                        // Include both Pederasyon Officials (user_type=3) AND Pederasyon Members (SK Chairpersons from all barangays)
+                        $cityRoleConditions[] = "((user.user_type = 3 AND user.ped_position IS NOT NULL) OR (user.user_type = 2 AND user.position = 1))";
                         break;
                     case 'pederasyon_members':
-                        $roleConditions[] = "(user.position LIKE '%Pederasyon%' AND user.position NOT LIKE '%Pederasyon President%' AND user.position NOT LIKE '%Pederasyon Vice President%' AND user.position NOT LIKE '%Pederasyon Secretary%' AND user.position NOT LIKE '%Pederasyon Treasurer%' AND user.position NOT LIKE '%Pederasyon Auditor%' AND user.position NOT LIKE '%Pederasyon Public Information Officer%' AND user.position NOT LIKE '%Pederasyon Sergeant at Arms%')";
+                        // Pederasyon Members are SK Chairpersons from all barangays
+                        $cityRoleConditions[] = "(user.user_type = 2 AND user.position = 1)";
                         break;
-                    case 'all_officials':
-                        $roleConditions[] = "user.position LIKE '%SK%'";
+                    case 'pederasyon_president':
+                        $cityRoleConditions[] = "(user.user_type = 3 AND user.ped_position = 1)";
                         break;
-                    case 'chairperson':
-                        $roleConditions[] = "user.position LIKE '%Chairperson%'";
+                    case 'pederasyon_vice_president':
+                        $cityRoleConditions[] = "(user.user_type = 3 AND user.ped_position = 2)";
                         break;
-                    case 'secretary':
-                        $roleConditions[] = "user.position LIKE '%Secretary%'";
+                    case 'pederasyon_secretary':
+                        $cityRoleConditions[] = "(user.user_type = 3 AND user.ped_position = 3)";
                         break;
-                    case 'treasurer':
-                        $roleConditions[] = "user.position LIKE '%Treasurer%'";
+                    case 'pederasyon_treasurer':
+                        $cityRoleConditions[] = "(user.user_type = 3 AND user.ped_position = 4)";
+                        break;
+                    case 'pederasyon_auditor':
+                        $cityRoleConditions[] = "(user.user_type = 3 AND user.ped_position = 5)";
+                        break;
+                    case 'pederasyon_pro':
+                        $cityRoleConditions[] = "(user.user_type = 3 AND user.ped_position = 6)";
+                        break;
+                    case 'pederasyon_sergeant':
+                        $cityRoleConditions[] = "(user.user_type = 3 AND user.ped_position = 7)";
                         break;
                 }
             }
-            if (!empty($roleConditions)) {
-                $query->where('(' . implode(' OR ', $roleConditions) . ')');
+            
+            if (!empty($cityRoleConditions)) {
+                $cityRoleQuery = '(' . implode(' OR ', $cityRoleConditions) . ')';
+                $cityQuery->where($cityRoleQuery);
+                log_message('debug', 'Applied City-Level role filter: ' . $cityRoleQuery);
+            }
+            
+            // City-Level Officials: Only basic filters (no barangay filtering)
+            $cityQuery->where('user.phone_number IS NOT NULL')
+                      ->where('user.phone_number !=', '')
+                      ->where('user.is_active', 1);
+            
+            $cityResults = $cityQuery->findAll();
+            log_message('debug', 'Found ' . count($cityResults) . ' City-Level Officials');
+            
+            foreach ($cityResults as $user) {
+                $recipients[$user['id']] = $user; // Use ID as key to avoid duplicates
             }
         }
         
-        return $query->findAll();
+        // 2. Handle Barangay-Level Officials - Apply barangay filtering
+        if (!empty($barangayLevelRoles)) {
+            log_message('debug', 'Processing Barangay-Level Officials...');
+            
+            $barangayQuery = $userModel->select('user.*, address.barangay as barangay_id, barangay.name as barangay_name')
+                                      ->join('address', 'address.user_id = user.id', 'left')
+                                      ->join('barangay', 'barangay.barangay_id = address.barangay', 'left');
+            
+            // Apply barangay filtering for Barangay-Level roles
+            if ($event['barangay_id'] == 0 && isset($event['sms_recipient_scope']) && $event['sms_recipient_scope']) {
+                if ($event['sms_recipient_scope'] === 'specific_barangays') {
+                    $selectedBarangays = json_decode($event['sms_recipient_barangays'], true) ?? [];
+                    if (!empty($selectedBarangays)) {
+                        $barangayQuery->whereIn('address.barangay', $selectedBarangays);
+                        log_message('debug', 'Applied specific barangays filter for Barangay-Level roles: ' . implode(', ', $selectedBarangays));
+                    }
+                }
+                // For 'all_barangays', no additional filter needed
+            } else {
+                // For regular events, only include users from the same barangay
+                $barangayQuery->where('address.barangay', $event['barangay_id']);
+                log_message('debug', 'Applied barangay filter for Barangay-Level roles: address.barangay = ' . $event['barangay_id']);
+            }
+            
+            $barangayRoleConditions = [];
+            foreach ($barangayLevelRoles as $role) {
+                switch ($role) {
+                    case 'all_sk_officials':
+                    case 'all_officials': // Handle both form values
+                        $barangayRoleConditions[] = "(user.user_type = 2 AND user.position IS NOT NULL)"; // Only SK officials, not Pederasyon
+                        break;
+                    case 'sk_chairperson':
+                    case 'chairperson': // Handle both form values
+                        $barangayRoleConditions[] = "(user.user_type = 2 AND user.position = 1)"; // Only SK Chairpersons
+                        break;
+                    case 'sk_secretary':
+                    case 'secretary': // Handle both form values
+                        $barangayRoleConditions[] = "(user.user_type = 2 AND user.position = 2)"; // Only SK Secretaries
+                        break;
+                    case 'sk_treasurer':
+                    case 'treasurer': // Handle both form values
+                        $barangayRoleConditions[] = "(user.user_type = 2 AND user.position = 3)"; // Only SK Treasurers
+                        break;
+                    case 'sk_members':
+                        $barangayRoleConditions[] = "(user.user_type = 2 AND user.position > 3)"; // Other SK positions
+                        break;
+                    case 'kk_members':
+                        $barangayRoleConditions[] = "(user.user_type = 1)";
+                        break;
+                }
+            }
+            
+            if (!empty($barangayRoleConditions)) {
+                $barangayRoleQuery = '(' . implode(' OR ', $barangayRoleConditions) . ')';
+                $barangayQuery->where($barangayRoleQuery);
+                log_message('debug', 'Applied Barangay-Level role filter: ' . $barangayRoleQuery);
+            }
+            
+            // Barangay-Level Officials: Apply all filters including barangay
+            $barangayQuery->where('user.phone_number IS NOT NULL')
+                          ->where('user.phone_number !=', '')
+                          ->where('user.is_active', 1);
+            
+            $barangayResults = $barangayQuery->findAll();
+            log_message('debug', 'Found ' . count($barangayResults) . ' Barangay-Level Officials');
+            
+            foreach ($barangayResults as $user) {
+                $recipients[$user['id']] = $user; // Use ID as key to avoid duplicates
+            }
+        }
+        
+        // Convert associative array back to indexed array and log results
+        $finalRecipients = array_values($recipients);
+        
+        log_message('info', 'SMS Recipients Final Results: ' . count($finalRecipients) . ' total recipients found');
+        log_message('debug', 'Final Recipients: ' . json_encode(array_column($finalRecipients, 'phone_number')));
+        
+        if (!empty($finalRecipients)) {
+            log_message('debug', 'First final recipient details: ' . json_encode($finalRecipients[0]));
+        }
+        
+        return $finalRecipients;
     }
     
-    private function formatSmsMessage($event) {
+    private function formatSmsMessage($event, $action = 'add') {
         $startDate = (new \DateTime($event['start_datetime']))->format('F d, Y');
         $startTime = (new \DateTime($event['start_datetime']))->format('h:i A');
         $endTime = (new \DateTime($event['end_datetime']))->format('h:i A');
         
-        $message = "NEW EVENT: {$event['title']}\n";
+        // Determine header based on event scope
+        if ($event['barangay_id'] == 0) {
+            // City-wide event
+            $header = "Panlungsod na Pederasyon ng mga Sangguniang Kabataan\nIriga City\n\n";
+        } else {
+            // Barangay-specific event
+            $barangayModel = new \App\Models\BarangayModel();
+            $barangay = $barangayModel->find($event['barangay_id']);
+            $barangayName = $barangay ? $barangay['name'] : 'Barangay';
+            $header = "Sangguniang Kabataan - {$barangayName}\nIriga City\n\n";
+        }
+        
+        // Build message based on action
+        $message = $header;
+        
+        switch ($action) {
+            case 'add':
+            case 'publish':
+                $message .= "NEW EVENT: {$event['title']}\n\n";
+                break;
+            case 'edit':
+            case 'update':
+                $message .= "EVENT UPDATE: {$event['title']}\n\n";
+                break;
+            case 'cancel':
+                $message .= "EVENT CANCELLED\n\n";
+                $message .= "We regret to inform you that the {$event['title']} on {$startDate} has been cancelled.";
+                return $message;
+        }
+        
         $message .= "Date: {$startDate}\n";
         $message .= "Time: {$startTime} - {$endTime}\n";
-        $message .= "Location: {$event['location']}\n";
-        $message .= "Description: {$event['description']}";
+        $message .= "Location: {$event['location']}\n\n";
+        $message .= "{$event['description']}";
         
         return $message;
     }

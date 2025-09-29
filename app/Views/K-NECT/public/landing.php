@@ -6,7 +6,7 @@
     <title><?= esc($page_title ?? 'K-NECT Platform') ?></title>
     <meta name="description" content="K-NECT: Unified youth engagement platform for announcements, events, resources, and data-driven community impact." />
     <meta name="robots" content="index,follow" />
-    <meta property="og:title" content="K-NECT Youth Engagement" />
+    <meta property="og:title" content="K-NECT: A Youth Government System" />
     <meta property="og:description" content="Announcements, events and resources empowering youth leadership." />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="<?= base_url('/uploads/logos/logo.png') ?>" />
@@ -123,7 +123,9 @@
 <body>
     <header>
         <div class="nav">
-            <div class="brand"><img src="<?= base_url('/uploads/logos/logo.png') ?>" alt="K-NECT logo"></div>
+            <div class="brand" style="padding:25px 10px;">
+                <img src="<?= base_url('/assets/images/K-Nect-Logo.png') ?>" alt="K-NECT logo" style="height:28px;width:auto;">
+            </div>
             <nav class="nav-links">
                 <a href="#services">Services</a>
                 <a href="#resources">Resources</a>
@@ -132,7 +134,7 @@
             </nav>
             <div style="margin-left:auto;display:flex;gap:.65rem;">
                 <a href="<?= base_url('login') ?>" class="btn">Sign In</a>
-                <a href="<?= base_url('login') ?>" class="btn-primary btn">Access Portal</a>
+                <a href="<?= base_url('profiling') ?>" class="btn-primary btn">Profiling</a>
             </div>
         </div>
     </header>
@@ -155,6 +157,7 @@
                 <div class="hero-media">
                     <?php $heroPost = $posts[0] ?? null; ?>
                     <?php 
+                        $defaultHero = base_url('/assets/images/default-Image.jpg');
                         $heroImages = [];
                         if (!empty($posts)) {
                             foreach ($posts as $hp) {
@@ -167,11 +170,11 @@
                         if (empty($heroImages)) {
                             $heroImages[] = !empty($heroPost['featured_image']) 
                                 ? base_url('/uploads/bulletin/'.$heroPost['featured_image']) 
-                                : 'https://via.placeholder.com/1200x700?text=K-NECT+Platform';
+                                : $defaultHero;
                         }
                     ?>
                     <?php foreach ($heroImages as $i => $src): ?>
-                        <img class="slide<?= $i === 0 ? ' active' : '' ?>" src="<?= $src ?>" alt="Hero Slide <?= $i+1 ?>">
+                        <img class="slide<?= $i === 0 ? ' active' : '' ?>" src="<?= $src ?>" alt="Hero Slide <?= $i+1 ?>" onerror="this.onerror=null;this.src='<?= $defaultHero ?>';">
                     <?php endforeach; ?>
                     <?php if (count($heroImages) > 1): ?>
                     <div class="hero-dots" id="heroDots" role="tablist" aria-label="Hero slides">

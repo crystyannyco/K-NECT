@@ -447,7 +447,8 @@ function downloadAttendancePDF() {
     }
     
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('l', 'mm', 'a4'); // landscape orientation
+    // Use custom page size: 13 x 8.5 inches -> expressed in mm: 13*25.4 = 330.2, 8.5*25.4 = 215.9
+    const doc = new jsPDF('l', 'mm', [330.2, 215.9]); // landscape, custom size in mm
     
     // First fetch logos to include in PDF if available
     fetch('<?= base_url('documents/logos') ?>')
@@ -512,8 +513,11 @@ function generateAttendancePDFWithLogos(doc, skLogo, irigaLogo, button, original
         let yPosition = 15;
         
         // Layout: Logo - 20% space - Header text - 20% space - Logo
-        const pageWidth = doc.internal.pageSize.getWidth(); // ~297mm for A4 landscape
-        const centerX = pageWidth / 2; // Center of page
+    const pageWidth = doc.internal.pageSize.getWidth(); // ~297mm for A4 landscape
+    const centerX = pageWidth / 2; // Center of page
+    // Safe printable margin: 0.5 inch = 12.7 mm
+    const safeMargin = 12.7;
+    const tableWidth = pageWidth - (safeMargin * 2);
         const logoSize = 20; // 20mm logos
         const spaceWidth = pageWidth * 0.2; // 20% of page width for spacing
         
@@ -539,18 +543,10 @@ function generateAttendancePDFWithLogos(doc, skLogo, irigaLogo, button, original
         doc.setFont('helvetica', 'normal');
         doc.text('SANGGUNIANG KABATAAN', centerX, yPosition + 20, { align: 'center' });
         
-        // Add barangay name if available - FIXED: Use barangay_name from controller or fallback to records
+        // Add barangay name from controller (SK session barangay) - FIXED: Don't use user address barangays
         <?php
-        // Try to get barangay name from controller data first, then from records
+        // Use only the barangay_name from controller (SK's session barangay), never from attendance records
         $barangayName = $barangay_name ?? '';
-        if (!$barangayName && !empty($attendance_records)) {
-            foreach ($attendance_records as $record) {
-                if (!empty($record['barangay_name'])) {
-                    $barangayName = $record['barangay_name'];
-                    break;
-                }
-            }
-        }
         ?>
         <?php if ($barangayName): ?>
         doc.text('NG BARANGAY <?= strtoupper(addslashes($barangayName)) ?>', centerX, yPosition + 25, { align: 'center' });
@@ -569,11 +565,13 @@ function generateAttendancePDFWithLogos(doc, skLogo, irigaLogo, button, original
         // Event details
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
-        doc.text('Event: ' + eventData.title, 20, yPosition);
-        doc.text('Date: ' + eventData.date, 20, yPosition + 5);
-        doc.text('Time: ' + eventData.time, 20, yPosition + 10);
+        // Align event details to the table's left edge. Use same centering logic as didDrawPage.
+        const effectiveLeft = Math.max(safeMargin, (pageWidth - tableWidth) / 2);
+        doc.text('Event: ' + eventData.title, effectiveLeft, yPosition);
+        doc.text('Date: ' + eventData.date, effectiveLeft, yPosition + 5);
+        doc.text('Time: ' + eventData.time, effectiveLeft, yPosition + 10);
         if (eventData.location) {
-            doc.text('Location: ' + eventData.location, 20, yPosition + 15);
+            doc.text('Location: ' + eventData.location, effectiveLeft, yPosition + 15);
             yPosition += 5;
         }
         
@@ -655,16 +653,21 @@ function generateAttendancePDFWithLogos(doc, skLogo, irigaLogo, button, original
             ];
         });
         
-        // Add table with proper safe area margins and perfect centering
-        const safeMargin = 15; // 15mm safe margins from edges
-        const tableWidth = pageWidth - (safeMargin * 2); // Full width minus safe margins
-        
-        doc.autoTable({
+    // Add table with proper safe area margins and perfect centering
+    // Use narrow margin: 0.5 inch = 12.7 mm (safeMargin and tableWidth already defined above)
+
+    // Compute column widths proportionally so the table fills the page width
+    // based on the relative widths used previously (sum = 289 units approx)
+    const colRelative = [20, 25, 55, 20, 25, 25, 22, 25, 25, 22];
+    const totalRel = colRelative.reduce((a, b) => a + b, 0);
+    const colWidths = colRelative.map(r => (r / totalRel) * tableWidth);
+
+    doc.autoTable({
             head: [['No.', 'KK Number', 'Name', 'Zone', 'AM Time-In', 'AM Time-Out', 'AM Status', 'PM Time-In', 'PM Time-Out', 'PM Status']],
             body: tableData,
             startY: yPosition,
             margin: { left: safeMargin, right: safeMargin }, // Safe area margins
-            tableWidth: 'wrap', // Let autoTable calculate optimal width
+            tableWidth: tableWidth, // ensure table fills the printable width
             horizontalPageBreak: true,
             styles: {
                 fontSize: 7,
@@ -694,16 +697,16 @@ function generateAttendancePDFWithLogos(doc, skLogo, irigaLogo, button, original
                 valign: 'middle'
             },
             columnStyles: {
-                0: { cellWidth: 20, halign: 'center' },  // No.
-                1: { cellWidth: 25, halign: 'center' },  // KK Number
-                2: { cellWidth: 55, halign: 'left' },    // Name (left aligned for readability)
-                3: { cellWidth: 20, halign: 'center' },  // Zone
-                4: { cellWidth: 25, halign: 'center' },  // AM Time-In
-                5: { cellWidth: 25, halign: 'center' },  // AM Time-Out
-                6: { cellWidth: 22, halign: 'center' },  // AM Status
-                7: { cellWidth: 25, halign: 'center' },  // PM Time-In
-                8: { cellWidth: 25, halign: 'center' },  // PM Time-Out
-                9: { cellWidth: 22, halign: 'center' }   // PM Status
+                0: { cellWidth: colWidths[0], halign: 'center' },
+                1: { cellWidth: colWidths[1], halign: 'center' },
+                2: { cellWidth: colWidths[2], halign: 'left' },
+                3: { cellWidth: colWidths[3], halign: 'center' },
+                4: { cellWidth: colWidths[4], halign: 'center' },
+                5: { cellWidth: colWidths[5], halign: 'center' },
+                6: { cellWidth: colWidths[6], halign: 'center' },
+                7: { cellWidth: colWidths[7], halign: 'center' },
+                8: { cellWidth: colWidths[8], halign: 'center' },
+                9: { cellWidth: colWidths[9], halign: 'center' }
             },
             theme: 'grid',  // Clean grid theme with borders only
             didDrawPage: function (data) {
@@ -716,7 +719,7 @@ function generateAttendancePDFWithLogos(doc, skLogo, irigaLogo, button, original
         });
         
         // Save and download
-        const fileName = `Attendance_Report_${eventData.title.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+        const fileName = `${eventData.title.replace(/[^a-zA-Z0-9]/g, '_')}_Attendance_Report_${new Date().toISOString().split('T')[0]}.pdf`;
         doc.save(fileName);
         
         showNotification('Attendance report PDF generated and downloaded successfully!', 'success');

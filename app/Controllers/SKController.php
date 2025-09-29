@@ -10,6 +10,7 @@ use App\Models\BarangayModel;
 use App\Models\EventModel;
 use App\Models\AttendanceModel;
 use App\Models\EventAttendanceModel;
+use App\Models\BulletinModel;
 use App\Libraries\UserHelper;
 use App\Libraries\BarangayHelper;
 use App\Libraries\ZoneHelper;
@@ -233,23 +234,56 @@ class SKController extends BaseController
         // Get document statistics for the current user
         $db = \Config\Database::connect();
         
-        // Total documents uploaded by this user
-        $totalDocuments = $db->query("SELECT COUNT(*) as count FROM documents WHERE uploaded_by = ?", [$username])->getRowArray()['count'];
-        
-        // Documents pending approval
-        $pendingApproval = $db->query("SELECT COUNT(*) as count FROM documents WHERE uploaded_by = ? AND approval_status = 'pending'", [$username])->getRowArray()['count'];
-        
-        // Approved documents
-        $approvedDocuments = $db->query("SELECT COUNT(*) as count FROM documents WHERE uploaded_by = ? AND approval_status = 'approved'", [$username])->getRowArray()['count'];
+        // Normalize username comparison (case-insensitive, trimmed) because documents.uploaded_by stores raw login username
+        $totalDocuments = $db->query(
+            "SELECT COUNT(*) AS count FROM documents WHERE LOWER(TRIM(uploaded_by)) = LOWER(TRIM(?))",
+            [$username]
+        )->getRowArray()['count'];
+
+        $pendingApproval = $db->query(
+            "SELECT COUNT(*) AS count FROM documents WHERE LOWER(TRIM(uploaded_by)) = LOWER(TRIM(?)) AND approval_status = 'pending'",
+            [$username]
+        )->getRowArray()['count'];
+
+        $approvedDocuments = $db->query(
+            "SELECT COUNT(*) AS count FROM documents WHERE LOWER(TRIM(uploaded_by)) = LOWER(TRIM(?)) AND approval_status = 'approved'",
+            [$username]
+        )->getRowArray()['count'];
         
         // Shared documents (documents shared with this user)
-        $sharedDocuments = $db->query("
-            SELECT COUNT(DISTINCT ds.document_id) as count 
-            FROM document_shares ds 
-            JOIN user u ON ds.shared_with_user_id = u.id 
-            WHERE u.username = ?
-        ", [$username])->getRowArray()['count'];
+            // Shared documents (documents shared with this user)
+            // Schema uses 'shared_with' (username string), not a foreign key user id.
+                        $sharedDocuments = $db->query(
+                                "SELECT COUNT(DISTINCT document_id) AS count FROM document_shares 
+                                    WHERE is_active = 1 
+                                        AND (expires_at IS NULL OR expires_at > NOW()) 
+                                        AND LOWER(TRIM(shared_with)) = LOWER(TRIM(?))",
+                                [$username]
+                        )->getRowArray()['count'];
         
+        // Bulletin overview data
+        $bulletinModel = new BulletinModel();
+        $featuredPosts = $bulletinModel->getFeaturedPosts(5, 'sk', $skBarangay);
+        $urgentPosts = $bulletinModel->getUrgentPosts(3, 'sk', $skBarangay);
+        // Recent published posts (fallback if not enough featured)
+        $recentPosts = $bulletinModel->getVisiblePosts('sk', $skBarangay, 6) ?? [];
+
+        // Upcoming events (next 6) - use start_datetime field (no event_date column)
+        $eventModel = new EventModel();
+        $upcomingEvents = $eventModel
+            ->where('status', 'Published')
+            ->where('start_datetime >=', date('Y-m-d H:i:s'))
+            ->orderBy('start_datetime', 'ASC')
+            ->limit(6)
+            ->find();
+
+        // Recent documents list (limit 8) - adapt to actual schema (filepath, uploaded_at)
+        $recentDocuments = $db->query(
+            "SELECT id, filename, filepath AS file_path, uploaded_at AS created_at, approval_status 
+             FROM documents WHERE LOWER(TRIM(uploaded_by)) = LOWER(TRIM(?)) ORDER BY uploaded_at DESC LIMIT 8",
+            [$username]
+        )->getResultArray();
+
         $data = [
             'user_id' => $session->get('user_id'),
             'username' => $username,
@@ -258,7 +292,13 @@ class SKController extends BaseController
             'totalDocuments' => $totalDocuments,
             'pendingApproval' => $pendingApproval,
             'approvedDocuments' => $approvedDocuments,
-            'sharedDocuments' => $sharedDocuments
+            'sharedDocuments' => $sharedDocuments,
+            // New overview payload
+            'featuredPosts' => $featuredPosts,
+            'urgentPosts' => $urgentPosts,
+            'recentPosts' => $recentPosts,
+            'upcomingEvents' => $upcomingEvents,
+            'recentDocuments' => $recentDocuments,
         ];
 
         return 

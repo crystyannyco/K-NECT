@@ -1110,4 +1110,80 @@ class AnalyticsModel extends Model
         
         return $query->getResultArray();
     }
+
+    /**
+     * Get top performing barangays based on events, participants, and posts within a time window.
+     * Scoring weights (can be tuned): events*3 + participants*0.5 + posts*2
+     * @param int $limit Number of barangays to return
+     * @param int $days  Lookback window in days
+     * @return array
+     */
+    public function getTopPerformingBarangays(int $limit = 3, int $days = 30, bool $excludeAggregates = true): array
+    {
+        try {
+            $cutoff = new \DateTime("-{$days} days", new \DateTimeZone('Asia/Manila'));
+        } catch (\Throwable $e) {
+            $cutoff = new \DateTime("-{$days} days");
+        }
+        $cutoffStr = $cutoff->format('Y-m-d H:i:s');
+
+        // Using subqueries for portability (avoids CTE requirement)
+                $limitClause = $limit > 0 ? "LIMIT {$limit}" : ""; // allow unlimited when $limit <= 0
+
+                $sql = "SELECT 
+                b.barangay_id,
+                b.name,
+                -- Events count
+                     (SELECT COUNT(*) FROM event e 
+                         WHERE (e.status='Published' OR e.status='published') 
+                     AND e.barangay_id = b.barangay_id 
+                     AND e.start_datetime >= ?) AS events_count,
+                -- Participants (distinct attendees across events)
+                                (SELECT COUNT(DISTINCT a.user_id) 
+                                     FROM event e 
+                   LEFT JOIN attendance a ON a.event_id = e.event_id 
+                                    WHERE (e.status='Published' OR e.status='published') 
+                    AND e.barangay_id = b.barangay_id 
+                    AND e.start_datetime >= ? 
+                    AND a.user_id IS NOT NULL) AS participants_count,
+                -- Posts published
+                                (SELECT COUNT(*) FROM bulletin_posts bp 
+                                    WHERE bp.status='published' 
+                    AND bp.barangay_id = b.barangay_id 
+                    AND bp.published_at >= ?) AS posts_count
+            FROM barangay b
+            HAVING events_count > 0 OR posts_count > 0 OR participants_count > 0
+            ORDER BY (events_count*3 + participants_count*0.5 + posts_count*2) DESC
+                        {$limitClause}";
+
+        $query = $this->db->query($sql, [$cutoffStr, $cutoffStr, $cutoffStr]);
+        $rows = $query->getResultArray();
+
+        if ($excludeAggregates) {
+            $rows = array_values(array_filter($rows, function($r){
+                $name = strtolower($r['name'] ?? '');
+                // Exclude generic aggregate/grouping rows that might exist in seed data
+                return !in_array($name, ['city-wide','citywide','all','overall']);
+            }));
+        }
+
+        // Compute score & normalize for progress bars
+        $maxScore = 0;
+        foreach ($rows as &$r) {
+            $r['events_count'] = (int)$r['events_count'];
+            $r['participants_count'] = (int)$r['participants_count'];
+            $r['posts_count'] = (int)$r['posts_count'];
+            $r['score'] = $r['events_count']*3 + $r['participants_count']*0.5 + $r['posts_count']*2;
+            if ($r['score'] > $maxScore) { $maxScore = $r['score']; }
+        }
+        unset($r);
+        if ($maxScore > 0) {
+            foreach ($rows as &$r) {
+                $r['score_percent'] = round(($r['score'] / $maxScore) * 100, 2);
+            }
+        } else {
+            foreach ($rows as &$r) { $r['score_percent'] = 0; }
+        }
+        return $rows;
+    }
 }

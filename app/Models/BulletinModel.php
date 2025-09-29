@@ -475,9 +475,19 @@ class BulletinModel extends Model
      */
     public function getRecentEvents($limit = 5, $userType = null, $barangayId = null)
     {
+        // Use Asia/Manila timezone for consistency across UI and backend
+        try {
+            $now = new \DateTime('now', new \DateTimeZone('Asia/Manila'));
+        } catch (\Throwable $ex) {
+            // Fallback to PHP default timezone if Asia/Manila is not available
+            $now = new \DateTime('now');
+        }
+        $todayStart = $now->format('Y-m-d 00:00:00');
+
         $builder = $this->db->table('event e')
             ->select('e.event_id as id, e.title as title, e.start_datetime as event_date, e.event_banner, e.created_at')
-            ->where('e.start_datetime >=', date('Y-m-d'))
+            ->where('e.status', 'Published')
+            ->where('e.start_datetime >=', $todayStart)
             ->orderBy('e.start_datetime', 'ASC')
             ->limit($limit);
 
@@ -495,6 +505,7 @@ class BulletinModel extends Model
     {
         $builder = $this->db->table('event e')
             ->select('e.event_id as id, e.title as title, e.start_datetime as event_date, e.event_banner, e.created_at')
+            ->where('e.status', 'Published')
             ->orderBy('e.created_at', 'DESC')
             ->limit($limit);
 

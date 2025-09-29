@@ -17,6 +17,10 @@ $routes->get('cron/debug-events', 'CronController::debugEvents');
 // Public landing page (always accessible). Authenticated users get redirected to their dashboard inside controller.
 $routes->get('/', 'PublicController::index');
 $routes->get('K-NECT', 'PublicController::index'); // Public website accessible to all users
+$routes->get('news/(:num)', 'NewsController::show/$1');
+$routes->get('api/top-barangays', 'PublicController::topBarangaysData');
+$routes->get('api/top-barangays/(:num)', 'PublicController::topBarangaysData/$1');
+$routes->get('event/(:num)', 'PublicController::event/$1');
 
 // Guest-only routes (login etc.)
 $routes->group('', ['filter' => 'guest'], function ($routes) {
@@ -73,7 +77,8 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
 
     // ================= USER TYPE: SK ================= //
     // Module: SK
-    $routes->get('sk/dashboard', 'AnalyticsController::skDashboard');
+    // Updated: Route SK dashboard to the new bulletin overview in SKController
+    $routes->get('sk/dashboard', 'SKController::dashboard');
     $routes->get('sk/profile', 'SKController::profile');
     $routes->get('sk/member', 'SKController::member');
     $routes->get('sk/settings', 'SKController::settings');
@@ -129,7 +134,14 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
 
     // ================= USER TYPE: Pederasyon ================= //
     // Module: Pederasyon
-    $routes->get('pederasyon/dashboard', 'AnalyticsController::pederasyonDashboard');
+    // Federation dashboard now uses Pederasyon overview UI
+    $routes->get('pederasyon/dashboard', 'PederasyonController::dashboard');
+    // Separate analytics route
+    $routes->get('pederasyon/analytics', 'AnalyticsController::pederasyonDashboard');
+    // Backward compatibility: redirect legacy overview URL if accessed
+    $routes->get('pederasyon/overview', function() {
+        return redirect()->to('pederasyon/dashboard');
+    });
     $routes->get('pederasyon/profile', 'PederasyonController::profile');
     $routes->get('pederasyon/member', 'PederasyonController::member');
     $routes->get('pederasyon/youthlist', 'PederasyonController::youthlist');

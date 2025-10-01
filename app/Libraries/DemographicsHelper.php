@@ -34,7 +34,7 @@ class DemographicsHelper
     public static function youthAgeGroupMap(): array
     {
         // Note: App logic groups ages as 15-17, 18-24, 25-30.
-        // Label for group 3 follows 25-30 to match logic.
+        // Special case: Users turning 15 within 1 month are assigned to group 1.
         return [
             '1' => 'Child Youth (15-17 yrs old)',
             '2' => 'Core Youth (18-24 yrs old)',

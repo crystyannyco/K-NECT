@@ -12,7 +12,7 @@ class TextBeeSMS extends BaseConfig
      * Device ID for TextBee SMS API
      * This is the unique identifier for your device in TextBee system
      */
-    public $deviceId = '68ce78b8d8ae427dcd5f2ebb';
+    public $deviceId = '68d1bf3ab8c77d7feb0ac0a4';
 
     /**
      * API Base URL for TextBee SMS

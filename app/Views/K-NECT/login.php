@@ -344,7 +344,7 @@
                 <div class="space-y-3">
                     <div id="reuploadBtnContainer" class="hidden">
                         <button id="reuploadBtn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
-                            Reupload Documents
+                            Profile Again
                         </button>
                     </div>
                     <button id="closeModalBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors">

@@ -16,13 +16,39 @@ class UserHelper
     public static function generateYearPrefixedUserId(): string
     {
         $userModel = new UserModel();
-        $yy = date('y');
-        do {
-            $suffix = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-            $candidate = $yy . '-' . $suffix;
-            $exists = $userModel->where('user_id', $candidate)->first();
-        } while ($exists);
-        return $candidate;
+
+        $now = new \DateTime('now', new \DateTimeZone('Asia/Manila'));
+        $yy = $now->format('y');
+        $mmdd = $now->format('md');
+        $prefix = $yy . '-' . $mmdd;
+
+        $existing = $userModel->select('user_id')
+            ->like('user_id', $prefix, 'after')
+            ->findAll();
+
+        $usedSuffixes = [];
+        foreach ($existing as $row) {
+            $existingId = $row['user_id'] ?? null;
+            if (!$existingId) {
+                continue;
+            }
+
+            $suffix = substr($existingId, strlen($prefix));
+            if (strlen($suffix) === 2 && ctype_digit($suffix)) {
+                $usedSuffixes[$suffix] = true;
+            }
+        }
+
+        for ($i = 1; $i <= 99; $i++) {
+            $sequence = str_pad((string) $i, 2, '0', STR_PAD_LEFT);
+            $candidate = $prefix . $sequence;
+
+            if (!isset($usedSuffixes[$sequence])) {
+                return $candidate;
+            }
+        }
+
+        throw new \RuntimeException('Maximum KK IDs reached for today.');
     }
 
     public static function generateUnique6DigitId()

@@ -868,10 +868,9 @@ class ProfilingController extends BaseController
         session()->set('profile_data', $profile_data);
         session()->set('demographic_data', $demographic_data);
         session()->set('account_data', $account_data);
-        if (!empty($account_data['agreement'])) {
-            session()->set('profiling_terms_ack', true);
-        }
-        session()->set('profiling_step', 1);
+        // Returning users have already acknowledged the terms, allow them to resume at step 2
+        session()->set('profiling_terms_ack', true);
+        session()->set('profiling_step', 2);
         session()->set('reupload_user_id', $userId);
         
         return redirect()->to(base_url('profiling'));

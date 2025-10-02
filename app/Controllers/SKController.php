@@ -375,8 +375,18 @@ class SKController extends BaseController
         
         $users = $query->findAll();
 
+        // Track barangay-level numbering for display
+        $barangayCounters = [];
+
         // Process user data with all backend logic
         foreach ($users as &$u) {
+            $barangayKey = $u['barangay'] ?? 'unknown';
+            if (!isset($barangayCounters[$barangayKey])) {
+                $barangayCounters[$barangayKey] = 0;
+            }
+            $barangayCounters[$barangayKey]++;
+            $u['barangay_sequence'] = $barangayCounters[$barangayKey];
+
             // Calculate age
             $u['age'] = $u['birthdate'] ? (date_diff(date_create($u['birthdate']), date_create('today'))->y) : '';
             

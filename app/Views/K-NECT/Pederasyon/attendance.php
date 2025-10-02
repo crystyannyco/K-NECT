@@ -2,7 +2,7 @@
     .event-card {
         transition: all 0.2s ease;
         border: 1px solid #e5e7eb;
-        height: 100%;
+        background: #ffffff;
     }
     
     .event-card:hover {
@@ -175,8 +175,8 @@
             </div>
         </div>
 
-        <!-- Events Grid -->
-        <div id="eventsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Events List -->
+        <div id="eventsGrid" class="space-y-4">
             <?php if (!empty($events)): ?>
                 <?php foreach ($events as $event): ?>
                     <?php
@@ -192,6 +192,14 @@
                         $status = 'completed';
                     }
                     
+                    $statusLabel = ucfirst($status);
+                    $statusBadgeClass = 'bg-yellow-100 text-yellow-800';
+                    if ($status === 'ongoing') {
+                        $statusBadgeClass = 'bg-green-100 text-green-800';
+                    } elseif ($status === 'completed') {
+                        $statusBadgeClass = 'bg-gray-100 text-gray-800';
+                    }
+                    
                     // Get category badge class
                     $categoryClass = 'badge-default';
                     if ($event['category']) {
@@ -201,48 +209,24 @@
                         }
                     }
                     ?>
-                    <div class="event-card bg-white rounded-lg overflow-hidden flex flex-col h-full" 
+                    <div class="event-card rounded-lg shadow-sm border border-gray-200 p-5 flex flex-col gap-4 md:flex-row md:items-center" 
                          data-status="<?= $status ?>" 
                          data-category="<?= esc($event['category']) ?>">
-                        
-                        <!-- Event Image -->
-                        <div class="h-48 bg-blue-500 relative overflow-hidden flex-shrink-0">
-            <?php if (!empty($event['event_banner'])): ?>
-                <img src="<?= base_url('uploads/event/' . $event['event_banner']) ?>" 
-                     alt="<?= esc($event['title']) ?>" 
-                     class="w-full h-full object-cover">
-            <?php else: ?>
-                <img src="<?= base_url('assets/images/default-event-banner.svg') ?>" 
-                     alt="No banner" 
-                     class="w-full h-full object-cover">
-            <?php endif; ?>                            <!-- Status Badge -->
-                            <div class="absolute top-3 right-3">
-                                <?php if ($status === 'upcoming'): ?>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                        Upcoming
-                                    </span>
-                                <?php elseif ($status === 'ongoing'): ?>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                        Ongoing
-                                    </span>
-                                <?php else: ?>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                        Completed
-                                    </span>
-                                <?php endif; ?>
+                        <div class="flex-1">
+                            <div class="flex flex-wrap items-center gap-3">
+                                <h4 class="text-lg font-semibold text-gray-900">
+                                    <?= esc($event['title']) ?>
+                                </h4>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= $statusBadgeClass ?>">
+                                    <?= $statusLabel ?>
+                                </span>
                             </div>
-                        </div>
-                        
-                        <!-- Event Details -->
-                        <div class="p-4 flex flex-col flex-grow">
-                            <div class="flex items-start justify-between mb-2">
-                                <h4 class="text-lg font-semibold text-gray-900 line-clamp-2"><?= esc($event['title']) ?></h4>
-                            </div>
-                            <div class="space-y-2 text-sm text-gray-600 mb-4">
-                                <div class="flex items-center">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="mt-3 space-y-2 text-sm text-gray-600">
+                                <div class="flex items-start">
+                                    <svg class="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                                     </svg>
+                                    <span>
                                     <?php
                                     // Format date range
                                     $startDate = $startDateTime->format('M j');
@@ -265,60 +249,47 @@
                                         }
                                     }
                                     ?>
+                                    </span>
                                 </div>
                                 <?php if ($event['location']): ?>
-                                <div class="flex items-center">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="flex items-start">
+                                    <svg class="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                                     </svg>
-                                    <?= esc($event['location']) ?>
+                                    <span><?= esc($event['location']) ?></span>
                                 </div>
                                 <?php endif; ?>
                                 <?php if ($event['category']): ?>
-                                <div class="mt-1 flex justify-start">
-                                    <div class="capsule-container">
-                                        <span class="category-badge <?= $categoryClass ?>">
-                                            <?= esc(ucfirst($event['category'])) ?>
-                                        </span>
-                                    </div>
+                                <div class="capsule-container">
+                                    <span class="category-badge <?= $categoryClass ?>">
+                                        <?= esc(ucfirst($event['category'])) ?>
+                                    </span>
                                 </div>
                                 <?php endif; ?>
                             </div>
-                            
-                            <div class="flex-grow">
-                                <?php if ($event['description']): ?>
-                                <p class="text-sm text-gray-600 mb-4 line-clamp-1"><?= esc($event['description']) ?></p>
-                                <?php endif; ?>
-                            </div>
-                            
-                            <!-- Action Button - Always at bottom -->
-                            <div class="mt-auto">
-                                <?php if ($status === 'completed'): ?>
-                                    <button onclick="viewAttendanceReport(<?= $event['event_id'] ?>)" 
-                                            class="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
-                                        View Attendance
-                                    </button>
-                                <?php else: ?>
-                                    <div class="flex gap-2">
-                                        <button onclick="openAttendanceModal(<?= $event['event_id'] ?>)" 
-                                                class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
-                                                style="flex-basis: 70%;">
-                                            Manage Attendance
-                                        </button>
-                                        <button onclick="openLiveAttendanceModal(<?= $event['event_id'] ?>)" 
-                                                class="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
-                                                style="flex-basis: 30%;">
-                                            Live
-                                        </button>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
+                        </div>
+                        <div class="flex flex-col w-full md:w-56 gap-2">
+                            <?php if ($status === 'completed'): ?>
+                                <button onclick="viewAttendanceReport(<?= $event['event_id'] ?>)" 
+                                        class="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+                                    View Attendance
+                                </button>
+                            <?php else: ?>
+                                <button onclick="openAttendanceModal(<?= $event['event_id'] ?>)" 
+                                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+                                    Manage Attendance
+                                </button>
+                                <button onclick="openLiveAttendanceModal(<?= $event['event_id'] ?>)" 
+                                        class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+                                    Live
+                                </button>
+                            <?php endif; ?>
                         </div>
                     </div>
                 <?php endforeach; ?>
             <?php else: ?>
-                <div class="col-span-full text-center py-12">
+                <div class="text-center py-12 bg-white rounded-lg border border-dashed border-gray-300">
                     <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                     </svg>
@@ -604,7 +575,7 @@ function filterEvents() {
             showCard = false;
         }
         
-        card.style.display = showCard ? 'block' : 'none';
+        card.style.display = showCard ? 'flex' : 'none';
     });
 }
 
@@ -626,24 +597,29 @@ function openAttendanceModal(eventId) {
     const startDate = new Date(event.start_datetime);
     
     eventInfo.innerHTML = `
-        <div class="flex items-start space-x-4">
-            <div class="flex-shrink-0">
-                ${event.event_banner ? 
-                    `<img src="<?= base_url('uploads/event/') ?>${event.event_banner}" alt="${event.title}" class="w-16 h-16 rounded-lg object-cover">` :
-                    `<img src="<?= base_url('assets/images/default-event-banner.svg') ?>" alt="No banner" class="w-16 h-16 rounded-lg object-cover">`
-                }
-            </div>
-            <div class="flex-1">
-                <h4 class="font-semibold text-gray-900">${event.title}</h4>
-                <p class="text-sm text-gray-600 mt-1">${startDate.toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric', 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                })}</p>
-                ${event.location ? `<p class="text-sm text-gray-500 mt-1">${event.location}</p>` : ''}
-            </div>
+        <div class="space-y-2">
+            <h4 class="text-2xl font-bold text-gray-900 tracking-tight">${event.title}</h4>
+            <p class="text-sm text-gray-600 flex items-center">
+                <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                ${startDate.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })}
+            </p>
+            ${event.location ? `
+                <p class="text-sm text-gray-500 flex items-center">
+                    <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    ${event.location}
+                </p>
+            ` : ''}
         </div>
     `;
     

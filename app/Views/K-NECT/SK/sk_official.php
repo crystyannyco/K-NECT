@@ -93,6 +93,9 @@
                                 <button class="status-tab active px-4 py-2 rounded-lg text-sm font-medium transition-all" data-status="all">
                                     All
                                 </button>
+                                <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all" data-status="officials">
+                                    All SK Officials
+                                </button>
                                 <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all" data-status="chairperson">
                                     SK Chairperson
                                 </button>
@@ -663,6 +666,36 @@
 
             // Tab filtering logic
 
+            function applyStatusFilter(status) {
+                $('#myTable tbody tr').each(function() {
+                    const position = parseInt($(this).data('position'), 10) || 0;
+                    let showRow = true;
+
+                    switch (status) {
+                        case 'officials':
+                            showRow = position >= 1 && position <= 4;
+                            break;
+                        case 'chairperson':
+                            showRow = position === 1;
+                            break;
+                        case 'councilor':
+                            showRow = position === 4;
+                            break;
+                        case 'appointed':
+                            showRow = position === 2 || position === 3;
+                            break;
+                        case 'kkmember':
+                            showRow = position >= 5;
+                            break;
+                        case 'all':
+                        default:
+                            showRow = true;
+                    }
+
+                    $(this).toggle(showRow);
+                });
+            }
+
             // Status tab click handler
             $(document).on('click', '.status-tab', function() {
                 // Remove active class from all tabs
@@ -672,45 +705,7 @@
                 $(this).addClass('active');
 
                 const status = $(this).data('status');
-                if (status === 'all') {
-                    $('#myTable tbody tr').show();
-                } else if (status === 'chairperson') {
-                    $('#myTable tbody tr').each(function() {
-                        var userType = $(this).find('td').eq(8).text().trim();
-                        if (userType === 'SK Chairperson') {
-                            $(this).show();
-                        } else {
-                            $(this).hide();
-                        }
-                    });
-                } else if (status === 'councilor') {
-                    $('#myTable tbody tr').each(function() {
-                        var userType = $(this).find('td').eq(8).text().trim();
-                        if (userType === 'SK Kagawad') {
-                            $(this).show();
-                        } else {
-                            $(this).hide();
-                        }
-                    });
-                } else if (status === 'appointed') {
-                    $('#myTable tbody tr').each(function() {
-                        var userType = $(this).find('td').eq(8).text().trim();
-                        if (userType === 'Secretary' || userType === 'Treasurer') {
-                            $(this).show();
-                        } else {
-                            $(this).hide();
-                        }
-                    });
-                } else if (status === 'kkmember') {
-                    $('#myTable tbody tr').each(function() {
-                        var userType = $(this).find('td').eq(8).text().trim();
-                        if (userType === 'KK Member') {
-                            $(this).show();
-                        } else {
-                            $(this).hide();
-                        }
-                    });
-                }
+                applyStatusFilter(status);
                 localStorage.setItem('memberTab', status);
             });
             
@@ -758,7 +753,7 @@
                 table.columns().search('').draw();
                 
                 // Show all rows
-                $('#myTable tbody tr').show();
+                applyStatusFilter('all');
                 
                 localStorage.setItem('memberTab', 'all');
                 
@@ -784,55 +779,27 @@
             // OLD Filtering logic for legacy tabs (now hidden)
             $('#tabAll').on('click', function() {
                 setActiveTab($(this));
-                $('#myTable tbody tr').show();
+                applyStatusFilter('all');
                 localStorage.setItem('kkTab', 'tabAll');
             });
             $('#tabChairperson').on('click', function() {
                 setActiveTab($(this));
-                $('#myTable tbody tr').each(function() {
-                    var userType = $(this).find('td').eq(8).text().trim();
-                    if (userType === 'SK Chairperson') {
-                        $(this).show();
-                    } else {
-                        $(this).hide();
-                    }
-                });
+                applyStatusFilter('chairperson');
                 localStorage.setItem('kkTab', 'tabChairperson');
             });
             $('#tabSK').on('click', function() {
                 setActiveTab($(this));
-                $('#myTable tbody tr').each(function() {
-                    var userType = $(this).find('td').eq(8).text().trim();
-                    if (userType === 'SK Kagawad') {
-                        $(this).show();
-                    } else {
-                        $(this).hide();
-                    }
-                });
+                applyStatusFilter('councilor');
                 localStorage.setItem('kkTab', 'tabSK');
             });
             $('#tabPederasyon').on('click', function() {
                 setActiveTab($(this));
-                $('#myTable tbody tr').each(function() {
-                    var userType = $(this).find('td').eq(8).text().trim();
-                    if (userType === 'Secretary' || userType === 'Treasurer') {
-                        $(this).show();
-                    } else {
-                        $(this).hide();
-                    }
-                });
+                applyStatusFilter('appointed');
                 localStorage.setItem('kkTab', 'tabPederasyon');
             });
             $('#tabKK').on('click', function() {
                 setActiveTab($(this));
-                $('#myTable tbody tr').each(function() {
-                    var userType = $(this).find('td').eq(8).text().trim();
-                    if (userType === 'KK Member') {
-                        $(this).show();
-                    } else {
-                        $(this).hide();
-                    }
-                });
+                applyStatusFilter('kkmember');
                 localStorage.setItem('kkTab', 'tabKK');
             });
             // On page load, restore last selected tab for legacy

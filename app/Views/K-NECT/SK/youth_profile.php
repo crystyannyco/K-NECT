@@ -238,7 +238,7 @@
                                     <?php if (!empty($user_list)): ?>
                                         <?php foreach ($user_list as $user): ?>
                                             <tr class="hover:bg-gray-50 transition-colors">
-                                                <td class="px-4 py-3 text-sm text-gray-900 text-center"><?= esc($user['id']) ?></td>
+                                                <td class="px-4 py-3 text-sm text-gray-900 text-center"><?= esc($user['barangay_sequence'] ?? '') ?></td>
                                                 <td class="px-4 py-3 text-sm text-gray-900 text-center">
                                                     <?php if (isset($user['user_id']) && $user['user_id']): ?>
                                                         <?= esc($user['user_id']) ?>

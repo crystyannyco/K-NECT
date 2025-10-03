@@ -1130,31 +1130,60 @@ function startAttendanceEnhanced() {
             // Also send direct message to open attendance tabs
             broadcastToAttendanceTabs(currentEventId, 'settings_updated');
             
-            // Open attendance display in a new tab
-            const attendanceDisplayUrl = `<?= base_url('sk/attendanceDisplay') ?>/${currentEventId}`;
-            const attendanceWindow = window.open(attendanceDisplayUrl, '_blank');
-            
-            // Track the window for direct messaging
-            if (attendanceWindow) {
-                window.attendanceDisplayWindows[currentEventId] = attendanceWindow;
+            // Wait a moment for broadcast, then check for existing tab or open new one
+            setTimeout(() => {
+                const attendanceDisplayUrl = `<?= base_url('sk/attendanceDisplay') ?>/${currentEventId}`;
+                const targetName = `sk_attendance_${currentEventId}`;
                 
-                // Clean up when window is closed
-                const checkClosed = setInterval(() => {
-                    if (attendanceWindow.closed) {
-                        delete window.attendanceDisplayWindows[currentEventId];
-                        clearInterval(checkClosed);
+                // Check if we have a tracked window reference for this event
+                const existingWindow = window.attendanceDisplayWindows && window.attendanceDisplayWindows[currentEventId];
+
+                if (existingWindow && !existingWindow.closed) {
+                    try {
+                        // Focus the existing tab and reload it with fresh settings
+                        existingWindow.focus();
+                        existingWindow.location.reload();
+                        showNotification('Refreshed existing attendance tab', 'success');
+                    } catch (focusError) {
+                        // If focus/reload fails (cross-origin issues), open with same name (replaces if exists)
+                        console.warn('Cannot access existing tab, opening new one:', focusError);
+                        const newWindow = window.open(attendanceDisplayUrl, targetName);
+                        if (newWindow) {
+                            window.attendanceDisplayWindows[currentEventId] = newWindow;
+                            showNotification('Opened new attendance display tab', 'success');
+                        }
                     }
-                }, 1000);
+                } else {
+                    // No valid window reference; open a new named tab
+                    const attendanceWindow = window.open(attendanceDisplayUrl, targetName);
+                    
+                    // Track the window for direct messaging
+                    if (attendanceWindow) {
+                        window.attendanceDisplayWindows[currentEventId] = attendanceWindow;
+                        
+                        // Clean up when window is closed
+                        const checkClosed = setInterval(() => {
+                            try {
+                                if (attendanceWindow.closed) {
+                                    delete window.attendanceDisplayWindows[currentEventId];
+                                    clearInterval(checkClosed);
+                                }
+                            } catch (e) {
+                                clearInterval(checkClosed);
+                            }
+                        }, 1000);
+                        
+                        showNotification('Opened new attendance display tab', 'success');
+                    } else {
+                        showNotification('Failed to open attendance display. Please check popup blocker settings.', 'warning');
+                    }
+                }
                 
-                showNotification('Attendance display opened in new tab', 'success');
-            } else {
-                showNotification('Failed to open attendance display. Please check popup blocker settings.', 'warning');
-            }
-            
-            // Clear modal fields after starting attendance
-            clearAttendanceModalFields();
-            // Close the modal
-            closeAttendanceModal();
+                // Clear modal fields after starting attendance
+                clearAttendanceModalFields();
+                // Close the modal
+                closeAttendanceModal();
+            }, 500);
             
         } else {
             showNotification(data.message || 'Failed to save settings', 'error');

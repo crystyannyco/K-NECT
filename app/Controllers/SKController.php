@@ -507,10 +507,11 @@ class SKController extends BaseController
         $userExtInfoModel = new UserExtInfoModel();
 
         $query = $userModel
-            ->select('user.id, user.user_id, user.rfid_code, address.barangay, address.zone_purok, user.last_name, user.first_name, user.middle_name, user.birthdate, user.sex, user_ext_info.profile_picture')
+            ->select('user.id, user.user_id, user.rfid_code, user.user_type, address.barangay, address.zone_purok, user.last_name, user.first_name, user.middle_name, user.birthdate, user.sex, user_ext_info.profile_picture')
             ->join('address', 'address.user_id = user.id', 'left')
             ->join('user_ext_info', 'user_ext_info.user_id = user.id', 'left')
-            ->where('user.status', 2); // Only verified users
+            ->where('user.status', 2) // Only verified users
+            ->whereIn('user.user_type', [1, 2, 3]); // Include KK, SK Officials, and Pederasyon Officers
         
         // Filter by SK's barangay if available
         if ($skBarangay) {
@@ -543,12 +544,32 @@ class SKController extends BaseController
             // Format zone/purok
             $u['zone_display'] = isset($u['zone_purok']) && !empty($u['zone_purok']) ? esc($u['zone_purok']) : '-';
             
+            // Format user type
+            $userTypeLabels = [
+                1 => 'KK Member',
+                2 => 'SK Official',
+                3 => 'Pederasyon Officer | SK Chairperson'
+            ];
+            $u['user_type_label'] = isset($userTypeLabels[$u['user_type']]) ? $userTypeLabels[$u['user_type']] : 'Unknown';
+            
             // RFID status
             $u['has_rfid'] = !empty($u['rfid_code']);
             $u['rfid_status'] = $u['has_rfid'] ? 'Assigned' : 'Not Assigned';
             $u['rfid_status_class'] = $u['has_rfid'] ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
             
             $u['user_json'] = htmlspecialchars(json_encode($u), ENT_QUOTES, 'UTF-8');
+        }
+        unset($u);
+
+        // Add current logged-in user's profile picture as fallback if not in list
+        $currentUserId = $session->get('id');
+        $currentUserProfilePic = $session->get('profile_picture');
+        
+        // If current user is in the list and has no profile_picture, use session value
+        foreach ($users as &$u) {
+            if ($u['id'] == $currentUserId && empty($u['profile_picture']) && !empty($currentUserProfilePic)) {
+                $u['profile_picture'] = $currentUserProfilePic;
+            }
         }
         unset($u);
 

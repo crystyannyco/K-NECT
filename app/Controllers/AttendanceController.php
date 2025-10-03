@@ -874,7 +874,7 @@ class AttendanceController extends BaseController
                     if ($currentTimeObj >= $sessionEndTime) {
                         return $this->response->setJSON([
                             'success' => false,
-                            'message' => 'Session has ended - cannot check out manually',
+                            'message' => 'Session has ended - cannot time-out manually',
                             'duplicate' => true
                         ]);
                     }
@@ -911,7 +911,7 @@ class AttendanceController extends BaseController
                     
                     return $this->response->setJSON([
                         'success' => true,
-                        'message' => ucfirst($session) . ' session check-out successful (30+ minutes timeout met)',
+                        'message' => ucfirst($session) . ' session time-out successful (30+ minutes timeout met)',
                         'data' => [
                             'user' => [
                                 'name' => trim($user['first_name'] . ' ' . ($user['middle_name'] ? $user['middle_name'] . ' ' : '') . $user['last_name']),
@@ -944,7 +944,7 @@ class AttendanceController extends BaseController
                     $remainingMinutes = 30 - $minutesDifference;
                     return $this->response->setJSON([
                         'success' => false,
-                        'message' => "Duplicate entry - already scanned. Please wait {$remainingMinutes} more minutes to check out.",
+                        'message' => "Duplicate entry - already scanned. Please wait {$remainingMinutes} more minutes to time-out.",
                         'duplicate' => true,
                         'remaining_minutes' => $remainingMinutes
                     ]);
@@ -986,10 +986,10 @@ class AttendanceController extends BaseController
             $message = '';
             if ($session === 'morning') {
                 $attendanceModel->recordTimeInAM($userIdForAttendance, $eventId, $rfidCode, $status);
-                $message = "Morning session check-in successful - Status: {$status}";
+                $message = "Morning session time-in successful - Status: {$status}";
             } else if ($session === 'afternoon') {
                 $attendanceModel->recordTimeInPM($userIdForAttendance, $eventId, $rfidCode, $status);
-                $message = "Afternoon session check-in successful - Status: {$status}";
+                $message = "Afternoon session time-in successful - Status: {$status}";
             }
             
             // Add debug information for troubleshooting

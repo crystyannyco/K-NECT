@@ -1117,27 +1117,27 @@ function startAttendanceEnhanced() {
             // Broadcast session update to attendance display windows
             broadcastSessionUpdate(currentEventId);
             
-            // Wait a moment, then check for existing tab or open new one
+            // Wait a moment for broadcast, then check for existing tab or open new one
             setTimeout(() => {
                 const attendanceDisplayUrl = `<?= base_url('pederasyon/attendanceDisplay') ?>/${currentEventId}`;
-                const targetName = `attendance_${currentEventId}`;
+                const targetName = `pederasyon_attendance_${currentEventId}`;
                 
-                // Try to focus/update an existing tracked tab for this event, otherwise open a new named tab
+                // Check if we have a tracked window reference for this event
                 const existingWindow = window.attendanceDisplayWindows && window.attendanceDisplayWindows[currentEventId];
 
                 if (existingWindow && !existingWindow.closed) {
                     try {
-                        // Try to focus the tab and refresh it
+                        // Focus the existing tab and reload it with fresh settings
                         existingWindow.focus();
                         existingWindow.location.reload();
-                        showNotification('Focused existing tab and refreshed page', 'success');
+                        showNotification('Refreshed existing attendance tab', 'success');
                     } catch (focusError) {
-                        // If focus/reload fails, try to open a new window with same name (will replace if exists)
-                        console.warn('Cannot focus existing tab, opening replacement:', focusError);
+                        // If focus/reload fails (cross-origin issues), open with same name (replaces if exists)
+                        console.warn('Cannot access existing tab, opening new one:', focusError);
                         const newWindow = window.open(attendanceDisplayUrl, targetName);
                         if (newWindow) {
                             window.attendanceDisplayWindows[currentEventId] = newWindow;
-                            showNotification('Opened fresh attendance display', 'success');
+                            showNotification('Opened new attendance display tab', 'success');
                         }
                     }
                 } else {

@@ -306,11 +306,11 @@
                     updateAttendanceCounts(data.counts || {});
                     updateLastUpdatedTime();
                 } else {
-                    console.error('Failed to load live attendance data:', data.message);
+                    console.error('Failed to load attendance data:', data.message);
                 }
             })
             .catch(error => {
-                console.error('Error loading live attendance data:', error);
+                console.error('Error loading attendance data:', error);
             });
         }
 

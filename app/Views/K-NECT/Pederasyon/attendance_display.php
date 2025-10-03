@@ -7,716 +7,164 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-            min-height: 100vh;
-        }
-        
-        /* Enhanced Professional Card Styles */
-        .card {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
-            border: 1px solid rgba(226, 232, 240, 0.8);
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-        
-        .card:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 8px 35px rgba(0, 0, 0, 0.12);
-        }
-        
-        /* Enhanced Header Styling */
-        .header-gradient {
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
-            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.22);
-            padding-top: 10px; /* reduced vertical padding for compact header */
-            padding-bottom: 10px;
-        }
-        
+        /* Tabular numbers for stable timer width */
         .time-display {
-            font-family: 'Inter', sans-serif;
-            font-size: 1.6rem; /* slightly smaller to save vertical space */
-            font-weight: 700;
-            min-width: 10ch;
-            white-space: nowrap;
-            display: inline-block;
-            text-align: center;
-            letter-spacing: -0.02em;
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: "tnum";
         }
         
-        .time-card {
-            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-            border: 1px solid rgba(59, 130, 246, 0.12);
-            box-shadow: 0 2px 10px rgba(59, 130, 246, 0.06);
-            padding: 8px 12px; /* compact padding */
-        }
-        
-        /* Enhanced Scanner Card */
-        .scan-card {
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-            color: white;
-            position: relative;
-            /* Remove overflow: hidden to prevent animation clipping */
-            border-radius: inherit;
-        }
-        
-        /* shimmer element placed inside the .scan-clip wrapper so it's clipped cleanly */
-        .scan-shimmer {
-            position: absolute;
-            /* extend a bit so the long highlight covers the card fully; wrapper will clip */
-            top: -6px;
-            left: -20%;
-            right: -20%;
-            bottom: -6px;
-            background: linear-gradient(70deg,
-                rgba(255,255,255,0) 0%,
-                rgba(255,255,255,0.06) 35%,
-                rgba(255,255,255,0.20) 50%,
-                rgba(255,255,255,0.06) 65%,
-                rgba(255,255,255,0) 100%
-            );
-            transform: translateX(-150%);
-            animation: shimmer 5.5s linear infinite;
-            z-index: 2; /* sits below card content (card children are z-index:3) */
-            pointer-events: none;
-            /* Smoothly fade left/right edges so no hard edge is visible */
-            -webkit-mask-image: linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%);
-            mask-image: linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%);
-        }
-        
-        @keyframes shimmer {
-            0% { transform: translateX(-160%); opacity: 0; }
-            20% { opacity: 1; }
-            80% { opacity: 1; }
-            100% { transform: translateX(160%); opacity: 0; }
-        }
-        
-        .scan-pulse {
-            animation: scanPulse 2s infinite ease-in-out;
-            transform-origin: center;
-        }
-        
-        @keyframes scanPulse {
-            0%, 100% { 
-                opacity: 1; 
-                transform: scale(1);
-                box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
-            }
-            50% { 
-                opacity: 0.85; 
-                transform: scale(1.02);
-                box-shadow: 0 8px 40px rgba(59, 130, 246, 0.25);
-            }
-        }
-        
-        /* Ensure scanner card content stays above animation layers */
-        .scan-card > * {
-            position: relative;
-            z-index: 3;
-        }
-
-        /* Wrapper that clips the shimmer to the card's rounded corners */
-        .scan-clip {
-            border-radius: 16px;
-            overflow: hidden;
-            display: block;
-            position: relative; /* ensure absolute children are positioned inside this wrapper */
-        }
-        
-        /* Scanner card hover effect that works with animations */
-        .scan-card:hover {
-            transform: translateY(-2px);
-            transition: transform 0.2s ease;
-        }
-        
-        /* Enhanced Profile Card */
-        .profile-card {
-            background: linear-gradient(135deg, #fefefe 0%, #f8fafc 100%);
-            border: 2px solid rgba(148, 163, 184, 0.2);
-        }
-        
-        .profile-avatar {
-            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
-            box-shadow: 0 4px 15px rgba(100, 116, 139, 0.3);
-            transition: all 0.3s ease;
-        }
-        
-        .profile-avatar:hover {
-            transform: scale(1.05);
-            box-shadow: 0 8px 25px rgba(100, 116, 139, 0.4);
-        }
-        
-        /* Enhanced Table Styles */
-        .attendance-table {
-            border-radius: 12px;
-            overflow: hidden;
-            background: white;
-        }
-        
-        .attendance-table thead {
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-        }
-        
-        .attendance-table th {
-            padding: 12px 16px;
-            font-weight: 600;
-            color: #374151;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.05em;
-        }
-        
-        .attendance-table td {
-            padding: 12px 16px;
-            border-bottom: 1px solid #f1f5f9;
-            transition: all 0.2s ease;
-        }
-        
-        .attendance-table tbody tr:hover {
-            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-            transform: translateX(2px);
-        }
-        
-        /* Status Badges */
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 4px 8px;
-            border-radius: 8px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.025em;
-        }
-        
-        .status-present {
-            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
-            color: #166534;
-            border: 1px solid #22c55e;
-        }
-        
-        .status-late {
-            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-            color: #92400e;
-            border: 1px solid #f59e0b;
-        }
-        
-        /* Enhanced Buttons */
-        .btn-primary {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 10px;
-            font-weight: 600;
-            border: none;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-        }
-        
-        .btn-primary:active {
-            transform: translateY(0);
-        }
-        
-        /* Enhanced Form Inputs */
-        .form-input {
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            padding: 12px 16px;
-            font-size: 0.875rem;
-            transition: all 0.3s ease;
-            background: #fefefe;
-        }
-        
-        .form-input:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-            background: white;
-        }
-        
-        /* Session Status Indicators */
-        .session-indicator {
-            animation: sessionPulse 2s infinite;
-            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
-        }
-        
-        @keyframes sessionPulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
-        
-        .session-active {
-            border-color: #10b981;
-            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
-        }
-        
-        .session-inactive {
-            border-color: #e5e7eb;
-            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
-            opacity: 0.7;
-        }
-        
-        .session-past {
-            border-color: #dc2626;
-            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-            opacity: 0.8;
-        }
-        
-        /* Loading and Animation States */
-        .refresh-animation {
-            animation: spin 1s linear infinite;
-        }
-        
+        /* Keyframe animations */
         @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
         
-        .attendance-disabled {
-            pointer-events: none;
-            opacity: 0.5;
-            filter: grayscale(50%);
-        }
-        
-        /* Enhanced Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
-            border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
-        }
-        
-        /* Responsive Design Enhancements */
-        @media (max-width: 1024px) {
-            .header-gradient {
-                padding: 1.5rem 1rem;
-            }
-            
-            .time-card {
-                padding: 1rem 1.5rem;
-            }
-            
-            .card {
-                padding: 1rem;
-            }
-            
-            .scan-card {
-                padding: 1.5rem;
-            }
-            
-            /* Reduce padding wrapper on smaller screens to save space */
-            .scan-card {
-                margin: 2px;
-            }
-        }
-        
-        @media (max-width: 768px) {
-            .toast-container {
-                bottom: 16px;
-                right: 16px;
-                left: 16px;
-                max-width: none;
-            }
-            
-            .notification-toast {
-                min-width: 280px;
-                padding: 16px 20px;
-            }
-            
-            .header-gradient {
-                text-align: center;
-            }
-            
-            main {
-                padding: 1rem;
-            }
-            
-            .grid {
-                grid-template-columns: 1fr;
-                gap: 1.5rem;
-            }
-        }
-        
-
-        /* Enhanced Loading Screen - transparent with 3-dot animated logo */
-        .loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            /* Dark solid overlay outside the container (no transparency/blur) */
-            background: rgba(0, 0, 0, 0.78);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            opacity: 1;
-            visibility: visible;
-            transition: opacity 0.4s ease, visibility 0.4s ease;
-            pointer-events: auto; /* block interaction while visible */
-        }
-
+        /* Loading & Toast transitions */
         .loading-screen.hidden {
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
         }
 
-        /* SVG network loader (3 connected nodes) */
-        .loader-panel {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-            background: #ffffff; /* white container */
-            border-radius: 14px;
-            padding: 14px 18px;
-            box-shadow: 0 10px 30px rgba(2,6,20,0.12);
-            border: 1px solid rgba(16,24,40,0.06);
-        }
-
-        .loader-svg { width: 220px; height: 84px; display: block; }
-
-        .loader-line {
-            stroke: url(#lineGrad);
-            stroke-width: 4.5;
-            stroke-linecap: round;
-            transition: stroke-width 120ms ease, stroke 120ms ease, opacity 120ms ease;
-            opacity: 0.94;
-        }
-
-        .loader-circle {
-            filter: drop-shadow(0 6px 12px rgba(2,6,23,0.06));
-            transition: r 180ms ease, transform 300ms cubic-bezier(.2,.8,.2,1);
-        }
-
-        .loader-circle.red { fill: #ef4444; }
-        .loader-circle.blue { fill: #2563eb; }
-        .loader-circle.yellow { fill: #f59e0b; }
-
-        /* subtle pulsing to keep the nodes feeling alive */
-        @keyframes nodePulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.06); }
-            100% { transform: scale(1); }
-        }
-
-    .loader-circle { animation: nodePulse 1600ms ease-in-out infinite; }
-
-    .loader-text-wrap { color: #0b1220; }
-    .loader-title { color: #0b1220; font-weight: 700; font-size: 15px; margin-bottom: 4px; }
-    .loader-subtext { color: rgba(11,18,32,0.72); font-size: 13px; }
-
-    .loader-progress { width: 180px; height: 6px; background: rgba(255,255,255,0.04); border-radius: 999px; margin-top: 8px; overflow: hidden; }
-    .loader-progress-bar { height:100%; background: linear-gradient(90deg,#60a5fa,#93c5fd); width: 0%; border-radius: 999px; transition: width 320ms cubic-bezier(.2,.9,.2,1); }
-
-    /* pulse lines when nodes approach each other */
-    .loader-line.pulse { stroke-width: 6.5; opacity: 1; }
-
-        .loading-text {
-            color: white;
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 12px;
-            text-align: center;
-        }
-
-        .loading-subtext {
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 14px;
-            text-align: center;
-        }
-        
-        /* Simplified, professional toast styles */
-        .toast-container {
-            position: fixed;
-            bottom: 18px;
-            right: 18px;
-            z-index: 1000;
-            max-width: 360px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            pointer-events: none;
-        }
-
-        .notification-toast {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px 14px;
-            border-radius: 10px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-            transition: transform 200ms ease, opacity 200ms ease;
-            transform: translateY(8px) scale(0.995);
-            opacity: 0;
-            pointer-events: auto;
-            background: #ffffff;
-            color: #0f172a;
-            border: 1px solid rgba(15,23,42,0.06);
-            overflow: hidden;
-            font-size: 0.95rem;
-        }
-
         .notification-toast.show {
-            transform: translateY(0) scale(1);
             opacity: 1;
         }
 
-        .notification-toast.success { background: #ecfdf5; border-color: rgba(16,185,129,0.12); }
-        .notification-toast.error   { background: #fff1f2; border-color: rgba(239,68,68,0.12); }
-        .notification-toast.warning { background: #fffbeb; border-color: rgba(245,158,11,0.12); }
-        .notification-toast.info    { background: #eff6ff; border-color: rgba(59,130,246,0.12); }
+        /* Toast type colors */
+        .notification-toast.success { background: #d1fae5; border-color: #10b981; color: #065f46; }
+        .notification-toast.error   { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
+        .notification-toast.warning { background: #fef3c7; border-color: #f59e0b; color: #92400e; }
+        .notification-toast.info    { background: #dbeafe; border-color: #3b82f6; color: #1e40af; }
 
-        .toast-icon { width: 18px; height: 18px; flex-shrink: 0; opacity: 0.95 }
-        .toast-message { flex: 1; line-height: 1.2; }
-        .toast-close { background: transparent; border: none; color: inherit; cursor: pointer; padding: 4px; opacity: 0.6 }
-        .toast-close:hover { opacity: 1 }
-        
-        /* Permanent visibility for all attendance records */
-        .permanent-visible {
-            display: table-row !important;
-        }
-        
-        /* Highlight active session records with a subtle border */
-        .highlight-active-session {
-            background-color: #f0f9ff !important;
-            border-left: 3px solid #3b82f6;
-            animation: subtle-pulse 3s ease-in-out infinite;
-        }
-        
-        /* Slightly dim inactive session records but keep them visible */
-        .dim-inactive-session {
-            opacity: 0.7;
-            background-color: #f9fafb;
-        }
-        
-        
-        /* Enhanced session filter styling */
-        .session-filter-enhanced {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-            box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
-        }
-        
-        /* Override any display: none for attendance rows */
+        /* Attendance row states */
         tr[data-session] {
             display: table-row !important;
         }
         
-        /* Smooth transitions for row highlighting */
         .permanent-visible {
-            transition: all 0.3s ease;
+            display: table-row !important;
         }
         
-        /* Enhanced attendance status badges (no animation) */
-        .highlight-active-session .status-badge {
-            box-shadow: 0 1px 3px rgba(59, 130, 246, 0.3);
+        .highlight-active-session {
+            background-color: #dbeafe !important;
+            border-left: 3px solid #3b82f6;
         }
         
-        /* Session indicator in time column for better visibility */
-        .session-indicator {
-            font-size: 10px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        .dim-inactive-session {
+            opacity: 0.6;
+            background-color: #f9fafb;
         }
         
-        .session-indicator.morning {
-            color: #0891b2;
-        }
-        
-        .session-indicator.afternoon {
-            color: #c2410c;
-        }
-        /* Responsive header title sizing: keep readable but fit container */
-        .header-title {
-            font-size: clamp(0.95rem, 1.8vw, 1.25rem); /* reduced max size for compact header */
-            line-height: 1.05;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            font-weight: 700;
-        }
-        /* Responsive logos to prevent overlap with title */
-        .header-logo {
-            width: clamp(36px, 5.5vw, 64px); /* smaller logos */
-            height: clamp(36px, 5.5vw, 64px);
-            flex: 0 0 auto;
-            object-fit: contain;
+        .recent-tap {
+            background-color: #fef3c7 !important;
+            border-left: 3px solid #f59e0b !important;
         }
 
-        .pederasyon-logo {
-            width: clamp(44px, 6.5vw, 80px);
-            height: clamp(44px, 6.5vw, 80px);
-            flex: 0 0 auto;
-            object-fit: contain;
+        /* Professional Loader Styling */
+        .loader-circle.red {
+            fill: #ef4444;
         }
-        /* Allow title to wrap on very small screens to avoid overlap with logos */
+        
+        .loader-circle.blue {
+            fill: #3b82f6;
+        }
+        
+        .loader-circle.yellow {
+            fill: #eab308;
+        }
+        
+        .loader-line {
+            stroke-width: 3;
+            stroke-linecap: round;
+        }
+        
+        .loader-progress-bar {
+            background: #3b82f6;
+            transition: width 0.3s ease-out;
+        }
+
+        /* Responsive header sizing */
+        .header-title {
+            font-size: clamp(0.95rem, 1.8vw, 1.25rem);
+            line-height: 1.2;
+        }
+        
+        .header-logo {
+            width: clamp(36px, 5.5vw, 64px);
+            height: clamp(36px, 5.5vw, 64px);
+        }
+
         @media (max-width: 420px) {
             .header-title {
                 white-space: normal;
-                overflow: visible;
-                text-overflow: clip;
-            }
-            /* Slightly reduce center card padding on tiny screens */
-            .flex-shrink-0.flex {
-                padding-left: 0.5rem;
-                padding-right: 0.5rem;
+                text-align: center;
+                font-size: 0.9rem;
             }
         }
-        /* Highlight for recent taps (transient) */
-        .recent-tap {
-            background-color: #fff7ed !important; /* light warm highlight */
-            border-left: 3px solid #f59e0b !important;
-            transition: background-color 0.6s ease, border-left-color 0.6s ease, opacity 0.6s ease;
+
+        /* Make attendance log wrapper scroll when there are many rows */
+        .attendance-scrollable {
+            max-height: 360px; /* roughly 5 rows; tweak if needed */
+            overflow-y: auto;
         }
 
-
-
-        /* RFID Input Focus Lock */
-        .rfid-locked {
-            outline: 3px solid #3b82f6;
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3);
+        /* Thin, subtle scrollbar for modern browsers */
+        .attendance-scrollable::-webkit-scrollbar {
+            width: 8px;
         }
-
-        /* User Profile Auto-clear Animation */
-        .profile-auto-clear {
-            animation: profileClearCountdown 30s linear forwards;
-            border-left: 4px solid transparent;
-        }
-
-        @keyframes profileClearCountdown {
-            0% { border-left-color: #10b981; }
-            80% { border-left-color: #f59e0b; }
-            100% { border-left-color: #ef4444; }
-        }
-        
-        /* Additional Professional Touches */
-        .card-header {
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-            border-radius: 16px 16px 0 0;
-            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
-        }
-
-        /* Make the live attendance log container rounded and clip inner content */
-        #attendanceLogCard {
-            border-radius: 16px;
-            overflow: hidden;
-        }
-        
-        .icon-badge {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
-        }
-        
-        /* Micro-animations for better UX */
-        .animate-fade-in {
-            animation: fadeIn 0.3s ease-out;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .animate-scale-in {
-            animation: scaleIn 0.2s ease-out;
-        }
-        
-        @keyframes scaleIn {
-            from { transform: scale(0.95); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
+        .attendance-scrollable::-webkit-scrollbar-thumb {
+            background: rgba(15, 23, 42, 0.12);
+            border-radius: 9999px;
         }
     </style>
 </head>
-<body class="min-h-screen">
+<body class="min-h-screen bg-gray-100 font-['Inter']">
     
     <!-- Loading Screen -->
-    <div id="loadingScreen" class="loading-screen" role="status" aria-live="polite" aria-label="Loading">
-        <div class="loader-panel" aria-hidden="false">
-            <svg class="loader-svg" viewBox="0 0 200 84" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-                <defs>
-                    <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stop-color="#60a5fa" stop-opacity="0.9" />
-                        <stop offset="100%" stop-color="#93c5fd" stop-opacity="0.6" />
-                    </linearGradient>
-                    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
-                        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                        <feMerge>
-                            <feMergeNode in="coloredBlur"/>
-                            <feMergeNode in="SourceGraphic"/>
-                        </feMerge>
-                    </filter>
-                </defs>
+    <div id="loadingScreen" class="loading-screen fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] opacity-100 visible pointer-events-auto" role="status" aria-live="polite" aria-label="Loading">
+        <div class="loader-panel flex flex-col items-center gap-4 bg-white rounded-xl px-6 py-5 shadow-2xl border border-gray-100" aria-hidden="false">
+            <svg class="loader-svg" width="180" height="80" viewBox="0 0 240 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
                 <!-- connecting lines -->
-                <line id="line12" class="loader-line" x1="38" y1="44" x2="100" y2="26" stroke="url(#lineGrad)"></line>
-                <line id="line23" class="loader-line" x1="100" y1="26" x2="162" y2="44" stroke="url(#lineGrad)"></line>
+                <line id="line12" class="loader-line" x1="40" y1="50" x2="120" y2="50" stroke="#1e3a8a"></line>
+                <line id="line23" class="loader-line" x1="120" y1="50" x2="200" y2="50" stroke="#1e3a8a"></line>
 
                 <!-- nodes -->
-                <circle id="node1" class="loader-circle red" cx="38" cy="44" r="9" filter="url(#softGlow)"></circle>
-                <circle id="node2" class="loader-circle blue" cx="100" cy="26" r="11" filter="url(#softGlow)"></circle>
-                <circle id="node3" class="loader-circle yellow" cx="162" cy="44" r="9" filter="url(#softGlow)"></circle>
+                <circle id="node1" class="loader-circle red" cx="40" cy="50" r="7" opacity="1"></circle>
+                <circle id="node2" class="loader-circle blue" cx="120" cy="50" r="7" opacity="1"></circle>
+                <circle id="node3" class="loader-circle yellow" cx="200" cy="50" r="7" opacity="1"></circle>
             </svg>
-            <div class="loader-text-wrap">
-                <div class="loader-title">Initializing Attendance System</div>
-                <div class="loader-subtext"><span id="loadingStatus">Checking event date and time...</span></div>
-                <div class="loader-progress">
-                    <div id="loaderProgressBar" class="loader-progress-bar" style="width:0%"></div>
+            <div class="loader-text-wrap text-center">
+                <div class="loader-title text-blue-900 font-semibold text-base mb-1.5">Initializing Attendance System</div>
+                <div class="loader-subtext text-gray-600 text-xs mb-2"><span id="loadingStatus">Checking event date and time...</span></div>
+                <div class="loader-progress w-[180px] h-1 bg-gray-200 rounded-full overflow-hidden shadow-inner">
+                    <div id="loaderProgressBar" class="loader-progress-bar h-full bg-blue-500 w-0 rounded-full" style="width:0%"></div>
                 </div>
             </div>
         </div>
     </div>
     
     <!-- Enhanced Professional Header Section -->
-    <header class="header-gradient text-white shadow-lg">
-    <div class="max-w-full mx-auto px-4 py-3">
-            <div class="flex flex-col lg:flex-row items-center justify-between gap-8">
-                <!-- Left: City Logo and Event Info -->
+    <header class="header-gradient bg-white border-b border-gray-200 shadow-md text-blue-900 py-3">
+        <div class="max-w-full mx-auto px-4 py-2">
+            <div class="flex flex-col lg:flex-row items-center justify-between gap-4">
+                <!-- Left: Logos and Event Info -->
                 <div class="flex items-center gap-4 flex-1 min-w-0 w-full lg:w-auto">
-                    <!-- Logo Section -->
                     <div class="flex-shrink-0 flex items-center gap-3">
                         <div class="relative">
                             <?php if (!empty($iriga_logo['file_path'])): ?>
-                                <img src="<?= base_url($iriga_logo['file_path']) ?>" alt="<?= esc($iriga_logo['logo_name']) ?>" class="w-24 h-24 rounded-full ring-4 ring-white/20 shadow-lg">
+                                <img src="<?= base_url($iriga_logo['file_path']) ?>" alt="<?= esc($iriga_logo['logo_name']) ?>" class="w-16 h-16 rounded-full ring-2 ring-white/20 shadow-md">
                             <?php else: ?>
-                                <div class="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center ring-4 ring-white/20 shadow-lg">
-                                    <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                                    </svg>
+                                <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center ring-2 ring-white/20 shadow-md">
+                                    <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
                                 </div>
                             <?php endif; ?>
                         </div>
                         <div class="relative">
                             <?php if (!empty($pederasyon_logo['file_path'])): ?>
-                                <img src="<?= base_url($pederasyon_logo['file_path']) ?>" alt="<?= esc($pederasyon_logo['logo_name']) ?>" class="w-24 h-24 rounded-full ring-4 ring-white/20 shadow-lg">
+                                <img src="<?= base_url($pederasyon_logo['file_path']) ?>" alt="<?= esc($pederasyon_logo['logo_name']) ?>" class="w-16 h-16 rounded-full ring-2 ring-white/20 shadow-md">
                             <?php else: ?>
-                                <div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center ring-4 ring-white/20 shadow-lg">
-                                    <svg class="w-24 h-24 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-                                    </svg>
+                                <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center ring-2 ring-white/20 shadow-md">
+                                    <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                                 </div>
                             <?php endif; ?>
                         </div>
@@ -725,49 +173,32 @@
                     <!-- Event Information -->
                     <div class="flex-1 min-w-0">
                         <div class="text-center lg:text-left">
-                            <h2 class="text-sm font-bold uppercase text-white/90 tracking-wide">
-                                City of Iriga
-                            </h2>
-                            <h2 class="text-lg font-bold uppercase mb-2 text-white tracking-wide">
-                                Pederasyon ng mga Sangguniang Kabataan
-                            </h2>
-                            <h1 class="text-2xl lg:text-3xl font-bold text-white mb-3 leading-tight" title="<?= esc($event['title']) ?>"><?= esc($event['title']) ?></h1>
-                            <div class="flex flex-wrap justify-center lg:justify-start items-center gap-x-6 gap-y-2 text-sm text-white/80">
+                            <h2 class="text-xs font-bold uppercase text-blue-900 tracking-wide">City of Iriga</h2>
+                            <h2 class="text-base font-bold uppercase mb-1 text-blue-400 tracking-wide">Pederasyon ng mga Sangguniang Kabataan</h2>
+                            <h1 class="text-xl lg:text-2xl font-bold text-blue-900 mb-2 leading-tight truncate" title="<?= esc($event['title']) ?>"><?= esc($event['title']) ?></h1>
+                            <div class="flex flex-wrap justify-center lg:justify-start items-center gap-x-4 gap-y-1 text-xs" style="color: #6b7280;">
                                 <div class="flex items-center gap-1">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                    </svg>
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                     <span class="font-semibold">Date:</span> 
                                     <?php 
                                         $startDate = date('Y-m-d', strtotime($event['start_datetime']));
                                         $endDate = date('Y-m-d', strtotime($event['end_datetime']));
-                                        
-                                        if ($startDate === $endDate) {
-                                            echo date('F d, Y', strtotime($event['start_datetime']));
-                                        } else {
+                                        if ($startDate === $endDate) { echo date('F d, Y', strtotime($event['start_datetime'])); } 
+                                        else {
                                             $startFormatted = date('F d', strtotime($event['start_datetime']));
                                             $endFormatted = date('F d, Y', strtotime($event['end_datetime']));
-                                            
-                                            if (date('Y-m', strtotime($event['start_datetime'])) === date('Y-m', strtotime($event['end_datetime']))) {
-                                                echo $startFormatted . ' - ' . $endFormatted;
-                                            } else {
-                                                echo date('F d, Y', strtotime($event['start_datetime'])) . ' - ' . $endFormatted;
-                                            }
+                                            if (date('Y-m', strtotime($event['start_datetime'])) === date('Y-m', strtotime($event['end_datetime']))) { echo $startFormatted . ' - ' . $endFormatted; } 
+                                            else { echo date('F d, Y', strtotime($event['start_datetime'])) . ' - ' . $endFormatted; }
                                         }
                                     ?>
                                 </div>
                                 <div class="flex items-center gap-1">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                     <span class="font-semibold">Time:</span> <?= date('g:i A', strtotime($event['start_datetime'])) ?> - <?= date('g:i A', strtotime($event['end_datetime'])) ?>
                                 </div>
                                 <?php if (!empty($event['location'])): ?>
                                 <div class="flex items-center gap-1">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                    </svg>
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                                     <span class="font-semibold">Location:</span> <?= esc($event['location']) ?>
                                 </div>
                                 <?php endif; ?>
@@ -775,53 +206,32 @@
                         </div>
                     </div>
                 </div>
-                <!-- Center: Current Time Card -->
+                <!-- Center: Current Time -->
                 <div class="flex-shrink-0">
-                    <div class="time-card rounded-2xl px-4 py-4 text-center shadow-lg">
-                        <div class="text-xs text-blue-700 font-semibold mb-2 uppercase tracking-wider">Current Time</div>
-                        <div class="text-3xl font-bold text-blue-800 mb-2 time-display" id="currentTime"></div>
-                        <div class="text-xs text-blue-600 flex items-center justify-center gap-1">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            Manila Time (PHT)
-                        </div>
+                    <div class="time-card bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-center shadow-sm min-w-[180px] flex flex-col items-center">
+                        <div class="text-xs text-blue-700 font-semibold mb-1 uppercase">Current Time</div>
+                        <div class="text-2xl font-bold text-blue-900 time-display whitespace-nowrap tracking-wide" id="currentTime" aria-live="polite">00:00:00 AM</div>
+                        <div class="text-xs text-blue-600">Manila Time (PHT)</div>
                     </div>
                 </div>
                 
-                <!-- Right: Session Status Card -->
+                <!-- Right: Session Status -->
                 <div class="flex-shrink-0">
-                    <div class="bg-white/20 backdrop-blur-sm rounded-2xl px-4 py-2 border border-white/30 shadow-lg">
-                        <div class="text-center px-4">
-                            <div class="flex items-center justify-center space-x-2 mb-2">
-                                <div class="w-3 h-3 rounded-full session-indicator" id="sessionIndicator"></div>
-                                <span class="text-sm font-semibold text-white" id="sessionStatus">Waiting</span>
+                    <div class="bg-white rounded-lg px-4 py-2 border border-gray-200 shadow-sm">
+                        <div class="text-center">
+                            <div class="flex items-center justify-center space-x-2 mb-1">
+                                <div class="w-2.5 h-2.5 rounded-full session-indicator" id="sessionIndicator"></div>
+                                <span class="text-xs font-semibold text-blue-900" id="sessionStatus">Waiting</span>
                             </div>
-                            <div class="text-lg font-bold text-white mb-3" id="currentSessionDisplay">No Active Session</div>
-                            
-                            <!-- Session stalk: persistent indicator -->
-                            <div id="sessionStalk" class="text-xs px-3 py-1 rounded-full bg-white/20 text-white/80 hidden mb-2" title="Session status">
-                                <!-- content updated by JS -->
-                            </div>
-                            
+                            <div class="text-base font-bold text-blue-900 mb-2" id="currentSessionDisplay">No Active Session</div>
                             <div class="space-y-1">
-                                <div class="text-xs text-white/80 flex items-center justify-between" id="amSessionTimes">
-                                    <span class="flex items-center gap-1">
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"></path>
-                                        </svg>
-                                        AM:
-                                    </span>
-                                    <span><?= $attendance_settings['start_attendance_am'] ? date('g:i A', strtotime($attendance_settings['start_attendance_am'])) : 'Not Set' ?> - <?= $attendance_settings['end_attendance_am'] ? date('g:i A', strtotime($attendance_settings['end_attendance_am'])) : 'Not Set' ?></span>
+                                <div class="text-xs text-gray-600 flex items-center justify-between gap-2" id="amSessionTimes">
+                                    <span class="font-bold">AM:</span>
+                                    <span><?= $attendance_settings['start_attendance_am'] ? date('g:iA', strtotime($attendance_settings['start_attendance_am'])) : 'N/A' ?> - <?= $attendance_settings['end_attendance_am'] ? date('g:iA', strtotime($attendance_settings['end_attendance_am'])) : 'N/A' ?></span>
                                 </div>
-                                <div class="text-xs text-white/80 flex items-center justify-between" id="pmSessionTimes">
-                                    <span class="flex items-center gap-1">
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6"></path>
-                                        </svg>
-                                        PM:
-                                    </span>
-                                    <span><?= $attendance_settings['start_attendance_pm'] ? date('g:i A', strtotime($attendance_settings['start_attendance_pm'])) : 'Not Set' ?> - <?= $attendance_settings['end_attendance_pm'] ? date('g:i A', strtotime($attendance_settings['end_attendance_pm'])) : 'Not Set' ?></span>
+                                <div class="text-xs text-gray-600 flex items-center justify-between gap-2" id="pmSessionTimes">
+                                    <span class="font-bold">PM:</span>
+                                    <span><?= $attendance_settings['start_attendance_pm'] ? date('g:iA', strtotime($attendance_settings['start_attendance_pm'])) : 'N/A' ?> - <?= $attendance_settings['end_attendance_pm'] ? date('g:iA', strtotime($attendance_settings['end_attendance_pm'])) : 'N/A' ?></span>
                                 </div>
                             </div>
                         </div>
@@ -831,228 +241,92 @@
         </div>
     </header>
 
-    <!-- Main Content - Enhanced Professional Layout -->
+    <!-- Main Content -->
     <main class="max-w-full mx-auto px-4 py-4">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <!-- RFID Scanner Card - Enhanced -->
-            <div class="lg:col-span-4">
-                <!-- Add padding wrapper to accommodate animation overflow -->
-                    <div class="scan-clip">
-                        <div class="scan-shimmer" aria-hidden="true"></div>
-                        <div class="card scan-card p-8 h-full text-center relative">
-                    <!-- Background Pattern -->
-                    <div class="absolute inset-0 opacity-10">
-                        <svg class="w-full h-full" viewBox="0 0 100 100" fill="none">
-                            <defs>
-                                <pattern id="scanPattern" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
-                                    <circle cx="5" cy="5" r="1" fill="white"/>
-                                </pattern>
-                            </defs>
-                            <rect width="100" height="100" fill="url(#scanPattern)"/>
-                        </svg>
-                    </div>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- RFID Scanner Card -->
+            <div class="lg:col-span-3">
+                <div class="bg-blue-500 text-white rounded-lg p-6 h-full text-center shadow-sm border border-gray-200 hover:-translate-y-0.5 transition-transform duration-200">
+                    <h3 class="text-xl font-bold mb-3">RFID Scanner</h3>
+                    <p class="text-sm mb-4 text-white/90" id="scanStatus">Ready to scan your RFID card...</p>
                     
-                    <h3 class="text-2xl font-bold mb-4 text-white">RFID Scanner</h3>
-                    <p class="text-sm mb-6 text-white/90 leading-relaxed" id="scanStatus">Ready to scan your RFID card...</p>
-                    
-                    <!-- Session Status -->
-                    <div class="mb-8 bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                        <div class="text-sm font-semibold mb-2 text-white/90" id="currentSessionDisplay">No Active Session</div>
-                        <div id="sessionStatus" class="inline-flex items-center px-3 py-2 rounded-full text-sm bg-white/20 text-white font-medium">
-                            <div class="w-2 h-2 rounded-full bg-current mr-2 session-indicator"></div>
+                    <div class="mb-6 bg-white/10 backdrop-blur-sm rounded-lg p-3">
+                        <div class="text-sm font-semibold mb-1 text-white/90" id="currentSessionDisplay">No Active Session</div>
+                        <div id="sessionStatus" class="inline-flex items-center px-3 py-1 rounded-full text-xs bg-white/20 text-white font-medium">
+                            <div class="w-2 h-2 rounded-full bg-current mr-2"></div>
                             Waiting
                         </div>
                     </div>
                     
-                    <!-- Hidden RFID Input -->
-                    <input type="text" id="rfidInput" 
-                           class="opacity-0 absolute -top-10 left-0 w-1 h-1" 
-                           autofocus>
+                    <input type="text" id="rfidInput" class="opacity-0 absolute -top-10 left-0 w-1 h-1" autofocus>
                     
-                    <!-- Manual Input Section -->
-                    <div class="bg-white rounded-2xl p-6 shadow-lg relative z-10">
-                        <div class="flex items-center gap-2 mb-4">
-                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                            </svg>
-                            <label class="text-sm font-bold text-gray-800">Manual Entry</label>
-                        </div>
-                        <div class="space-y-4">
-                            <input type="text" id="userIdInput" 
-                                placeholder="Enter User ID (e.g., 123456 or 25-123456)" 
-                                class="form-input w-full text-gray-900 placeholder-gray-500">
-                            <button onclick="processManualAttendance()" 
-                                    class="btn-primary w-full py-4">
-                                <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                Submit Attendance
-                            </button>
-                            <div id="manualEntryStatus" class="text-xs text-gray-500 text-center">
-                                Ready for manual input
-                            </div>
+                    <div class="bg-white rounded-xl p-4 shadow-lg">
+                        <label class="text-sm font-bold text-blue-900 mb-2 block">Manual Entry</label>
+                        <div class="space-y-3">
+                            <input type="text" id="userIdInput" placeholder="Enter User ID" class="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-3 focus:ring-blue-500/10 bg-white">
+                            <button onclick="processManualAttendance()" class="bg-blue-500 text-white w-full py-2 text-sm rounded-lg font-medium hover:bg-blue-600 transition-colors">Submit Attendance</button>
+                            <div id="manualEntryStatus" class="text-xs text-gray-500">Ready for manual input</div>
                         </div>
                     </div>
-                </div>
                 </div>
             </div>
             
-            <!-- User Profile Card - Enhanced -->
+            <!-- User Profile Card -->
             <div class="lg:col-span-3">
-                <div class="card profile-card p-6 h-full">
-                    <div class="flex items-center gap-3 mb-6">
-                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                        </svg>
-                        <h3 class="text-lg font-bold text-gray-900">User Profile</h3>
-                    </div>
-                    
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 h-full">
+                    <h3 class="text-base font-bold text-blue-900 mb-4">User Profile</h3>
                     <div id="userInfoContent" class="text-center">
-                        <!-- Default State -->
-                        <div class="profile-avatar w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center">
-                            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                            </svg>
+                        <div class="bg-slate-500 w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                         </div>
-                        <h4 class="text-lg font-semibold text-gray-900 mb-2">No User Selected</h4>
-                        <p class="text-sm text-gray-500 mb-6">Scan RFID card or enter User ID to view profile</p>
+                        <h4 class="text-base font-semibold text-blue-900 mb-1">No User Selected</h4>
+                        <p class="text-xs text-gray-500 mb-4">Scan RFID or enter User ID</p>
                         
-                        <!-- User Info Fields -->
-                        <div class="bg-gray-50 rounded-xl p-4 space-y-3">
-                            <div class="flex items-center justify-between py-2 border-b border-gray-200 last:border-b-0">
-                                <div class="flex items-center gap-2">
-                                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                                    </svg>
-                                    <span class="text-sm font-medium text-gray-700">Type:</span>
-                                </div>
-                                <span class="text-sm text-gray-500 font-mono">---</span>
-                            </div>
-                            <div class="flex items-center justify-between py-2 border-b border-gray-200 last:border-b-0">
-                                <div class="flex items-center gap-2">
-                                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                    </svg>
-                                    <span class="text-sm font-medium text-gray-700">Age:</span>
-                                </div>
-                                <span class="text-sm text-gray-500 font-mono">---</span>
-                            </div>
-                            <div class="flex items-center justify-between py-2 border-b border-gray-200 last:border-b-0">
-                                <div class="flex items-center gap-2">
-                                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                    </svg>
-                                    <span class="text-sm font-medium text-gray-700">Gender:</span>
-                                </div>
-                                <span class="text-sm text-gray-500 font-mono">---</span>
-                            </div>
-                            <div class="flex items-center justify-between py-2 border-b border-gray-200 last:border-b-0">
-                                <div class="flex items-center gap-2">
-                                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                    </svg>
-                                    <span class="text-sm font-medium text-gray-700">Zone:</span>
-                                </div>
-                                <span class="text-sm text-gray-500 font-mono">---</span>
-                            </div>
-                            <div class="flex items-center justify-between py-2">
-                                <div class="flex items-center gap-2">
-                                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    <span class="text-sm font-medium text-gray-700">Status:</span>
-                                </div>
-                                <span class="text-sm text-gray-500 font-mono">---</span>
-                            </div>
+                        <div class="bg-gray-50 rounded-lg p-3 space-y-2 text-sm">
+                            <div class="flex justify-between"><span class="font-medium text-gray-700">Type:</span><span class="text-gray-600 font-mono">---</span></div>
+                            <div class="flex justify-between"><span class="font-medium text-gray-700">Age:</span><span class="text-gray-600 font-mono">---</span></div>
+                            <div class="flex justify-between"><span class="font-medium text-gray-700">Gender:</span><span class="text-gray-600 font-mono">---</span></div>
+                            <div class="flex justify-between"><span class="font-medium text-gray-700">Zone:</span><span class="text-gray-600 font-mono">---</span></div>
+                            <div class="flex justify-between"><span class="font-medium text-gray-700">Status:</span><span class="text-gray-600 font-mono">---</span></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Attendance Log Card - Enhanced -->
-            <div class="lg:col-span-5">
-                <div id="attendanceLogCard" class="card h-full flex flex-col">
-                    <!-- Enhanced Header -->
-                    <div class="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-blue-50">
+            <!-- Attendance Log Card -->
+            <div class="lg:col-span-6">
+                <div id="attendanceLogCard" class="bg-white rounded-lg shadow-sm border border-gray-200 h-full flex flex-col overflow-hidden">
+                    <div id="attendanceLogWrapper" class="px-4 py-3 bg-blue-500 border-b border-blue-300 rounded-t-lg">
                         <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-3">
-                                <div class="p-2 bg-blue-100 rounded-lg">
-                                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h3 class="text-lg font-bold text-gray-900">Live Attendance Log</h3>
-                                    <span id="sessionFilter" class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700 hidden font-medium">
-                                        Filtered by Active Session
-                                    </span>
-                                </div>
+                            <div>
+                                <h3 class="text-base font-bold text-white">Attendance Log</h3>
                             </div>
-                            <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-2">
                                 <div class="text-right">
-                                    <div class="text-xs text-gray-500 uppercase tracking-wide">Total Attendees</div>
-                                    <div class="text-2xl font-bold text-blue-600" id="totalAttendees">0</div>
+                                    <div class="text-xs text-white">Total</div>
+                                    <div class="text-xl font-bold text-blue-200" id="totalAttendees">0</div>
                                 </div>
-                                <div class="flex items-center space-x-2">
-                                    <button onclick="refreshData()" 
-                                            class="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all" 
-                                            title="Refresh attendance data">
-                                        <svg id="refreshIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                                        </svg>
-                                    </button>
-                                </div>
+                                <button onclick="refreshData()" class="p-2 text-gray-100 hover:text-blue-400 rounded-md transition-colors" title="Refresh data">
+                                    <svg id="refreshIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                </button>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Enhanced Table -->
-                    <div class="flex-1 relative">
-                        <div class="absolute inset-0 overflow-hidden">
-                            <div class="h-full overflow-y-auto overflow-x-hidden">
-                                <table class="attendance-table min-w-full table-fixed">
-                                    <thead class="sticky top-0 z-10">
-                                        <tr>
-                                            <th class="attendance-table th w-2/5">
-                                                <div class="flex items-center gap-2">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                                    </svg>
-                                                    Name
-                                                </div>
-                                            </th>
-                                            <th class="attendance-table th w-1/5">
-                                                <div class="flex items-center gap-2">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                    </svg>
-                                                    Status
-                                                </div>
-                                            </th>
-                                            <th class="attendance-table th w-1/5">
-                                                <div class="flex items-center gap-2">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                    </svg>
-                                                    Time
-                                                </div>
-                                            </th>
-                                            <th class="attendance-table th w-1/5">
-                                                <div class="flex items-center gap-2">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                                                    </svg>
-                                                    Action
-                                                </div>
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="attendanceLogsList" class="bg-white">
-                                        <!-- Dynamic content will be inserted here -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+                    <div class="flex-1 overflow-y-auto">
+                        <table class="w-full bg-white text-sm">
+                            <thead class="sticky top-0 bg-gray-50 border-b border-gray-200 z-10">
+                                <tr>
+                                    <th class="px-3 py-2 font-semibold text-gray-700 uppercase text-[0.7rem] tracking-wider text-left w-2/5">Name</th>
+                                    <th class="px-3 py-2 font-semibold text-gray-700 uppercase text-[0.7rem] tracking-wider text-left w-1/5">Status</th>
+                                    <th class="px-3 py-2 font-semibold text-gray-700 uppercase text-[0.7rem] tracking-wider text-left w-1/5">Time</th>
+                                    <th class="px-3 py-2 font-semibold text-gray-700 uppercase text-[0.7rem] tracking-wider text-left w-1/5">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendanceLogsList" class="bg-white">
+                                <!-- Dynamic content -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -1082,7 +356,8 @@
         const CONFIG = {
             REAL_TIME_UPDATE_INTERVAL: 5000,    // 5 seconds polling for server status
             SESSION_CHECK_INTERVAL: 30000,       // 30 seconds for session pending checks (less noisy)
-            PROFILE_DISPLAY_DURATION: 30000,    // 30 seconds for profile visibility
+            PROFILE_DISPLAY_DURATION: 20000,    // 20 seconds for profile visibility when idle
+            MIN_SCAN_PROCESSING_COOLDOWN: 250,  // Minimum delay before allowing the next scan (ms)
             LOADING_MIN_DURATION: 2000,         // Minimum loading screen time
             TOAST_DURATION: 5000,               // Toast notification duration
             RFID_FOCUS_CHECK_INTERVAL: 500      // RFID input focus check interval
@@ -1147,6 +422,63 @@
             return new Date();
         }
 
+        function parseLocalDateTime(dateTimeString) {
+            if (!dateTimeString) return null;
+            const normalized = dateTimeString.replace(' ', 'T');
+            const parsed = new Date(normalized);
+            return isNaN(parsed.getTime()) ? null : parsed;
+        }
+
+        function isSameDay(dateA, dateB) {
+            if (!(dateA instanceof Date) || !(dateB instanceof Date)) return false;
+            return (
+                dateA.getFullYear() === dateB.getFullYear() &&
+                dateA.getMonth() === dateB.getMonth() &&
+                dateA.getDate() === dateB.getDate()
+            );
+        }
+
+        function minutesBetween(fromDate, toDate) {
+            if (!(fromDate instanceof Date) || !(toDate instanceof Date)) return null;
+            return Math.round((toDate.getTime() - fromDate.getTime()) / 60000);
+        }
+
+        function describeTimeUntil(targetDate) {
+            if (!(targetDate instanceof Date)) return '';
+            const minutes = minutesBetween(new Date(), targetDate);
+            if (minutes === null) return '';
+            if (minutes <= 0) {
+                return 'moments';
+            }
+            if (minutes === 1) {
+                return '1 minute';
+            }
+            if (minutes < 60) {
+                return `${minutes} minutes`;
+            }
+
+            const hours = Math.floor(minutes / 60);
+            const remainingMinutes = minutes - hours * 60;
+            if (hours < 24) {
+                if (remainingMinutes >= 30) {
+                    return `${hours + 1} hours`;
+                }
+                return `${hours} hour${hours === 1 ? '' : 's'}`;
+            }
+
+            const days = Math.round(minutes / (60 * 24));
+            return `${days} day${days === 1 ? '' : 's'}`;
+        }
+
+        function formatTimeForMessage(date) {
+            if (!(date instanceof Date)) return '';
+            return date.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+        }
+
         // ==================== EVENT DATE/TIME VALIDATION ====================
         
         function validateEventDateTime() {
@@ -1155,41 +487,61 @@
             if (!eventData || !eventData.start_datetime) {
                 console.error('Event data or start_datetime not available');
                 AppState.eventDateValid = false;
-                AppState.eventState = 'past';
+                AppState.eventState = 'completed';
+                AppState.eventMeta = {};
                 return AppState.eventState;
             }
 
-            const currentDate = getCurrentDate();
-            const eventStartDate = eventData.start_datetime.split(' ')[0]; // Extract date part
-            const eventEndDate = eventData.end_datetime ? eventData.end_datetime.split(' ')[0] : eventStartDate;
+            const eventStart = parseLocalDateTime(eventData.start_datetime);
+            const eventEnd = parseLocalDateTime(eventData.end_datetime) || eventStart;
+            const now = new Date();
 
-            const currentDateObj = new Date(currentDate);
-            const eventStartDateObj = new Date(eventStartDate);
-            const eventEndDateObj = new Date(eventEndDate);
-
-            // Determine state: active (today within range), upcoming (today before start), past (today after end)
-            if (currentDateObj >= eventStartDateObj && currentDateObj <= eventEndDateObj) {
-                AppState.eventState = 'active';
-                AppState.eventDateValid = true;
-            } else if (currentDateObj < eventStartDateObj) {
-                AppState.eventState = 'upcoming';
+            if (!eventStart) {
+                console.error('Unable to parse event start datetime');
                 AppState.eventDateValid = false;
-            } else {
-                AppState.eventState = 'past';
-                AppState.eventDateValid = false;
+                AppState.eventState = 'completed';
+                AppState.eventMeta = {};
+                return AppState.eventState;
             }
 
-            const dateRangeText = eventStartDate === eventEndDate ? 
-                formatEventDate(eventStartDate) : 
-                `${formatEventDate(eventStartDate)} - ${formatEventDate(eventEndDate)}`;
-
-            if (AppState.eventState === 'upcoming') {
-                showToast(`Event scheduled for ${dateRangeText}. Display is read-only until the event starts.`, 'info');
-            } else if (AppState.eventState === 'past') {
-                showToast(`This event occurred ${dateRangeText}. Attendance display is read-only for review.`, 'info');
+            let eventState = 'upcoming';
+            if (now > eventEnd) {
+                eventState = 'completed';
+            } else if (now >= eventStart) {
+                eventState = 'active';
+            } else if (isSameDay(now, eventStart)) {
+                eventState = 'incoming';
             }
 
-            // Return the current event state so callers can decide how to proceed
+            const minutesToStart = minutesBetween(now, eventStart);
+            const minutesToEnd = minutesBetween(now, eventEnd);
+
+            AppState.eventState = eventState;
+            AppState.eventDateValid = eventState === 'active';
+            AppState.eventMeta = {
+                startDate: eventStart,
+                endDate: eventEnd,
+                startsInMinutes: minutesToStart,
+                endsInMinutes: minutesToEnd,
+                isSameDay: isSameDay(now, eventStart)
+            };
+
+            const eventStartDateStr = eventData.start_datetime.split(' ')[0];
+            const eventEndDateStr = eventData.end_datetime ? eventData.end_datetime.split(' ')[0] : eventStartDateStr;
+            const dateRangeText = eventStartDateStr === eventEndDateStr
+                ? formatEventDate(eventStartDateStr)
+                : `${formatEventDate(eventStartDateStr)} - ${formatEventDate(eventEndDateStr)}`;
+
+            if (eventState === 'incoming') {
+                const timeLabel = formatTimeForMessage(eventStart);
+                const relativeLabel = describeTimeUntil(eventStart);
+                showToast(`Event starts today at ${timeLabel}${relativeLabel ? ` (in ${relativeLabel})` : ''}. Attendance will open once the first session begins.`, 'info', 'event');
+            } else if (eventState === 'upcoming') {
+                showToast(`Event scheduled for ${dateRangeText}. Display remains read-only until the event date.`, 'info', 'event');
+            } else if (eventState === 'completed') {
+                showToast(`This event occurred ${dateRangeText}. Attendance display is read-only for review.`, 'info', 'event');
+            }
+
             return AppState.eventState;
         }
 
@@ -1280,21 +632,21 @@
             if (_loaderInterval) return; // already running (we'll store RAF id here)
 
             // aggressive RAF-driven motion
-            // slower, smooth-moving state with collision avoidance
+            // smooth, slower-moving state with collision avoidance
             const state = {
                 nodes: {
-                    n1: { x: 28, y: 32, tx: 28, ty: 32, speed: 0.04 },
-                    n2: { x: 80, y: 20, tx: 80, ty: 20, speed: 0.05 },
-                    n3: { x: 132, y: 32, tx: 132, ty: 32, speed: 0.04 }
+                    n1: { x: 40, y: 50, tx: 40, ty: 50, speed: 0.03 },
+                    n2: { x: 120, y: 50, tx: 120, ty: 50, speed: 0.04 },
+                    n3: { x: 200, y: 50, tx: 200, ty: 50, speed: 0.03 }
                 },
                 lastTargetAt: Date.now(),
-                nextSwapAt: Date.now() + 2200
+                nextSwapAt: Date.now() + 2500
             };
 
             function chooseNewTargets() {
                 const now = Date.now();
-                const bounds = { minX: 18, maxX: 142, minY: 12, maxY: 48 };
-                const minSeparation = 36; // minimum separation between node targets
+                const bounds = { minX: 60, maxX: 180, minY: 35, maxY: 65 };
+                const minSeparation = 30; // minimum separation between node targets
 
                 // helper to ensure a target is far enough from other targets
                 function ensureSeparation(tx, ty, others) {
@@ -1322,29 +674,51 @@
                 const keys = Object.keys(state.nodes);
                 const tentative = {};
                 keys.forEach((k, i) => {
-                    if (doSideSwap) {
-                        // swap n1 and n3 positions: n1 -> near n3, n3 -> near n1, n2 stays central
-                        if (k === 'n1') {
-                            tentative[k] = { tx: state.nodes['n3'].x + (Math.random()-0.5)*8, ty: state.nodes['n3'].y + (Math.random()-0.5)*8 };
-                        } else if (k === 'n3') {
-                            tentative[k] = { tx: state.nodes['n1'].x + (Math.random()-0.5)*8, ty: state.nodes['n1'].y + (Math.random()-0.5)*8 };
+                    // Create opposite/diagonal movements for particle effect
+                    const n = state.nodes[k];
+                    const centerX = (bounds.minX + bounds.maxX) / 2;
+                    const centerY = (bounds.minY + bounds.maxY) / 2;
+                    
+                    // Determine if node is on left/right/center and top/bottom
+                    const isLeft = n.x < centerX - 20;
+                    const isRight = n.x > centerX + 20;
+                    const isTop = n.y < centerY;
+                    
+                    // Generate target in opposite direction for diagonal movement
+                    let tx, ty;
+                    if (Math.random() < 0.7) {
+                        // Move to opposite side diagonally
+                        if (isLeft && isTop) {
+                            tx = bounds.maxX - Math.random() * 40;
+                            ty = bounds.maxY - Math.random() * 15;
+                        } else if (isRight && isTop) {
+                            tx = bounds.minX + Math.random() * 40;
+                            ty = bounds.maxY - Math.random() * 15;
+                        } else if (isLeft && !isTop) {
+                            tx = bounds.maxX - Math.random() * 40;
+                            ty = bounds.minY + Math.random() * 15;
+                        } else if (isRight && !isTop) {
+                            tx = bounds.minX + Math.random() * 40;
+                            ty = bounds.minY + Math.random() * 15;
                         } else {
-                            tentative[k] = { tx: state.nodes[k].x + (Math.random()-0.5)*6, ty: state.nodes[k].y + (Math.random()-0.5)*6 };
+                            // Center node moves randomly up/down and left/right
+                            tx = Math.random() < 0.5 ? bounds.minX + Math.random() * 30 : bounds.maxX - Math.random() * 30;
+                            ty = Math.random() * (bounds.maxY - bounds.minY) + bounds.minY;
                         }
                     } else {
-                        if (Math.random() < 0.12 && k === 'n2') {
-                            const targetKey = Math.random() < 0.5 ? 'n1' : 'n3';
-                            tentative[k] = {
-                                tx: state.nodes[targetKey].x + (Math.random() - 0.5) * 12,
-                                ty: state.nodes[targetKey].y + (Math.random() - 0.5) * 12
-                            };
+                        // Sometimes move vertically or horizontally
+                        if (Math.random() < 0.5) {
+                            // Vertical movement
+                            tx = n.x + (Math.random() - 0.5) * 20;
+                            ty = isTop ? bounds.maxY - Math.random() * 10 : bounds.minY + Math.random() * 10;
                         } else {
-                            tentative[k] = {
-                                tx: Math.random() * (bounds.maxX - bounds.minX) + bounds.minX,
-                                ty: Math.random() * (bounds.maxY - bounds.minY) + bounds.minY
-                            };
+                            // Horizontal movement
+                            tx = isLeft ? bounds.maxX - Math.random() * 20 : bounds.minX + Math.random() * 20;
+                            ty = n.y + (Math.random() - 0.5) * 15;
                         }
                     }
+                    
+                    tentative[k] = { tx, ty };
                 });
 
                 // enforce separation between tentative targets
@@ -1357,28 +731,35 @@
 
                 // update timing
                 state.lastTargetAt = now;
-                state.nextSwapAt = now + (1800 + Math.random()*2200); // slower changes
+                state.nextSwapAt = now + 2500 + Math.random() * 2000;
             }
 
             chooseNewTargets();
 
             function step() {
                 try {
-                    // occasionally swap targets to create crossing behavior
+                    // continuously swap targets to create non-stop movement
                     if (Date.now() > state.nextSwapAt) chooseNewTargets();
 
                     // move each node towards its target with interpolation and simple collision avoidance
                     const keys = Object.keys(state.nodes);
-                    // first apply smooth lerp towards targets
+                    // first apply smooth lerp towards targets with higher speed
                     keys.forEach(k => {
                         const n = state.nodes[k];
-                        const t = Math.max(0.04, Math.min(0.2, n.speed + 0.02));
-                        n.x += (n.tx - n.x) * t;
-                        n.y += (n.ty - n.y) * t;
+                    const t = Math.max(0.02, Math.min(0.10, n.speed + 0.01));
+                    n.x += (n.tx - n.x) * t;
+                    n.y += (n.ty - n.y) * t;                        // Check if node is close to target and assign new target immediately
+                        const distToTarget = Math.hypot(n.tx - n.x, n.ty - n.y);
+                        if (distToTarget < 5) {
+                            // Generate new target for this specific node
+                            const bounds = { minX: 60, maxX: 180, minY: 35, maxY: 65 };
+                            n.tx = Math.random() * (bounds.maxX - bounds.minX) + bounds.minX;
+                            n.ty = Math.random() * (bounds.maxY - bounds.minY) + bounds.minY;
+                        }
                     });
 
                     // then apply separation if nodes are too close
-                    const minSeparation = 28; // px
+                    const minSeparation = 22; // px - minimum distance to prevent overlap
                     for (let i = 0; i < keys.length; i++) {
                         for (let j = i+1; j < keys.length; j++) {
                             const a = state.nodes[keys[i]];
@@ -1404,8 +785,8 @@
                         const n = state.nodes[k];
                         const el = _nodes[k];
                         // clamp to display bounds roughly matching SVG viewbox
-                        n.x = Math.max(12, Math.min(188, n.x));
-                        n.y = Math.max(10, Math.min(70, n.y));
+                        n.x = Math.max(20, Math.min(220, n.x));
+                        n.y = Math.max(18, Math.min(82, n.y));
                         if (el) {
                             el.setAttribute('cx', n.x.toFixed(2));
                             el.setAttribute('cy', n.y.toFixed(2));
@@ -1462,16 +843,16 @@
             try { if (_progressState.rafId) { cancelAnimationFrame(_progressState.rafId); _progressState.rafId = null; } } catch (e) {}
             // reset nodes to canonical positions
             try {
-                if (_nodes.n1) { _nodes.n1.setAttribute('cx', 28); _nodes.n1.setAttribute('cy', 32); }
-                if (_nodes.n2) { _nodes.n2.setAttribute('cx', 80); _nodes.n2.setAttribute('cy', 20); }
-                if (_nodes.n3) { _nodes.n3.setAttribute('cx', 132); _nodes.n3.setAttribute('cy', 32); }
+                if (_nodes.n1) { _nodes.n1.setAttribute('cx', 40); _nodes.n1.setAttribute('cy', 50); }
+                if (_nodes.n2) { _nodes.n2.setAttribute('cx', 120); _nodes.n2.setAttribute('cy', 50); }
+                if (_nodes.n3) { _nodes.n3.setAttribute('cx', 200); _nodes.n3.setAttribute('cy', 50); }
                 if (_nodes.l12) {
-                    _nodes.l12.setAttribute('x1', 28); _nodes.l12.setAttribute('y1', 32);
-                    _nodes.l12.setAttribute('x2', 80); _nodes.l12.setAttribute('y2', 20);
+                    _nodes.l12.setAttribute('x1', 40); _nodes.l12.setAttribute('y1', 50);
+                    _nodes.l12.setAttribute('x2', 120); _nodes.l12.setAttribute('y2', 50);
                 }
                 if (_nodes.l23) {
-                    _nodes.l23.setAttribute('x1', 80); _nodes.l23.setAttribute('y1', 20);
-                    _nodes.l23.setAttribute('x2', 132); _nodes.l23.setAttribute('y2', 32);
+                    _nodes.l23.setAttribute('x1', 120); _nodes.l23.setAttribute('y1', 50);
+                    _nodes.l23.setAttribute('x2', 200); _nodes.l23.setAttribute('y2', 50);
                 }
                 // ensure progress bar finishes
                 setLoaderProgress(100);
@@ -1592,18 +973,67 @@
             }
 
             // Update scan status to a professional message
-            const scanStatus = document.getElementById('scanStatus');
-            if (scanStatus) {
-                scanStatus.textContent = readOnly ? 'Display is read-only. Attendance input is disabled.' : 'Attendance is not available at this time.';
-            }
-
-            // Update session status and card with clear professional labels
             const sessionStatus = document.getElementById('sessionStatus');
             const currentSessionDisplay = document.getElementById('currentSessionDisplay');
-                if (sessionStatus && currentSessionDisplay) {
-                currentSessionDisplay.textContent = readOnly ? 'No Active Event (Read-Only)' : 'No Active Event';
-                sessionStatus.textContent = readOnly ? 'Read-Only' : 'Inactive';
-                sessionStatus.className = readOnly ? 'inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-400 text-white' : 'inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-500 text-white';
+            const sessionIndicator = document.getElementById('sessionIndicator');
+            const scanStatus = document.getElementById('scanStatus');
+
+            if (sessionStatus && currentSessionDisplay) {
+                const state = readOnly ? (AppState.eventState || 'upcoming') : 'inactive';
+                const meta = AppState.eventMeta || {};
+                const startLabel = meta.startDate instanceof Date ? formatTimeForMessage(meta.startDate) : '';
+
+                const defaults = {
+                    display: readOnly ? 'No Active Event (Read-Only)' : 'No Active Event',
+                    status: readOnly ? 'Read-Only' : 'Inactive',
+                    badgeClass: readOnly
+                        ? 'inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-400 text-white'
+                        : 'inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-500 text-white',
+                    indicatorClass: readOnly
+                        ? 'w-3 h-3 rounded-full bg-gray-400 session-indicator'
+                        : 'w-3 h-3 rounded-full bg-red-500 session-indicator',
+                    scanMessage: readOnly
+                        ? 'Display is read-only. Attendance input is disabled.'
+                        : 'Attendance is not available at this time.'
+                };
+
+                const presets = {
+                    incoming: {
+                        display: 'Event Today (Incoming)',
+                        status: 'Incoming',
+                        badgeClass: 'inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-600 text-white',
+                        indicatorClass: 'w-3 h-3 rounded-full bg-blue-500 session-indicator',
+                        scanMessage: startLabel
+                            ? `Event starts at ${startLabel}. Attendance opens once sessions begin.`
+                            : 'Event starts later today.'
+                    },
+                    upcoming: {
+                        display: 'Event Not Active (Upcoming)',
+                        status: 'Not Active',
+                        badgeClass: 'inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-500 text-white',
+                        indicatorClass: 'w-3 h-3 rounded-full bg-blue-500 session-indicator',
+                        scanMessage: 'Event scheduled on a future date. Display is read-only.'
+                    },
+                    completed: {
+                        display: 'Event Not Active (Completed)',
+                        status: 'Completed',
+                        badgeClass: 'inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-500 text-white',
+                        indicatorClass: 'w-3 h-3 rounded-full bg-gray-400 session-indicator',
+                        scanMessage: 'Event completed. Attendance display is read-only for review.'
+                    }
+                };
+
+                const config = presets[state] || defaults;
+
+                currentSessionDisplay.textContent = config.display;
+                sessionStatus.textContent = config.status;
+                sessionStatus.className = config.badgeClass;
+                if (sessionIndicator) {
+                    sessionIndicator.className = config.indicatorClass;
+                }
+                if (scanStatus) {
+                    scanStatus.textContent = config.scanMessage;
+                }
             }
 
             // If readOnly, ensure attendance log remains visible and interactive in read-only mode
@@ -1694,30 +1124,59 @@
             const userInfoContent = document.getElementById('userInfoContent');
             if (!userInfoContent) return;
             
-            // Remove any existing auto-clear animation
-            userInfoContent.classList.remove('profile-auto-clear');
-            
             // Set profile content
             showUserInfo(user);
             
-            // Add auto-clear animation and set timer
-            setTimeout(() => {
-                userInfoContent.classList.add('profile-auto-clear');
-            }, 100);
-            
+            // Set timer to clear profile
             profileClearTimer = setTimeout(() => {
                 clearUserProfile();
             }, duration);
         }
 
+        function normalizeUserForDisplay(user) {
+            if (!user || typeof user !== 'object') {
+                return user;
+            }
+
+            const normalized = { ...user };
+
+            const rawTimeCandidates = [
+                user.time_raw,
+                user.timeOriginal,
+                user.time_original,
+                user.timeISO,
+                user.timestamp,
+                user.time
+            ];
+            const rawTime = rawTimeCandidates.find(value => value) || null;
+
+            let displayTime = user.time_display || user.timeFormatted || '';
+            if (!displayTime) {
+                if (typeof rawTime === 'string' && /^(\d{1,2}:\d{2}(?::\d{2})?\s?(AM|PM))$/i.test(rawTime.trim())) {
+                    displayTime = rawTime.trim().replace(/\s+/g, ' ');
+                } else if (rawTime) {
+                    const formatted = formatTimeDisplay(rawTime);
+                    if (formatted) {
+                        displayTime = formatted;
+                    }
+                }
+            }
+
+            if (!displayTime && typeof user.time === 'string') {
+                displayTime = user.time;
+            }
+
+            normalized.time_raw = rawTime;
+            normalized.time_display = displayTime || '';
+            if (displayTime) {
+                normalized.time = displayTime;
+            }
+
+            return normalized;
+        }
+
         function clearUserProfile() {
             clearProfileClearTimer();
-            
-            const userInfoContent = document.getElementById('userInfoContent');
-            if (userInfoContent) {
-                userInfoContent.classList.remove('profile-auto-clear');
-            }
-            
             clearUserInfo();
         }
 
@@ -1833,8 +1292,14 @@
 
         // Update session status from server data
         function updateSessionStatusFromData(data) {
-            const morningStatus = data.morning_status;
-            const afternoonStatus = data.afternoon_status;
+            const morningStatus = data.morning_status || {};
+            const afternoonStatus = data.afternoon_status || {};
+
+            if (AppState.eventState !== 'active') {
+                currentActiveSession = null;
+                updateSessionDisplay(null, morningStatus, afternoonStatus);
+                return;
+            }
             
             // Determine which session should be active
             let newActiveSession = null;
@@ -2094,6 +1559,7 @@
                             name: record.user_name || getFullName(record),
                             session: 'morning',
                             time: formatTimeDisplay(record['time-in_am']),
+                            time_raw: record['time-in_am'],  // Pass raw datetime for proper sorting
                             status: record.status_am || 'Present',
                             action: 'time_in',
                             rfid_code: record.rfid_code,
@@ -2101,6 +1567,7 @@
                             barangay: record.barangay || '',
                             profile_picture: record.profile_picture || '',
                             attendanceStatus: record.status_am || 'Present',
+                            attendance_id: record.attendance_id,  // Include for deduplication
                             isExisting: true  // Mark as existing record for always visible display
                         });
                         
@@ -2111,6 +1578,7 @@
                                 name: record.user_name || getFullName(record),
                                 session: 'morning',
                                 time: formatTimeDisplay(record['time-out_am']),
+                                time_raw: record['time-out_am'],  // Pass raw datetime for proper sorting
                                 status: record.status_am || 'Present',
                                 action: 'time_out',
                                 rfid_code: record.rfid_code,
@@ -2118,6 +1586,7 @@
                                 barangay: record.barangay || '',
                                 profile_picture: record.profile_picture || '',
                                 attendanceStatus: record.status_am || 'Present',
+                                attendance_id: record.attendance_id,  // Include for deduplication
                                 isExisting: true  // Mark as existing record for always visible display
                             });
                         }
@@ -2131,6 +1600,7 @@
                             name: record.user_name || getFullName(record),
                             session: 'afternoon',
                             time: formatTimeDisplay(record['time-in_pm']),
+                            time_raw: record['time-in_pm'],  // Pass raw datetime for proper sorting
                             status: record.status_pm || 'Present',
                             action: 'time_in',
                             rfid_code: record.rfid_code,
@@ -2138,6 +1608,7 @@
                             barangay: record.barangay || '',
                             profile_picture: record.profile_picture || '',
                             attendanceStatus: record.status_pm || 'Present',
+                            attendance_id: record.attendance_id,  // Include for deduplication
                             isExisting: true  // Mark as existing record for always visible display
                         });
                         
@@ -2148,6 +1619,7 @@
                                 name: record.user_name || getFullName(record),
                                 session: 'afternoon',
                                 time: formatTimeDisplay(record['time-out_pm']),
+                                time_raw: record['time-out_pm'],  // Pass raw datetime for proper sorting
                                 status: record.status_pm || 'Present',
                                 action: 'time_out',
                                 rfid_code: record.rfid_code,
@@ -2155,6 +1627,7 @@
                                 barangay: record.barangay || '',
                                 profile_picture: record.profile_picture || '',
                                 attendanceStatus: record.status_pm || 'Present',
+                                attendance_id: record.attendance_id,  // Include for deduplication
                                 isExisting: true  // Mark as existing record for always visible display
                             });
                         }
@@ -2213,9 +1686,11 @@
         function formatTimeDisplay(timeString) {
             if (!timeString) return '';
             const date = new Date(timeString);
+            if (isNaN(date.getTime())) return '';
             return date.toLocaleTimeString('en-US', { 
                 hour: 'numeric', 
                 minute: '2-digit',
+                second: '2-digit',
                 hour12: true 
             });
         }
@@ -2230,6 +1705,10 @@
                 clearInterval(pendingNotificationInterval);
             }
 
+            if (!startTime) {
+                return;
+            }
+
             const formattedStartTime = formatTimeTo12Hour(startTime);
             
             // Show initial notification immediately
@@ -2238,8 +1717,9 @@
             // Set up periodic notifications every 1 minute (60000ms) to notify admin
             pendingNotificationInterval = setInterval(() => {
                 const currentTime = getCurrentTime24HourForComparison();
-                
-                if (currentTime >= startTime) {
+                const comparison = compareTimeStrings(currentTime, startTime);
+
+                if (comparison.isAtOrAfter) {
                     // Session has started, clear the notification interval
                     clearInterval(pendingNotificationInterval);
                     pendingNotificationInterval = null;
@@ -2252,8 +1732,9 @@
             // Continue with session start monitoring at less frequent intervals
             sessionStartWaitInterval = setInterval(() => {
                 const currentTime = getCurrentTime24HourForComparison();
+                const comparison = compareTimeStrings(currentTime, startTime);
 
-                if (currentTime >= startTime) {
+                if (comparison.isAtOrAfter) {
                     clearInterval(sessionStartWaitInterval);
                     sessionStartWaitInterval = null;
                     
@@ -2293,30 +1774,60 @@
             const sessionStatus = document.getElementById('sessionStatus');
             const currentSessionDisplay = document.getElementById('currentSessionDisplay');
             const scanStatus = document.getElementById('scanStatus');
-            
-            // If the event itself is marked upcoming or past, show clear labels
-            if (AppState.eventState === 'upcoming') {
-                currentSessionDisplay.textContent = 'Event Not Active (Upcoming)';
-                sessionStatus.textContent = 'Not Active';
+
+            const eventMeta = AppState.eventMeta || {};
+            const startDateLabel = eventMeta.startDate instanceof Date ? formatTimeForMessage(eventMeta.startDate) : '';
+            const relativeStart = eventMeta.startDate instanceof Date ? describeTimeUntil(eventMeta.startDate) : '';
+
+            if (AppState.eventState === 'incoming') {
+                currentSessionDisplay.textContent = 'Event Today (Incoming)';
+                sessionStatus.textContent = 'Incoming';
                 sessionStatus.className = 'inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-600 text-white';
                 sessionIndicator.className = 'w-3 h-3 rounded-full bg-blue-500 session-indicator';
-                const startText = (morningStatus && morningStatus.start_time) || (afternoonStatus && afternoonStatus.start_time) || '';
-                scanStatus.textContent = startText ? `Attendance opens at ${formatTimeTo12Hour(startText)} on the event date.` : 'Event scheduled - display is read-only.';
+                if (scanStatus) {
+                    scanStatus.textContent = startDateLabel
+                        ? `Attendance opens today at ${startDateLabel}${relativeStart && relativeStart !== 'moments' ? ` (in ${relativeStart})` : ''}.`
+                        : 'Event starts later today. Attendance opens once sessions begin.';
+                }
 
-                document.getElementById('rfidInput').disabled = true;
+                const rfidInput = document.getElementById('rfidInput');
+                if (rfidInput) rfidInput.disabled = true;
                 if (userIdInput) userIdInput.disabled = true;
                 showAllAttendanceLogs();
                 return;
             }
 
-            if (AppState.eventState === 'past') {
-                currentSessionDisplay.textContent = 'Event Not Active (Completed)';
+            if (AppState.eventState === 'upcoming') {
+                currentSessionDisplay.textContent = 'Event Not Active (Upcoming)';
                 sessionStatus.textContent = 'Not Active';
+                sessionStatus.className = 'inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-500 text-white';
+                sessionIndicator.className = 'w-3 h-3 rounded-full bg-blue-500 session-indicator';
+                if (scanStatus) {
+                    const startText = (morningStatus && morningStatus.start_time) || (afternoonStatus && afternoonStatus.start_time) || startDateLabel;
+                    const descriptor = startDateLabel && relativeStart && relativeStart !== 'moments'
+                        ? `${startDateLabel} (in ${relativeStart})`
+                        : startDateLabel || (startText ? formatTimeTo12Hour(startText) : 'the scheduled time');
+                    scanStatus.textContent = `Event scheduled on a future date. Attendance opens at ${descriptor}.`;
+                }
+
+                const rfidInput = document.getElementById('rfidInput');
+                if (rfidInput) rfidInput.disabled = true;
+                if (userIdInput) userIdInput.disabled = true;
+                showAllAttendanceLogs();
+                return;
+            }
+
+            if (AppState.eventState === 'completed') {
+                currentSessionDisplay.textContent = 'Event Not Active (Completed)';
+                sessionStatus.textContent = 'Completed';
                 sessionStatus.className = 'inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-500 text-white';
                 sessionIndicator.className = 'w-3 h-3 rounded-full bg-gray-400 session-indicator';
-                scanStatus.textContent = 'Event completed. Attendance display is read-only for review.';
+                if (scanStatus) {
+                    scanStatus.textContent = 'Event completed. Attendance display is read-only for review.';
+                }
 
-                document.getElementById('rfidInput').disabled = true;
+                const rfidInput = document.getElementById('rfidInput');
+                if (rfidInput) rfidInput.disabled = true;
                 if (userIdInput) userIdInput.disabled = true;
                 showAllAttendanceLogs();
                 return;
@@ -2416,171 +1927,165 @@
             };
         }
 
+        function evaluateSessionState(sessionKey, startTime, endTime, currentTime) {
+            if (!startTime || !endTime || AppState.eventState !== 'active') {
+                return {
+                    session: sessionKey,
+                    state: 'inactive',
+                    startTime,
+                    endTime,
+                    displayStartTime: startTime ? formatTimeTo12Hour(startTime) : '',
+                    displayEndTime: endTime ? formatTimeTo12Hour(endTime) : ''
+                };
+            }
+
+            const startComparison = compareTimeStrings(currentTime, startTime);
+            const endComparison = compareTimeStrings(currentTime, endTime);
+
+            let state = 'inactive';
+            if (startComparison.isAtOrAfter && endComparison.isAtOrBefore) {
+                state = 'active';
+            } else if (startComparison.isBefore) {
+                state = 'pending';
+            } else if (endComparison.isAfter) {
+                state = 'ended';
+            }
+
+            return {
+                session: sessionKey,
+                state,
+                startTime,
+                endTime,
+                displayStartTime: formatTimeTo12Hour(startTime),
+                displayEndTime: formatTimeTo12Hour(endTime)
+            };
+        }
+
         // Update session status based on current time with improved accuracy
         function updateSessionStatus() {
-            const now = new Date();
-            const currentTime = getCurrentTime24HourForComparison(); // HH:MM format for backend comparison
-            const previousActiveSession = currentActiveSession;
-            currentActiveSession = null;
-            
-            const sessionIndicator = document.getElementById('sessionIndicator');
-            const sessionStatus = document.getElementById('sessionStatus');
-            const currentSessionDisplay = document.getElementById('currentSessionDisplay');
-            const scanStatus = document.getElementById('scanStatus');
+            const currentTime = getCurrentTime24HourForComparison();
+            const previousStates = AppState.previousSessionStates || { morning: 'inactive', afternoon: 'inactive' };
 
-            if (AppState.eventState && AppState.eventState !== 'active') {
-                // When the current date does not match the event date, treat the session card as not active
-                const isUpcoming = AppState.eventState === 'upcoming';
-                currentSessionDisplay.textContent = isUpcoming ? 'Event Not Active (Upcoming)' : 'Event Not Active (Completed)';
-                sessionStatus.textContent = 'Not Active';
-                sessionStatus.className = isUpcoming
-                    ? 'inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-600 text-white'
-                    : 'inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-500 text-white';
-                sessionIndicator.className = isUpcoming
-                    ? 'w-3 h-3 rounded-full bg-blue-500 session-indicator'
-                    : 'w-3 h-3 rounded-full bg-gray-400 session-indicator';
-                scanStatus.textContent = isUpcoming
-                    ? 'Attendance opens on the event date. Display is read-only.'
-                    : 'This event has concluded. Display is read-only for review.';
+            const placeholderMorning = {
+                status: 'inactive',
+                start_time: attendanceSettings.start_attendance_am,
+                end_time: attendanceSettings.end_attendance_am
+            };
+            const placeholderAfternoon = {
+                status: 'inactive',
+                start_time: attendanceSettings.start_attendance_pm,
+                end_time: attendanceSettings.end_attendance_pm
+            };
 
-                // Disable inputs during read-only mode
-                const rfidInput = document.getElementById('rfidInput');
-                if (rfidInput) rfidInput.disabled = true;
-                const userIdInput = document.getElementById('userIdInput');
-                if (userIdInput) userIdInput.disabled = true;
+            if (AppState.eventState !== 'active') {
+                currentActiveSession = null;
+                updateSessionDisplay(null, placeholderMorning, placeholderAfternoon);
 
-                showAllAttendanceLogs();
-                return;
-            }
-            
-            let sessionState = 'inactive';
-            let nextSessionInfo = null;
-            let sessionEnded = false;
-            
-            // Check morning session with precise time comparison
-            if (attendanceSettings.start_attendance_am && attendanceSettings.end_attendance_am) {
-                const startTime = attendanceSettings.start_attendance_am;
-                const endTime = attendanceSettings.end_attendance_am;
-                
-                const startComparison = compareTimeStrings(currentTime, startTime);
-                const endComparison = compareTimeStrings(currentTime, endTime);
-                
-                const isActive = startComparison.isAtOrAfter && endComparison.isAtOrBefore;
-                const isPending = startComparison.isBefore;
-                const isPast = endComparison.isAfter;
-                
-                if (isActive) {
-                    currentActiveSession = 'morning';
-                    sessionState = 'active';
-                    // Show notification when morning session starts (only if no previous session was active)
-                    if (previousActiveSession !== 'morning') {
-                        showToast('Morning session is now active!', 'success');
-                    }
-                } else if (isPending) {
-                    sessionState = 'pending';
-                    nextSessionInfo = { session: 'morning', startTime: startTime };
-                } else if (isPast && previousActiveSession === 'morning') {
-                    // AUTOMATIC TIMEOUT - Session just ended
-                    sessionEnded = true;
-                    showToast('Morning session has ended - Auto-timeout initiated', 'info');
-                    autoTimeoutSession('morning');
-                    hideSessionAttendanceLogs(); // Hide live display when session ends
-                }
-            }
-            
-            // Check afternoon session with precise time comparison
-            if (attendanceSettings.start_attendance_pm && attendanceSettings.end_attendance_pm) {
-                const startTime = attendanceSettings.start_attendance_pm;
-                const endTime = attendanceSettings.end_attendance_pm;
-                
-                const startComparison = compareTimeStrings(currentTime, startTime);
-                const endComparison = compareTimeStrings(currentTime, endTime);
-                
-                const isActive = startComparison.isAtOrAfter && endComparison.isAtOrBefore;
-                const isPending = startComparison.isBefore;
-                const isPast = endComparison.isAfter;
-                
-                if (isActive) {
-                    currentActiveSession = 'afternoon';
-                    sessionState = 'active';
-                    // Show notification when afternoon session starts (only if no previous session was active)
-                    if (previousActiveSession !== 'afternoon') {
-                        showToast('Afternoon session is now active!', 'success');
-                    }
-                } else if (isPending && (!nextSessionInfo || startComparison.isBefore)) {
-                    // Use afternoon if it's the next upcoming session
-                    sessionState = 'pending';
-                    nextSessionInfo = { session: 'afternoon', startTime: startTime };
-                } else if (isPast && previousActiveSession === 'afternoon') {
-                    // AUTOMATIC TIMEOUT - Session just ended
-                    sessionEnded = true;
-                    showToast('Afternoon session has ended - Auto-timeout initiated', 'info');
-                    autoTimeoutSession('afternoon');
-                    hideSessionAttendanceLogs(); // Hide live display when session ends
-                }
-            }
-            
-            // Update UI based on session status
-            if (currentActiveSession) {
-                const sessionName = currentActiveSession === 'morning' ? 'Morning Session' : 'Afternoon Session';
-                currentSessionDisplay.textContent = sessionName;
-                sessionStatus.textContent = 'Active';
-                sessionStatus.className = 'inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-500 bg-opacity-100 text-white';
-                sessionIndicator.className = 'w-3 h-3 rounded-full bg-green-500 session-indicator';
-                scanStatus.textContent = 'Ready to scan - Tap your RFID card';
-                
-                // Enable attendance input
-                document.getElementById('rfidInput').disabled = false;
-                document.getElementById('userIdInput').disabled = false;
-                
-                // Clear any waiting interval
                 if (sessionStartWaitInterval) {
                     clearInterval(sessionStartWaitInterval);
                     sessionStartWaitInterval = null;
                 }
-                
-                // Filter attendance log by active session
+                if (pendingNotificationInterval) {
+                    clearInterval(pendingNotificationInterval);
+                    pendingNotificationInterval = null;
+                }
+
+                AppState.previousSessionStates = { morning: 'inactive', afternoon: 'inactive' };
+                return;
+            }
+
+            const sessionStates = {
+                morning: evaluateSessionState('morning', attendanceSettings.start_attendance_am, attendanceSettings.end_attendance_am, currentTime),
+                afternoon: evaluateSessionState('afternoon', attendanceSettings.start_attendance_pm, attendanceSettings.end_attendance_pm, currentTime)
+            };
+
+            const activeSession = sessionStates.morning.state === 'active'
+                ? sessionStates.morning
+                : sessionStates.afternoon.state === 'active'
+                    ? sessionStates.afternoon
+                    : null;
+
+            currentActiveSession = activeSession ? activeSession.session : null;
+
+            ['morning', 'afternoon'].forEach(sessionKey => {
+                const stateInfo = sessionStates[sessionKey];
+                const previousState = previousStates[sessionKey];
+
+                if (previousState === stateInfo.state) {
+                    return;
+                }
+
+                const sessionName = sessionKey === 'morning' ? 'Morning' : 'Afternoon';
+
+                if (stateInfo.state === 'active') {
+                    showToast(`${sessionName} session is now active!`, 'success', 'session');
+                    setupSessionAutoTimeout(sessionKey, {
+                        start_time: stateInfo.startTime,
+                        end_time: stateInfo.endTime
+                    });
+                } else if (previousState === 'active' && stateInfo.state === 'ended') {
+                    showToast(`${sessionName} session has ended`, 'info', 'session');
+                    autoTimeoutSession(sessionKey);
+                    hideSessionAttendanceLogs();
+                    if (autoTimeoutTimers[sessionKey]) {
+                        clearTimeout(autoTimeoutTimers[sessionKey]);
+                        delete autoTimeoutTimers[sessionKey];
+                    }
+                } else if (stateInfo.state === 'pending') {
+                    waitForSessionStart(sessionKey, stateInfo.startTime);
+                }
+            });
+
+            const morningStatusPayload = {
+                active: sessionStates.morning.state === 'active',
+                status: sessionStates.morning.state === 'pending' ? 'waiting'
+                    : sessionStates.morning.state === 'active' ? 'active'
+                    : sessionStates.morning.state === 'ended' ? 'completed'
+                    : 'inactive',
+                message: sessionStates.morning.state === 'pending'
+                    ? `Morning session starts at ${sessionStates.morning.displayStartTime}`
+                    : 'Morning session',
+                start_time: sessionStates.morning.startTime,
+                end_time: sessionStates.morning.endTime,
+                display_start_time: sessionStates.morning.displayStartTime,
+                countdown_target: sessionStates.morning.startTime
+            };
+
+            const afternoonStatusPayload = {
+                active: sessionStates.afternoon.state === 'active',
+                status: sessionStates.afternoon.state === 'pending' ? 'waiting'
+                    : sessionStates.afternoon.state === 'active' ? 'active'
+                    : sessionStates.afternoon.state === 'ended' ? 'completed'
+                    : 'inactive',
+                message: sessionStates.afternoon.state === 'pending'
+                    ? `Afternoon session starts at ${sessionStates.afternoon.displayStartTime}`
+                    : 'Afternoon session',
+                start_time: sessionStates.afternoon.startTime,
+                end_time: sessionStates.afternoon.endTime,
+                display_start_time: sessionStates.afternoon.displayStartTime,
+                countdown_target: sessionStates.afternoon.startTime
+            };
+
+            const activeSessionPayload = activeSession ? {
+                active: true,
+                message: `${activeSession.session === 'morning' ? 'Morning' : 'Afternoon'} Session`,
+                session: activeSession.session,
+                start_time: activeSession.startTime,
+                end_time: activeSession.endTime
+            } : null;
+
+            updateSessionDisplay(activeSessionPayload, morningStatusPayload, afternoonStatusPayload);
+
+            if (activeSession) {
                 filterAttendanceLogBySession();
-            } else if (sessionState === 'pending' && nextSessionInfo) {
-                currentSessionDisplay.textContent = `Waiting for ${nextSessionInfo.session} session`;
-                sessionStatus.textContent = 'Pending';
-                sessionStatus.className = 'inline-flex items-center px-2 py-1 rounded-full text-xs bg-yellow-500 bg-opacity-100 text-white';
-                sessionIndicator.className = 'w-3 h-3 rounded-full bg-yellow-400';
-                const displayTime = nextSessionInfo.display_start_time || formatTimeTo12Hour(nextSessionInfo.startTime);
-                scanStatus.textContent = `Session starts at ${displayTime}`;
-                
-                // Disable attendance input during pending state
-                document.getElementById('rfidInput').disabled = true;
-                document.getElementById('userIdInput').disabled = false; // Keep manual entry enabled
-                
-                // Start waiting for session to begin
-                waitForSessionStart(nextSessionInfo.session, nextSessionInfo.startTime);
-            } else {
-                currentSessionDisplay.textContent = 'No Active Session';
-                sessionStatus.textContent = 'Waiting';
-                sessionStatus.className = 'inline-flex items-center px-2 py-1 rounded-full text-xs bg-white bg-opacity-20';
-                sessionIndicator.className = 'w-3 h-3 rounded-full bg-gray-400';
-                scanStatus.textContent = 'No session scheduled';
-                
-                // Keep RFID input disabled, but allow manual entry
-                document.getElementById('rfidInput').disabled = true;
-                document.getElementById('userIdInput').disabled = false;
-                
-                // Show all attendance logs when no session is active
+            } else if (sessionStates.morning.state !== 'pending' && sessionStates.afternoon.state !== 'pending') {
                 showAllAttendanceLogs();
             }
-            
-            // Update manual entry button and status
-            const manualSubmitBtn = document.querySelector('button[onclick="processManualAttendance()"]');
-            const manualEntryStatus = document.getElementById('manualEntryStatus');
-            if (manualSubmitBtn) {
-                manualSubmitBtn.textContent = 'Submit Attendance';
-                manualSubmitBtn.className = 'w-full px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded transition-all text-sm font-semibold';
-            }
-            if (manualEntryStatus) {
-                manualEntryStatus.textContent = 'Ready for manual input';
-                manualEntryStatus.className = 'text-xs text-gray-500 text-center';
-            }
+
+            AppState.previousSessionStates = {
+                morning: sessionStates.morning.state,
+                afternoon: sessionStates.afternoon.state
+            };
         }
 
 
@@ -2703,25 +2208,35 @@
         function processAttendance(rfidCode, userId) {
             const scanKey = `${rfidCode || ''}:${userId || ''}`;
             if (window.AppState.processing) return;
+
             window.AppState.processing = true;
-            const _releaseProcessing = () => { setTimeout(() => { window.AppState.processing = false; }, 1200); };
+            const _releaseProcessing = () => {
+                setTimeout(() => {
+                    window.AppState.processing = false;
+                }, CONFIG.MIN_SCAN_PROCESSING_COOLDOWN);
+            };
+
             if (!currentActiveSession) {
-                // More specific message for RFID vs manual entry
+                const profileName = rfidCode ? `RFID: ${rfidCode}` : (userId ? `User ID: ${userId}` : 'No active session');
                 const inputType = rfidCode ? 'RFID card scanned' : 'User ID entered';
                 showToast(`${inputType} but no active session available`, 'error');
                 updateScanStatus('No active session available', 'error');
+                displayUserProfile({
+                    name: profileName,
+                    status: 'No active session available',
+                    error: true
+                }, CONFIG.PROFILE_DISPLAY_DURATION / 2);
+                _releaseProcessing();
                 return;
             }
 
-            // Show processing state
             updateScanStatus('Processing attendance...', 'processing');
-            showUserInfo({
+            displayUserProfile({
                 name: 'Processing...',
                 status: 'Checking attendance...',
                 loading: true
-            });
+            }, CONFIG.PROFILE_DISPLAY_DURATION);
 
-            // Make API call to process attendance
             fetch('<?= base_url('pederasyon/processAttendance') ?>', {
                 method: 'POST',
                 headers: {
@@ -2735,167 +2250,124 @@
                     session: currentActiveSession
                 })
             })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    try {
-                        window.AppState.lastSuccessScan = scanKey;
-                        window.AppState.lastSuccessAt = Date.now();
-                    } catch (e) {}
-                    const user = data.data.user;
-                    showUserInfo({
-                        name: user.name,
-                        first_name: user.first_name,
-                        last_name: user.last_name,
-                        middle_name: user.middle_name,
-                        id: user.id,
-                        user_id: user.user_id,
-                        rfid_code: user.rfid_code,
-                        status: data.message,
-                        session: user.session,
-                        time: user.time,
-                        action: user.action,
-                        attendanceStatus: user.attendanceStatus || user.status,
-                        age: user.age,
-                        sex: user.sex,
-                        position: user.position,
-                        user_type: user.user_type,
-                        barangay: user.barangay,
-                        zone_purok: user.zone_purok,
-                        email: user.email,
-                        phone_number: user.phone_number,
-                        profile_picture: user.profile_picture
-                    });
-                    
-                    addAttendanceLog(user);
-                    refreshData(); // Refresh counts and logs
-                    
-                    // Enhanced success notifications with status and timeout info
-                    const statusText = user.attendanceStatus === 'Late' ? ' (Late)' : ' (Present)';
-                    const actionText = user.action === 'time_out' ? 'Checked Out' : 'Checked In';
-                    let toastType = 'success';
-                    
-                    // Special handling for late entries
-                    if (user.attendanceStatus === 'Late') {
-                        toastType = 'warning';
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                     }
-                    
-                    // Special handling for timeout check-outs
-                    if (user.action === 'time_out' && data.message.includes('timeout')) {
-                        toastType = 'info';
-                        showToast(`${actionText} after 30+ minutes${statusText}`, toastType);
-                    } else {
-                        showToast(`${actionText} successfully${statusText}`, toastType);
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        try {
+                            window.AppState.lastSuccessScan = scanKey;
+                            window.AppState.lastSuccessAt = Date.now();
+                        } catch (e) {}
+
+                        const user = data.data && data.data.user ? data.data.user : {};
+                        const normalizedUser = normalizeUserForDisplay({
+                            ...user,
+                            status: data.message,
+                            attendanceStatus: user.attendanceStatus || user.status
+                        });
+
+                        displayUserProfile(normalizedUser);
+                        addAttendanceLog({ ...normalizedUser });
+                        refreshData();
+
+                        const statusText = normalizedUser.attendanceStatus === 'Late' ? ' (Late)' : ' (Present)';
+                        const actionText = normalizedUser.action === 'time_out' ? 'Checked Out' : 'Checked In';
+                        let toastType = normalizedUser.attendanceStatus === 'Late' ? 'warning' : 'success';
+
+                        if (normalizedUser.action === 'time_out' && data.message.includes('timeout')) {
+                            toastType = 'info';
+                            showToast(`${actionText} after 30+ minutes${statusText}`, toastType);
+                        } else {
+                            showToast(`${actionText} successfully${statusText}`, toastType);
+                        }
+
+                        updateScanStatus('Attendance recorded successfully', 'success');
+                        return;
                     }
-                    
-                    updateScanStatus('Attendance recorded successfully', 'success');
-                } else {
-                    // Handle specific error cases with detailed messages
+
                     let errorType = 'error';
-                    
-                    // DUPLICATE ENTRY HANDLING
+                    const profileContext = {
+                        name: rfidCode ? `RFID: ${rfidCode}` : `User ID: ${userId}`,
+                        status: data.message
+                    };
+                    let profilePayload = { ...profileContext, error: true };
+
                     if (data.duplicate) {
                         errorType = 'warning';
-                        
-                        // Show remaining time for timeout if available
+
                         if (data.remaining_minutes) {
-                            showToast(`Duplicate entry - Wait ${data.remaining_minutes} minutes to check out`, 'warning');
+                            showToast(`Duplicate entry - Wait ${data.remaining_minutes} minutes to time-out`, 'warning');
                             updateScanStatus(`Wait ${data.remaining_minutes} more minutes`, 'warning');
                         } else {
                             showToast('Duplicate entry - Already scanned', 'warning');
                             updateScanStatus('Already scanned', 'warning');
                         }
-                        
-                        // Show duplicate entry info in user card
-                        showUserInfo({
-                            name: rfidCode ? `RFID: ${rfidCode}` : `User ID: ${userId}`,
-                            status: data.message,
-                            duplicate: true
-                        });
+
+                        profilePayload = { ...profileContext, duplicate: true };
                     } else if (data.session_status === 'pending') {
-                        // Session hasn't started yet
                         errorType = 'info';
                         showToast(`${data.message} - Current time: ${data.current_time}`, 'info');
                         updateScanStatus(`⏳ Session starts at ${data.start_time}`, 'info');
-                        showUserInfo({
-                            name: rfidCode ? `RFID: ${rfidCode}` : `User ID: ${userId}`,
+                        profilePayload = {
+                            ...profileContext,
                             status: `Session starts at ${data.start_time}`,
                             pending: true
-                        });
+                        };
                     } else if (data.session_status === 'ended') {
-                        // Session has ended
                         errorType = 'warning';
                         showToast(`${data.message} - Current time: ${data.current_time}`, 'warning');
                         updateScanStatus(`⛔ Session ended at ${data.end_time}`, 'warning');
-                        showUserInfo({
-                            name: rfidCode ? `RFID: ${rfidCode}` : `User ID: ${userId}`,
+                        profilePayload = {
+                            ...profileContext,
                             status: `Session ended at ${data.end_time}`,
                             ended: true
-                        });
-                    } else if (data.message.toLowerCase().includes('not found') || data.message.toLowerCase().includes('invalid')) {
+                        };
+                    } else if (typeof data.message === 'string' && (data.message.toLowerCase().includes('not found') || data.message.toLowerCase().includes('invalid'))) {
                         errorType = 'warning';
-                        showUserInfo({
-                            name: rfidCode ? `RFID: ${rfidCode}` : `User ID: ${userId}`,
-                            status: data.message,
-                            error: true
-                        });
                         showToast(`${data.message}`, errorType);
                         updateScanStatus(data.message, 'error');
+                        profilePayload = { ...profileContext, error: true };
                     } else {
-                        showUserInfo({
-                            name: rfidCode ? `RFID: ${rfidCode}` : `User ID: ${userId}`,
-                            status: data.message,
-                            error: true
-                        });
                         showToast(`${data.message}`, errorType);
                         updateScanStatus(data.message, 'error');
                     }
-                }
-                
-                // Clear user info after 30 seconds
-                setTimeout(() => {
-                    clearUserInfo();
-                }, 30000);
-            })
-            .catch(error => {
-                console.error('Error processing attendance:', error);
-                let errorMessage = 'Network error occurred';
-                
-                // Handle specific network errors
-                if (error.message.includes('HTTP 500')) {
-                    errorMessage = 'Server error - Please try again';
-                } else if (error.message.includes('HTTP 404')) {
-                    errorMessage = 'Service not found - Contact administrator';
-                } else if (error.message.includes('Failed to fetch')) {
-                    errorMessage = 'Connection failed - Check network';
-                }
-                
-                const lastScan = window.AppState.lastSuccessScan || null;
-                const lastAt = window.AppState.lastSuccessAt || 0;
-                const now = Date.now();
-                if (lastScan === scanKey && (now - lastAt) < 2000) {
-                    console.info('Suppressed server/network error toast due to immediate successful scan for same input');
-                } else {
-                    showUserInfo({
-                        name: rfidCode ? `RFID: ${rfidCode}` : `User ID: ${userId}`,
-                        status: errorMessage,
-                        error: true
-                    });
-                    showToast(`${errorMessage}`, 'error');
-                    updateScanStatus(`${errorMessage}`, 'error');
-                }
-                
-                setTimeout(() => {
-                    clearUserInfo();
-                }, 30000);
-            }).finally(() => {
-                _releaseProcessing();
-            });
+
+                    displayUserProfile(profilePayload, CONFIG.PROFILE_DISPLAY_DURATION / 2);
+                })
+                .catch(error => {
+                    console.error('Error processing attendance:', error);
+                    let errorMessage = 'Network error occurred';
+
+                    if (error.message.includes('HTTP 500')) {
+                        errorMessage = 'Server error - Please try again';
+                    } else if (error.message.includes('HTTP 404')) {
+                        errorMessage = 'Service not found - Contact administrator';
+                    } else if (error.message.includes('Failed to fetch')) {
+                        errorMessage = 'Connection failed - Check network';
+                    }
+
+                    const lastScan = window.AppState.lastSuccessScan || null;
+                    const lastAt = window.AppState.lastSuccessAt || 0;
+                    const now = Date.now();
+                    if (lastScan === scanKey && (now - lastAt) < 2000) {
+                        console.info('Suppressed server/network error toast due to immediate successful scan for same input');
+                    } else {
+                        displayUserProfile({
+                            name: rfidCode ? `RFID: ${rfidCode}` : `User ID: ${userId}`,
+                            status: errorMessage,
+                            error: true
+                        }, CONFIG.PROFILE_DISPLAY_DURATION / 2);
+                        showToast(`${errorMessage}`, 'error');
+                        updateScanStatus(`${errorMessage}`, 'error');
+                    }
+                })
+                .finally(() => {
+                    _releaseProcessing();
+                });
         }
 
         // Show user information
@@ -2905,7 +2377,7 @@
             if (user.loading) {
                 userInfoContent.innerHTML = `
                     <div class="w-4 h-4 border-2 border-blue-500 rounded-full mx-auto mb-2"></div>
-                    <h4 class="font-medium text-gray-900 mb-1 text-sm">Processing...</h4>
+                    <h4 class="font-medium text-blue-900 mb-1 text-sm">Processing...</h4>
                     <p class="text-xs text-gray-600">${user.status || 'Checking attendance...'}</p>
                 `;
                 return;
@@ -2971,58 +2443,67 @@
             if (user.user_type == 1) userTypeLabel = 'KK';
             else if (user.user_type == 2) userTypeLabel = 'SK Official';
             else if (user.user_type == 3) userTypeLabel = 'Pederasyon Officer | SK Chairperson';
+            
+            // Build proper profile picture URL
+            let profilePicUrl = '';
+            if (user.profile_picture) {
+                const picValue = user.profile_picture.trim();
+                if (picValue.startsWith('http://') || picValue.startsWith('https://') || picValue.startsWith('data:')) {
+                    profilePicUrl = picValue;
+                } else if (picValue.includes('/')) {
+                    profilePicUrl = '<?= base_url() ?>/' + picValue.replace(/^\/+/, '');
+                } else {
+                    profilePicUrl = '<?= base_url("uploads/profile_pictures/") ?>' + picValue;
+                }
+            }
+            
             userInfoContent.innerHTML = `
                 <!-- Profile Picture or Initial -->
-                <div class="w-20 h-20 rounded-full mx-auto mb-2 flex items-center justify-center overflow-hidden shadow-md border-2 border-white">
-                    ${user.profile_picture ? 
-                        `<img src=\"<?= base_url('uploads/profile_pictures/') ?>${user.profile_picture}\" alt=\"${user.name}\" class=\"w-full h-full object-cover\">` :
-                        `<div class=\"w-full h-full bg-blue-400 flex items-center justify-center\">
-                            <svg class=\"w-6 h-6 text-white\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\">
-                                <path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z\"></path>
-                            </svg>
-                         </div>`
+                <div class="w-20 h-20 rounded-full mx-auto mb-3 flex items-center justify-center overflow-hidden shadow-lg border-2 border-gray-100 bg-white">
+                    ${profilePicUrl ? 
+                        `<img src="${profilePicUrl}" alt="${user.name}" class="w-full h-full object-cover" onerror="this.onerror=null; this.parentElement.innerHTML='<svg class=\\'w-8 h-8 text-gray-400\\' fill=\\'none\\' stroke=\\'currentColor\\' viewBox=\\'0 0 24 24\\'><path stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\' stroke-width=\\'2\\' d=\\'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z\\'></path></svg>';">` :
+                        `<svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>`
                     }
                 </div>
                 
                 <!-- User Name and Status -->
-                <h4 class="font-bold text-gray-900 mb-1 text-xs">${user.name}</h4>
-                <p class="text-xs text-green-600 font-medium mb-2">${user.action === 'time_out' ? 'Checked Out' : 'Checked In'}</p>
+                <h4 class="font-semibold text-gray-900 mb-1 text-sm text-center">${user.name}</h4>
+                <p class="text-xs ${user.action === 'time_out' ? 'text-red-600' : 'text-green-600'} font-medium mb-3 text-center">${user.action === 'time_out' ? 'Checked Out' : 'Checked In'}</p>
                 
                 <!-- Detailed User Information -->
-                <div class="space-y-1 text-left">
-                    <div class="flex justify-between">
-                        <span class="text-xs text-gray-600">Type:</span>
-                        <span class="text-xs text-gray-900">${userTypeLabel}</span>
+                <div class="space-y-2 bg-gray-50 rounded-lg p-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-gray-500">Type</span>
+                        <span class="text-xs font-medium text-gray-900">${userTypeLabel}</span>
                     </div>
                     ${user.age ? `
-                        <div class="flex justify-between">
-                            <span class="text-xs text-gray-600">Age:</span>
-                            <span class="text-xs text-gray-900">${user.age} years old</span>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs text-gray-500">Age</span>
+                            <span class="text-xs font-medium text-gray-900">${user.age} years</span>
                         </div>
                     ` : ''}
                     ${user.sex ? `
-                        <div class="flex justify-between">
-                            <span class="text-xs text-gray-600">Gender:</span>
-                            <span class="text-xs text-gray-900">${user.sex}</span>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs text-gray-500">Gender</span>
+                            <span class="text-xs font-medium text-gray-900">${user.sex}</span>
                         </div>
                     ` : ''}
                     ${user.zone_purok ? `
-                        <div class="flex justify-between">
-                            <span class="text-xs text-gray-600">Zone:</span>
-                            <span class="text-xs text-gray-900">${user.zone_purok}</span>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs text-gray-500">Zone</span>
+                            <span class="text-xs font-medium text-gray-900">${user.zone_purok}</span>
                         </div>
                     ` : ''}
-                    <!-- Attendance Status -->
-                    <div class="flex justify-between items-center pt-1">
-                        <span class="text-xs text-gray-600">Status:</span>
-                        <span class="text-xs px-2 py-1 ${statusColor} rounded-full">${user.attendanceStatus || 'Present'}</span>
+                    <div class="flex justify-between items-center pt-1 border-t border-gray-200">
+                        <span class="text-xs text-gray-500">Status</span>
+                        <span class="text-xs px-2.5 py-1 ${statusColor} rounded-md font-medium">${user.attendanceStatus || 'Present'}</span>
                     </div>
-                    <!-- Session and Time Info -->
-                    ${user.session && user.time ? `
-                        <div class="pt-2 border-t border-gray-200">
-                            <div class="text-center">
-                                <span class="text-xs text-gray-500 capitalize">${user.session} Session - ${user.time}</span>
-                            </div>
+                    ${user.session && (user.time_display || user.time) ? `
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs text-gray-500">Time</span>
+                            <span class="text-xs font-medium text-gray-900">${(user.time_display || user.time)}</span>
                         </div>
                     ` : ''}
                 </div>
@@ -3038,7 +2519,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                     </svg>
                 </div>
-                <h4 class="font-medium text-gray-900 mb-1 text-xs">No User Selected</h4>
+                <h4 class="font-medium text-blue-900 mb-1 text-xs">No User Selected</h4>
                 <p class="text-xs text-gray-500 mb-2">Scan RFID to view profile</p>
                 
                 <div class="space-y-1 text-left">
@@ -3080,36 +2561,113 @@
             const statusColor = status === 'Late' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800';
             const actionLabel = user.action === 'time_out' ? 'Time-Out' : 'Time-In';
 
-            // Parse time to get ISO format for data-time attribute
+            const baseTimeValue = user.time_raw || user.timeOriginal || user.time_original || user.timeISO || user.timestamp || user.time;
             let isoTime = '';
             try {
-                if (user.time) {
-                    // If it's already a formatted time like "2:30 PM", create a date object for today
-                    if (typeof user.time === 'string' && (user.time.includes('AM') || user.time.includes('PM'))) {
+                if (baseTimeValue) {
+                    if (typeof baseTimeValue === 'string' && /(AM|PM)/i.test(baseTimeValue)) {
                         const today = new Date();
-                        const timeStr = user.time.replace(/\s?(AM|PM)/i, ' $1');
+                        const timeStr = baseTimeValue.replace(/\s?(AM|PM)/i, ' $1');
                         const tempDate = new Date(`${today.toDateString()} ${timeStr}`);
-                        isoTime = tempDate.toISOString();
+                        if (!isNaN(tempDate)) {
+                            isoTime = tempDate.toISOString();
+                        }
                     } else {
-                        // Assume it's already in datetime format
-                        const tempDate = new Date(user.time);
-                        isoTime = tempDate.toISOString();
+                        const tempDate = new Date(baseTimeValue);
+                        if (!isNaN(tempDate)) {
+                            isoTime = tempDate.toISOString();
+                        }
                     }
                 }
             } catch (error) {
-                console.warn('Error parsing time for filtering:', user.time, error);
-                isoTime = new Date().toISOString(); // Fallback to current time
+                console.warn('Error parsing time for filtering:', baseTimeValue, error);
+            }
+            if (!isoTime) {
+                isoTime = new Date().toISOString();
+            }
+
+            let displayTime = '';
+            if (user.time_display) {
+                displayTime = user.time_display;
+            } else if (baseTimeValue) {
+                const formattedFromBase = formatTimeDisplay(baseTimeValue);
+                if (formattedFromBase) {
+                    displayTime = formattedFromBase;
+                }
+            }
+
+            if (!displayTime && user.time) {
+                const formattedFromTime = formatTimeDisplay(user.time);
+                displayTime = formattedFromTime || user.time;
             }
 
             // Prefer server-provided attendance_id for stable deduplication if available
             const stableId = user.attendance_id || user.attendanceId || null;
             const fallbackId = `${user.user_id || user.id}-${user.session}-${user.action}-${isoTime}`;
-            const entryId = stableId ? `aid-${stableId}` : fallbackId;
+            const entryId = stableId
+                ? `aid-${stableId}-${user.session || 'none'}-${user.action || 'unknown'}`
+                : fallbackId;
 
-            // Check if this entry already exists to prevent duplicates
-            const existingEntry = logsList.querySelector(`tr[data-entry-id="${entryId}"]`);
+            // Check if this entry already exists so we can update instead of duplicate
+            const existingEntry = Array.from(logsList.querySelectorAll('tr[data-entry-id]'))
+                .find(row => row.getAttribute('data-entry-id') === entryId);
             if (existingEntry) {
-                console.log('Duplicate entry detected, skipping:', entryId);
+                existingEntry.setAttribute('data-time', isoTime);
+                existingEntry.setAttribute('data-session', user.session);
+                existingEntry.setAttribute('data-action', user.action);
+                if (user.isExisting) {
+                    existingEntry.setAttribute('data-existing-record', 'true');
+                }
+
+                // Build updated cell markup and replace contents
+                let profilePicUrlTable = '';
+                if (user.profile_picture) {
+                    const picValue = user.profile_picture.trim();
+                    if (picValue.startsWith('http://') || picValue.startsWith('https://') || picValue.startsWith('data:')) {
+                        profilePicUrlTable = picValue;
+                    } else if (picValue.includes('/')) {
+                        profilePicUrlTable = '<?= base_url() ?>/' + picValue.replace(/^\/+/, '');
+                    } else {
+                        profilePicUrlTable = '<?= base_url("uploads/profile_pictures/") ?>' + picValue;
+                    }
+                }
+
+                const updatedRowHtml = `
+                    <td class="px-3 py-2">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden border border-gray-200 bg-white">
+                                ${profilePicUrlTable ?
+                                    `<img src="${profilePicUrlTable}" alt="${user.name}" class="w-full h-full object-cover" onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\\'text-blue-600 text-xs font-semibold\\'>${user.name.charAt(0).toUpperCase()}</span>';">` :
+                                    `<span class="text-blue-600 text-xs font-semibold">${user.name.charAt(0).toUpperCase()}</span>`
+                                }
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="text-sm font-medium text-gray-900 truncate">${user.name}</div>
+                                ${(user.zone_purok || user.barangay) ? `
+                                    <div class="text-xs text-gray-500">
+                                        ${user.zone_purok ? `Zone ${user.zone_purok}` : ''}${user.zone_purok && user.barangay ? ' • ' : ''}${user.barangay ? `${user.barangay}` : ''}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-3 py-2 text-center">
+                        <span class="inline-flex px-2 py-1 text-xs font-medium rounded-md ${statusColor}">
+                            ${status}
+                        </span>
+                    </td>
+                    <td class="px-3 py-2 text-center">
+                        <div class="text-sm font-medium text-gray-700">${displayTime || '--'}</div>
+                    </td>
+                    <td class="px-3 py-2 text-center">
+                        <span class="inline-flex px-2 py-1 text-xs font-medium rounded-md ${user.action === 'time_out' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">
+                            ${actionLabel}
+                        </span>
+                    </td>
+                `;
+
+                existingEntry.innerHTML = updatedRowHtml;
+                sortAttendanceByDatetimeDesc();
                 return;
             }
 
@@ -3138,37 +2696,48 @@
                 logRow.classList.add('dim-inactive-session');
             }
 
+            // Build proper profile picture URL for table
+            let profilePicUrlTable = '';
+            if (user.profile_picture) {
+                const picValue = user.profile_picture.trim();
+                if (picValue.startsWith('http://') || picValue.startsWith('https://') || picValue.startsWith('data:')) {
+                    profilePicUrlTable = picValue;
+                } else if (picValue.includes('/')) {
+                    profilePicUrlTable = '<?= base_url() ?>/' + picValue.replace(/^\/+/, '');
+                } else {
+                    profilePicUrlTable = '<?= base_url("uploads/profile_pictures/") ?>' + picValue;
+                }
+            }
+
             logRow.innerHTML = `
-                <td class="px-2 py-1">
-                    <div class="flex items-center">
-                        <div class="w-6 h-6 rounded-full flex items-center justify-center mr-2 flex-shrink-0 overflow-hidden shadow-sm border border-gray-200">
-                            ${user.profile_picture ? 
-                                `<img src="<?= base_url('uploads/profile_pictures/') ?>${user.profile_picture}" alt="${user.name}" class="w-full h-full object-cover">` :
-                                `<div class="w-full h-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-                                    <span class="text-white text-[10px] font-medium">${user.name.charAt(0).toUpperCase()}</span>
-                                </div>`
+                <td class="px-3 py-2">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden border border-gray-200 bg-white">
+                            ${profilePicUrlTable ? 
+                                `<img src="${profilePicUrlTable}" alt="${user.name}" class="w-full h-full object-cover" onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\\'text-blue-600 text-xs font-semibold\\'>${user.name.charAt(0).toUpperCase()}</span>';">` :
+                                `<span class="text-blue-600 text-xs font-semibold">${user.name.charAt(0).toUpperCase()}</span>`
                             }
                         </div>
                         <div class="min-w-0 flex-1">
-                            <div class="text-xs font-medium text-gray-900 truncate">${user.name}</div>
-                            <div class="flex flex-row space-x-1">
-                                ${user.zone_purok ? `<span class="text-xs text-gray-400">Zone ${user.zone_purok}</span>` : ''}
-                                ${user.zone_purok && user.barangay ? `<span class="text-xs text-gray-300">|</span>` : ''}
-                                ${user.barangay ? `<span class="text-xs text-gray-400">Brgy. ${user.barangay}</span>` : ''}
-                            </div>
+                            <div class="text-sm font-medium text-gray-900 truncate">${user.name}</div>
+                            ${(user.zone_purok || user.barangay) ? `
+                                <div class="text-xs text-gray-500">
+                                    ${user.zone_purok ? `Zone ${user.zone_purok}` : ''}${user.zone_purok && user.barangay ? ' • ' : ''}${user.barangay ? `${user.barangay}` : ''}
+                                </div>
+                            ` : ''}
                         </div>
                     </div>
                 </td>
-                <td class="px-2 py-1">
-                    <span class="inline-flex px-1 py-0.5 text-[10px] font-medium rounded-full ${statusColor}">
+                <td class="px-3 py-2 text-center">
+                    <span class="inline-flex px-2 py-1 text-xs font-medium rounded-md ${statusColor}">
                         ${status}
                     </span>
                 </td>
-                <td class="px-2 py-1">
-                    <div class="text-xs text-gray-900 time-indicator ${currentActiveSession === user.session ? 'active-session-indicator' : (currentActiveSession !== null ? 'inactive-session-indicator' : '')}">${user.time}</div>
+                <td class="px-3 py-2 text-center">
+                    <div class="text-sm font-medium text-gray-700">${displayTime || '--'}</div>
                 </td>
-                <td class="px-2 py-1">
-                    <span class="inline-flex px-1 py-0.5 text-[10px] font-medium rounded-full ${user.action === 'time_out' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}">
+                <td class="px-3 py-2 text-center">
+                    <span class="inline-flex px-2 py-1 text-xs font-medium rounded-md ${user.action === 'time_out' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">
                         ${actionLabel}
                     </span>
                 </td>
@@ -3199,6 +2768,12 @@
                 updateAttendanceCounts();
             } catch (err) {
                 console.warn('Error updating attendance counts after adding entry:', err);
+            }
+            // Toggle scroll behavior based on number of rows
+            try {
+                toggleAttendanceScroll();
+            } catch (err) {
+                console.warn('toggleAttendanceScroll failed after add:', err);
             }
         }
 
@@ -3235,6 +2810,8 @@
                     logsList.appendChild(newRow);
                 }
             }
+            // Ensure scroll toggle happens after insertion
+            try { toggleAttendanceScroll(); } catch (e) { /* ignore */ }
         }
 
         // Sort entire attendance table body by data-time (datetime) descending
@@ -3273,6 +2850,29 @@
             filterAttendanceLogBySession();
             // Keep log sorted by datetime (newest-first)
             sortAttendanceByDatetimeDesc();
+            try { toggleAttendanceScroll(); } catch (e) { /* ignore */ }
+        }
+
+        // Toggle attendance log wrapper to be scrollable when rows >= 5
+        function toggleAttendanceScroll() {
+            const logsList = document.getElementById('attendanceLogsList');
+            const wrapper = document.getElementById('attendanceLogWrapper');
+            if (!logsList || !wrapper) return;
+
+            const rows = logsList.querySelectorAll('tr[data-entry-id], tr[data-time]');
+            if (rows.length >= 5) {
+                // Add a dedicated inner wrapper around the table body for consistent height if not present
+                const tableParent = logsList.closest('div');
+                if (tableParent) {
+                    tableParent.classList.add('attendance-scrollable');
+                    // ensure the wrapper for scroll is the container that holds table (not the header)
+                }
+            } else {
+                const tableParent = logsList.closest('div');
+                if (tableParent) {
+                    tableParent.classList.remove('attendance-scrollable');
+                }
+            }
         }
 
         // Filter attendance log by active session
@@ -3790,6 +3390,9 @@
             
             // Setup session update listener for cross-tab communication
             setupSessionUpdateListener();
+
+            // Ensure attendance scroll state is correct on init
+            try { toggleAttendanceScroll(); } catch (e) { console.warn('initial toggleAttendanceScroll failed', e); }
             
             // Add manual entry field listener for no-session feedback
             const userIdInput = document.getElementById('userIdInput');

@@ -102,19 +102,40 @@
             }
         }
 
-        /* Make attendance log wrapper scroll when there are many rows */
-        .attendance-scrollable {
-            max-height: 360px; /* roughly 5 rows; tweak if needed */
+        /* Attendance log scrollable container */
+        .attendance-log-container {
+            max-height: 21rem; /* Approximately 5.5 rows (each row ~4rem) */
             overflow-y: auto;
         }
 
-        /* Thin, subtle scrollbar for modern browsers */
-        .attendance-scrollable::-webkit-scrollbar {
-            width: 8px;
+        /* Custom scrollbar styling for attendance log */
+        .attendance-log-container::-webkit-scrollbar {
+            width: 6px;
         }
-        .attendance-scrollable::-webkit-scrollbar-thumb {
-            background: rgba(15, 23, 42, 0.12);
-            border-radius: 9999px;
+
+        .attendance-log-container::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 3px;
+        }
+
+        .attendance-log-container::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .attendance-log-container::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Manual entry input adjustments */
+        #userIdInput::-webkit-outer-spin-button,
+        #userIdInput::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        #userIdInput[type=number] {
+            -moz-appearance: textfield;
         }
     </style>
 </head>
@@ -263,7 +284,12 @@
                     <div class="bg-white rounded-xl p-4 shadow-lg">
                         <label class="text-sm font-bold text-blue-900 mb-2 block">Manual Entry</label>
                         <div class="space-y-3">
-                            <input type="text" id="userIdInput" placeholder="Enter User ID" class="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-3 focus:ring-blue-500/10 bg-white">
+                            <div class="relative">
+                                <input type="text" inputmode="tel" pattern="[0-9\-]*" id="userIdInput" placeholder="Enter User ID" class="w-full border border-gray-300 rounded-lg pl-3.5 pr-10 py-2.5 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-3 focus:ring-blue-500/10 bg-white">
+                                <button type="button" id="clearManualInput" class="absolute inset-y-0 right-2 flex items-center text-lg text-gray-400 hover:text-gray-600 focus:outline-none transition-opacity opacity-0 pointer-events-none" aria-label="Clear manual entry">
+                                    <span class="leading-none">&times;</span>
+                                </button>
+                            </div>
                             <button onclick="processManualAttendance()" class="bg-blue-500 text-white w-full py-2 text-sm rounded-lg font-medium hover:bg-blue-600 transition-colors">Submit Attendance</button>
                             <div id="manualEntryStatus" class="text-xs text-gray-500">Ready for manual input</div>
                         </div>
@@ -296,7 +322,7 @@
             <!-- Attendance Log Card -->
             <div class="lg:col-span-6">
                 <div id="attendanceLogCard" class="bg-white rounded-lg shadow-sm border border-gray-200 h-full flex flex-col overflow-hidden">
-                    <div id="attendanceLogWrapper" class="px-4 py-3 bg-blue-500 border-b border-blue-300 rounded-t-lg">
+                    <div class="px-4 py-3 bg-blue-500 border-b border-blue-300 rounded-t-lg">
                         <div class="flex items-center justify-between">
                             <div>
                                 <h3 class="text-base font-bold text-white">Attendance Log</h3>
@@ -313,7 +339,7 @@
                         </div>
                     </div>
                     
-                    <div class="flex-1 overflow-y-auto">
+                    <div class="flex-1 attendance-log-container">
                         <table class="w-full bg-white text-sm">
                             <thead class="sticky top-0 bg-gray-50 border-b border-gray-200 z-10">
                                 <tr>
@@ -2158,6 +2184,7 @@
         function processManualAttendance() {
             const rfidCode = document.getElementById('rfidInput').value.trim();
             const userId = document.getElementById('userIdInput').value.trim();
+            const manualStatus = document.getElementById('manualEntryStatus');
             
             if (!currentActiveSession) {
                 // Enhanced notification for manual entry without active session
@@ -2198,6 +2225,100 @@
             processAttendance(rfidCode || null, userId || null);
             document.getElementById('rfidInput').value = '';
             document.getElementById('userIdInput').value = '';
+
+            if (manualStatus) {
+                manualStatus.textContent = 'Processing manual entry...';
+                manualStatus.classList.remove('text-red-500', 'text-yellow-500', 'text-gray-500', 'text-green-600');
+                manualStatus.classList.add('text-blue-500');
+            }
+        }
+
+        function setupManualEntryControls() {
+            const userIdInput = document.getElementById('userIdInput');
+            const clearButton = document.getElementById('clearManualInput');
+            const manualStatus = document.getElementById('manualEntryStatus');
+            const rfidInput = document.getElementById('rfidInput');
+
+            if (!userIdInput || !clearButton) return;
+
+            const updateClearVisibility = () => {
+                const hasValue = userIdInput.value.trim().length > 0;
+                clearButton.classList.toggle('opacity-0', !hasValue);
+                clearButton.classList.toggle('pointer-events-none', !hasValue);
+            };
+
+            updateClearVisibility();
+
+            clearButton.addEventListener('click', () => {
+                userIdInput.value = '';
+                updateClearVisibility();
+
+                if (manualStatus) {
+                    manualStatus.textContent = 'Manual entry cleared';
+                    manualStatus.classList.remove('text-red-500', 'text-yellow-500', 'text-blue-500', 'text-green-600');
+                    manualStatus.classList.add('text-gray-500');
+                    setTimeout(() => {
+                        manualStatus.textContent = 'Ready for manual input';
+                    }, 1500);
+                }
+
+                if (window.AppState) {
+                    window.AppState.processing = false;
+                }
+
+                setTimeout(() => {
+                    if (rfidInput) {
+                        rfidInput.focus();
+                    }
+                }, 20);
+            });
+
+            const sanitizeInput = value => {
+                let sanitized = value.replace(/[^0-9-]/g, '');
+                const hyphenIndex = sanitized.indexOf('-');
+                if (hyphenIndex !== -1) {
+                    sanitized = sanitized.slice(0, hyphenIndex + 1) + sanitized.slice(hyphenIndex + 1).replace(/-/g, '');
+                    const leadingDigits = sanitized.slice(0, hyphenIndex).replace(/-/g, '');
+                    if (leadingDigits.length < 2) {
+                        sanitized = sanitized.replace('-', '');
+                    }
+                }
+                return sanitized;
+            };
+
+            userIdInput.addEventListener('input', () => {
+                const sanitized = sanitizeInput(userIdInput.value);
+                if (sanitized !== userIdInput.value) {
+                    userIdInput.value = sanitized;
+                }
+                updateClearVisibility();
+            });
+
+            userIdInput.addEventListener('keydown', event => {
+                if (event.key === 'e' || event.key === 'E' || event.key === '+') {
+                    event.preventDefault();
+                    return;
+                }
+
+                if (event.key === '-') {
+                    const value = userIdInput.value;
+                    const selectionStart = userIdInput.selectionStart ?? value.length;
+                    if (value.includes('-') || selectionStart < 2) {
+                        event.preventDefault();
+                    }
+                }
+            });
+
+            userIdInput.addEventListener('wheel', event => {
+                event.preventDefault();
+            }, { passive: false });
+
+            userIdInput.addEventListener('paste', event => {
+                event.preventDefault();
+                const text = (event.clipboardData || window.clipboardData).getData('text');
+                userIdInput.value = sanitizeInput(text);
+                updateClearVisibility();
+            });
         }
 
         // Ensure AppState exists
@@ -2206,6 +2327,7 @@
 
         // Process attendance (RFID or manual) with duplicate-guard
         function processAttendance(rfidCode, userId) {
+            const manualStatus = document.getElementById('manualEntryStatus');
             const scanKey = `${rfidCode || ''}:${userId || ''}`;
             if (window.AppState.processing) return;
 
@@ -2286,6 +2408,17 @@
                         }
 
                         updateScanStatus('Attendance recorded successfully', 'success');
+
+                        if (manualStatus && userId) {
+                            manualStatus.textContent = 'Manual entry recorded successfully';
+                            manualStatus.classList.remove('text-red-500', 'text-yellow-500', 'text-blue-500');
+                            manualStatus.classList.add('text-green-600');
+                            setTimeout(() => {
+                                manualStatus.textContent = 'Ready for manual input';
+                                manualStatus.classList.remove('text-green-600');
+                                manualStatus.classList.add('text-gray-500');
+                            }, 2500);
+                        }
                         return;
                     }
 
@@ -2337,6 +2470,12 @@
                     }
 
                     displayUserProfile(profilePayload, CONFIG.PROFILE_DISPLAY_DURATION / 2);
+
+                    if (manualStatus && userId) {
+                        manualStatus.textContent = data.message || 'Manual entry failed';
+                        manualStatus.classList.remove('text-green-600', 'text-blue-500');
+                        manualStatus.classList.add('text-red-500');
+                    }
                 })
                 .catch(error => {
                     console.error('Error processing attendance:', error);
@@ -2364,9 +2503,25 @@
                         showToast(`${errorMessage}`, 'error');
                         updateScanStatus(`${errorMessage}`, 'error');
                     }
+
+                    if (manualStatus && userId) {
+                        manualStatus.textContent = errorMessage;
+                        manualStatus.classList.remove('text-green-600', 'text-blue-500');
+                        manualStatus.classList.add('text-red-500');
+                    }
                 })
                 .finally(() => {
                     _releaseProcessing();
+
+                    if (manualStatus && userId) {
+                        setTimeout(() => {
+                            if (manualStatus.classList.contains('text-red-500')) {
+                                manualStatus.textContent = 'Ready for manual input';
+                                manualStatus.classList.remove('text-red-500');
+                                manualStatus.classList.add('text-gray-500');
+                            }
+                        }, 3000);
+                    }
                 });
         }
 
@@ -2769,12 +2924,6 @@
             } catch (err) {
                 console.warn('Error updating attendance counts after adding entry:', err);
             }
-            // Toggle scroll behavior based on number of rows
-            try {
-                toggleAttendanceScroll();
-            } catch (err) {
-                console.warn('toggleAttendanceScroll failed after add:', err);
-            }
         }
 
         // Insert entry so the newest tap is always at the top of the attendance log
@@ -2810,8 +2959,6 @@
                     logsList.appendChild(newRow);
                 }
             }
-            // Ensure scroll toggle happens after insertion
-            try { toggleAttendanceScroll(); } catch (e) { /* ignore */ }
         }
 
         // Sort entire attendance table body by data-time (datetime) descending
@@ -2850,29 +2997,6 @@
             filterAttendanceLogBySession();
             // Keep log sorted by datetime (newest-first)
             sortAttendanceByDatetimeDesc();
-            try { toggleAttendanceScroll(); } catch (e) { /* ignore */ }
-        }
-
-        // Toggle attendance log wrapper to be scrollable when rows >= 5
-        function toggleAttendanceScroll() {
-            const logsList = document.getElementById('attendanceLogsList');
-            const wrapper = document.getElementById('attendanceLogWrapper');
-            if (!logsList || !wrapper) return;
-
-            const rows = logsList.querySelectorAll('tr[data-entry-id], tr[data-time]');
-            if (rows.length >= 5) {
-                // Add a dedicated inner wrapper around the table body for consistent height if not present
-                const tableParent = logsList.closest('div');
-                if (tableParent) {
-                    tableParent.classList.add('attendance-scrollable');
-                    // ensure the wrapper for scroll is the container that holds table (not the header)
-                }
-            } else {
-                const tableParent = logsList.closest('div');
-                if (tableParent) {
-                    tableParent.classList.remove('attendance-scrollable');
-                }
-            }
         }
 
         // Filter attendance log by active session
@@ -3379,6 +3503,7 @@
         // ==================== APPLICATION INITIALIZATION ====================
         
         document.addEventListener('DOMContentLoaded', function() {
+            setupManualEntryControls();
             // Initialize the attendance system with loading screen
             initializeAttendanceSystem();
             
@@ -3390,9 +3515,6 @@
             
             // Setup session update listener for cross-tab communication
             setupSessionUpdateListener();
-
-            // Ensure attendance scroll state is correct on init
-            try { toggleAttendanceScroll(); } catch (e) { console.warn('initial toggleAttendanceScroll failed', e); }
             
             // Add manual entry field listener for no-session feedback
             const userIdInput = document.getElementById('userIdInput');

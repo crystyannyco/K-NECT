@@ -87,50 +87,9 @@
     <div class="min-h-screen flex flex-col lg:flex-row login-content">
         
         <!-- Mobile Title for smaller screens -->
-        <div class="lg:hidden w-full text-center p-8 pt-12">
-            <img src="<?= base_url('/assets/images/K-Nect-Logo.png') ?>" alt="K-NECT Logo" class="w-48 mx-auto mb-1 drop-shadow-xl glow-logo mobile-logo-top-padding" />
-            <h2 class="text-xl font-semibold text-white mb-4">KABATAAN CONNECT</h2>
-            <p class="text-base text-white leading-relaxed mb-4 text-justify px-2">
-                A comprehensive governance system designed for Iriga City's youth development and community engagement. Connecting the youth with opportunities for growth, leadership, and civic participation.
-            </p>
-            <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-white mb-2">
-                <div class="flex items-center">
-                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                    </svg>
-                    Youth Profiling
-                </div>
-                <div class="flex items-center">
-                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                    </svg>
-                    Event Management
-                </div>
-                <div class="flex items-center">
-                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                    </svg>
-                    Document Storage
-                </div>
-                <div class="flex items-center">
-                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                    </svg>
-                    Attendance Monitoring
-                </div>
-                <div class="flex items-center">
-                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                    </svg>
-                    Community Bulletin Management
-                </div>
-                <div class="flex items-center">
-                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                    </svg>
-                    Analytics and Reports
-                </div>
-            </div>
+        <div class="lg:hidden w-full text-center pb-4 pt-10">
+            <img src="<?= base_url('/assets/images/K-Nect-Logo.png') ?>" alt="K-NECT Logo" class="w-56 mx-auto mb-1 drop-shadow-xl glow-logo mobile-logo-top-padding" />
+            <h2 class="text-xl font-semibold text-white">KABATAAN CONNECT</h2>
         </div>
 
         <!-- Left Side - System Title and Description (Desktop) -->

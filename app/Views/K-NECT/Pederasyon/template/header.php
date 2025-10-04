@@ -188,7 +188,10 @@
                             }
                         }
                         ?>
-                        <h2 class="text-lg font-semibold text-gray-900"><?= $pageTitle ?></h2>
+                        <div class="flex items-center gap-3">
+                            <h2 class="text-lg font-semibold text-gray-900"><?= $pageTitle ?></h2>
+                            <span class="inline-flex items-center px-1.5 py-[2px] rounded-full text-[10px] font-medium bg-blue-100 text-blue-700 border border-blue-200">Pederasyon</span>
+                        </div>
                         <p class="text-sm text-gray-500"><?= $pageDescription ?></p>
                     </div>
                 </div>

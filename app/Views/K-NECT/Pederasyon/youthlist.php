@@ -204,6 +204,17 @@
                 border: 1px solid black !important;
             }
         }
+
+        /* Responsive cell classes */
+        .name-cell {
+            white-space: normal !important;
+            word-wrap: break-word;
+            max-width: 200px;
+        }
+        
+        .action-cell {
+            white-space: nowrap !important;
+        }
     </style>
         <!-- Main Content -->
         <!-- ===== MAIN CONTENT AREA ===== -->
@@ -340,7 +351,7 @@
                                                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     <?= esc(BarangayHelper::getBarangayName($user['barangay'])) ?>
                                                 </td>
-                                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900"><?= esc($user['last_name']) ?>, <?= esc($user['first_name']) ?> <?= esc($user['middle_name']) ?></td>
+                                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 name-cell"><?= esc($user['last_name']) ?>, <?= esc($user['first_name']) ?> <?= esc($user['middle_name']) ?></td>
                                                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900"><?= esc($user['age']) ?></td>
                                                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900"><?= $user['sex'] == '1' ? 'Male' : ($user['sex'] == '2' ? 'Female' : '') ?></td>
                                                 <td class="px-4 py-4 whitespace-nowrap">
@@ -370,7 +381,7 @@
                                                         echo $type == 1 ? 'KK Member' : ($type == 2 ? 'SK Chairperson' : ($type == 3 ? 'Pederasyon' : 'Unknown'));
                                                     ?>
                                                 </td>
-                                                <td class="px-4 py-4 whitespace-nowrap">
+                                                <td class="px-4 py-4 whitespace-nowrap action-cell">
                                                     <button type="button" 
                                                         class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors view-user-btn"
                                                         data-id="<?= esc($user['id']) ?>"
@@ -793,12 +804,18 @@
             // DataTable and tab logic
             const table = $('#myTable').DataTable({
                 columnDefs: [
-                    { orderable: false, targets: 0 }
+                    { orderable: false, targets: 0 },
+                    { responsivePriority: 1, targets: 7 }, // Actions
+                    { responsivePriority: 2, targets: 2 }, // Full Name
+                    { responsivePriority: 3, targets: 1 }, // User ID
+                    { responsivePriority: 4, targets: 5 }, // Position
+                    { responsivePriority: 5, targets: 3 }, // Barangay
+                    { responsivePriority: 6, targets: 4 }, // Age
+                    { responsivePriority: 7, targets: 6 }  // Status
                 ],
                 order: [[1, 'asc']],
-                scrollCollapse: true,
-                scrollY: '500px',
-                scrollX: true,
+                responsive: true,
+                autoWidth: false,
                 paging: true,
                 pageLength: 25,
                 info: true,

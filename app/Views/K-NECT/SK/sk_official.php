@@ -40,6 +40,32 @@
             color: white;
             border-color: #3b82f6;
         }
+        /* Responsive table improvements */
+        .table-responsive-wrapper {
+            overflow-x: auto;
+        }
+
+        /* Let long names wrap, keep actions compact */
+        #myTable th, #myTable td {
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        #myTable td.name-cell {
+            white-space: normal; /* allow wrapping for names */
+            word-break: break-word;
+        }
+
+        #myTable td.action-cell {
+            white-space: nowrap;
+        }
+
+        /* Smaller screens: allow more wrapping and increase readability */
+        @media (max-width: 768px) {
+            #myTable th, #myTable td {
+                font-size: 0.85rem;
+            }
+        }
     </style>
         
         <!-- ===== MAIN CONTENT AREA ===== -->
@@ -136,7 +162,7 @@
                 
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200">
                     <div class="p-6">
-                        <div class="overflow-x-auto">
+                        <div class="overflow-x-auto table-responsive-wrapper">
                             <table id="myTable" class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
@@ -184,7 +210,7 @@
                                                     <?= esc(BarangayHelper::getBarangayName($user['barangay'])) ?>
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= esc($user['zone_purok'] ?? '') ?></td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= esc($user['last_name']) ?>, <?= esc($user['first_name']) ?> <?= esc($user['middle_name']) ?></td>
+                                                <td class="px-6 py-4 text-sm text-gray-900 name-cell"><?= esc($user['last_name']) ?>, <?= esc($user['first_name']) ?> <?= esc($user['middle_name']) ?></td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= esc($user['age']) ?></td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= $user['sex'] == '1' ? 'Male' : ($user['sex'] == '2' ? 'Female' : '') ?></td>
                                                 <td class="px-6 py-4 whitespace-nowrap">
@@ -222,7 +248,7 @@
                                                         echo isset($positionLabels[$position]) ? $positionLabels[$position] : 'KK Member';
                                                     ?>
                                                 </td>
-                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                <td class="px-6 py-4 action-cell">
                                                     <a href="#" 
                                                         class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors view-user-btn"
                                                         data-id="<?= esc($user['id']) ?>"
@@ -607,16 +633,13 @@
             // DataTable and tab logic
             const table = $('#myTable').DataTable({
                 columnDefs: [
-                    { orderable: false, targets: 0 }
+                    { orderable: false, targets: 0 },
+                    { responsivePriority: 1, targets: 1 }, // name
+                    { responsivePriority: 2, targets: -1 } // actions
                 ],
                 order: [[1, 'asc']],
-                fixedColumns: {
-                    leftColumns: 0,
-                    rightColumns: 1
-                },
-                scrollCollapse: true,
-                scrollY: '300px',
-                scrollX: true,
+                responsive: true,
+                autoWidth: false,
                 paging: true,
                 info: true, // Keep the "Showing x to y of z entries"
                 language: {

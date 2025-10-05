@@ -317,7 +317,7 @@
                                 </button>
                                 <button onclick="openLiveAttendanceModal(<?= $event['event_id'] ?>)" 
                                         class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
-                                    Live
+                                    Real-Time Attendance View
                                 </button>
                             <?php endif; ?>
                         </div>

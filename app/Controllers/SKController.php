@@ -554,7 +554,7 @@ class SKController extends BaseController
             
             // RFID status
             $u['has_rfid'] = !empty($u['rfid_code']);
-            $u['rfid_status'] = $u['has_rfid'] ? 'Assigned' : 'Not Assigned';
+            $u['rfid_status'] = $u['has_rfid'] ? 'Assigned' : 'Unassigned';
             $u['rfid_status_class'] = $u['has_rfid'] ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
             
             $u['user_json'] = htmlspecialchars(json_encode($u), ENT_QUOTES, 'UTF-8');
@@ -612,7 +612,7 @@ class SKController extends BaseController
 
             $updateData = ['status' => 2];
 
-            // Ensure we have a unique user_id if missing
+            // Ensure we have a unique user_id if missing (new format YY-MMDD-NN)
             if (empty($user['user_id'])) {
                 $attempts = 0;
                 $newId = null;

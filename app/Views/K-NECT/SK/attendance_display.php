@@ -325,7 +325,7 @@
                     <div class="px-4 py-3 bg-blue-500 border-b border-blue-300 rounded-t-lg">
                         <div class="flex items-center justify-between">
                             <div>
-                                <h3 class="text-base font-bold text-white">Attendance Log</h3>
+                                <h3 class="text-base font-bold text-white">Real-Time Attendance Log</h3>
                             </div>
                             <div class="flex items-center space-x-2">
                                 <div class="text-right">
@@ -395,7 +395,9 @@
             eventDateValid: false,
             lastUserProfileUpdate: null,
             rfidInputLocked: false,
-            loadingStartTime: null
+            loadingStartTime: null,
+            manualEntryActive: false,
+            rfidAutoFocusPausedUntil: 0
         };
 
         // Toast registry to prevent repeated toasts
@@ -522,6 +524,11 @@
             const eventEnd = parseLocalDateTime(eventData.end_datetime) || eventStart;
             const now = new Date();
 
+            // Get just the date part for day-level comparisons
+            const eventStartDateOnly = new Date(eventStart.getFullYear(), eventStart.getMonth(), eventStart.getDate());
+            const eventEndDateOnly = new Date(eventEnd.getFullYear(), eventEnd.getMonth(), eventEnd.getDate());
+            const nowDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
             if (!eventStart) {
                 console.error('Unable to parse event start datetime');
                 AppState.eventDateValid = false;
@@ -531,11 +538,24 @@
             }
 
             let eventState = 'upcoming';
-            if (now > eventEnd) {
+            // Check if the current date is within the event's date range
+            if (nowDateOnly >= eventStartDateOnly && nowDateOnly <= eventEndDateOnly) {
+                // If within the date range, check the time
+                if (now >= eventStart && now <= eventEnd) {
+                    eventState = 'active';
+                } else if (now < eventStart) {
+                    // It's a day of the event, but before the start time (e.g., morning of day 1)
+                    eventState = 'incoming';
+                } else {
+                    // It's a day of the event, but after the end time (e.g., after midnight on the last day)
+                    eventState = 'completed';
+                }
+            } else if (nowDateOnly > eventEndDateOnly) {
                 eventState = 'completed';
-            } else if (now >= eventStart) {
-                eventState = 'active';
-            } else if (isSameDay(now, eventStart)) {
+            }
+
+            // Final check for same-day 'incoming' status if still 'upcoming'
+            if (eventState === 'upcoming' && isSameDay(now, eventStart)) {
                 eventState = 'incoming';
             }
 
@@ -543,6 +563,7 @@
             const minutesToEnd = minutesBetween(now, eventEnd);
 
             AppState.eventState = eventState;
+            // An event is valid for attendance if it's currently active.
             AppState.eventDateValid = eventState === 'active';
             AppState.eventMeta = {
                 startDate: eventStart,
@@ -1079,35 +1100,69 @@
         function initializeRFIDCapture() {
             const rfidInput = document.getElementById('rfidInput');
             const userIdInput = document.getElementById('userIdInput');
-            
+
             if (!rfidInput) return;
-            
-            // Ensure RFID input gets exclusive focus for scanning
-            function maintainRFIDFocus() {
-                if (!AppState.rfidInputLocked && document.activeElement !== rfidInput && document.activeElement !== userIdInput) {
-                    rfidInput.focus();
+
+            const pauseRFIDAutoFocus = (ms = 1500) => {
+                const pauseUntil = Date.now() + ms;
+                AppState.rfidAutoFocusPausedUntil = Math.max(AppState.rfidAutoFocusPausedUntil || 0, pauseUntil);
+            };
+
+            const shouldMaintainRFIDFocus = () => {
+                if (AppState.rfidInputLocked || AppState.manualEntryActive) {
+                    return false;
                 }
+
+                if (AppState.rfidAutoFocusPausedUntil && Date.now() < AppState.rfidAutoFocusPausedUntil) {
+                    return false;
+                }
+
+                const selection = window.getSelection ? window.getSelection() : null;
+                if (selection && !selection.isCollapsed) {
+                    return false;
+                }
+
+                return document.activeElement !== rfidInput && document.activeElement !== userIdInput;
+            };
+
+            function maintainRFIDFocus() {
+                if (!shouldMaintainRFIDFocus()) {
+                    return;
+                }
+
+                rfidInput.focus({ preventScroll: true });
             }
-            
+
+            if (!initializeRFIDCapture._listenersAttached) {
+                const handlePointerPause = () => pauseRFIDAutoFocus(4000);
+                document.addEventListener('mousedown', handlePointerPause, true);
+                document.addEventListener('touchstart', handlePointerPause, { passive: true, capture: true });
+                document.addEventListener('selectionchange', () => {
+                    const selection = window.getSelection ? window.getSelection() : null;
+                    if (selection && !selection.isCollapsed) {
+                        pauseRFIDAutoFocus(5000);
+                    }
+                });
+                initializeRFIDCapture._listenersAttached = true;
+            }
+
             // Focus management
             rfidInput.addEventListener('focus', function() {
                 AppState.rfidInputLocked = true;
                 this.classList.add('rfid-locked');
             });
-            
+
             rfidInput.addEventListener('blur', function() {
                 AppState.rfidInputLocked = false;
                 this.classList.remove('rfid-locked');
-                // Re-focus after a short delay if not manually focused elsewhere
-                setTimeout(() => {
-                    if (document.activeElement !== userIdInput) {
-                        this.focus();
-                    }
-                }, 100);
+                pauseRFIDAutoFocus(2000);
             });
-            
+
             // Prevent other inputs from stealing focus during RFID scan
-            setInterval(maintainRFIDFocus, CONFIG.RFID_FOCUS_CHECK_INTERVAL);
+            if (initializeRFIDCapture._focusInterval) {
+                clearInterval(initializeRFIDCapture._focusInterval);
+            }
+            initializeRFIDCapture._focusInterval = setInterval(maintainRFIDFocus, CONFIG.RFID_FOCUS_CHECK_INTERVAL);
             
             // Handle RFID input
             rfidInput.addEventListener('keypress', function(e) {
@@ -2213,16 +2268,31 @@
             
             // Remove RFID length validation - let backend handle it
             
-            if (userId && !isNaN(userId)) {
-                // Regular numeric User ID - valid
-            } else if (userId && /^\d{2}-\d{6}$/.test(userId)) {
-                // YY-XXXXXX format - valid  
-            } else if (userId) {
-                showToast('User ID must be a number or YY-XXXXXX format (e.g., 25-123456)', 'warning');
-                return;
+            // Normalize User ID - accept with or without hyphens
+            let normalizedUserId = userId;
+            if (userId) {
+                // Remove all non-numeric characters (including multiple hyphens)
+                const digitsOnly = userId.replace(/\D/g, '');
+                
+                if (digitsOnly && !isNaN(digitsOnly)) {
+                    // Check if it matches new KK ID format (8 digits: YYMMDDNN)
+                    if (/^\d{8}$/.test(digitsOnly)) {
+                        // Format as YY-MMDD-NN for backend
+                        normalizedUserId = digitsOnly.substring(0, 2) + '-' + 
+                                          digitsOnly.substring(2, 6) + '-' + 
+                                          digitsOnly.substring(6, 8);
+                        console.log(`Normalized KK ID from ${userId} to ${normalizedUserId}`);
+                    } else {
+                        // Regular numeric ID - use digits only
+                        normalizedUserId = digitsOnly;
+                    }
+                } else {
+                    showToast('User ID must contain valid numbers', 'warning');
+                    return;
+                }
             }
             
-            processAttendance(rfidCode || null, userId || null);
+            processAttendance(rfidCode || null, normalizedUserId || null);
             document.getElementById('rfidInput').value = '';
             document.getElementById('userIdInput').value = '';
 
@@ -2249,6 +2319,16 @@
 
             updateClearVisibility();
 
+            userIdInput.addEventListener('focus', () => {
+                AppState.manualEntryActive = true;
+                AppState.rfidAutoFocusPausedUntil = Date.now() + 10000;
+            });
+
+            userIdInput.addEventListener('blur', () => {
+                AppState.manualEntryActive = false;
+                AppState.rfidAutoFocusPausedUntil = Math.max(AppState.rfidAutoFocusPausedUntil || 0, Date.now() + 1000);
+            });
+
             clearButton.addEventListener('click', () => {
                 userIdInput.value = '';
                 updateClearVisibility();
@@ -2266,6 +2346,9 @@
                     window.AppState.processing = false;
                 }
 
+                AppState.manualEntryActive = false;
+                AppState.rfidAutoFocusPausedUntil = Date.now() + 500;
+
                 setTimeout(() => {
                     if (rfidInput) {
                         rfidInput.focus();
@@ -2273,39 +2356,56 @@
                 }, 20);
             });
 
-            const sanitizeInput = value => {
-                let sanitized = value.replace(/[^0-9-]/g, '');
-                const hyphenIndex = sanitized.indexOf('-');
-                if (hyphenIndex !== -1) {
-                    sanitized = sanitized.slice(0, hyphenIndex + 1) + sanitized.slice(hyphenIndex + 1).replace(/-/g, '');
-                    const leadingDigits = sanitized.slice(0, hyphenIndex).replace(/-/g, '');
-                    if (leadingDigits.length < 2) {
-                        sanitized = sanitized.replace('-', '');
-                    }
+            const formatKKId = value => {
+                // Remove all non-numeric characters
+                const digitsOnly = value.replace(/\D/g, '');
+                
+                // Auto-format as YY-MMDD-NN while typing
+                let formatted = digitsOnly;
+                if (digitsOnly.length >= 3) {
+                    formatted = digitsOnly.substring(0, 2) + '-' + digitsOnly.substring(2);
                 }
-                return sanitized;
+                if (digitsOnly.length >= 7) {
+                    formatted = digitsOnly.substring(0, 2) + '-' + 
+                               digitsOnly.substring(2, 6) + '-' + 
+                               digitsOnly.substring(6);
+                }
+                
+                // Limit to 8 digits maximum (YY-MMDD-NN format)
+                if (digitsOnly.length > 8) {
+                    formatted = digitsOnly.substring(0, 2) + '-' + 
+                               digitsOnly.substring(2, 6) + '-' + 
+                               digitsOnly.substring(6, 8);
+                }
+                
+                return formatted;
             };
 
-            userIdInput.addEventListener('input', () => {
-                const sanitized = sanitizeInput(userIdInput.value);
-                if (sanitized !== userIdInput.value) {
-                    userIdInput.value = sanitized;
+            userIdInput.addEventListener('input', (e) => {
+                const cursorPos = e.target.selectionStart;
+                const oldValue = e.target.value;
+                const formatted = formatKKId(oldValue);
+                
+                if (formatted !== oldValue) {
+                    e.target.value = formatted;
+                    
+                    // Adjust cursor position after formatting
+                    let newPos = cursorPos;
+                    if (formatted.length > oldValue.length) {
+                        newPos = cursorPos + (formatted.length - oldValue.length);
+                    }
+                    e.target.setSelectionRange(newPos, newPos);
                 }
                 updateClearVisibility();
             });
 
             userIdInput.addEventListener('keydown', event => {
-                if (event.key === 'e' || event.key === 'E' || event.key === '+') {
+                // Allow backspace, delete, tab, enter, arrows, home, end
+                const allowedKeys = ['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight', 'Home', 'End'];
+                
+                // Prevent non-numeric input (except allowed control keys)
+                if (!allowedKeys.includes(event.key) && !/^\d$/.test(event.key)) {
                     event.preventDefault();
-                    return;
-                }
-
-                if (event.key === '-') {
-                    const value = userIdInput.value;
-                    const selectionStart = userIdInput.selectionStart ?? value.length;
-                    if (value.includes('-') || selectionStart < 2) {
-                        event.preventDefault();
-                    }
                 }
             });
 
@@ -2316,7 +2416,7 @@
             userIdInput.addEventListener('paste', event => {
                 event.preventDefault();
                 const text = (event.clipboardData || window.clipboardData).getData('text');
-                userIdInput.value = sanitizeInput(text);
+                userIdInput.value = formatKKId(text);
                 updateClearVisibility();
             });
         }

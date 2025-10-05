@@ -741,18 +741,29 @@ class AttendanceController extends BaseController
             
             if ($rfidCode && $userId) {
                 // Both RFID and User ID provided - validate they match
-                // Handle YY-XXXXXX format for User ID
+                // Handle new YY-MMDD-NN format for User ID (with or without hyphens)
                 $searchUserId = $userId;
-                if (preg_match('/^\d{2}-\d{6}$/', $userId)) {
-                    // Use the full YY-XXXXXX format for search
-                    log_message('info', "Dual lookup: YY-XXXXXX format {$userId}, RFID: {$rfidCode}");
+                
+                // Normalize input: accept ID with or without hyphens (remove all non-numeric chars)
+                $digitsOnly = preg_replace('/\D/', '', $userId);
+                if (strlen($digitsOnly) === 8 && ctype_digit($digitsOnly)) {
+                    // Format as YY-MMDD-NN for database search
+                    $searchUserId = substr($digitsOnly, 0, 2) . '-' . 
+                                   substr($digitsOnly, 2, 4) . '-' . 
+                                   substr($digitsOnly, 6, 2);
+                    log_message('info', "Normalized KK ID from {$userId} to {$searchUserId}");
+                }
+                
+                if (preg_match('/^\d{2}-\d{4}-\d{2}$/', $searchUserId)) {
+                    // Use the full YY-MMDD-NN format for search
+                    log_message('info', "Dual lookup: YY-MMDD-NN format {$searchUserId}, RFID: {$rfidCode}");
                 } else {
                     log_message('info', "Dual lookup: Regular User ID: {$searchUserId}, RFID: {$rfidCode}");
                 }
                 
                 $user = $userModel->where(['rfid_code' => $rfidCode, 'user_id' => $searchUserId])->first();
-                if (!$user && !preg_match('/^\d{2}-\d{6}$/', $userId)) {
-                    // Try with 'id' field as well, but only for non YY-XXXXXX format
+                if (!$user && !preg_match('/^\d{2}-\d{4}-\d{2}$/', $searchUserId)) {
+                    // Try with 'id' field as well, but only for non-hyphenated format
                     log_message('info', "Dual lookup: user_id field failed, trying primary id field");
                     $user = $userModel->where(['rfid_code' => $rfidCode, 'id' => $searchUserId])->first();
                 }
@@ -771,11 +782,23 @@ class AttendanceController extends BaseController
                     return $this->response->setJSON(['success' => false, 'message' => 'RFID not found. Please ensure your ID is properly registered.']);
                 }
             } else if ($userId) {
-                // Only User ID provided - handle YY-XXXXXX format (e.g., 25-123456)
+                // Only User ID provided - handle YY-MMDD-NN format (e.g., 25-1005-01)
                 $searchUserId = $userId; // Store original for logging
-                if (preg_match('/^\d{2}-\d{6}$/', $userId)) {
-                    // Search for the full YY-XXXXXX format in user_id field
-                    log_message('info', "Processing YY-XXXXXX format: {$userId}");
+                
+                // Normalize input: accept ID with or without hyphens (remove all non-numeric chars)
+                $digitsOnly = preg_replace('/\D/', '', $userId);
+                
+                // Check if it's 8 digits (new KK ID format without hyphens: YYMMDDNN)
+                if (strlen($digitsOnly) === 8 && ctype_digit($digitsOnly)) {
+                    // Format as YY-MMDD-NN for database search
+                    $normalizedId = substr($digitsOnly, 0, 2) . '-' . 
+                                   substr($digitsOnly, 2, 4) . '-' . 
+                                   substr($digitsOnly, 6, 2);
+                    log_message('info', "Normalized KK ID from {$userId} to {$normalizedId}");
+                    $user = $userModel->where('user_id', $normalizedId)->first();
+                } else if (preg_match('/^\d{2}-\d{4}-\d{2}$/', $userId)) {
+                    // Already in YY-MMDD-NN format
+                    log_message('info', "Processing YY-MMDD-NN format: {$userId}");
                     $user = $userModel->where('user_id', $userId)->first();
                 } else {
                     // Handle regular user ID format - try both user_id and id fields
@@ -811,6 +834,8 @@ class AttendanceController extends BaseController
                 }
             }
             
+            // Determine final user identifier for attendance logs prior to status validation
+            $userIdForAttendance = $user['user_id'] ?? $user['id'];
             // Validate user status - only accepted users can attend
             $userStatus = isset($user['status']) ? (int)$user['status'] : 1;
             if ($userStatus !== 2) {
@@ -818,7 +843,8 @@ class AttendanceController extends BaseController
                 log_message('error', "User attendance denied - Status: {$statusText} for User ID: {$userIdForAttendance}");
                 return $this->response->setJSON([
                     'success' => false,
-                    'message' => "Attendance denied. User status is {$statusText}. Only accepted users can attend events."
+                    'message' => "Attendance denied. User status is {$statusText}. Only accepted users can attend events.",
+                    'status' => $statusText
                 ]);
             }
             
@@ -1960,16 +1986,12 @@ class AttendanceController extends BaseController
         $user2 = $userModel->find($userId);
         $results['primary_key'] = $user2 ? 'Found: ' . $user2['first_name'] . ' ' . $user2['last_name'] : 'Not found';
         
-        // Method 3: YY-XXXXXX format handling (for debug comparison)
-        if (preg_match('/^\d{2}-\d{6}$/', $userId)) {
-            $extractedId = substr($userId, 3);
-            $user3_wrong = $userModel->where('user_id', $extractedId)->first();
-            $user3_correct = $userModel->where('user_id', $userId)->first();
-            $results['yy_xxxxxx_format'] = [
+        // Method 3: New YY-MMDD-NN format handling (for debug)
+        if (preg_match('/^\d{2}-\d{4}-\d{2}$/', $userId)) {
+            $user3 = $userModel->where('user_id', $userId)->first();
+            $results['yy_mmdd_nn_format'] = [
                 'original' => $userId,
-                'extracted' => $extractedId,
-                'wrong_search_result' => $user3_wrong ? 'Found: ' . $user3_wrong['first_name'] . ' ' . $user3_wrong['last_name'] : 'Not found',
-                'correct_search_result' => $user3_correct ? 'Found: ' . $user3_correct['first_name'] . ' ' . $user3_correct['last_name'] : 'Not found'
+                'search_result' => $user3 ? 'Found: ' . $user3['first_name'] . ' ' . $user3['last_name'] : 'Not found'
             ];
         }
         

@@ -7,8 +7,10 @@
                 <!-- Logo Section -->
                 <div class="w-64 px-6 flex items-center justify-between h-16 border-b border-gray-200 bg-white">
                     <div class="flex-shrink-0">
-                        <img class="h-7 w-auto" src="<?= base_url('assets/images/K-NECT-logo.png') ?>" alt="K-NECT Logo" data-type="logo" data-fallback="<?= base_url('assets/images/default-logo.svg') ?>" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                        <p class="text-[10px] text-gray-500 font-medium leading-tight">Youth Governance System</p>
+                        <a href="<?= base_url('/K-NECT') ?>" class="block">
+                            <img class="h-7 w-auto" src="<?= base_url('assets/images/K-NECT-logo.png') ?>" alt="K-NECT Logo" data-type="logo" data-fallback="<?= base_url('assets/images/default-logo.svg') ?>" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                            <p class="text-[10px] text-gray-500 font-medium leading-tight">Youth Governance System</p>
+                        </a>
                         <div style="display:none;">
                             <h1 class="text-xl font-bold text-gray-900">K-NECT</h1>
                             <p class="text-xs text-gray-500">Youth Governance</p>
@@ -127,8 +129,18 @@
                 </nav>
 
                 <!-- Settings Section -->
-                <div class="p-4 border-t border-gray-100">
-                    <a href="<?= base_url('/sk/settings') ?>" class="nav-item flex items-center gap-3 p-3 rounded-xl text-gray-700 hover:bg-gray-50 font-medium <?= (uri_string() == 'sk/settings') ? 'active' : '' ?>">
+                    <div class="p-4 border-t border-gray-100">
+                    <?php
+                        // Highlight Settings when on settings pages or the user management subpage
+                        $isSettingsActive = (
+                            uri_string() == 'sk/settings' ||
+                            uri_string() == 'sk/user-management' ||
+                            uri_string() == 'sk/user_management' ||
+                            uri_string() == 'sk/settings/user-management' ||
+                            uri_string() == 'sk/settings/user_management'
+                        );
+                    ?>
+                    <a href="<?= base_url('/sk/settings') ?>" class="nav-item flex items-center gap-3 p-3 rounded-xl text-gray-700 hover:bg-gray-50 font-medium <?= $isSettingsActive ? 'active' : '' ?>">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>

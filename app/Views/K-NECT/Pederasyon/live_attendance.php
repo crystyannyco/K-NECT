@@ -104,7 +104,7 @@
                     <!-- Live Monitoring Status -->
                     <div class="flex items-center space-x-2 mb-2">
                         <div class="w-2 h-2 bg-green-400 rounded-full session-indicator"></div>
-                        <span class="text-sm font-semibold text-green-700">Live Monitoring</span>
+                        <span class="text-sm font-semibold text-green-700">Real-Time Monitoring</span>
                     </div>
                     
                     <!-- Session Status -->
@@ -120,7 +120,7 @@
                     <!-- Controls -->
                     <div class="flex space-x-2">
                         <button id="refreshBtn" onclick="refreshData()" class="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-xs leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg id="refreshIcon" class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                             </svg>
                             Refresh
@@ -207,7 +207,7 @@
         <div class="card p-6">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-semibold text-gray-900">Recent Attendance Activity - City-Wide</h3>
-                <div class="text-xs text-gray-500">Updates every 3 seconds</div>
+                <div class="text-xs text-gray-500">Updates instantly as attendance happens</div>
             </div>
             
             <div class="overflow-hidden rounded-lg border border-gray-200">
@@ -233,7 +233,7 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                         </svg>
                                         <span class="text-lg">Waiting for attendance activity...</span>
-                                        <span class="text-sm text-gray-400 mt-1">Data refreshes every 3 seconds</span>
+                                        <span class="text-sm text-gray-400 mt-1">Listening for new attendance activity...</span>
                                     </div>
                                 </td>
                             </tr>
@@ -247,10 +247,14 @@
     <script>
         const eventId = <?= $event['event_id'] ?>;
         const attendanceSettings = <?= json_encode($attendance_settings ?? []) ?>;
-        let liveAttendanceInterval = null;
-        let lastUpdateTime = null;
-        let previousDataHash = '';
-        let currentActiveSession = null;
+    let liveAttendanceAbortController = null;
+    let liveAttendanceActive = false;
+    let isPollingAttendance = false;
+    let pendingImmediateRefresh = false;
+    let nextLiveAttendanceTimer = null;
+    let lastUpdateTime = null;
+    let previousDataHash = '';
+    let currentActiveSession = null;
 
         // Start live monitoring when page loads
         document.addEventListener('DOMContentLoaded', function() {
@@ -278,41 +282,115 @@
         }
 
         function startLiveAttendanceMonitoring() {
-            // Initial load
-            loadLiveAttendanceData();
-            
-            // Set up periodic refresh every 3 seconds
-            if (liveAttendanceInterval) {
-                clearInterval(liveAttendanceInterval);
+            if (liveAttendanceActive) {
+                triggerImmediateLiveAttendanceRefresh();
+                return;
             }
-            
-            liveAttendanceInterval = setInterval(() => {
-                loadLiveAttendanceData();
-            }, 3000);
+
+            liveAttendanceActive = true;
+            pendingImmediateRefresh = false;
+            scheduleNextLiveAttendancePoll(0);
         }
 
-        function loadLiveAttendanceData() {
-            fetch(`<?= base_url('pederasyon/getAttendanceData') ?>`, {
+        function stopLiveAttendanceMonitoring() {
+            liveAttendanceActive = false;
+            pendingImmediateRefresh = false;
+            isPollingAttendance = false;
+
+            if (nextLiveAttendanceTimer) {
+                clearTimeout(nextLiveAttendanceTimer);
+                nextLiveAttendanceTimer = null;
+            }
+
+            if (liveAttendanceAbortController) {
+                liveAttendanceAbortController.abort();
+                liveAttendanceAbortController = null;
+            }
+        }
+
+        function scheduleNextLiveAttendancePoll(delay) {
+            if (!liveAttendanceActive) return;
+
+            if (nextLiveAttendanceTimer) {
+                clearTimeout(nextLiveAttendanceTimer);
+            }
+
+            nextLiveAttendanceTimer = setTimeout(() => {
+                nextLiveAttendanceTimer = null;
+                pollLiveAttendance();
+            }, Math.max(0, delay || 0));
+        }
+
+        function triggerImmediateLiveAttendanceRefresh() {
+            pendingImmediateRefresh = true;
+
+            if (!liveAttendanceActive) {
+                startLiveAttendanceMonitoring();
+                return;
+            }
+
+            if (!isPollingAttendance) {
+                pollLiveAttendance();
+            }
+        }
+
+        async function pollLiveAttendance() {
+            if (!liveAttendanceActive || isPollingAttendance) {
+                return;
+            }
+
+            isPollingAttendance = true;
+            liveAttendanceAbortController = new AbortController();
+            let pollSuccessful = false;
+
+            try {
+                pollSuccessful = await loadLiveAttendanceData(liveAttendanceAbortController.signal);
+            } catch (error) {
+                if (!liveAttendanceAbortController.signal.aborted) {
+                    console.error('Error loading attendance data:', error);
+                }
+            } finally {
+                isPollingAttendance = false;
+
+                if (!liveAttendanceActive) {
+                    return;
+                }
+
+                if (pendingImmediateRefresh) {
+                    pendingImmediateRefresh = false;
+                    scheduleNextLiveAttendancePoll(0);
+                } else {
+                    scheduleNextLiveAttendancePoll(pollSuccessful ? 500 : 2000);
+                }
+            }
+        }
+
+        async function loadLiveAttendanceData(signal) {
+            const response = await fetch(`<?= base_url('pederasyon/getAttendanceData') ?>`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: `event_id=${eventId}`
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    updateLiveAttendanceTable(data.data || []);
-                    updateAttendanceCounts(data.counts || {});
-                    updateLastUpdatedTime();
-                } else {
-                    console.error('Failed to load attendance data:', data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error loading attendance data:', error);
+                body: `event_id=${eventId}`,
+                signal
             });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                updateLiveAttendanceTable(data.data || []);
+                updateAttendanceCounts(data.counts || {});
+                updateLastUpdatedTime();
+                return true;
+            }
+
+            console.error('Failed to load attendance data:', data.message);
+            return false;
         }
 
         function updateLiveAttendanceTable(attendanceData) {
@@ -327,7 +405,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                 </svg>
                                 <span class="text-lg">Waiting for attendance activity...</span>
-                                <span class="text-sm text-gray-400 mt-1">Data refreshes every 3 seconds</span>
+                                <span class="text-sm text-gray-400 mt-1">Listening for new attendance activity...</span>
                             </div>
                         </td>
                     </tr>
@@ -432,6 +510,7 @@
 
         function updateLastUpdatedTime() {
             const now = new Date();
+            lastUpdateTime = now;
             document.getElementById('lastUpdated').textContent = now.toLocaleTimeString('en-US', { 
                 hour12: true, 
                 hour: '2-digit', 
@@ -440,8 +519,13 @@
         }
 
         function refreshData() {
-            // Refresh the entire page
-            window.location.reload();
+            const refreshIcon = document.getElementById('refreshIcon');
+            if (refreshIcon) {
+                refreshIcon.classList.add('refresh-animation');
+                setTimeout(() => refreshIcon.classList.remove('refresh-animation'), 600);
+            }
+
+            triggerImmediateLiveAttendanceRefresh();
         }
 
         // Session Status Functions
@@ -539,11 +623,18 @@
             return hours * 60 + minutes;
         }
 
-        // Clean up interval when page is closed
-        window.addEventListener('beforeunload', function() {
-            if (liveAttendanceInterval) {
-                clearInterval(liveAttendanceInterval);
+        // Pause polling when tab is hidden to reduce unnecessary requests
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                stopLiveAttendanceMonitoring();
+            } else {
+                startLiveAttendanceMonitoring();
             }
+        });
+
+        // Clean up realtime polling when page is closed
+        window.addEventListener('beforeunload', function() {
+            stopLiveAttendanceMonitoring();
         });
     </script>
 </body>

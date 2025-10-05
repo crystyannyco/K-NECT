@@ -7,8 +7,10 @@
                 <!-- Logo Section -->
                 <div class="w-64 px-6 flex items-center justify-between h-16 border-b border-gray-200 bg-white">
                     <div class="flex-shrink-0">
-                        <img class="h-7 w-auto" src="<?= base_url('assets/images/K-NECT-logo.png') ?>" alt="K-NECT Logo" data-type="logo" data-fallback="<?= base_url('assets/images/default-logo.svg') ?>" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                        <p class="text-[10px] text-gray-500 font-medium leading-tight">Youth Governance System</p>
+                        <a href="<?= base_url('/K-NECT') ?>" class="block">
+                            <img class="h-7 w-auto" src="<?= base_url('assets/images/K-NECT-logo.png') ?>" alt="K-NECT Logo" data-type="logo" data-fallback="<?= base_url('assets/images/default-logo.svg') ?>" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                            <p class="text-[10px] text-gray-500 font-medium leading-tight">Youth Governance System</p>
+                        </a>
                         <div style="display:none;">
                             <h1 class="text-xl font-bold text-gray-900">K-NECT</h1>
                             <p class="text-xs text-gray-500">Youth Governance</p>

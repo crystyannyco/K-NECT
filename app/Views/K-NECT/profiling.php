@@ -1165,15 +1165,52 @@ document.addEventListener('DOMContentLoaded',function(){
                                 
                                 <!-- Date of Birth -->
                                 <div class="space-y-1 sm:space-y-2">
-                                    <label class="block text-xs sm:text-sm font-medium text-slate-700 mb-3">
-                                        Date of Birth <span class="text-red-500">*</span>
-                                    </label>
+                                    <div class="flex items-start justify-between mb-3">
+                                        <label class="block text-xs sm:text-sm font-medium text-slate-700">
+                                            Date of Birth <span class="text-red-500">*</span>
+                                        </label>
+                                        <!-- Info tooltip at top: appears on hover -->
+                                        <div class="relative group ml-3">
+                                            <button type="button" class="text-slate-400 hover:text-slate-700 p-1 focus:outline-none" aria-describedby="birthdate_note" aria-label="Date of birth help">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                    <path fill-rule="evenodd" d="M18 10A8 8 0 11 2 10a8 8 0 0116 0zm-8-4a1 1 0 10-0 2 1 1 0 000-2zm1 8a1 1 0 10-2 0v-4a1 1 0 112 0v4z" clip-rule="evenodd" />
+                                                </svg>
+                                            </button>
+                                            <div id="birthdate_note" role="tooltip" class="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute right-0 top-full mt-2 w-72 bg-white border border-slate-200 text-xs text-slate-700 p-3 rounded shadow-lg z-50 hidden sm:block">
+                                                Note: Some years, months, and dates are disabled because only individuals who are at least 15 years old (or turning 15 within one month) and not older than 30 years old are eligible, in accordance with <u>DILG Memorandum Circular No. 2022-324.</u>
+                                            </div>
+                                        </div>
+                                    </div>
                                     <div class="grid grid-cols-3 gap-2 sm:gap-3">
+                                         <!-- Year -->
+                                        <div>
+                                            <label class="block text-xs text-slate-500 mb-1">Year</label>
+                        <select name="birth_year" data-required="true" aria-describedby="birthdate_note"
+                            class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?php if ((session('validation_user') && session('validation_user')->hasError('birthdate')) || session('age_error')) { echo 'border-red-400 bg-red-50'; } else { echo 'border-slate-200'; } ?> transition-all duration-200 text-xs sm:text-sm">
+                                                <option value="">Year</option>
+                                                <?php 
+                                                $current_year = '';
+                                                if (old('birth_year')) {
+                                                    $current_year = old('birth_year');
+                                                } elseif (isset($profile_data['birthdate']) && $profile_data['birthdate']) {
+                                                    $current_year = date('Y', strtotime($profile_data['birthdate']));
+                                                }
+                                                $current_year_num = date('Y');
+                                                // Only show years that can possibly produce an age within 15..30 (inclusive)
+                                                // earliest allowed year = current_year - 30
+                                                // latest allowed year = current_year - 15 (people turning 15 within 1 month handled in JS)
+                                                $start_year = $current_year_num - 30;
+                                                $end_year = $current_year_num - 15;
+                                                for ($year = $end_year; $year >= $start_year; $year--): ?>
+                                                    <option value="<?= $year ?>" <?= $current_year == $year ? 'selected' : '' ?>><?= $year ?></option>
+                                                <?php endfor; ?>
+                                            </select>
+                                        </div>
                                         <!-- Month -->
                                         <div>
                                             <label class="block text-xs text-slate-500 mb-1">Month</label>
-                                            <select name="birth_month" data-required="true" 
-                                                    class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?php if ((session('validation_user') && session('validation_user')->hasError('birthdate')) || session('age_error')) { echo 'border-red-400 bg-red-50'; } else { echo 'border-slate-200'; } ?> transition-all duration-200 text-xs sm:text-sm">
+                        <select name="birth_month" data-required="true" aria-describedby="birthdate_note"
+                            class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?php if ((session('validation_user') && session('validation_user')->hasError('birthdate')) || session('age_error')) { echo 'border-red-400 bg-red-50'; } else { echo 'border-slate-200'; } ?> transition-all duration-200 text-xs sm:text-sm">
                                                 <option value="">Month</option>
                                                 <?php 
                                                 $months = [
@@ -1195,8 +1232,8 @@ document.addEventListener('DOMContentLoaded',function(){
                                         <!-- Day -->
                                         <div>
                                             <label class="block text-xs text-slate-500 mb-1">Day</label>
-                                            <select name="birth_day" data-required="true" 
-                                                    class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?php if ((session('validation_user') && session('validation_user')->hasError('birthdate')) || session('age_error')) { echo 'border-red-400 bg-red-50'; } else { echo 'border-slate-200'; } ?> transition-all duration-200 text-xs sm:text-sm">
+                        <select name="birth_day" data-required="true" aria-describedby="birthdate_note"
+                            class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?php if ((session('validation_user') && session('validation_user')->hasError('birthdate')) || session('age_error')) { echo 'border-red-400 bg-red-50'; } else { echo 'border-slate-200'; } ?> transition-all duration-200 text-xs sm:text-sm">
                                                 <option value="">Day</option>
                                                 <?php 
                                                 $current_day = '';
@@ -1212,28 +1249,6 @@ document.addEventListener('DOMContentLoaded',function(){
                                                 <?php endfor; ?>
                                             </select>
                                         </div>
-                                        <!-- Year -->
-                                        <div>
-                                            <label class="block text-xs text-slate-500 mb-1">Year</label>
-                                            <select name="birth_year" data-required="true" 
-                                                    class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?php if ((session('validation_user') && session('validation_user')->hasError('birthdate')) || session('age_error')) { echo 'border-red-400 bg-red-50'; } else { echo 'border-slate-200'; } ?> transition-all duration-200 text-xs sm:text-sm">
-                                                <option value="">Year</option>
-                                                <?php 
-                                                $current_year = '';
-                                                if (old('birth_year')) {
-                                                    $current_year = old('birth_year');
-                                                } elseif (isset($profile_data['birthdate']) && $profile_data['birthdate']) {
-                                                    $current_year = date('Y', strtotime($profile_data['birthdate']));
-                                                }
-                                                $current_year_num = date('Y');
-                                                // Show 50 years range but validate for 15-30 age range
-                                                $start_year = $current_year_num - 30; // 50 years ago (for display)
-                                                $end_year = $current_year_num; // Current year (for display)
-                                                for ($year = $end_year; $year >= $start_year; $year--): ?>
-                                                    <option value="<?= $year ?>" <?= $current_year == $year ? 'selected' : '' ?>><?= $year ?></option>
-                                                <?php endfor; ?>
-                                            </select>
-                                        </div>
                                     </div>
                                     <!-- Hidden input for combined birthdate -->
                                     <input type="hidden" name="birthdate" id="birthdate_hidden" 
@@ -1242,6 +1257,7 @@ document.addEventListener('DOMContentLoaded',function(){
                                         <span id="birthdate_helper" class="text-xs text-slate-600"></span>
                                         <span id="birthdate_age" class="ml-3 text-xs font-medium text-blue-700"></span>
                                     </div>
+                                    <!-- note is now a hover tooltip at the top -->
                                     <?php if (session('validation_user') && session('validation_user')->hasError('birthdate')): ?>
                                         <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('validation_user')->getError('birthdate') ?></p>
                                     <?php endif; ?>
@@ -6444,6 +6460,41 @@ document.addEventListener('DOMContentLoaded',function(){
                 return new Date(y, m, 0).getDate();
             }
 
+            // Disable months that cannot possibly contain a valid DOB given the selected year
+            function refreshMonths(){
+                const y = parseInt(yearSel.value,10);
+                const monthOptions = monthSel.querySelectorAll('option');
+                // If no year selected, enable all months and return
+                if(!y){
+                    monthOptions.forEach(opt => opt.disabled = false);
+                    return;
+                }
+                const {earliest, latestNormal, graceLatest} = limits;
+                // For each month, check if there exists at least one day in that month that produces a DOB within limits
+                monthOptions.forEach(opt => {
+                    if(!opt.value) return; // skip placeholder
+                    const m = parseInt(opt.value,10);
+                    // Check days in that month for the selected year
+                    const total = daysInMonth(y,m);
+                    let possible = false;
+                    for(let d=1; d<=total; d++){
+                        const dob = new Date(y, m-1, d);
+                        if(isNaN(dob.getTime())) continue;
+                        if(dob >= earliest && dob <= graceLatest){
+                            possible = true; break;
+                        }
+                    }
+                    opt.disabled = !possible;
+                });
+                // If currently selected month is disabled, clear it
+                if(monthSel.value){
+                    const curOpt = monthSel.querySelector('option[value="'+monthSel.value+'"]');
+                    if(curOpt && curOpt.disabled){
+                        monthSel.value = '';
+                    }
+                }
+            }
+
             function calcAgeDetail(dob){
                 const now = new Date();
                 let years = now.getFullYear() - dob.getFullYear();
@@ -6523,32 +6574,51 @@ document.addEventListener('DOMContentLoaded',function(){
                 const m = parseInt(monthSel.value,10);
                 const currentDay = daySel.value;
                 daySel.innerHTML = '<option value="">Day</option>';
-                if(!m){
+                if(!m || !y){
                     daySel.disabled = true;
                     validateAndUpdate();
                     return;
                 }
                 const total = daysInMonth(y,m);
+                const {earliest, latestNormal, graceLatest} = limits;
                 for(let i=1;i<=total;i++){
                     const val = pad(i);
+                    const dob = new Date(y, m-1, i);
                     const opt = document.createElement('option');
-                    opt.value=val; opt.textContent=i;
+                    opt.value = val; opt.textContent = i;
+                    // Disable options that produce DOB outside allowed range
+                    if(isNaN(dob.getTime()) || dob < earliest || dob > graceLatest){
+                        opt.disabled = true;
+                    }
                     daySel.appendChild(opt);
                 }
-                daySel.disabled = false;
-                if(currentDay && parseInt(currentDay,10)<=total){
-                    daySel.value=currentDay;
+                // If all day options (except placeholder) are disabled, keep select disabled
+                const anyEnabled = Array.from(daySel.options).some(o => o.value && !o.disabled);
+                daySel.disabled = !anyEnabled;
+                if(currentDay && parseInt(currentDay,10) <= total){
+                    // Only reselect if the option exists and is not disabled
+                    const opt = daySel.querySelector('option[value="'+pad(parseInt(currentDay,10))+'"]');
+                    if(opt && !opt.disabled) daySel.value = pad(parseInt(currentDay,10)); else daySel.value = '';
                 } else {
-                    daySel.value='';
+                    daySel.value = '';
                 }
                 validateAndUpdate();
             }
 
             [yearSel, monthSel, daySel].forEach(sel=> sel.addEventListener('change', ()=>{
-                if(sel===yearSel || sel===monthSel) refreshDays(); else validateAndUpdate();
+                if(sel===yearSel){
+                    // When year changes, refresh months (disable impossible months) then refresh days
+                    refreshMonths();
+                    refreshDays();
+                } else if(sel===monthSel){
+                    refreshDays();
+                } else {
+                    validateAndUpdate();
+                }
             }));
 
-            // Initial run
+            // Initial run: ensure months and days reflect server-populated selects
+            refreshMonths();
             refreshDays();
         })();
 

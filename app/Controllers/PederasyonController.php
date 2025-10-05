@@ -1629,66 +1629,94 @@ class PederasyonController extends BaseController
     public function getCredentialsData()
     {
         try {
-            log_message('info', 'Getting credentials data...');
-            
-            // Use shared ProfileController for common functionality
+            log_message('info', 'Getting credentials data (SK + Pederasyon) ...');
+
             $profileController = new ProfileController();
             $users = $profileController->getAllUsersWithExtendedInfo();
             $users = $profileController->processUsersForMemberListing($users, 'pederasyon');
-            
-            // Filter only SK Chairpersons (user_type=2 AND position=1 with Accepted status)
-            $officials = array_filter($users, function($user) {
-                $userType = isset($user['user_type']) ? (int)$user['user_type'] : 1;
-                $position = isset($user['position']) ? (int)$user['position'] : 0;
-                $status = isset($user['status']) ? (int)$user['status'] : 1;
-                return $userType === 2 && $position === 1 && $status === 2; // Only SK Chairpersons, Accepted
-            });
 
             $skCredentials = [];
+            $pedCredentials = [];
 
-            foreach ($officials as $official) {
-                $userId = $official['user_id'] ?: '';
-                $barangay = \App\Libraries\BarangayHelper::getBarangayName($official['barangay']);
-                
-                $fullName = esc($official['last_name']);
-                if (!empty($official['first_name'])) {
-                    $fullName .= ', ' . esc($official['first_name']);
-                }
-                if (!empty($official['middle_name'])) {
-                    $fullName .= ' ' . esc($official['middle_name']);
+            // Map ped_position to labels (keep consistent with front-end & PDF logic)
+            $pedPositionMap = [
+                1 => 'President',
+                2 => 'Vice President',
+                3 => 'Secretary',
+                4 => 'Treasurer',
+                5 => 'Auditor',
+                6 => 'PIO',
+                7 => 'Sergeant at Arms'
+            ];
+
+            foreach ($users as $u) {
+                $status = isset($u['status']) ? (int)$u['status'] : 0; // 2 = Accepted
+                if ($status !== 2) {
+                    continue; // Only accepted users eligible for credential listing
                 }
 
-                // SK Credentials (only for SK Chairpersons)
-                $skUsername = $official['sk_username'] ?? '';
-                $skPassword = $official['sk_password'] ?? '';
-                
-                if ($skUsername && $skPassword) {
-                    $skCredentials[] = [
-                        'userId' => $userId,
-                        'name' => $fullName,
-                        'barangay' => $barangay,
-                        'position' => 'SK Chairperson',
-                        'username' => $skUsername,
-                        'password' => $skPassword
-                    ];
+                $userType = isset($u['user_type']) ? (int)$u['user_type'] : 0; // 2=SK Chairperson, 3=Pederasyon (from project context)
+                $userId = $u['user_id'] ?? '';
+                $barangay = \App\Libraries\BarangayHelper::getBarangayName($u['barangay'] ?? '');
+                // Consistent Full Name: Last, First Middle
+                $fullName = esc($u['last_name'] ?? '');
+                if (!empty($u['first_name'])) {
+                    $fullName .= ', ' . esc($u['first_name']);
+                }
+                if (!empty($u['middle_name'])) {
+                    $fullName .= ' ' . esc($u['middle_name']);
+                }
+
+                // SK Chairperson credentials (user_type=2 & has sk_username/password & position=1 if provided)
+                if ($userType === 2) {
+                    $skUsername = $u['sk_username'] ?? '';
+                    $skPassword = $u['sk_password'] ?? '';
+                    // Only include if both fields exist
+                    if ($skUsername && $skPassword) {
+                        $skCredentials[] = [
+                            'userId'   => $userId,
+                            'name'     => $fullName,
+                            'barangay' => $barangay,
+                            'position' => 'SK Chairperson',
+                            'username' => $skUsername,
+                            'password' => $skPassword,
+                        ];
+                    }
+                }
+
+                // Pederasyon credentials (user_type=3 & ped_username/password)
+                if ($userType === 3) {
+                    $pedUsername = $u['ped_username'] ?? '';
+                    $pedPassword = $u['ped_password'] ?? '';
+                    if ($pedUsername && $pedPassword) {
+                        $pedPosCode = isset($u['ped_position']) ? (int)$u['ped_position'] : 0;
+                        $pedPosLabel = $pedPositionMap[$pedPosCode] ?? 'Officer';
+                        $pedCredentials[] = [
+                            'userId'   => $userId,
+                            'name'     => $fullName,
+                            'barangay' => $barangay,
+                            'position' => 'Pederasyon ' . $pedPosLabel,
+                            'username' => $pedUsername,
+                            'password' => $pedPassword,
+                        ];
+                    }
                 }
             }
 
-            log_message('info', 'Found ' . count($skCredentials) . ' SK Chairperson credentials');
+            log_message('info', 'SK credentials count: ' . count($skCredentials) . ' | Pederasyon credentials count: ' . count($pedCredentials));
 
             return $this->response->setJSON([
                 'success' => true,
                 'data' => [
                     'sk' => $skCredentials,
-                    'pederasyon' => []
+                    'pederasyon' => $pedCredentials,
                 ],
                 'counts' => [
                     'sk' => count($skCredentials),
-                    'pederasyon' => 0,
-                    'total' => count($skCredentials)
+                    'pederasyon' => count($pedCredentials),
+                    'total' => count($skCredentials) + count($pedCredentials)
                 ]
             ]);
-
         } catch (\Exception $e) {
             log_message('error', 'Error in getCredentialsData: ' . $e->getMessage());
             log_message('error', 'Stack trace: ' . $e->getTraceAsString());

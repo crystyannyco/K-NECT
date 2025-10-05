@@ -264,7 +264,10 @@
                         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                             <!-- Role Status Tabs -->
                             <div class="flex flex-wrap gap-2">
-                                <button class="status-tab active bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="all">
+                                <button class="status-tab active bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="officials" title="All SK Chairpersons & Pederasyon Officers">
+                                    ALL Officials (<span id="countOfficials">0</span>)
+                                </button>
+                                <button class="status-tab bg-gray-100 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="all">
                                     All (<span id="countAll">0</span>)
                                 </button>
                                 <button class="status-tab bg-green-100 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="pederasyon">
@@ -908,6 +911,8 @@
             function updateDisplayedCounts() {
                 $('#countAll').text(originalCounts.all);
                 $('#countSK').text(originalCounts.sk);
+                // Officials = SK + Pederasyon (derived)
+                $('#countOfficials').text(originalCounts.sk + originalCounts.pederasyon);
                 $('#countPederasyon').text(originalCounts.pederasyon);
                 $('#countKK').text(originalCounts.kk);
                 
@@ -930,6 +935,7 @@
                     .addClass('bg-gray-100');
                 $('.status-tab[data-role="sk"]').removeClass('bg-gray-100').addClass('bg-yellow-100');
                 $('.status-tab[data-role="pederasyon"]').removeClass('bg-gray-100').addClass('bg-green-100');
+                $('.status-tab[data-role="officials"]').removeClass('bg-gray-100').addClass('bg-indigo-100');
                 $('.status-tab[data-role="kk"]').removeClass('bg-gray-100').addClass('bg-red-100');
                 
                 tab.removeClass('bg-gray-100 bg-yellow-100 bg-green-100 bg-red-100')
@@ -947,17 +953,18 @@
                 
                 // Apply role filter using DataTable column search
                 if (roleFilter !== 'all') {
-                    let searchTerms = [];
+                    let regex = '';
                     if (roleFilter === 'sk') {
-                        searchTerms = ['SK Chairperson', 'SK Chairperson'];
+                        regex = '^(SK Chairperson)$';
                     } else if (roleFilter === 'pederasyon') {
-                        searchTerms = ['Pederasyon'];
+                        regex = '^(Pederasyon)'; // Positions begin with Pederasyon
                     } else if (roleFilter === 'kk') {
-                        searchTerms = ['KK Member'];
+                        regex = '^(KK Member)$';
+                    } else if (roleFilter === 'officials') {
+                        // Combine SK Chairperson + any Pederasyon
+                        regex = '^(SK Chairperson|Pederasyon)';
                     }
-                    
-                    if (searchTerms.length > 0) {
-                        const regex = searchTerms.join('|');
+                    if (regex) {
                         table.column(7).search(regex, true, false);
                     }
                 }
@@ -1011,7 +1018,7 @@
 
             // Clear filters
             $('#clearFilters').on('click', function() {
-                $('.status-tab[data-role="all"]').trigger('click');
+                $('.status-tab[data-role="officials"]').trigger('click');
                 $('#statusFilter').val('all');
                 $('#barangayFilter').val('');
                 table.search('').columns().search('').draw();
@@ -1019,11 +1026,12 @@
                 localStorage.removeItem('activeStatusFilter');
                 localStorage.removeItem('activeBarangayFilter');
                 updateDisplayedCounts();
+                showNotification('Filters cleared successfully', 'success');
             });
 
             // Function to restore saved filters
             function restoreFilters() {
-                const savedRoleTab = localStorage.getItem('activeRoleTab') || 'all';
+                const savedRoleTab = localStorage.getItem('activeRoleTab') || 'officials';
                 const savedStatusFilter = localStorage.getItem('activeStatusFilter') || 'all';
                 const savedBarangayFilter = localStorage.getItem('activeBarangayFilter') || '';
                 

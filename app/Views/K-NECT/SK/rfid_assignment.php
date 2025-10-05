@@ -152,7 +152,7 @@
                                     <th class="px-4 py-2 border-b text-left">Full Name</th>
                                     <th class="px-4 py-2 border-b">Age</th>
                                     <th class="px-4 py-2 border-b">Sex</th>
-                                    <th class="px-4 py-2 border-b">Status</th>
+                                    <th class="px-4 py-2 border-b">RFID Status</th>
                                     <th class="px-4 py-2 border-b">Action</th>
                                 </tr>
                             </thead>
@@ -216,7 +216,7 @@
             <!-- Modal Body -->
             <div class="p-6">
                 <!-- User Profile Section -->
-                <div class="mb-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
+                <div class="mb-6 bg-gradient-to-br from-blue-50 to-blue-50 rounded-lg p-4 border border-blue-100">
                     <div class="flex items-center space-x-4">
                         <!-- Profile Picture -->
                         <div class="relative flex-shrink-0">
@@ -405,7 +405,7 @@
         var table = $('#rfidTable').DataTable({
             "pageLength": 25,
             "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
-            "order": [[0, "asc"]], // Sort by No. (first column)
+            "order": [[6, "desc"], [1, "desc"]], // Sort by RFID Status desc (Unassigned first), then User ID desc
             "responsive": true,
             "columnDefs": [
                 { "orderable": false, "targets": [7] } // Disable sorting on Action column (now column 7)
@@ -714,7 +714,7 @@
             } else if (user.user_type == 2) {
                 userTypeElement.className += 'bg-blue-100 text-blue-800'; // SK Official
             } else if (user.user_type == 3) {
-                userTypeElement.className += 'bg-purple-100 text-purple-800'; // Pederasyon Officer
+                userTypeElement.className += 'bg-blue-100 text-blue-800'; // Pederasyon Officer
             }
         }
         

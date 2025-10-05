@@ -124,6 +124,30 @@
             }
         }
 
+        /* Make KK table flexible and fluid on screens */
+        #kkTable {
+            width: 100% !important;
+            table-layout: auto; /* let columns size naturally */
+        }
+
+        #kkTable th, #kkTable td {
+            vertical-align: middle;
+            white-space: normal; /* allow wrapping */
+            word-break: break-word;
+        }
+
+        /* Give the full name column more room to wrap nicely */
+        #kkTable td.fullname-cell {
+            min-width: 220px;
+            max-width: 420px;
+            white-space: normal;
+        }
+
+        /* Smooth horizontal scrolling on mobile */
+        .overflow-x-auto {
+            -webkit-overflow-scrolling: touch;
+        }
+
         /* Screen-only: use 8px font for table data in the download KK list modal preview */
         @media screen {
             #downloadContent table thead th,
@@ -1602,15 +1626,29 @@
         // DataTables logic
         $(document).ready(function () {
             const table = $('#kkTable').DataTable({
-                fixedColumns: {
-                    leftColumns: 0,
-                    rightColumns: 1
-                },
-                scrollCollapse: true,
-                scrollY: '300px',
-                scrollX: true,
+                responsive: true,
+                autoWidth: false,
                 paging: true,
                 info: true,
+                order: [[7, 'asc'], [0, 'desc']], // Sort by Status (Pending first), then by sequence number descending
+                columnDefs: [
+                    {
+                        targets: 7, // Status column
+                        type: 'string',
+                        render: function(data, type, row) {
+                            if (type === 'type' || type === 'sort') {
+                                // Custom sorting order: Pending first, then Accepted, then Rejected
+                                const statusOrder = {
+                                    'Pending': '1',
+                                    'Accepted': '2', 
+                                    'Rejected': '3'
+                                };
+                                return statusOrder[data] || '9';
+                            }
+                            return data;
+                        }
+                    }
+                ],
                 language: {
                     search: "",
                     searchPlaceholder: "Search..."
@@ -1625,8 +1663,9 @@
                     // Populate zone filter options
                     populateZoneFilter();
                     
-                    // Initialize "All" tab as active by default
-                    $('.status-tab[data-status="all"]').trigger('click');
+                    // Initialize "All" tab as active by default (unless user saved a preference)
+                    const savedTab = localStorage.getItem('memberTab') || 'all';
+                    $('.status-tab[data-status="' + savedTab + '"]').trigger('click');
                 }
             });
 
@@ -1692,6 +1731,11 @@
             
             // Clear all column searches
             table.columns().search('').draw();
+            
+            // Show success notification to the user
+            if (typeof showNotification === 'function') {
+                showNotification('Filters cleared successfully', 'success');
+            }
         });
     });
 
@@ -1994,9 +2038,13 @@
         // Prefer the assigned KK ID if already accepted
         let idNumber = existingId && existingId !== '-' ? existingId : '';
         if (!idNumber) {
-            const yy = new Date().getFullYear().toString().slice(-2);
-            const suffix = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
-            idNumber = `${yy}-${suffix}`; // Preview format
+            const now = new Date();
+            const yy = now.getFullYear().toString().slice(-2);
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+            // Temporary client-side sequence (00-99) just for preview; real uniqueness should come from backend persistence
+            const seq = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+            idNumber = `${yy}-${mm}${dd}-${seq}`; // New preview format YY-MMDD-NN
         }
         
         // Generate expiry date (1 year from now)

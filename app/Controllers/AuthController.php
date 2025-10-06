@@ -577,4 +577,375 @@ class AuthController extends BaseController
         
         return redirect()->to('login')->with('success', 'Password changed successfully! Please log in with your new password.');
     }
+
+    /**
+     * Display forgot password form
+     */
+    public function forgotPassword()
+    {
+        return $this->loadView('K-NECT/forgot-password');
+    }
+
+    /**
+     * Verify username and determine account type
+     */
+    public function verifyUsername()
+    {
+        $userModel = new UserModel();
+        $username = $this->request->getPost('username');
+        $isAjax = $this->request->isAJAX();
+
+        // Validate username
+        if (empty($username)) {
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Username is required.'
+                ]);
+            }
+            return redirect()->back()->with('error', 'Username is required.');
+        }
+
+        $username = trim($username);
+        $user = null;
+        $accountType = null;
+        $accountTypeLabel = null;
+
+        // Check KK Member (username field)
+        $user = $userModel->where('username', $username)->first();
+        if ($user) {
+            $accountType = 'kk';
+            $accountTypeLabel = 'KK (Katipunan ng Kabataan)';
+        }
+
+        // Check SK Official (sk_username field)
+        if (!$user) {
+            $user = $userModel->where('sk_username', $username)->first();
+            if ($user) {
+                $accountType = 'sk';
+                $accountTypeLabel = 'SK (Sangguniang Kabataan)';
+            }
+        }
+
+        // Check Pederasyon Officer (ped_username field)
+        if (!$user) {
+            $user = $userModel->where('ped_username', $username)->first();
+            if ($user) {
+                $accountType = 'pederasyon';
+                $accountTypeLabel = 'Pederasyon';
+            }
+        }
+
+        // If no user found
+        if (!$user) {
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Username not found. Please check and try again.'
+                ]);
+            }
+            return redirect()->back()->with('error', 'Username not found. Please check and try again.');
+        }
+
+        // Username verified successfully
+        if ($isAjax) {
+            return $this->response->setJSON([
+                'success' => true,
+                'account_type' => $accountType,
+                'account_type_label' => $accountTypeLabel,
+                'message' => 'Username verified. Please enter your registered email.'
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Username verified. Please enter your registered email.');
+    }
+
+    /**
+     * Send password reset email
+     */
+    public function sendResetEmail()
+    {
+        $userModel = new UserModel();
+        $username = $this->request->getPost('username');
+        $email = $this->request->getPost('email');
+        $accountType = $this->request->getPost('account_type');
+        $isAjax = $this->request->isAJAX();
+
+        // Validate inputs
+        if (empty($username) || empty($email) || empty($accountType)) {
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Missing required information. Please start over.'
+                ]);
+            }
+            return redirect()->back()->with('error', 'Missing required information. Please start over.');
+        }
+
+        // Validate email format
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Please enter a valid email address.'
+                ]);
+            }
+            return redirect()->back()->with('error', 'Please enter a valid email address.');
+        }
+
+        // Find user based on account type and username
+        $user = null;
+        switch ($accountType) {
+            case 'kk':
+                $user = $userModel->where('username', $username)->first();
+                break;
+            case 'sk':
+                $user = $userModel->where('sk_username', $username)->first();
+                break;
+            case 'pederasyon':
+                $user = $userModel->where('ped_username', $username)->first();
+                break;
+        }
+
+        // Verify user exists
+        if (!$user) {
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Account not found. Please start over.'
+                ]);
+            }
+            return redirect()->back()->with('error', 'Account not found. Please start over.');
+        }
+
+        // Verify email matches the account
+        if (strtolower(trim($user['email'])) !== strtolower(trim($email))) {
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'The email address does not match the registered email for this ' . $accountType . ' account.'
+                ]);
+            }
+            return redirect()->back()->with('error', 'The email address does not match the registered email for this ' . $accountType . ' account.');
+        }
+
+        // Generate reset token
+        $token = bin2hex(random_bytes(32));
+        $tokenHash = hash('sha256', $token);
+        
+        // Set token expiry to 30 minutes from now
+        date_default_timezone_set('Asia/Manila');
+        $expiry = date('Y-m-d H:i:s', time() + (30 * 60));
+
+        // Save token hash, expiry, and account type to database
+        $userModel->update($user['id'], [
+            'reset_token_hash' => $tokenHash,
+            'reset_token_expires_at' => $expiry,
+            'reset_account_type' => $accountType // Store which account type (kk/sk/pederasyon)
+        ]);
+
+        // Send email with reset link
+        $resetLink = base_url('reset-password?token=' . $token);
+        
+        // Determine account type label for email
+        $accountTypeLabel = '';
+        switch ($accountType) {
+            case 'sk':
+                $accountTypeLabel = 'SK (Sangguniang Kabataan)';
+                break;
+            case 'pederasyon':
+                $accountTypeLabel = 'Pederasyon';
+                break;
+            case 'kk':
+            default:
+                $accountTypeLabel = 'KK (Katipunan ng Kabataan)';
+                break;
+        }
+        
+        $emailService = \Config\Services::email();
+        $emailService->setTo($email);
+        $emailService->setSubject('Password Reset - K-NECT ' . $accountTypeLabel . ' Account');
+        
+        $message = view('emails/password_reset', [
+            'resetLink' => $resetLink,
+            'userName' => $user['first_name'] . ' ' . $user['last_name'],
+            'accountType' => $accountType,
+            'accountTypeLabel' => $accountTypeLabel
+        ]);
+        
+        $emailService->setMessage($message);
+
+        try {
+            if ($emailService->send()) {
+                if ($isAjax) {
+                    return $this->response->setJSON([
+                        'success' => true,
+                        'message' => 'Password reset link has been sent to your email.'
+                    ]);
+                }
+                return redirect()->back()->with('success', 'Password reset link has been sent to your email.');
+            } else {
+                log_message('error', 'Failed to send password reset email: ' . $emailService->printDebugger(['headers']));
+                if ($isAjax) {
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'message' => 'Failed to send email. Please try again later.'
+                    ]);
+                }
+                return redirect()->back()->with('error', 'Failed to send email. Please try again later.');
+            }
+        } catch (\Exception $e) {
+            log_message('error', 'Email sending exception: ' . $e->getMessage());
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'An error occurred. Please try again later.'
+                ]);
+            }
+            return redirect()->back()->with('error', 'An error occurred. Please try again later.');
+        }
+    }
+
+    /**
+     * Display reset password form
+     */
+    public function resetPassword()
+    {
+        $token = $this->request->getGet('token');
+        
+        if (empty($token)) {
+            return redirect()->to('login')->with('error', 'Invalid reset link.');
+        }
+
+        $userModel = new UserModel();
+        $tokenHash = hash('sha256', $token);
+        
+        // Find user with this token
+        $user = $userModel->where('reset_token_hash', $tokenHash)->first();
+        
+        if (!$user) {
+            return redirect()->to('login')->with('error', 'Invalid or expired reset link.');
+        }
+
+        // Check if token has expired
+        date_default_timezone_set('Asia/Manila');
+        if (strtotime($user['reset_token_expires_at']) <= time()) {
+            return redirect()->to('login')->with('error', 'This reset link has expired. Please request a new one.');
+        }
+
+        $data = [
+            'token' => $token
+        ];
+
+        return $this->loadView('K-NECT/reset-password', $data);
+    }
+
+    /**
+     * Process password reset
+     */
+    public function processResetPassword()
+    {
+        $userModel = new UserModel();
+        $token = $this->request->getPost('token');
+        $password = $this->request->getPost('password');
+        $confirmPassword = $this->request->getPost('confirm_password');
+        $isAjax = $this->request->isAJAX();
+
+        // Validate inputs
+        if (empty($token) || empty($password) || empty($confirmPassword)) {
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'All fields are required.'
+                ]);
+            }
+            return redirect()->back()->with('error', 'All fields are required.');
+        }
+
+        if ($password !== $confirmPassword) {
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Passwords do not match.'
+                ]);
+            }
+            return redirect()->back()->with('error', 'Passwords do not match.');
+        }
+
+        if (strlen($password) < 6) {
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Password must be at least 6 characters long.'
+                ]);
+            }
+            return redirect()->back()->with('error', 'Password must be at least 6 characters long.');
+        }
+
+        // Verify token
+        $tokenHash = hash('sha256', $token);
+        $user = $userModel->where('reset_token_hash', $tokenHash)->first();
+
+        if (!$user) {
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Invalid or expired reset link.'
+                ]);
+            }
+            return redirect()->to('login')->with('error', 'Invalid or expired reset link.');
+        }
+
+        // Check if token has expired
+        date_default_timezone_set('Asia/Manila');
+        if (strtotime($user['reset_token_expires_at']) <= time()) {
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'This reset link has expired. Please request a new one.'
+                ]);
+            }
+            return redirect()->to('login')->with('error', 'This reset link has expired. Please request a new one.');
+        }
+
+        // Hash new password
+        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
+        // Determine which password field to update based on account type
+        $accountType = $user['reset_account_type'] ?? 'kk'; // Default to KK if not set
+        $passwordField = 'password'; // Default for KK
+        
+        switch ($accountType) {
+            case 'sk':
+                $passwordField = 'sk_password';
+                break;
+            case 'pederasyon':
+                $passwordField = 'ped_password';
+                break;
+            case 'kk':
+            default:
+                $passwordField = 'password';
+                break;
+        }
+
+        // Update the correct password field and clear reset token
+        $updateData = [
+            $passwordField => $hashedPassword,
+            'reset_token_hash' => null,
+            'reset_token_expires_at' => null,
+            'reset_account_type' => null
+        ];
+        
+        $userModel->update($user['id'], $updateData);
+
+        if ($isAjax) {
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Password has been reset successfully! You can now log in with your new password.',
+                'redirect' => base_url('login')
+            ]);
+        }
+
+        return redirect()->to('login')->with('success', 'Password has been reset successfully! You can now log in with your new password.');
+    }
 }

@@ -33,6 +33,13 @@ $routes->get('logout', 'AuthController::logout');
 $routes->get('change-password', 'AuthController::changePassword');
 $routes->post('change-password-process', 'AuthController::changePasswordProcess');
 
+// ---------------- Forgot Password Routes ------------------ //
+$routes->get('forgot-password', 'AuthController::forgotPassword');
+$routes->post('verify-username', 'AuthController::verifyUsername');
+$routes->post('send-reset-email', 'AuthController::sendResetEmail');
+$routes->get('reset-password', 'AuthController::resetPassword');
+$routes->post('process-reset-password', 'AuthController::processResetPassword');
+
 // ---------------- Profiling Routes ------------------ //
 $routes->get('profiling', 'ProfilingController::profiling');
 $routes->post('profiling/step1', 'ProfilingController::profilingStep1');

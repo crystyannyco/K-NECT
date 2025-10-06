@@ -258,6 +258,13 @@
                     <div id="passwordError" class="mt-1 text-red-600 text-xs hidden"></div>
                 </div>
 
+                <!-- Forgot Password Link -->
+                <div class="flex items-center justify-end">
+                    <a href="<?= base_url('forgot-password') ?>" class="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors">
+                        Forgot Password?
+                    </a>
+                </div>
+
                 <!-- Login Button -->
                 <button 
                     type="submit" 

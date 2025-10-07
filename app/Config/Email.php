@@ -10,6 +10,16 @@ class Email extends BaseConfig
     public string $fromName   = 'K-NECT System';
     public string $recipients = '';
 
+    public function __construct()
+    {
+        parent::__construct();
+        
+        // Load SMTP credentials from environment variables
+        $this->SMTPHost = getenv('SMTP_HOST') ?: 'smtp.gmail.com';
+        $this->SMTPUser = getenv('SMTP_USER') ?: '';
+        $this->SMTPPass = getenv('SMTP_PASS') ?: '';
+    }
+
     /**
      * The "user agent"
      */
@@ -28,17 +38,17 @@ class Email extends BaseConfig
     /**
      * SMTP Server Hostname
      */
-    public string $SMTPHost = 'smtp.gmail.com';
+    public string $SMTPHost;
 
     /**
      * SMTP Username
      */
-    public string $SMTPUser = 'knect.system@gmail.com';
+    public string $SMTPUser;
 
     /**
      * SMTP Password
      */
-    public string $SMTPPass = 'pjmpqdheerivygyr';
+    public string $SMTPPass;
 
     /**
      * SMTP Port

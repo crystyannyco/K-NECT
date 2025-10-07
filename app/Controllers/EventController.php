@@ -356,7 +356,14 @@ class EventController extends BaseController
                         return $this->handleErrorResponse('Please select at least one barangay for SMS notifications.');
                     }
                     $data['sms_recipient_barangays'] = json_encode($selectedBarangays);
+                } else {
+                    // For 'all_barangays' scope, set to null
+                    $data['sms_recipient_barangays'] = null;
                 }
+            } else {
+                // For non-superadmin or barangay-level events, set scope to null
+                $data['sms_recipient_scope'] = null;
+                $data['sms_recipient_barangays'] = null;
             }
             
             // Handle recipient roles
@@ -375,7 +382,14 @@ class EventController extends BaseController
                 if ($recipientScope === 'specific_barangays') {
                     $selectedBarangays = $this->request->getPost('sms_recipient_barangays');
                     $data['sms_recipient_barangays'] = json_encode($selectedBarangays ?: []);
+                } else {
+                    // For 'all_barangays' scope or empty, set to null
+                    $data['sms_recipient_barangays'] = null;
                 }
+            } else {
+                // For non-superadmin or barangay-level events, set scope to null
+                $data['sms_recipient_scope'] = null;
+                $data['sms_recipient_barangays'] = null;
             }
             
             $recipientRoles = $this->request->getPost('sms_recipient_roles');
@@ -751,15 +765,24 @@ class EventController extends BaseController
                 } else {
                     $data['sms_recipient_barangays'] = null;
                 }
+            } else {
+                // For non-superadmin or barangay-level events, preserve existing scope settings
+                $data['sms_recipient_scope'] = $event['sms_recipient_scope'];
+                $data['sms_recipient_barangays'] = $event['sms_recipient_barangays'];
             }
             
             // Handle recipient roles
             $recipientRoles = $this->request->getPost('sms_recipient_roles');
             if (empty($recipientRoles)) {
-                return $this->handleErrorResponse('Please select at least one recipient role for SMS notifications.');
+                // If no roles provided but event already has roles, preserve them
+                if (!empty($event['sms_recipient_roles'])) {
+                    $data['sms_recipient_roles'] = $event['sms_recipient_roles'];
+                } else {
+                    return $this->handleErrorResponse('Please select at least one recipient role for SMS notifications.');
+                }
+            } else {
+                $data['sms_recipient_roles'] = json_encode($recipientRoles);
             }
-            
-            $data['sms_recipient_roles'] = json_encode($recipientRoles);
         } elseif ($smsNotificationEnabled && $isDraft) {
             // For drafts, just save the SMS settings without validation
             if ($role === 'super_admin' && $event['barangay_id'] == 0) {
@@ -772,11 +795,16 @@ class EventController extends BaseController
                 } else {
                     $data['sms_recipient_barangays'] = null;
                 }
+            } else {
+                // For non-superadmin or barangay-level events, preserve existing scope settings
+                $data['sms_recipient_scope'] = $event['sms_recipient_scope'];
+                $data['sms_recipient_barangays'] = $event['sms_recipient_barangays'];
             }
             
             $recipientRoles = $this->request->getPost('sms_recipient_roles');
             $data['sms_recipient_roles'] = json_encode($recipientRoles ?: []);
         } else {
+            // When SMS is disabled, clear all SMS settings
             $data['sms_recipient_scope'] = null;
             $data['sms_recipient_barangays'] = null;
             $data['sms_recipient_roles'] = null;
@@ -1347,6 +1375,7 @@ class EventController extends BaseController
         foreach ($recipientRoles as $role) {
             if (in_array($role, [
                 'all_pederasyon_officials', 
+                'pederasyon_officers', // Pederasyon Officers (user_type=3 with position)
                 'pederasyon_members', // Add this - they are SK Chairpersons from all barangays
                 'pederasyon_president', 
                 'pederasyon_vice_president',
@@ -1379,6 +1408,10 @@ class EventController extends BaseController
                     case 'all_pederasyon_officials':
                         // Include both Pederasyon Officials (user_type=3) AND Pederasyon Members (SK Chairpersons from all barangays)
                         $cityRoleConditions[] = "((user.user_type = 3 AND user.ped_position IS NOT NULL) OR (user.user_type = 2 AND user.position = 1))";
+                        break;
+                    case 'pederasyon_officers':
+                        // Pederasyon Officers are user_type=3 with ped_position not null
+                        $cityRoleConditions[] = "(user.user_type = 3 AND user.ped_position IS NOT NULL)";
                         break;
                     case 'pederasyon_members':
                         // Pederasyon Members are SK Chairpersons from all barangays
@@ -1417,7 +1450,8 @@ class EventController extends BaseController
             // City-Level Officials: Only basic filters (no barangay filtering)
             $cityQuery->where('user.phone_number IS NOT NULL')
                       ->where('user.phone_number !=', '')
-                      ->where('user.is_active', 1);
+                      ->where('user.is_active', 1)
+                      ->where('user.status', 2); // Only accepted users
             
             $cityResults = $cityQuery->findAll();
             log_message('debug', 'Found ' . count($cityResults) . ' City-Level Officials');
@@ -1456,24 +1490,30 @@ class EventController extends BaseController
                 switch ($role) {
                     case 'all_sk_officials':
                     case 'all_officials': // Handle both form values
-                        $barangayRoleConditions[] = "(user.user_type = 2 AND user.position IS NOT NULL)"; // Only SK officials, not Pederasyon
+                        // All SK Officials: user_type=2 OR user_type=3
+                        $barangayRoleConditions[] = "(user.user_type = 2 OR user.user_type = 3)";
                         break;
                     case 'sk_chairperson':
                     case 'chairperson': // Handle both form values
-                        $barangayRoleConditions[] = "(user.user_type = 2 AND user.position = 1)"; // Only SK Chairpersons
+                        // SK Chairman: (user_type=2 AND position=1) OR (user_type=3)
+                        $barangayRoleConditions[] = "((user.user_type = 2 AND user.position = 1) OR user.user_type = 3)";
                         break;
                     case 'sk_secretary':
                     case 'secretary': // Handle both form values
-                        $barangayRoleConditions[] = "(user.user_type = 2 AND user.position = 2)"; // Only SK Secretaries
+                        // SK Secretary: user_type=2 AND position=2
+                        $barangayRoleConditions[] = "(user.user_type = 2 AND user.position = 2)";
                         break;
                     case 'sk_treasurer':
                     case 'treasurer': // Handle both form values
-                        $barangayRoleConditions[] = "(user.user_type = 2 AND user.position = 3)"; // Only SK Treasurers
+                        // SK Treasurer: user_type=2 AND position=3
+                        $barangayRoleConditions[] = "(user.user_type = 2 AND user.position = 3)";
                         break;
                     case 'sk_members':
-                        $barangayRoleConditions[] = "(user.user_type = 2 AND user.position > 3)"; // Other SK positions
+                        // SK Councilor: user_type=2 AND position IS NULL
+                        $barangayRoleConditions[] = "(user.user_type = 2 AND user.position IS NULL)";
                         break;
                     case 'kk_members':
+                        // KK Members: user_type=1
                         $barangayRoleConditions[] = "(user.user_type = 1)";
                         break;
                 }
@@ -1488,7 +1528,8 @@ class EventController extends BaseController
             // Barangay-Level Officials: Apply all filters including barangay
             $barangayQuery->where('user.phone_number IS NOT NULL')
                           ->where('user.phone_number !=', '')
-                          ->where('user.is_active', 1);
+                          ->where('user.is_active', 1)
+                          ->where('user.status', 2); // Only accepted users
             
             $barangayResults = $barangayQuery->findAll();
             log_message('debug', 'Found ' . count($barangayResults) . ' Barangay-Level Officials');

@@ -503,12 +503,11 @@ class AnalyticsModel extends Model
                 b.name as barangay,
                 COALESCE(p.name, 
                     CASE 
-                        WHEN u.position = 1 THEN 'SK Chairman'
-                        WHEN u.position = 2 THEN 'SK Kagawad'
-                        WHEN u.position = 3 THEN 'Secretary'
-                        WHEN u.position = 4 THEN 'Treasurer'
-                        WHEN u.position = 5 THEN 'KK Member'
-                        ELSE 'SK Kagawad'
+                        WHEN u.position = 1 THEN 'Chairperson'
+                        WHEN u.position = 2 THEN 'Secretary'
+                        WHEN u.position = 3 THEN 'Treasurer'
+                        WHEN u.position = 4 THEN 'SK Councilor'
+                        ELSE 'Member'
                     END
                 ) as position,
                 COUNT(DISTINCT a.event_id) as events_attended,

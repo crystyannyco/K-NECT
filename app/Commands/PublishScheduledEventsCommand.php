@@ -253,7 +253,8 @@ class PublishScheduledEventsCommand extends BaseCommand
                         $barangayRoleConditions[] = "(user.user_type = 2 AND user.position = 3)";
                         break;
                     case 'sk_members':
-                        $barangayRoleConditions[] = "(user.user_type = 2 AND user.position IS NULL)";
+                        // SK Councilor: user_type=2 AND position=4
+                        $barangayRoleConditions[] = "(user.user_type = 2 AND user.position = 4)";
                         break;
                     case 'kk_members':
                         $barangayRoleConditions[] = "(user.user_type = 1)";

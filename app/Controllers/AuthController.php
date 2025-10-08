@@ -649,10 +649,13 @@ class AuthController extends BaseController
 
         // Username verified successfully
         if ($isAjax) {
+            // include full name for display in UI
+            $fullName = isset($user['first_name']) || isset($user['last_name']) ? trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')) : '';
             return $this->response->setJSON([
                 'success' => true,
                 'account_type' => $accountType,
                 'account_type_label' => $accountTypeLabel,
+                'full_name' => $fullName,
                 'message' => 'Username verified. Please enter your registered email.'
             ]);
         }
@@ -661,7 +664,617 @@ class AuthController extends BaseController
     }
 
     /**
-     * Send password reset email
+     * Choose verification method (SMS or Email)
+     */
+    public function chooseVerificationMethod()
+    {
+        $username = $this->request->getPost('username');
+        $accountType = $this->request->getPost('account_type');
+        $method = $this->request->getPost('method'); // 'sms' or 'email'
+        $isAjax = $this->request->isAJAX();
+
+        // Validate inputs
+        if (empty($username) || empty($accountType) || empty($method)) {
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Missing required information.'
+                ]);
+            }
+            return redirect()->back()->with('error', 'Missing required information.');
+        }
+
+        // Validate method
+        if (!in_array($method, ['sms', 'email'])) {
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Invalid verification method selected.'
+                ]);
+            }
+            return redirect()->back()->with('error', 'Invalid verification method selected.');
+        }
+
+        // Store method in session for next step
+        session()->set('password_reset_method', $method);
+        session()->set('password_reset_username', $username);
+        session()->set('password_reset_account_type', $accountType);
+
+        if ($isAjax) {
+            return $this->response->setJSON([
+                'success' => true,
+                'method' => $method,
+                'message' => 'Verification method selected. Please enter your ' . ($method === 'sms' ? 'phone number' : 'email address') . '.'
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Verification method selected.');
+    }
+
+    /**
+     * Verify contact information (email or phone number)
+     */
+    public function verifyContactInfo()
+    {
+        helper('otp');
+        $userModel = new UserModel();
+        
+        $username = $this->request->getPost('username');
+        $accountType = $this->request->getPost('account_type');
+        $method = $this->request->getPost('method');
+        $contactInfo = trim($this->request->getPost('contact_info'));
+        $isAjax = $this->request->isAJAX();
+
+        // Validate inputs
+        if (empty($username) || empty($accountType) || empty($method) || empty($contactInfo)) {
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'All fields are required.'
+                ]);
+            }
+            return redirect()->back()->with('error', 'All fields are required.');
+        }
+
+        // Find user based on account type
+        $user = null;
+        switch ($accountType) {
+            case 'kk':
+                $user = $userModel->where('username', $username)->first();
+                break;
+            case 'sk':
+                $user = $userModel->where('sk_username', $username)->first();
+                break;
+            case 'pederasyon':
+                $user = $userModel->where('ped_username', $username)->first();
+                break;
+        }
+
+        if (!$user) {
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Account not found.'
+                ]);
+            }
+            return redirect()->back()->with('error', 'Account not found.');
+        }
+
+        // Verify contact info matches
+        if ($method === 'email') {
+            // Validate email format
+            if (!filter_var($contactInfo, FILTER_VALIDATE_EMAIL)) {
+                if ($isAjax) {
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'message' => 'Please enter a valid email address.'
+                    ]);
+                }
+                return redirect()->back()->with('error', 'Please enter a valid email address.');
+            }
+
+            if (strtolower($user['email']) !== strtolower($contactInfo)) {
+                if ($isAjax) {
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'message' => 'The email address does not match our records.'
+                    ]);
+                }
+                return redirect()->back()->with('error', 'The email address does not match our records.');
+            }
+
+            $maskedContact = mask_email($contactInfo);
+        } else { // SMS
+            // Normalize phone number for comparison
+            $cleanInput = preg_replace('/[^0-9]/', '', $contactInfo);
+            $cleanStored = preg_replace('/[^0-9]/', '', $user['phone_number']);
+
+            if ($cleanInput !== $cleanStored) {
+                if ($isAjax) {
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'message' => 'The phone number does not match our records.'
+                    ]);
+                }
+                return redirect()->back()->with('error', 'The phone number does not match our records.');
+            }
+
+            $maskedContact = mask_phone_number($contactInfo);
+        }
+
+        // Store verified contact info and password reset data in session
+        session()->set([
+            'password_reset_contact' => $contactInfo,
+            'password_reset_user_id' => $user['id'],
+            'password_reset_method' => $method,
+            'password_reset_username' => $username,
+            'password_reset_account_type' => $accountType
+        ]);
+
+        if ($isAjax) {
+            return $this->response->setJSON([
+                'success' => true,
+                'masked_contact' => $maskedContact,
+                'method' => $method,
+                'message' => 'Contact information verified. Ready to send OTP.'
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Contact information verified.');
+    }
+
+    /**
+     * Send OTP via SMS or Email
+     */
+    public function sendOtp()
+    {
+        helper(['otp', 'sms']);
+        $userModel = new UserModel();
+        $userOtpModel = new \App\Models\UserOtpModel();
+        
+        $userId = session('password_reset_user_id');
+        $method = session('password_reset_method');
+        $contactInfo = session('password_reset_contact');
+        $username = session('password_reset_username');
+        $accountType = session('password_reset_account_type');
+        $isAjax = $this->request->isAJAX();
+
+        // Validate session data
+        if (!$userId || !$method || !$contactInfo) {
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Session expired. Please start over.'
+                ]);
+            }
+            return redirect()->to('forgot-password')->with('error', 'Session expired. Please start over.');
+        }
+
+        $user = $userModel->find($userId);
+        if (!$user) {
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'User not found.'
+                ]);
+            }
+            return redirect()->to('forgot-password')->with('error', 'User not found.');
+        }
+
+        // Check rate limiting using user_otp table
+        $existingOtp = $userOtpModel->getLatestOtpForUser($userId);
+        $lastRequest = $existingOtp['otp_last_request'] ?? null;
+        $rateLimit = check_otp_rate_limit($lastRequest, 34);
+        if (!$rateLimit['allowed']) {
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Please wait ' . $rateLimit['remainingSeconds'] . ' seconds before requesting another OTP.',
+                    'remainingSeconds' => $rateLimit['remainingSeconds']
+                ]);
+            }
+            return redirect()->back()->with('error', 'Please wait before requesting another OTP.');
+        }
+
+        // Generate OTP
+        $otp = generate_otp();
+        $otpHash = hash_otp($otp);
+        $expiresAt = get_otp_expiry_time(5); // 5 minutes
+
+        // Save OTP to user_otp table
+        date_default_timezone_set('Asia/Manila');
+        $userOtpModel->upsertOtp($userId, [
+            'otp_code' => $otpHash,
+            'otp_expires_at' => $expiresAt,
+            'otp_type' => $method,
+            'otp_verified' => 0,
+            'otp_attempts' => 0,
+            'otp_last_request' => date('Y-m-d H:i:s')
+        ]);
+
+        // Send OTP
+        $sendSuccess = false;
+        $errorMessage = '';
+
+        try {
+            if ($method === 'sms') {
+                $result = send_otp_sms($contactInfo, $otp);
+                $sendSuccess = $result && !isset($result['error']);
+                if (!$sendSuccess) {
+                    $errorMessage = isset($result['error']) ? $result['error'] : 'Failed to send SMS';
+                }
+            } else { // email
+                $accountTypeLabel = $this->getAccountTypeLabel($accountType);
+                $userName = $user['first_name'] . ' ' . $user['last_name'];
+                $sendSuccess = send_otp_email($contactInfo, $otp, $userName, $accountTypeLabel);
+                if (!$sendSuccess) {
+                    $errorMessage = 'Failed to send email';
+                }
+            }
+        } catch (\Exception $e) {
+            log_message('error', 'OTP sending error: ' . $e->getMessage());
+            $errorMessage = 'An error occurred while sending OTP';
+        }
+
+        if ($sendSuccess) {
+            log_message('info', "OTP sent via {$method} to user ID: {$userId}");
+            
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'OTP has been sent to your ' . ($method === 'sms' ? 'phone' : 'email') . '. Please check and enter the code.',
+                    'method' => $method
+                ]);
+            }
+            return redirect()->to('verify-otp')->with('success', 'OTP has been sent.');
+        } else {
+            log_message('error', "Failed to send OTP via {$method} to user ID: {$userId}. Error: {$errorMessage}");
+            
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Failed to send OTP. Please try again or contact support.'
+                ]);
+            }
+            return redirect()->back()->with('error', 'Failed to send OTP. Please try again.');
+        }
+    }
+
+    /**
+     * Verify OTP code entered by user
+     */
+    public function verifyOtp()
+    {
+        helper('otp');
+        $userModel = new UserModel();
+        $userOtpModel = new \App\Models\UserOtpModel();
+        
+        $userId = session('password_reset_user_id');
+        $otpInput = $this->request->getPost('otp');
+        $isAjax = $this->request->isAJAX();
+
+        // Validate inputs
+        if (!$userId || empty($otpInput)) {
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Invalid request. Please start over.'
+                ]);
+            }
+            return redirect()->to('forgot-password')->with('error', 'Invalid request.');
+        }
+
+        $user = $userModel->find($userId);
+        if (!$user) {
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'User not found.'
+                ]);
+            }
+            return redirect()->to('forgot-password')->with('error', 'User not found.');
+        }
+
+        // Get OTP record from user_otp table
+        $otpRecord = $userOtpModel->getLatestOtpForUser($userId);
+        
+        // Check if OTP exists
+        if (!$otpRecord || empty($otpRecord['otp_code'])) {
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'No OTP found. Please request a new one.'
+                ]);
+            }
+            return redirect()->back()->with('error', 'No OTP found. Please request a new one.');
+        }
+
+        // Check if OTP has expired
+        if (is_otp_expired($otpRecord['otp_expires_at'])) {
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'OTP has expired. Please request a new one.',
+                    'expired' => true
+                ]);
+            }
+            return redirect()->back()->with('error', 'OTP has expired. Please request a new one.');
+        }
+
+        // Check attempt limit (max 5 attempts)
+        if ($otpRecord['otp_attempts'] >= 5) {
+            // Clear OTP to force new request
+            $userOtpModel->clearOtp($userId);
+            
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Too many failed attempts. Please request a new OTP.',
+                    'locked' => true
+                ]);
+            }
+            return redirect()->back()->with('error', 'Too many failed attempts. Please request a new OTP.');
+        }
+
+        // Verify OTP
+        if (verify_otp($otpInput, $otpRecord['otp_code'])) {
+            // OTP is correct - mark as verified
+            $userOtpModel->update($otpRecord['id'], [
+                'otp_verified' => 1,
+                'otp_attempts' => 0
+            ]);
+
+            // Generate token for password reset
+            $token = bin2hex(random_bytes(32));
+            session()->set('password_reset_token', $token);
+
+            log_message('info', "OTP verified successfully for user ID: {$userId}");
+
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'OTP verified successfully. You can now reset your password.',
+                    'redirect' => base_url('reset-password-otp?token=' . $token)
+                ]);
+            }
+            return redirect()->to('reset-password-otp?token=' . $token)->with('success', 'OTP verified successfully.');
+        } else {
+            // Incorrect OTP - increment attempts
+            $newAttempts = $otpRecord['otp_attempts'] + 1;
+            $userOtpModel->update($otpRecord['id'], [
+                'otp_attempts' => $newAttempts
+            ]);
+
+            $remainingAttempts = 5 - $newAttempts;
+            
+            log_message('warning', "Failed OTP verification for user ID: {$userId}. Attempts: {$newAttempts}");
+
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Incorrect OTP. You have ' . $remainingAttempts . ' attempt(s) remaining.',
+                    'remainingAttempts' => $remainingAttempts
+                ]);
+            }
+            return redirect()->back()->with('error', 'Incorrect OTP. You have ' . $remainingAttempts . ' attempt(s) remaining.');
+        }
+    }
+
+    /**
+     * Display OTP verification page
+     */
+    public function verifyOtpPage()
+    {
+        $userId = session('password_reset_user_id');
+        $method = session('password_reset_method');
+
+        if (!$userId || !$method) {
+            return redirect()->to('forgot-password')->with('error', 'Session expired. Please start over.');
+        }
+
+        helper('otp');
+        $userModel = new UserModel();
+        $userOtpModel = new \App\Models\UserOtpModel();
+        $user = $userModel->find($userId);
+
+        if (!$user) {
+            return redirect()->to('forgot-password')->with('error', 'User not found.');
+        }
+
+        // Get OTP record from user_otp table
+        $otpRecord = $userOtpModel->getLatestOtpForUser($userId);
+
+        // Calculate remaining time
+        $remainingSeconds = 300; // Default 5 minutes
+        if ($otpRecord && !empty($otpRecord['otp_expires_at'])) {
+            date_default_timezone_set('Asia/Manila');
+            $now = new \DateTime();
+            $expiresAt = new \DateTime($otpRecord['otp_expires_at']);
+            $diff = $expiresAt->getTimestamp() - $now->getTimestamp();
+            $remainingSeconds = max(0, $diff); // Don't go negative
+        }
+
+        $data = [
+            'method' => $method,
+            'masked_contact' => $method === 'sms' ? mask_phone_number($user['phone_number']) : mask_email($user['email']),
+            'can_resend' => ($otpRecord && !empty($otpRecord['otp_last_request'])) ? check_otp_rate_limit($otpRecord['otp_last_request'], 34)['allowed'] : true,
+            'remaining_seconds' => $remainingSeconds
+        ];
+
+        return $this->loadView('K-NECT/verify-otp', $data);
+    }
+
+    /**
+     * Display password reset form (after OTP verification)
+     */
+    public function resetPasswordOtp()
+    {
+        $token = $this->request->getGet('token');
+        $sessionToken = session('password_reset_token');
+        $userId = session('password_reset_user_id');
+        $otpVerified = session('password_reset_user_id') ? true : false;
+
+        // Verify token and OTP verification status
+        if (empty($token) || empty($sessionToken) || $token !== $sessionToken || !$userId) {
+            return redirect()->to('forgot-password')->with('error', 'Invalid or expired session. Please start over.');
+        }
+
+        // Double-check OTP verification in user_otp table
+        $userModel = new UserModel();
+        $userOtpModel = new \App\Models\UserOtpModel();
+        $user = $userModel->find($userId);
+        $otpRecord = $userOtpModel->getLatestOtpForUser($userId);
+
+        if (!$user || !$otpRecord || $otpRecord['otp_verified'] != 1) {
+            return redirect()->to('forgot-password')->with('error', 'OTP verification required. Please start over.');
+        }
+
+        $data = [
+            'token' => $token,
+            'account_type' => session('password_reset_account_type')
+        ];
+
+        return $this->loadView('K-NECT/reset-password-otp', $data);
+    }
+
+    /**
+     * Process password reset after OTP verification
+     */
+    public function processResetPasswordOtp()
+    {
+        $userModel = new UserModel();
+        $token = $this->request->getPost('token');
+        $sessionToken = session('password_reset_token');
+        $userId = session('password_reset_user_id');
+        $password = $this->request->getPost('password');
+        $confirmPassword = $this->request->getPost('confirm_password');
+        $isAjax = $this->request->isAJAX();
+
+        // Validate inputs
+        if (empty($token) || empty($password) || empty($confirmPassword)) {
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'All fields are required.'
+                ]);
+            }
+            return redirect()->back()->with('error', 'All fields are required.');
+        }
+
+        // Verify token
+        if ($token !== $sessionToken || !$userId) {
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Invalid session. Please start over.'
+                ]);
+            }
+            return redirect()->to('forgot-password')->with('error', 'Invalid session.');
+        }
+
+        if ($password !== $confirmPassword) {
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Passwords do not match.'
+                ]);
+            }
+            return redirect()->back()->with('error', 'Passwords do not match.');
+        }
+
+        if (strlen($password) < 6) {
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Password must be at least 6 characters long.'
+                ]);
+            }
+            return redirect()->back()->with('error', 'Password must be at least 6 characters long.');
+        }
+
+        $user = $userModel->find($userId);
+        $userOtpModel = new \App\Models\UserOtpModel();
+        $otpRecord = $userOtpModel->getLatestOtpForUser($userId);
+        
+        if (!$user || !$otpRecord || $otpRecord['otp_verified'] != 1) {
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'OTP verification required.'
+                ]);
+            }
+            return redirect()->to('forgot-password')->with('error', 'OTP verification required.');
+        }
+
+        // Hash new password
+        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
+        // Determine which password field to update
+        $accountType = session('password_reset_account_type') ?? 'kk';
+        $passwordField = 'password'; // Default for KK
+        
+        switch ($accountType) {
+            case 'sk':
+                $passwordField = 'sk_password';
+                break;
+            case 'pederasyon':
+                $passwordField = 'ped_password';
+                break;
+            case 'kk':
+            default:
+                $passwordField = 'password';
+                break;
+        }
+
+        // Update password
+        $updateData = [
+            $passwordField => $hashedPassword
+        ];
+        
+        $userModel->update($userId, $updateData);
+        
+        // Clear OTP data from user_otp table
+        $userOtpModel->clearOtp($userId);
+
+        // Clear session data
+        session()->remove('password_reset_method');
+        session()->remove('password_reset_username');
+        session()->remove('password_reset_account_type');
+        session()->remove('password_reset_contact');
+        session()->remove('password_reset_user_id');
+        session()->remove('password_reset_token');
+
+        log_message('info', "Password reset completed successfully for user ID: {$userId}");
+
+        if ($isAjax) {
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Password has been reset successfully! You can now log in with your new password.',
+                'redirect' => base_url('login')
+            ]);
+        }
+
+        return redirect()->to('login')->with('success', 'Password has been reset successfully! You can now log in with your new password.');
+    }
+
+    /**
+     * Helper method to get account type label
+     */
+    private function getAccountTypeLabel($accountType)
+    {
+        switch ($accountType) {
+            case 'sk':
+                return 'SK (Sangguniang Kabataan)';
+            case 'pederasyon':
+                return 'Pederasyon';
+            case 'kk':
+            default:
+                return 'KK (Katipunan ng Kabataan)';
+        }
+    }
+
+    /**
+     * Send password reset email (Legacy method - kept for backwards compatibility)
      */
     public function sendResetEmail()
     {

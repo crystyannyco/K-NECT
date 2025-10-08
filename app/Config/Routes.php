@@ -43,9 +43,18 @@ $routes->post('change-password-process', 'AuthController::changePasswordProcess'
 // ---------------- Forgot Password Routes ------------------ //
 $routes->get('forgot-password', 'AuthController::forgotPassword');
 $routes->post('verify-username', 'AuthController::verifyUsername');
-$routes->post('send-reset-email', 'AuthController::sendResetEmail');
-$routes->get('reset-password', 'AuthController::resetPassword');
-$routes->post('process-reset-password', 'AuthController::processResetPassword');
+$routes->post('send-reset-email', 'AuthController::sendResetEmail'); // Legacy
+$routes->get('reset-password', 'AuthController::resetPassword'); // Legacy
+$routes->post('process-reset-password', 'AuthController::processResetPassword'); // Legacy
+
+// ---------------- OTP Password Reset Routes ------------------ //
+$routes->post('choose-verification-method', 'AuthController::chooseVerificationMethod');
+$routes->post('verify-contact-info', 'AuthController::verifyContactInfo');
+$routes->post('send-otp', 'AuthController::sendOtp');
+$routes->get('verify-otp', 'AuthController::verifyOtpPage');
+$routes->post('verify-otp', 'AuthController::verifyOtp');
+$routes->get('reset-password-otp', 'AuthController::resetPasswordOtp');
+$routes->post('process-reset-password-otp', 'AuthController::processResetPasswordOtp');
 
 // ---------------- Profiling Routes ------------------ //
 $routes->get('profiling', 'ProfilingController::profiling');

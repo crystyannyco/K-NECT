@@ -10,7 +10,7 @@ class UserModel extends Model
     protected $primaryKey = 'id';
     protected $useAutoIncrement = true;
     protected $returnType     = 'array';
-    protected $allowedFields = ['last_name','first_name','middle_name','sex','gender', 'suffix','birthdate','email','phone_number', 'username','status','user_type','position','is_active','password','sk_username','sk_password','ped_username','ped_password','ped_position','created_at','updated_at', 'user_id', 'last_login', 'rfid_code', 'reset_token_hash', 'reset_token_expires_at', 'reset_account_type'];
+    protected $allowedFields = ['last_name','first_name','middle_name','sex','gender', 'suffix','birthdate','email','phone_number', 'username','status','user_type','position','is_active','password','sk_username','sk_password','ped_username','ped_password','ped_position','created_at','updated_at', 'user_id', 'last_login', 'rfid_code'];
     protected $useTimestamps = true;
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';

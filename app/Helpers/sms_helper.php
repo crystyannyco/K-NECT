@@ -1,8 +1,11 @@
 ﻿<?php
+
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 
-define('SMS_ENABLED', true);
+if (!defined('SMS_ENABLED')) {
+    define('SMS_ENABLED', true);
+}
 
 if (!function_exists('format_phone_number')) {
     function format_phone_number($phoneNumber) {

@@ -130,12 +130,9 @@
                     </button>
                 </form>
 
-                <!-- Step 2: Email Form (Hidden Initially) -->
-                <form id="emailForm" action="<?= base_url('send-reset-email') ?>" method="post" class="space-y-4 hidden">
-                    <input type="hidden" id="verified_username" name="username" value="">
-                    <input type="hidden" id="account_type" name="account_type" value="">
-                    
-                    <!-- Account Type Display -->
+                <!-- Step 2: Verification Method Selection (Hidden Initially) -->
+                <form id="methodSelectionForm" class="space-y-4 hidden">
+                    <!-- Account Info Display -->
                     <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
                         <div class="flex items-center">
                             <svg class="w-5 h-5 text-blue-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -143,30 +140,100 @@
                             </svg>
                             <div>
                                 <p class="text-blue-800 font-medium text-sm">Account Found</p>
-                                <p class="text-blue-700 text-xs">Username: <span id="displayUsername" class="font-semibold"></span> | Type: <span id="displayAccountType" class="font-semibold"></span></p>
+                                <p class="text-blue-700 text-xs">Full name: <span id="displayFullName" class="font-semibold"></span></p>
+                                <p class="text-blue-700 text-xs">Username: <span id="displayUsername" class="font-semibold"></span></p>
+                                <p class="text-blue-700 text-xs">Type: <span id="displayAccountType" class="font-semibold"></span></p>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Email Field -->
-                    <div class="space-y-2">
-                        <label for="email" class="block text-gray-700 text-sm font-medium">Email Address</label>
-                        <p class="text-gray-500 text-xs mb-2">Enter the registered email for this <span id="accountTypeLabel"></span> account.</p>
-                        <div class="relative input-container">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
-                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <p class="text-gray-600 text-sm text-center mb-4">Choose how you'd like to receive your verification code:</p>
+
+                    <!-- Verification Method Buttons -->
+                    <div class="space-y-3">
+                        <button 
+                            type="button"
+                            onclick="selectMethod('email')"
+                            class="btn-hover w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                            <span class="flex items-center justify-center space-x-2">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                                 </svg>
+                                <span>Verify via Email</span>
+                            </span>
+                        </button>
+
+                        <button 
+                            type="button"
+                            onclick="selectMethod('sms')"
+                            class="btn-hover w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                            <span class="flex items-center justify-center space-x-2">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                </svg>
+                                <span>Verify via SMS</span>
+                            </span>
+                        </button>
+                    </div>
+
+                    <!-- Back Button -->
+                    <button 
+                        type="button" 
+                        onclick="backFromMethodSelection()"
+                        class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-4 rounded-lg focus:outline-none transition-colors">
+                        <span class="flex items-center justify-center space-x-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                            </svg>
+                            <span>Back to Username</span>
+                        </span>
+                    </button>
+                </form>
+
+                <!-- Step 3: Contact Info Form (Hidden Initially) -->
+                <form id="contactInfoForm" class="space-y-4 hidden">
+                    <!-- Account Info Display -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 text-blue-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                            </svg>
+                            <div>
+                                <p class="text-blue-800 font-medium text-sm">Verification Method: <span id="selectedMethodLabel" class="font-semibold"></span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Masked Contact Display (Hidden Initially) -->
+                    <div id="maskedContactDisplay" class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 hidden">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                            </svg>
+                            <div>
+                                <p class="text-green-800 font-medium text-sm">Contact Verified</p>
+                                <p class="text-green-700 text-xs">OTP will be sent to: <span id="maskedContact" class="font-semibold font-mono"></span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contact Info Field -->
+                    <div class="space-y-2" id="contactInputSection">
+                        <label for="contactInfo" class="block text-gray-700 text-sm font-medium" id="contactLabel">Contact Information</label>
+                        <p class="text-gray-500 text-xs mb-2" id="contactHint">Enter your registered contact information</p>
+                        <div class="relative input-container">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10" id="contactIcon">
+                                <!-- Icon will be set by JS -->
                             </div>
                             <input 
-                                type="email" 
-                                id="email" 
-                                name="email" 
-                                placeholder="Enter your registered email address" 
+                                type="text" 
+                                id="contactInfo" 
+                                name="contact_info" 
+                                placeholder="Enter your contact information" 
                                 required
                                 class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         </div>
-                        <div id="emailError" class="mt-1 text-red-600 text-xs hidden"></div>
+                        <div id="contactError" class="mt-1 text-red-600 text-xs hidden"></div>
                     </div>
 
                     <!-- Submit Button -->
@@ -175,22 +242,22 @@
                         class="btn-hover w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                         <span class="flex items-center justify-center space-x-2">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
-                            <span>Send Reset Link</span>
+                            <span>Verify and Continue</span>
                         </span>
                     </button>
 
                     <!-- Back Button -->
                     <button 
                         type="button" 
-                        id="backToUsername"
+                        onclick="backFromContactInfo()"
                         class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-4 rounded-lg focus:outline-none transition-colors">
                         <span class="flex items-center justify-center space-x-2">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                             </svg>
-                            <span>Back to Username</span>
+                            <span>Back to Method Selection</span>
                         </span>
                     </button>
                 </form>
@@ -216,56 +283,52 @@
     </div>
 
     <script>
-        // Form elements
-        const usernameForm = document.getElementById('usernameForm');
-        const emailForm = document.getElementById('emailForm');
-        const usernameInput = document.getElementById('username');
-        const emailInput = document.getElementById('email');
-        const usernameError = document.getElementById('usernameError');
-        const emailError = document.getElementById('emailError');
-        const headerDescription = document.getElementById('headerDescription');
-        const backToUsernameBtn = document.getElementById('backToUsername');
+        document.addEventListener('DOMContentLoaded', function() {
+            // Form elements
+            const usernameForm = document.getElementById('usernameForm');
+            const usernameInput = document.getElementById('username');
+            const usernameError = document.getElementById('usernameError');
+            const headerDescription = document.getElementById('headerDescription');
 
-        // Helper functions
-        function clearFieldError(input, errorEl) {
-            input.classList.remove('border-red-500');
-            errorEl.textContent = '';
-            errorEl.classList.add('hidden');
-        }
-
-        function setFieldError(input, errorEl, message) {
-            input.classList.add('border-red-500');
-            errorEl.textContent = message;
-            errorEl.classList.remove('hidden');
-        }
-
-        function setLoadingState(form, loading, buttonText) {
-            const submitBtn = form.querySelector('button[type="submit"]');
-            if (loading) {
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = `
-                    <span class="flex items-center justify-center space-x-2">
-                        <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span>Verifying...</span>
-                    </span>
-                `;
-            } else {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = buttonText;
+            // Helper functions
+            function clearFieldError(input, errorEl) {
+                input.classList.remove('border-red-500');
+                errorEl.textContent = '';
+                errorEl.classList.add('hidden');
             }
-        }
 
-        // Clear errors on input
-        usernameInput.addEventListener('input', () => clearFieldError(usernameInput, usernameError));
-        emailInput.addEventListener('input', () => clearFieldError(emailInput, emailError));
+            function setFieldError(input, errorEl, message) {
+                input.classList.add('border-red-500');
+                errorEl.textContent = message;
+                errorEl.classList.remove('hidden');
+            }
 
-        // Step 1: Username verification
-        usernameForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            clearFieldError(usernameInput, usernameError);
+            function setLoadingState(form, loading, buttonText) {
+                const submitBtn = form.querySelector('button[type="submit"]');
+                if (loading) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = `
+                        <span class="flex items-center justify-center space-x-2">
+                            <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>Verifying...</span>
+                        </span>
+                    `;
+                } else {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = buttonText;
+                }
+            }
+
+            // Clear errors on input
+            usernameInput.addEventListener('input', () => clearFieldError(usernameInput, usernameError));
+
+            // Step 1: Username verification
+            usernameForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                clearFieldError(usernameInput, usernameError);
 
             const username = usernameInput.value.trim();
 
@@ -294,19 +357,23 @@
             .then(data => {
                 setLoadingState(usernameForm, false, originalButtonText);
 
-                if (data.success) {
+                    if (data.success) {
                     // Store username and account type
-                    document.getElementById('verified_username').value = username;
-                    document.getElementById('account_type').value = data.account_type;
+                    window.verifiedUsername = username;
+                    window.verifiedAccountType = data.account_type;
+                    window.verifiedAccountTypeLabel = data.account_type_label;
+                        // store full name for display
+                        window.verifiedFullName = data.full_name || '';
+
+                    // Update display elements in method selection form
+                    document.getElementById('displayFullName').textContent = window.verifiedFullName;
                     document.getElementById('displayUsername').textContent = username;
                     document.getElementById('displayAccountType').textContent = data.account_type_label;
-                    document.getElementById('accountTypeLabel').textContent = data.account_type_label;
 
-                    // Switch to email form
+                    // Switch to verification method selection
                     usernameForm.classList.add('hidden');
-                    emailForm.classList.remove('hidden');
-                    headerDescription.textContent = 'Enter the registered email for your ' + data.account_type_label + ' account.';
-                    emailInput.focus();
+                    document.getElementById('methodSelectionForm').classList.remove('hidden');
+                    headerDescription.textContent = 'Choose your verification method';
                 } else {
                     setFieldError(usernameInput, usernameError, data.message || 'Username not found.');
                 }
@@ -317,88 +384,192 @@
             });
         });
 
-        // Step 2: Email verification and send reset link
-        emailForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            clearFieldError(emailInput, emailError);
+        // Step 2: Method Selection
+        let selectedMethod = '';
 
-            const email = emailInput.value.trim();
-
-            if (!email) {
-                setFieldError(emailInput, emailError, 'Email address is required.');
-                return;
-            }
-
-            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                setFieldError(emailInput, emailError, 'Please enter a valid email address.');
-                return;
-            }
-
-            const originalButtonText = `
-                <span class="flex items-center justify-center space-x-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        window.selectMethod = function(method) {
+            selectedMethod = method;
+            
+            const methodLabel = method === 'sms' ? 'SMS' : 'Email';
+            document.getElementById('selectedMethodLabel').textContent = methodLabel;
+            
+            // Update contact info form based on method
+            const contactLabel = document.getElementById('contactLabel');
+            const contactHint = document.getElementById('contactHint');
+            const contactIcon = document.getElementById('contactIcon');
+            const contactInput = document.getElementById('contactInfo');
+            
+            if (method === 'sms') {
+                contactLabel.textContent = 'Phone Number';
+                contactHint.textContent = 'Enter your registered phone number (e.g., 09171234567)';
+                contactIcon.innerHTML = `
+                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                    </svg>
+                `;
+                contactInput.type = 'tel';
+                contactInput.placeholder = 'Enter your phone number';
+            } else {
+                contactLabel.textContent = 'Email Address';
+                contactHint.textContent = 'Enter your registered email address';
+                contactIcon.innerHTML = `
+                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                     </svg>
-                    <span>Send Reset Link</span>
+                `;
+                contactInput.type = 'email';
+                contactInput.placeholder = 'Enter your email address';
+            }
+            
+            // Update display elements
+            document.getElementById('displayUsername').textContent = window.verifiedUsername;
+            document.getElementById('displayAccountType').textContent = window.verifiedAccountTypeLabel;
+            
+            // Show contact info form
+            document.getElementById('methodSelectionForm').classList.add('hidden');
+            document.getElementById('contactInfoForm').classList.remove('hidden');
+            headerDescription.textContent = 'Enter your ' + (method === 'sms' ? 'phone number' : 'email address');
+            contactInput.focus();
+        };
+
+        window.backFromMethodSelection = function() {
+            document.getElementById('methodSelectionForm').classList.add('hidden');
+            usernameForm.classList.remove('hidden');
+            headerDescription.textContent = 'Enter your username to verify your account.';
+        };
+
+        window.backFromContactInfo = function() {
+            document.getElementById('contactInfoForm').classList.add('hidden');
+            document.getElementById('methodSelectionForm').classList.remove('hidden');
+            headerDescription.textContent = 'Choose your verification method';
+            document.getElementById('contactInfo').value = '';
+            clearContactError();
+        };
+
+        // Step 3: Contact Info Form
+        const contactInfoForm = document.getElementById('contactInfoForm');
+        const contactInput = document.getElementById('contactInfo');
+        const contactError = document.getElementById('contactError');
+
+        function clearContactError() {
+            contactInput.classList.remove('border-red-500');
+            contactError.textContent = '';
+            contactError.classList.add('hidden');
+        }
+
+        function setContactError(message) {
+            contactInput.classList.add('border-red-500');
+            contactError.textContent = message;
+            contactError.classList.remove('hidden');
+        }
+
+        contactInput.addEventListener('input', () => clearContactError());
+
+        contactInfoForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            clearContactError();
+
+            const contactValue = contactInput.value.trim();
+
+            if (!contactValue) {
+                setContactError('This field is required.');
+                return;
+            }
+
+            // Validate based on method
+            if (selectedMethod === 'email') {
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactValue)) {
+                    setContactError('Please enter a valid email address.');
+                    return;
+                }
+            } else if (selectedMethod === 'sms') {
+                const cleanPhone = contactValue.replace(/\D/g, '');
+                if (cleanPhone.length < 10 || cleanPhone.length > 13) {
+                    setContactError('Please enter a valid phone number (10-13 digits).');
+                    return;
+                }
+            }
+
+            const submitBtn = contactInfoForm.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `
+                <span class="flex items-center justify-center space-x-2">
+                    <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Verifying...</span>
                 </span>
             `;
 
-            setLoadingState(emailForm, true, originalButtonText);
+            // First verify contact info
+            const verifyData = new FormData();
+            verifyData.append('username', window.verifiedUsername);
+            verifyData.append('account_type', window.verifiedAccountType);
+            verifyData.append('method', selectedMethod);
+            verifyData.append('contact_info', contactValue);
 
-            fetch(emailForm.action, {
+            fetch('<?= base_url('verify-contact-info') ?>', {
                 method: 'POST',
-                body: new FormData(emailForm),
+                body: verifyData,
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             })
             .then(response => response.json())
             .then(data => {
-                setLoadingState(emailForm, false, originalButtonText);
-
                 if (data.success) {
-                    const submitBtn = emailForm.querySelector('button[type="submit"]');
+                    // Show masked contact
+                    document.getElementById('maskedContact').textContent = data.masked_contact;
+                    document.getElementById('maskedContactDisplay').classList.remove('hidden');
+                    document.getElementById('contactInputSection').classList.add('hidden');
+                    
+                    // Update button to show sending status
                     submitBtn.innerHTML = `
                         <span class="flex items-center justify-center space-x-2">
-                            <svg class="w-5 h-5 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
-                            <span>Sent!</span>
+                            <span>Sending OTP...</span>
                         </span>
                     `;
                     
-                    // Show success message
-                    const alertDiv = document.createElement('div');
-                    alertDiv.className = 'mb-4 p-4 bg-green-50 border border-green-200 rounded-lg';
-                    alertDiv.innerHTML = `
-                        <div class="flex items-center">
-                            <svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                            </svg>
-                            <p class="text-green-700 text-sm">${data.message}</p>
-                        </div>
-                    `;
-                    emailForm.insertBefore(alertDiv, emailForm.firstChild);
-                    
-                    // Clear email input
-                    emailInput.value = '';
+                    // Contact verified, now send OTP
+                    return fetch('<?= base_url('send-otp') ?>', {
+                        method: 'POST',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
                 } else {
-                    setFieldError(emailInput, emailError, data.message || 'An error occurred. Please try again.');
+                    throw new Error(data.message);
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+
+                if (data.success) {
+                    // Redirect to OTP verification page
+                    window.location.href = '<?= base_url('verify-otp') ?>';
+                } else {
+                    // Hide masked contact and show input again on error
+                    document.getElementById('maskedContactDisplay').classList.add('hidden');
+                    document.getElementById('contactInputSection').classList.remove('hidden');
+                    setContactError(data.message || 'Failed to send OTP. Please try again.');
                 }
             })
             .catch(error => {
-                setLoadingState(emailForm, false, originalButtonText);
-                setFieldError(emailInput, emailError, 'Unable to connect to server. Please try again.');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+                // Hide masked contact and show input again on error
+                document.getElementById('maskedContactDisplay').classList.add('hidden');
+                document.getElementById('contactInputSection').classList.remove('hidden');
+                setContactError(error.message || 'An error occurred. Please try again.');
             });
         });
 
-        // Back to username button
-        backToUsernameBtn.addEventListener('click', function() {
-            emailForm.classList.add('hidden');
-            usernameForm.classList.remove('hidden');
-            headerDescription.textContent = 'Enter your username to verify your account.';
-            emailInput.value = '';
-            clearFieldError(emailInput, emailError);
-            usernameInput.focus();
-        });
+        }); // End DOMContentLoaded
     </script>
 </body>
 </html>

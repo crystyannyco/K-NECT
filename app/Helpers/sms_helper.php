@@ -1,8 +1,11 @@
 ﻿<?php
+
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 
-define('SMS_ENABLED', true);
+if (!defined('SMS_ENABLED')) {
+    define('SMS_ENABLED', true);
+}
 
 if (!function_exists('format_phone_number')) {
     function format_phone_number($phoneNumber) {
@@ -30,7 +33,7 @@ if (!function_exists('send_sms')) {
         }
         
         $apiKey = '8f9a7412-f462-4db1-bdc7-d1dd29bbd081';
-        $deviceId = '68d1bf3ab8c77d7feb0ac0a4'; // Device ID from TextBee dashboard
+        $deviceId = '68ce78b8d8ae427dcd5f2ebb'; // Device ID from TextBee dashboard
         $url = "https://api.textbee.dev/api/v1/gateway/devices/{$deviceId}/send-sms";
         
         $recipients = is_array($to) ? $to : [$to];

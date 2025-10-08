@@ -820,6 +820,11 @@ class ProfilingController extends BaseController
             return redirect()->to(base_url('profiling'))->with('error', 'User data not found.');
         }
 
+        // Security: Only allow rejected users (status = 3) to access this route
+        if (!isset($user['status']) || (int)$user['status'] !== 3) {
+            return redirect()->to(base_url('login'))->with('error', 'Access denied. This page is only for rejected applications.');
+        }
+
         // Prepare session data for each step
         $profile_data = [
             'first_name' => $user['first_name'],

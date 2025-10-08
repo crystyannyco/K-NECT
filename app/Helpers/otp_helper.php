@@ -179,9 +179,8 @@ if (!function_exists('send_otp_sms')) {
     function send_otp_sms($phoneNumber, $otp) {
         $message = "K-NECT Password Reset\n\n";
         $message .= "Your OTP code is: {$otp}\n\n";
-        $message .= "This code will expire in 5 minutes.\n";
-        $message .= "DO NOT share this code with anyone.\n\n";
-        $message .= "If you did not request this, please ignore this message.";
+        $message .= "This code will expire in 5 minutes. Do not share it with anyone.\n\n";
+        $message .= "If you did not request a password reset, please ignore this message.";
         
         return send_sms($phoneNumber, $message);
     }
@@ -221,5 +220,156 @@ if (!function_exists('send_otp_email')) {
             log_message('error', 'OTP email sending exception: ' . $e->getMessage());
             return false;
         }
+    }
+}
+
+if (!function_exists('send_account_approved_notification')) {
+    /**
+     * Send account approval notification via Email and SMS
+     * 
+     * @param array $user User data array
+     * @param array $address Address data array
+     * @return array ['email' => bool, 'sms' => bool] Success status for each channel
+     */
+    function send_account_approved_notification($user, $address = null) {
+        $result = ['email' => false, 'sms' => false];
+        
+        // Prepare user information
+        $userName = trim($user['first_name'] . ' ' . $user['last_name']);
+        $userId = $user['user_id'] ?? '';
+        $username = $user['username'] ?? '';
+        $email = $user['email'] ?? '';
+        $phoneNumber = $user['phone_number'] ?? '';
+        
+        // All users in approval process are KK Members
+        $accountTypeLabel = 'Katipunan ng Kabataan (KK) Member';
+        
+        // Get barangay name if available
+        $barangayName = '';
+        if ($address && isset($address['barangay'])) {
+            $barangayHelper = new \App\Libraries\BarangayHelper();
+            $barangayName = $barangayHelper->getBarangayName($address['barangay']);
+        }
+        
+        // Send Email Notification
+        try {
+            $emailService = \Config\Services::email();
+            $emailService->setTo($email);
+            $emailService->setSubject('Account Approved - Welcome to K-NECT!');
+            
+            $message = view('emails/account_approved', [
+                'userName' => $userName,
+                'userId' => $userId,
+                'username' => $username,
+                'accountTypeLabel' => $accountTypeLabel,
+                'barangayName' => $barangayName
+            ]);
+            
+            $emailService->setMessage($message);
+            
+            if ($emailService->send()) {
+                $result['email'] = true;
+                log_message('info', "Account approval email sent successfully to {$email}");
+            } else {
+                log_message('error', "Failed to send account approval email to {$email}: " . $emailService->printDebugger(['headers']));
+            }
+        } catch (\Exception $e) {
+            log_message('error', "Account approval email exception for {$email}: " . $e->getMessage());
+        }
+        
+        // Send SMS Notification
+        if (!empty($phoneNumber)) {
+            try {
+                // Use newlines to improve readability on mobile devices
+                $smsMessage = "Congratulations {$userName}!\n";
+                $smsMessage .= "Your account has been APPROVED.\n";
+                $smsMessage .= "User ID: {$userId}\n\n";
+                $smsMessage .= "Login to access K-NECT. Welcome to K-NECT!";
+
+                $smsResult = send_sms($phoneNumber, $smsMessage);
+
+                if ($smsResult && !isset($smsResult['error'])) {
+                    $result['sms'] = true;
+                    log_message('info', "Account approval SMS sent successfully to {$phoneNumber}");
+                } else {
+                    log_message('error', "Failed to send account approval SMS to {$phoneNumber}");
+                }
+            } catch (\Exception $e) {
+                log_message('error', "Account approval SMS exception for {$phoneNumber}: " . $e->getMessage());
+            }
+        }
+        
+        return $result;
+    }
+}
+
+if (!function_exists('send_account_rejected_notification')) {
+    /**
+     * Send account rejection notification via Email and SMS
+     * 
+     * @param array $user User data array
+     * @param string $reason Rejection reason
+     * @return array ['email' => bool, 'sms' => bool] Success status for each channel
+     */
+    function send_account_rejected_notification($user, $reason) {
+        $result = ['email' => false, 'sms' => false];
+        
+        // Prepare user information
+        $userName = trim($user['first_name'] . ' ' . $user['last_name']);
+        $email = $user['email'] ?? '';
+        $phoneNumber = $user['phone_number'] ?? '';
+        $id = $user['id'] ?? ''; // Use database ID, not user_id
+        
+        // All users in approval process are KK Members
+        $accountTypeLabel = 'Katipunan ng Kabataan (KK) Member';
+        
+        // Send Email Notification
+        try {
+            $emailService = \Config\Services::email();
+            $emailService->setTo($email);
+            $emailService->setSubject('Account Registration Update - K-NECT');
+            
+            $message = view('emails/account_rejected', [
+                'userName' => $userName,
+                'accountTypeLabel' => $accountTypeLabel,
+                'reason' => $reason,
+                'id' => $id
+            ]);
+            
+            $emailService->setMessage($message);
+            
+            if ($emailService->send()) {
+                $result['email'] = true;
+                log_message('info', "Account rejection email sent successfully to {$email}");
+            } else {
+                log_message('error', "Failed to send account rejection email to {$email}: " . $emailService->printDebugger(['headers']));
+            }
+        } catch (\Exception $e) {
+            log_message('error', "Account rejection email exception for {$email}: " . $e->getMessage());
+        }
+        
+        // Send SMS Notification
+        if (!empty($phoneNumber)) {
+            try {
+                // Add newlines so the message is easier to read on phones
+                $smsMessage = "Dear {$userName},\n";
+                $smsMessage .= "Your account registration could not be approved.\n";
+                $smsMessage .= "Reason: " . substr($reason, 0, 100) . (strlen($reason) > 100 ? '...' : '') . "\n\n";
+                $smsMessage .= "Please login and profile again your documents. Check your email for full details.";
+
+                $smsResult = send_sms($phoneNumber, $smsMessage);
+
+                if ($smsResult && !isset($smsResult['error'])) {
+                    $result['sms'] = true;
+                    log_message('info', "Account rejection SMS sent successfully to {$phoneNumber}");
+                } else {
+                    log_message('error', "Failed to send account rejection SMS to {$phoneNumber}");
+                }
+            } catch (\Exception $e) {
+                log_message('error', "Account rejection SMS exception for {$phoneNumber}: " . $e->getMessage());
+            }
+        }
+        
+        return $result;
     }
 }

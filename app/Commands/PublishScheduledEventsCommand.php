@@ -133,61 +133,152 @@ class PublishScheduledEventsCommand extends BaseCommand
         $recipients = [];
         $recipientRoles = json_decode($event['sms_recipient_roles'], true) ?? [];
         
-        // Build query based on recipient scope and roles
-        $query = $userModel->select('user.*, barangay.name as barangay_name')
-                          ->join('barangay', 'barangay.barangay_id = user.barangay_id', 'left');
+        // Separate City-Level Officials from Barangay-Level roles
+        $cityLevelRoles = [];
+        $barangayLevelRoles = [];
         
-        // Handle recipient scope for superadmin
-        if ($event['barangay_id'] == 0 && $event['sms_recipient_scope']) {
-            if ($event['sms_recipient_scope'] === 'specific_barangays') {
-                $selectedBarangays = json_decode($event['sms_recipient_barangays'], true) ?? [];
-                if (!empty($selectedBarangays)) {
-                    $query->whereIn('user.barangay_id', $selectedBarangays);
-                }
+        foreach ($recipientRoles as $role) {
+            if (in_array($role, [
+                'all_pederasyon_officials', 
+                'pederasyon_officers',
+                'pederasyon_members',
+                'pederasyon_president', 
+                'pederasyon_vice_president',
+                'pederasyon_secretary', 
+                'pederasyon_treasurer', 
+                'pederasyon_auditor',
+                'pederasyon_pro', 
+                'pederasyon_sergeant'
+            ])) {
+                $cityLevelRoles[] = $role;
+            } else {
+                $barangayLevelRoles[] = $role;
             }
-            // For 'all_barangays', no additional filter needed
-        } else {
-            // For regular events, only include users from the same barangay
-            $query->where('user.barangay_id', $event['barangay_id']);
         }
         
-        // Filter by roles
-        if (!empty($recipientRoles)) {
-            $roleConditions = [];
-            foreach ($recipientRoles as $role) {
+        // 1. Handle City-Level Officials (Pederasyon) - No barangay filtering
+        if (!empty($cityLevelRoles)) {
+            $cityQuery = $userModel->select('user.*, address.barangay as barangay_id, barangay.name as barangay_name')
+                                  ->join('address', 'address.user_id = user.id', 'left')
+                                  ->join('barangay', 'barangay.barangay_id = address.barangay', 'left');
+            
+            $cityRoleConditions = [];
+            foreach ($cityLevelRoles as $role) {
                 switch ($role) {
                     case 'all_pederasyon_officials':
-                        $roleConditions[] = "user.position LIKE '%Pederasyon%'";
+                        $cityRoleConditions[] = "((user.user_type = 3 AND user.ped_position IS NOT NULL) OR (user.user_type = 2 AND user.position = 1))";
                         break;
                     case 'pederasyon_officers':
-                        $roleConditions[] = "(user.position LIKE '%Pederasyon President%' OR user.position LIKE '%Pederasyon Vice President%' OR user.position LIKE '%Pederasyon Secretary%' OR user.position LIKE '%Pederasyon Treasurer%' OR user.position LIKE '%Pederasyon Auditor%' OR user.position LIKE '%Pederasyon Public Information Officer%' OR user.position LIKE '%Pederasyon Sergeant at Arms%')";
+                        $cityRoleConditions[] = "(user.user_type = 3 AND user.ped_position IS NOT NULL)";
                         break;
                     case 'pederasyon_members':
-                        $roleConditions[] = "(user.position LIKE '%Pederasyon%' AND user.position NOT LIKE '%Pederasyon President%' AND user.position NOT LIKE '%Pederasyon Vice President%' AND user.position NOT LIKE '%Pederasyon Secretary%' AND user.position NOT LIKE '%Pederasyon Treasurer%' AND user.position NOT LIKE '%Pederasyon Auditor%' AND user.position NOT LIKE '%Pederasyon Public Information Officer%' AND user.position NOT LIKE '%Pederasyon Sergeant at Arms%')";
+                        $cityRoleConditions[] = "(user.user_type = 2 AND user.position = 1)";
                         break;
-                    case 'all_officials':
-                        $roleConditions[] = "user.position LIKE '%SK%'";
+                    case 'pederasyon_president':
+                        $cityRoleConditions[] = "(user.user_type = 3 AND user.ped_position = 1)";
                         break;
-                    case 'chairperson':
-                        $roleConditions[] = "user.position LIKE '%Chairperson%'";
+                    case 'pederasyon_vice_president':
+                        $cityRoleConditions[] = "(user.user_type = 3 AND user.ped_position = 2)";
                         break;
-                    case 'secretary':
-                        $roleConditions[] = "user.position LIKE '%Secretary%'";
+                    case 'pederasyon_secretary':
+                        $cityRoleConditions[] = "(user.user_type = 3 AND user.ped_position = 3)";
                         break;
-                    case 'treasurer':
-                        $roleConditions[] = "user.position LIKE '%Treasurer%'";
+                    case 'pederasyon_treasurer':
+                        $cityRoleConditions[] = "(user.user_type = 3 AND user.ped_position = 4)";
                         break;
-                    case 'kk_members':
-                        $roleConditions[] = "user.position LIKE '%KK%' OR user.position LIKE '%Katipunan%'";
+                    case 'pederasyon_auditor':
+                        $cityRoleConditions[] = "(user.user_type = 3 AND user.ped_position = 5)";
+                        break;
+                    case 'pederasyon_pro':
+                        $cityRoleConditions[] = "(user.user_type = 3 AND user.ped_position = 6)";
+                        break;
+                    case 'pederasyon_sergeant':
+                        $cityRoleConditions[] = "(user.user_type = 3 AND user.ped_position = 7)";
                         break;
                 }
             }
-            if (!empty($roleConditions)) {
-                $query->where('(' . implode(' OR ', $roleConditions) . ')');
+            
+            if (!empty($cityRoleConditions)) {
+                $cityRoleQuery = '(' . implode(' OR ', $cityRoleConditions) . ')';
+                $cityQuery->where($cityRoleQuery);
+            }
+            
+            $cityQuery->where('user.phone_number IS NOT NULL')
+                      ->where('user.phone_number !=', '')
+                      ->where('user.is_active', 1)
+                      ->where('user.status', 2);
+            
+            $cityResults = $cityQuery->findAll();
+            
+            foreach ($cityResults as $user) {
+                $recipients[$user['id']] = $user;
             }
         }
         
-        return $query->findAll();
+        // 2. Handle Barangay-Level Officials - Apply barangay filtering
+        if (!empty($barangayLevelRoles)) {
+            $barangayQuery = $userModel->select('user.*, address.barangay as barangay_id, barangay.name as barangay_name')
+                                      ->join('address', 'address.user_id = user.id', 'left')
+                                      ->join('barangay', 'barangay.barangay_id = address.barangay', 'left');
+            
+            // Apply barangay filtering for Barangay-Level roles
+            if ($event['barangay_id'] == 0 && isset($event['sms_recipient_scope']) && $event['sms_recipient_scope']) {
+                if ($event['sms_recipient_scope'] === 'specific_barangays') {
+                    $selectedBarangays = json_decode($event['sms_recipient_barangays'], true) ?? [];
+                    if (!empty($selectedBarangays)) {
+                        $barangayQuery->whereIn('address.barangay', $selectedBarangays);
+                    }
+                }
+            } else {
+                $barangayQuery->where('address.barangay', $event['barangay_id']);
+            }
+            
+            $barangayRoleConditions = [];
+            foreach ($barangayLevelRoles as $role) {
+                switch ($role) {
+                    case 'all_sk_officials':
+                    case 'all_officials':
+                        $barangayRoleConditions[] = "(user.user_type = 2 OR user.user_type = 3)";
+                        break;
+                    case 'sk_chairperson':
+                    case 'chairperson':
+                        $barangayRoleConditions[] = "((user.user_type = 2 AND user.position = 1) OR user.user_type = 3)";
+                        break;
+                    case 'sk_secretary':
+                    case 'secretary':
+                        $barangayRoleConditions[] = "(user.user_type = 2 AND user.position = 2)";
+                        break;
+                    case 'sk_treasurer':
+                    case 'treasurer':
+                        $barangayRoleConditions[] = "(user.user_type = 2 AND user.position = 3)";
+                        break;
+                    case 'sk_members':
+                        $barangayRoleConditions[] = "(user.user_type = 2 AND user.position IS NULL)";
+                        break;
+                    case 'kk_members':
+                        $barangayRoleConditions[] = "(user.user_type = 1)";
+                        break;
+                }
+            }
+            
+            if (!empty($barangayRoleConditions)) {
+                $barangayRoleQuery = '(' . implode(' OR ', $barangayRoleConditions) . ')';
+                $barangayQuery->where($barangayRoleQuery);
+            }
+            
+            $barangayQuery->where('user.phone_number IS NOT NULL')
+                          ->where('user.phone_number !=', '')
+                          ->where('user.is_active', 1)
+                          ->where('user.status', 2);
+            
+            $barangayResults = $barangayQuery->findAll();
+            
+            foreach ($barangayResults as $user) {
+                $recipients[$user['id']] = $user;
+            }
+        }
+        
+        return array_values($recipients);
     }
     
     private function formatSmsMessage($event)

@@ -10,13 +10,24 @@
         "slack": "https://codeigniterchat.slack.com"
     },
     "require": {
-        "php": "^8.1",
-        "codeigniter4/framework": "^4.0",
+        "php": "^8.2",
+        "ext-mbstring": "*",
+        "ext-zip": "*",
+        "ext-gd": "*",
+        "ext-intl": "*",
+        "ext-iconv": "*",
+        "ext-json": "*",
+        "ext-dom": "*",
+        "ext-xml": "*",
+        "ext-simplexml": "*",
+        "ext-fileinfo": "*",
+        "ext-openssl": "*",
+        "codeigniter4/framework": "^4.6",
         "dompdf/dompdf": "^3.1",
-        "phpoffice/phpspreadsheet": "^2.1",
+        "phpoffice/phpspreadsheet": "^2.3",
         "phpoffice/phpword": "^1.4",
         "google/apiclient": "^2.18",
-        "guzzlehttp/guzzle": "^7.9"
+        "guzzlehttp/guzzle": "^7.10"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9",
@@ -40,7 +51,10 @@
     "config": {
         "optimize-autoloader": true,
         "preferred-install": "dist",
-        "sort-packages": true
+        "sort-packages": true,
+        "platform": {
+            "php": "8.2.0"
+        }
     },
     "scripts": {
         "test": "phpunit"

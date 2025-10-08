@@ -10,19 +10,53 @@ use App\Libraries\BarangayHelper;
 class UserHelper
 {
     /**
-     * Generate a unique user_id in the format yy-XXXXXX (e.g., 25-123456)
+     * Generate a unique KK user_id in the new format YY-MMDD-NN (e.g., 25-1005-01)
+     *  - YY   : last two digits of the current year
+     *  - MMDD : current month + day
+     *  - NN   : 2-digit sequential number (01-99) for that day
      * Ensures uniqueness against the user.user_id column.
+     * NOTE: Legacy IDs without the second hyphen (YY-MMDDNN) remain untouched.
      */
     public static function generateYearPrefixedUserId(): string
     {
         $userModel = new UserModel();
-        $yy = date('y');
-        do {
-            $suffix = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-            $candidate = $yy . '-' . $suffix;
-            $exists = $userModel->where('user_id', $candidate)->first();
-        } while ($exists);
-        return $candidate;
+
+        $now = new \DateTime('now', new \DateTimeZone('Asia/Manila'));
+        $yy = $now->format('y');
+        $mmdd = $now->format('md');
+        // New prefix includes trailing hyphen to differentiate new pattern
+        $prefix = $yy . '-' . $mmdd . '-';
+
+        $existing = $userModel->select('user_id')
+            ->like('user_id', $prefix, 'after')
+            ->findAll();
+
+        $usedSuffixes = [];
+        foreach ($existing as $row) {
+            $existingId = $row['user_id'] ?? null;
+            if (!$existingId) {
+                continue;
+            }
+
+            // Only consider IDs that match the new pattern YY-MMDD-NN
+            if (preg_match('/^\d{2}-\d{4}-\d{2}$/', $existingId)) {
+                $suffix = substr($existingId, -2); // last two chars
+                if (ctype_digit($suffix)) {
+                    $usedSuffixes[$suffix] = true;
+                }
+            }
+        }
+
+        for ($i = 1; $i <= 99; $i++) {
+            $sequence = str_pad((string) $i, 2, '0', STR_PAD_LEFT);
+            $candidate = $prefix . $sequence; // e.g., 25-1005-01
+
+            if (!isset($usedSuffixes[$sequence])) {
+                return $candidate;
+            }
+        }
+
+        throw new \RuntimeException('Maximum KK IDs reached for today (99).');
     }
 
     public static function generateUnique6DigitId()
@@ -95,7 +129,7 @@ class UserHelper
                 1 => 'Chairperson',
                 2 => 'Secretary',
                 3 => 'Treasurer',
-                4 => 'Member'
+                4 => 'SK Councilor',
             ];
             $positionText = $positions[$user['position']] ?? 'Member';
         } elseif ($userType === 'pederasyon') {
@@ -202,20 +236,11 @@ class UserHelper
         return $username;
     }
     
+    // NOTE: Secretary/Treasurer/Councilor now also use generateSKUsername() so all SK officials share the SK_ prefix.
+    // Legacy generateSecretaryUsername kept if referenced elsewhere, but now simply proxies to generateSKUsername for backward compatibility.
     public static function generateSecretaryUsername($firstName, $lastName)
     {
-        $userModel = new UserModel();
-        $baseUsername = 'SEC_' . ucfirst(str_replace(' ', '', $firstName)) . ucfirst(str_replace(' ', '', $lastName));
-        
-        // Ensure uniqueness
-        $counter = 1;
-        $username = $baseUsername;
-        while ($userModel->where('sk_username', $username)->first()) {
-            $username = $baseUsername . $counter;
-            $counter++;
-        }
-        
-        return $username;
+        return self::generateSKUsername($firstName, $lastName);
     }
     
     public static function generatePEDUsername($firstName, $lastName)

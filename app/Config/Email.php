@@ -6,9 +6,19 @@ use CodeIgniter\Config\BaseConfig;
 
 class Email extends BaseConfig
 {
-    public string $fromEmail  = '';
-    public string $fromName   = '';
+    public string $fromEmail  = 'knect.system@gmail.com';
+    public string $fromName   = 'K-NECT System';
     public string $recipients = '';
+
+    public function __construct()
+    {
+        parent::__construct();
+        
+        // Load SMTP credentials from environment variables
+        $this->SMTPHost = getenv('SMTP_HOST') ?: 'smtp.gmail.com';
+        $this->SMTPUser = getenv('SMTP_USER') ?: '';
+        $this->SMTPPass = getenv('SMTP_PASS') ?: '';
+    }
 
     /**
      * The "user agent"
@@ -18,7 +28,7 @@ class Email extends BaseConfig
     /**
      * The mail sending protocol: mail, sendmail, smtp
      */
-    public string $protocol = 'mail';
+    public string $protocol = 'smtp';
 
     /**
      * The server path to Sendmail.
@@ -28,22 +38,22 @@ class Email extends BaseConfig
     /**
      * SMTP Server Hostname
      */
-    public string $SMTPHost = '';
+    public string $SMTPHost;
 
     /**
      * SMTP Username
      */
-    public string $SMTPUser = '';
+    public string $SMTPUser;
 
     /**
      * SMTP Password
      */
-    public string $SMTPPass = '';
+    public string $SMTPPass;
 
     /**
      * SMTP Port
      */
-    public int $SMTPPort = 25;
+    public int $SMTPPort = 587;
 
     /**
      * SMTP Timeout (in seconds)
@@ -77,7 +87,7 @@ class Email extends BaseConfig
     /**
      * Type of mail, either 'text' or 'html'
      */
-    public string $mailType = 'text';
+    public string $mailType = 'html';
 
     /**
      * Character set (utf-8, iso-8859-1, etc.)

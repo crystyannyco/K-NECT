@@ -1,37 +1,24 @@
-<?php
+﻿<?php
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 
-define('SMS_ENABLED', false); // Set to true to enable, false to disable
+define('SMS_ENABLED', true);
 
-if (!function_exists('check_sms_delivery_status')) {
-    function check_sms_delivery_status($messageId) {
-        $baseUrl = 'https://rp9mm1.api.infobip.com';
-        $apiKey = '714c7c24647c5a373276e7793fa104ad-f176a2b1-080f-486a-8509-ec713a96a284';
-        $client = new Client([
-            'base_uri' => $baseUrl,
-            'headers' => [
-                'Authorization' => 'App ' . $apiKey,
-                'Content-Type' => 'application/json',
-                'Accept' => 'application/json',
-            ]
-        ]);
-        try {
-            $response = $client->get('/sms/2/reports', [
-                'query' => [
-                    'messageId' => $messageId
-                ]
-            ]);
-            $result = $response->getBody()->getContents();
-            log_message('debug', 'Infobip delivery report for messageId ' . $messageId . ': ' . $result);
-            return $result;
-        } catch (RequestException $e) {
-            log_message('error', 'Infobip delivery report error for messageId ' . $messageId . ': ' . $e->getMessage());
-            if ($e->hasResponse()) {
-                log_message('error', 'Infobip delivery report response: ' . $e->getResponse()->getBody()->getContents());
-            }
-            return false;
+if (!function_exists('format_phone_number')) {
+    function format_phone_number($phoneNumber) {
+        $phone = preg_replace('/[^0-9]/', '', $phoneNumber);
+        
+        if (strlen($phone) === 11 && substr($phone, 0, 1) === '0') {
+            return '+63' . substr($phone, 1);
+        } elseif (strlen($phone) === 10 && substr($phone, 0, 1) === '9') {
+            return '+63' . $phone;
+        } elseif (strlen($phone) === 12 && substr($phone, 0, 2) === '63') {
+            return '+' . $phone;
+        } elseif (strlen($phone) === 13 && substr($phone, 0, 3) === '+63') {
+            return $phone;
         }
+        
+        return $phoneNumber;
     }
 }
 
@@ -41,35 +28,89 @@ if (!function_exists('send_sms')) {
             log_message('debug', 'SMS sending is currently disabled.');
             return false;
         }
-        // Accept $to as array or comma-separated string
-        if (is_array($to)) {
-            $to = implode(',', $to);
-        }
-        $apiToken = '541cca40527b1e22517c725738925deff2b4c69a';
-        $url = 'https://sms.iprogtech.com/api/v1/sms_messages/send_bulk';
-        $client = new Client();
-        $body = [
-            'api_token' => $apiToken,
-            'phone_number' => $to,
-            'message' => $message
-        ];
-        try {
-            $response = $client->post($url, [
-                'form_params' => $body,
-                'headers' => [
-                    'Content-Type' => 'application/x-www-form-urlencoded',
-                    'Accept' => 'application/json',
-                ]
-            ]);
-            $result = $response->getBody()->getContents();
-            log_message('debug', 'IPROG SMS API response: ' . $result);
-            return $result;
-        } catch (RequestException $e) {
-            log_message('error', 'IPROG SMS API error: ' . $e->getMessage());
-            if ($e->hasResponse()) {
-                log_message('error', 'IPROG SMS API response: ' . $e->getResponse()->getBody()->getContents());
+        
+        $apiKey = '8f9a7412-f462-4db1-bdc7-d1dd29bbd081';
+        $deviceId = '68d1bf3ab8c77d7feb0ac0a4'; // Device ID from TextBee dashboard
+        $url = "https://api.textbee.dev/api/v1/gateway/devices/{$deviceId}/send-sms";
+        
+        $recipients = is_array($to) ? $to : [$to];
+        $results = [];
+        
+        foreach ($recipients as $phoneNumber) {
+            $formattedPhone = format_phone_number($phoneNumber);
+            
+            $payload = [
+                'recipients' => [$formattedPhone],
+                'message' => $message,
+                'simulateDelivery' => false,
+                'prioritize' => false
+            ];
+            
+            try {
+                $client = new Client();
+                $response = $client->post($url, [
+                    'headers' => [
+                        'x-api-key' => $apiKey,
+                        'Content-Type' => 'application/json',
+                        'Accept' => 'application/json'
+                    ],
+                    'json' => $payload,
+                    'timeout' => 30,
+                    'verify' => false
+                ]);
+                
+                $result = json_decode($response->getBody()->getContents(), true);
+                $results[$formattedPhone] = $result;
+                
+                log_message('info', "TextBee SMS sent to {$formattedPhone}: " . json_encode($result));
+                log_sms_to_database($formattedPhone, $message, 'sent', json_encode($result), null);
+                
+            } catch (RequestException $e) {
+                $errorMessage = $e->getMessage();
+                $results[$formattedPhone] = ['error' => $errorMessage];
+                
+                log_message('error', "TextBee SMS error for {$formattedPhone}: " . $errorMessage);
+                
+                if ($e->hasResponse()) {
+                    $errorResponse = $e->getResponse()->getBody()->getContents();
+                    log_message('error', "TextBee SMS error response: " . $errorResponse);
+                    $results[$formattedPhone]['response'] = $errorResponse;
+                }
+                
+                log_sms_to_database($formattedPhone, $message, 'failed', $errorMessage, null);
             }
+        }
+        
+        return count($recipients) === 1 ? $results[array_key_first($results)] : $results;
+    }
+}
+
+if (!function_exists('log_sms_to_database')) {
+    function log_sms_to_database($phoneNumber, $message, $status, $response = null, $eventId = null) {
+        try {
+            $db = \Config\Database::connect();
+            
+            if (!$db->tableExists('sms_logs')) {
+                log_message('warning', 'SMS logs table does not exist. SMS will not be logged to database.');
+                return false;
+            }
+            
+            $data = [
+                'phone_number' => $phoneNumber,
+                'message' => $message,
+                'status' => $status,
+                'response' => $response,
+                'event_id' => $eventId,
+                'sent_at' => date('Y-m-d H:i:s'),
+                'created_by' => session('user_id') ?? null
+            ];
+            
+            $db->table('sms_logs')->insert($data);
+            return true;
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Failed to log SMS to database: ' . $e->getMessage());
             return false;
         }
     }
-} 
+}

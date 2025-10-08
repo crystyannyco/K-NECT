@@ -56,8 +56,45 @@ class ProfilingController extends BaseController
         return $destName;
     }
 
+    /**
+     * Remove temporary upload files older than the provided age (defaults to 1 hour).
+     */
+    private function cleanupOldTempFiles(int $maxAgeSeconds = 3600): void
+    {
+        $directories = [
+            FCPATH . 'uploads/certificate',
+            FCPATH . 'uploads/id',
+            FCPATH . 'uploads/profile_pictures',
+        ];
+
+        $cutoff = time() - $maxAgeSeconds;
+
+        foreach ($directories as $dir) {
+            if (!is_dir($dir)) {
+                continue;
+            }
+
+            $pattern = rtrim($dir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'tmp_*';
+            $files = glob($pattern) ?: [];
+
+            foreach ($files as $file) {
+                if (!is_file($file)) {
+                    continue;
+                }
+
+                $modified = @filemtime($file);
+                if ($modified === false || $modified <= $cutoff) {
+                    $this->removeTempFile($file);
+                }
+            }
+        }
+    }
+
     public function profiling()
     {
+        // Clean up any stale temporary uploads from previous attempts
+        $this->cleanupOldTempFiles(3600);
+
         $userModel = new UserModel();
         $users = $userModel->findAll();
 
@@ -119,6 +156,13 @@ class ProfilingController extends BaseController
     public function profilingStep1()
     {
         $step = session('profiling_step') ?? 1;
+        $acceptedInitialTerms = $this->request->getPost('accept_terms');
+        if ($acceptedInitialTerms) {
+            $accountData = session('account_data') ?? [];
+            $accountData['agreement'] = 1;
+            session()->set('account_data', $accountData);
+            session()->set('profiling_terms_ack', true);
+        }
         if ($step == 1) {
             session()->set('profiling_step', 2);
             return redirect()->to(base_url('profiling'));
@@ -179,19 +223,28 @@ class ProfilingController extends BaseController
             $age = $today->diff($bdate)->y;
             $months = $today->diff($bdate)->m;
             $days = $today->diff($bdate)->d;
+            
+            // Check if user will turn 15 within 1 month
             $isTurning15Soon = ($age === 14 && $months === 11 && $days >= 0) || ($age === 14 && $months === 10 && $days > 0);
+            
             if ($age < 15 && !$isTurning15Soon) {
                 session()->set('profiling_step', 2);
-                session()->set('profile_data', $userData + $genderData + ['region' => 'Region V', 'province' => 'Camarines Sur', 'municipality' => 'Iriga City', 'barangay' => $addressData['barangay'], 'zone_purok' => $addressData['zone_purok'], 'age_group' => $ageGroup]);
-                return redirect()->back()->withInput()->with('validation_user', $userModel->validation)
+                session()->set('profile_data', $userData + ['region' => 'Region V', 'province' => 'Camarines Sur', 'municipality' => 'Iriga City', 'barangay' => $addressData['barangay'], 'zone_purok' => $addressData['zone_purok'], 'age_group' => $ageGroup]);
+                $postData = $this->request->getPost();
+                session()->setFlashdata('_ci_old_input', $postData);
+                return redirect()->back()->with('validation_user', $userModel->validation)
                     ->with('age_error', 'Only users who are at least 15 years old (or turning 15 within 1 month) are allowed.');
             }
+            
             if ($age > 30) {
                 session()->set('profiling_step', 2);
-                session()->set('profile_data', $userData + $genderData + ['region' => 'Region V', 'province' => 'Camarines Sur', 'municipality' => 'Iriga City', 'barangay' => $addressData['barangay'], 'zone_purok' => $addressData['zone_purok'], 'age_group' => $ageGroup]);
-                return redirect()->back()->withInput()->with('validation_user', $userModel->validation)
+                session()->set('profile_data', $userData + ['region' => 'Region V', 'province' => 'Camarines Sur', 'municipality' => 'Iriga City', 'barangay' => $addressData['barangay'], 'zone_purok' => $addressData['zone_purok'], 'age_group' => $ageGroup]);
+                $postData = $this->request->getPost();
+                session()->setFlashdata('_ci_old_input', $postData);
+                return redirect()->back()->with('validation_user', $userModel->validation)
                     ->with('age_error', 'Only users aged between 15 to 30 years old are allowed.');
             }
+            
             // Calculate age group
             if ($age >= 15 && $age <= 17) {
                 $ageGroup = '1';
@@ -199,6 +252,14 @@ class ProfilingController extends BaseController
                 $ageGroup = '2';
             } elseif ($age >= 25 && $age <= 30) {
                 $ageGroup = '3';
+            } else {
+                // For users turning 15 soon, assign to group 1
+                if ($isTurning15Soon) {
+                    $ageGroup = '1';
+                } else {
+                    // This shouldn't happen due to validation above, but just in case
+                    $ageGroup = '4';
+                }
             }
         }
 
@@ -206,7 +267,9 @@ class ProfilingController extends BaseController
             session()->set('profiling_step', 2);
             session()->set('profile_data', $userData + ['region' => 'Region V', 'province' => 'Camarines Sur', 'municipality' => 'Iriga City', 'barangay' => $addressData['barangay'], 'zone_purok' => $addressData['zone_purok'], 'age_group' => $ageGroup]);
             
-            return redirect()->back()->withInput()
+            $postData = $this->request->getPost();
+            session()->setFlashdata('_ci_old_input', $postData);
+            return redirect()->back()
                 ->with('validation_user', $userModel->validation)
                 ->with('validation_address', $addressModel->validation);
         }
@@ -242,7 +305,7 @@ class ProfilingController extends BaseController
     // Handle file uploads with validation
         $birthCertFile = $this->request->getFile('birth_certificate');
     $uploadIdFile = $this->request->getFile('upload_id');
-    $uploadIdBackFile = $this->request->getFile('upload_id_back');
+    $uploadIdBackFile = $this->request->getFile('upload_id-back');
         $certificatePath = FCPATH . 'uploads/certificate/';
         $idPath = FCPATH . 'uploads/id/';
         // Ensure directories exist
@@ -325,9 +388,9 @@ class ProfilingController extends BaseController
             $fileName = $uploadIdBackFile->getClientName();
             $fileSize = round($uploadIdBackFile->getSize() / (1024 * 1024), 2); // Size in MB
             if (!in_array($uploadIdBackFile->getMimeType(), $allowedTypes)) {
-                $fileErrors['upload_id_back'] = "Invalid file type for '{$fileName}'. Allowed formats: JPG, PNG, GIF, WEBP, PDF.";
+                $fileErrors['upload_id-back'] = "Invalid file type for '{$fileName}'. Allowed formats: JPG, PNG, GIF, WEBP, PDF.";
             } elseif ($uploadIdBackFile->getSize() > $maxSize) {
-                $fileErrors['upload_id_back'] = "Valid ID (Back) file '{$fileName}' is too large ({$fileSize} MB). Maximum allowed size is 5MB.";
+                $fileErrors['upload_id-back'] = "Valid ID (Back) file '{$fileName}' is too large ({$fileSize} MB). Maximum allowed size is 5MB.";
             } else {
                 $newName = 'tmp_idback_' . (method_exists(session(), 'getId') ? session()->getId() : session_id()) . '_' . uniqid() . '.' . $uploadIdBackFile->getExtension();
                 $uploadIdBackFile->move($idPath, $newName);
@@ -342,7 +405,7 @@ class ProfilingController extends BaseController
             // Check if a file was attempted to be uploaded but failed
             if ($uploadIdBackFile && $uploadIdBackFile->getError() !== UPLOAD_ERR_NO_FILE) {
                 $fileName = $uploadIdBackFile->getClientName() ?: 'Unknown file';
-                $fileErrors['upload_id_back'] = "Failed to upload Valid ID (Back) '{$fileName}'. Please try again.";
+                $fileErrors['upload_id-back'] = "Failed to upload Valid ID (Back) '{$fileName}'. Please try again.";
             }
             $prevBack = session('demographic_data')['upload_id-back'] ?? '';
             if (!empty($prevBack)) {
@@ -355,7 +418,11 @@ class ProfilingController extends BaseController
     if (!empty($fileErrors) || !$userExtInfoModel->validate($demo)) {
             session()->set('profiling_step', 3);
             session()->set('demographic_data', $demo);
-            return redirect()->back()->withInput()
+            $postData = $this->request->getPost();
+            // Remove file uploads from post data before storing in session (they can't be serialized)
+            unset($postData['birth_certificate'], $postData['upload_id'], $postData['upload_id-back']);
+            session()->setFlashdata('_ci_old_input', $postData);
+            return redirect()->back()
                 ->with('validation', $userExtInfoModel->validation)
                 ->with('file_errors', $fileErrors);
         }
@@ -371,7 +438,11 @@ class ProfilingController extends BaseController
     if (!empty($fileErrors)) {
             session()->set('profiling_step', 3);
             session()->set('demographic_data', $demo);
-            return redirect()->back()->withInput()
+            $postData = $this->request->getPost();
+            // Remove file uploads from post data before storing in session (they can't be serialized)
+            unset($postData['birth_certificate'], $postData['upload_id'], $postData['upload_id-back']);
+            session()->setFlashdata('_ci_old_input', $postData);
+            return redirect()->back()
                 ->with('file_errors', $fileErrors);
         }
 
@@ -383,10 +454,14 @@ class ProfilingController extends BaseController
 
     public function profilingStep3()
     {
+        $existingAccount = session('account_data') ?? [];
+        $agreement = !empty($existingAccount['agreement']) || session('profiling_terms_ack') ? 1 : 0;
+
         $account = [
             'username' => $this->request->getPost('username'),
             'password' => $this->request->getPost('password'),
             'confirm_password' => $this->request->getPost('confirm_password'),
+            'agreement' => $agreement,
         ];
         $userModel = new UserModel();
         $validation = \Config\Services::validation();
@@ -484,12 +559,16 @@ class ProfilingController extends BaseController
             $account['profile_picture'] = $profile_picture;
             session()->set('account_data', $account);
             // Pass errors as array for the view
-            return redirect()->back()->withInput()
+            $postData = $this->request->getPost();
+            // Remove file uploads from post data before storing in session (they can't be serialized)
+            unset($postData['profile_picture']);
+            session()->setFlashdata('_ci_old_input', $postData);
+            return redirect()->back()
                 ->with('validation_account_errors', $validation->getErrors())
                 ->with('file_errors', ['profile_picture' => $fileError]);
         }
         // Save profile_picture to account_data in session
-        $account['profile_picture'] = $profile_picture;
+    $account['profile_picture'] = $profile_picture;
         session()->set('account_data', $account);
         session()->set('profiling_step', 5);
         return redirect()->to(base_url('profiling'));
@@ -501,7 +580,7 @@ class ProfilingController extends BaseController
         $profile = session('profile_data') ?? [];
         session()->set('profiling_step', 2);
         session()->set('profile_data', $profile);
-        return redirect()->to(base_url('profiling'))->withInput();
+        return redirect()->to(base_url('profiling'));
     }
 
     public function backToStep3()
@@ -511,25 +590,27 @@ class ProfilingController extends BaseController
         session()->set('profiling_step', 3);
         session()->set('demographic_data', $demo);
         
-        return redirect()->to(base_url('profiling'))->withInput();
+        return redirect()->to(base_url('profiling'));
     }
 
     public function backToStep4()
     {
         // Retain account data (including profile picture) when going back to step 4
-        $account = session('account_data') ?? [
+        $account = session('account_data') ?? [];
+        $account = array_merge([
             'username' => '',
             'password' => '',
             'confirm_password' => '',
-            'profile_picture' => ''
-        ];
+            'profile_picture' => '',
+            'agreement' => session('profiling_terms_ack') ? 1 : 0,
+        ], $account);
         $demo = session('demographic_data') ?? [];
         
         session()->set('profiling_step', 4);
         session()->set('account_data', $account);
         session()->set('demographic_data', $demo);
         
-        return redirect()->to(base_url('profiling'))->withInput();
+        return redirect()->to(base_url('profiling'));
     }
 
     public function profilingSubmit()
@@ -619,6 +700,8 @@ class ProfilingController extends BaseController
                 'upload_id' => $demographic['upload_id'] ?? '',
                 'upload_id-back' => $demographic['upload_id-back'] ?? '',
                 'profile_picture' => $account['profile_picture'] ?? '',
+                'agreement' => $account['agreement'] ?? 0,
+                'agreement' => $account['agreement'] ?? 0,
             ];
             $extInfoExists = $userExtInfoModel->where('user_id', $reuploadUserId)->first();
             if ($extInfoExists) {
@@ -635,6 +718,8 @@ class ProfilingController extends BaseController
             session()->remove('account_data');
             session()->remove('reupload_user_id');
             session()->remove('profiling_temp_files');
+            session()->remove('profiling_terms_ack');
+            session()->remove('profiling_terms_ack');
             
             // Show success on profiling page with auto-redirect
             session()->set('profiling_success', 'reupload');
@@ -718,7 +803,7 @@ class ProfilingController extends BaseController
         ];
         session()->set('demographic_data', $demo);
         session()->set('profiling_step', 1);
-        return redirect()->to(base_url('profiling'))->withInput();
+        return redirect()->to(base_url('profiling'));
     }
 
     public function reuploadById($userId)
@@ -775,6 +860,7 @@ class ProfilingController extends BaseController
             'password' => '',
             'confirm_password' => '',
             'profile_picture' => $ext['profile_picture'] ?? '',
+            'agreement' => isset($ext['agreement']) ? (int) $ext['agreement'] : 1,
         ];
 
         // Status will be set to 1 (pending) only after completing the profiling process
@@ -782,7 +868,9 @@ class ProfilingController extends BaseController
         session()->set('profile_data', $profile_data);
         session()->set('demographic_data', $demographic_data);
         session()->set('account_data', $account_data);
-        session()->set('profiling_step', 1);
+        // Returning users have already acknowledged the terms, allow them to resume at step 2
+        session()->set('profiling_terms_ack', true);
+        session()->set('profiling_step', 2);
         session()->set('reupload_user_id', $userId);
         
         return redirect()->to(base_url('profiling'));
@@ -809,11 +897,48 @@ class ProfilingController extends BaseController
         session()->remove('account_data');
         session()->remove('reupload_user_id');
         session()->remove('profiling_success');
+        session()->remove('profiling_terms_ack');
 
         // Optionally communicate fresh start to the client
         if ($this->request->isAJAX()) {
             return $this->response->setJSON(['status' => 'ok']);
         }
         return redirect()->to(base_url('profiling?fresh=1'));
+    }
+
+    /**
+     * Abort the current profiling session, cleaning up temporary files when the wizard ends prematurely.
+     */
+    public function abortProfiling()
+    {
+        if (session('profiling_success')) {
+            return $this->response->setJSON(['status' => 'skipped']);
+        }
+
+        $deleted = 0;
+        $tmpFiles = session('profiling_temp_files') ?? [];
+        if (is_array($tmpFiles)) {
+            foreach ($tmpFiles as $file) {
+                if (is_string($file) && is_file($file) && str_starts_with(basename($file), 'tmp_')) {
+                    if (@unlink($file)) {
+                        $deleted++;
+                    }
+                }
+            }
+        }
+
+        session()->remove('profiling_temp_files');
+        session()->remove('profile_data');
+        session()->remove('demographic_data');
+        session()->remove('account_data');
+        session()->remove('profiling_step');
+        session()->remove('reupload_user_id');
+        session()->remove('reupload_rejected');
+        session()->remove('profiling_terms_ack');
+
+        return $this->response->setJSON([
+            'status' => 'aborted',
+            'deleted' => $deleted,
+        ]);
     }
 }

@@ -25,7 +25,7 @@
             <!-- Content Section -->
             <div class="p-8">
                 <!-- Error Message -->
-                <?php if (!empty($errorMsg)): ?>
+                <?php if (!empty($errorMsg) || session()->getFlashdata('error')): ?>
                     <div class="mb-6 bg-red-50 border-l-4 border-red-400 rounded-lg shadow-sm animate-fade-in">
                         <div class="flex items-center p-4">
                             <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center mr-3">
@@ -34,7 +34,7 @@
                                 </svg>
                             </div>
                             <div class="flex-1">
-                                <p class="text-red-800 font-medium"><?= esc($errorMsg) ?></p>
+                                <p class="text-red-800 font-medium"><?= esc($errorMsg ?: session()->getFlashdata('error')) ?></p>
                             </div>
                             <button onclick="this.parentElement.parentElement.parentElement.remove()" class="text-red-400 hover:text-red-600 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -86,30 +86,35 @@
                         
                         <!-- Left Column -->
                         <div class="space-y-6">
-                            <!-- Filename (Read-only) -->
+                            <!-- Filename (Editable) -->
                             <div class="space-y-3">
                                 <label class="block text-sm font-semibold text-gray-700 flex items-center gap-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
-                                    Filename
+                                    Filename <span class="text-red-500">*</span>
                                 </label>
                                 <div class="relative">
                                     <input type="text" 
+                                           name="filename"
+                                           id="filename"
+                                           required
                                            value="<?= esc($doc['filename']) ?>" 
-                                           class="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-600 cursor-not-allowed shadow-sm" 
-                                           readonly />
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all duration-200 text-gray-900 placeholder-gray-400 shadow-sm hover:shadow-md" 
+                                           placeholder="Enter document filename"
+                                           maxlength="255" />
                                     <div class="absolute right-3 top-3">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                         </svg>
                                     </div>
                                 </div>
+                                <p id="filenameError" class="mt-2 text-sm text-red-600 hidden"></p>
                                 <p class="text-xs text-gray-500 flex items-center gap-1">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
-                                    Filename cannot be changed after upload
+                                    Provide a descriptive filename for easy identification
                                 </p>
                             </div>
 

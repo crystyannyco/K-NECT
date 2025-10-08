@@ -15,10 +15,19 @@ $routes->get('healthz', static function () {
 
 // ==================== PUBLIC ROUTES ==================== //
 
+// ------------- Cron Job Routes (Public but secured with token) ------------- //
+$routes->match(['GET', 'POST'], 'cron/publish-events', 'CronController::publishScheduledEvents');
+$routes->get('cron/health', 'CronController::health');
+$routes->get('cron/debug-events', 'CronController::debugEvents');
+
 // ------------- Public Landing & Authentication Routes ------------- //
 // Public landing page (always accessible). Authenticated users get redirected to their dashboard inside controller.
 $routes->get('/', 'PublicController::index');
 $routes->get('K-NECT', 'PublicController::index'); // Public website accessible to all users
+$routes->get('news/(:num)', 'NewsController::show/$1');
+$routes->get('api/top-barangays', 'PublicController::topBarangaysData');
+$routes->get('api/top-barangays/(:num)', 'PublicController::topBarangaysData/$1');
+$routes->get('event/(:num)', 'PublicController::event/$1');
 
 // Guest-only routes (login etc.)
 $routes->group('', ['filter' => 'guest'], function ($routes) {
@@ -26,10 +35,17 @@ $routes->group('', ['filter' => 'guest'], function ($routes) {
 });
 $routes->post('loginProcess', 'AuthController::loginProcess');
 $routes->post('logout', 'AuthController::logout');
-// Also allow GET logout for safety (server will still enforce credential gating)
+// Also allow GET logout for safety
 $routes->get('logout', 'AuthController::logout');
 $routes->get('change-password', 'AuthController::changePassword');
 $routes->post('change-password-process', 'AuthController::changePasswordProcess');
+
+// ---------------- Forgot Password Routes ------------------ //
+$routes->get('forgot-password', 'AuthController::forgotPassword');
+$routes->post('verify-username', 'AuthController::verifyUsername');
+$routes->post('send-reset-email', 'AuthController::sendResetEmail');
+$routes->get('reset-password', 'AuthController::resetPassword');
+$routes->post('process-reset-password', 'AuthController::processResetPassword');
 
 // ---------------- Profiling Routes ------------------ //
 $routes->get('profiling', 'ProfilingController::profiling');
@@ -75,7 +91,8 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
 
     // ================= USER TYPE: SK ================= //
     // Module: SK
-    $routes->get('sk/dashboard', 'AnalyticsController::skDashboard');
+    // Updated: Route SK dashboard to the new bulletin overview in SKController
+    $routes->get('sk/dashboard', 'SKController::dashboard');
     $routes->get('sk/profile', 'SKController::profile');
     $routes->get('sk/member', 'SKController::member');
     $routes->get('sk/settings', 'SKController::settings');
@@ -122,10 +139,23 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('sk/account-settings/password', 'SKController::updatePassword');
     $routes->get('sk/account-settings/check-email', 'SKController::checkEmail');
     $routes->get('sk/user-management', 'SKController::userManagement');
+    // SK Credentials
+    $routes->get('sk/credentials-data', 'SKController::getCredentialsData');
+    $routes->post('sk/generate-credentials', 'SKController::generateCredentials');
+    $routes->post('sk/generate-credentials-pdf', 'SKController::generateCredentialsPDF');
+    $routes->post('sk/generate-credentials-word', 'SKController::generateCredentialsWord');
+    $routes->post('sk/generate-credentials-excel', 'SKController::generateCredentialsExcel');
 
     // ================= USER TYPE: Pederasyon ================= //
     // Module: Pederasyon
-    $routes->get('pederasyon/dashboard', 'AnalyticsController::pederasyonDashboard');
+    // Federation dashboard now uses Pederasyon overview UI
+    $routes->get('pederasyon/dashboard', 'PederasyonController::dashboard');
+    // Separate analytics route
+    $routes->get('pederasyon/analytics', 'AnalyticsController::pederasyonDashboard');
+    // Backward compatibility: redirect legacy overview URL if accessed
+    $routes->get('pederasyon/overview', function() {
+        return redirect()->to('pederasyon/dashboard');
+    });
     $routes->get('pederasyon/profile', 'PederasyonController::profile');
     $routes->get('pederasyon/member', 'PederasyonController::member');
     $routes->get('pederasyon/youthlist', 'PederasyonController::youthlist');
@@ -164,9 +194,6 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('pederasyon/generate-credentials-pdf', 'PederasyonController::generateCredentialsPDF');
     $routes->post('pederasyon/generate-credentials-word', 'PederasyonController::generateCredentialsWord');
     $routes->post('pederasyon/generate-credentials-excel', 'PederasyonController::generateCredentialsExcel');
-    // Credential download gating endpoints
-    $routes->get('pederasyon/credential-download-status', 'PederasyonController::credentialDownloadStatus');
-    $routes->post('pederasyon/mark-credential-downloaded', 'PederasyonController::markCredentialDownloaded');
 
     // ============== Module: Member Management ============== //
     $routes->post('getUserInfo', 'MemberController::getUserInfo');
@@ -228,6 +255,12 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->get('city-events', 'EventController::cityEvents');
     // Removed manual publish testing route
     $routes->post('events/bulk_delete', 'EventController::bulkDelete');
+
+    // ============== Module: SMS Testing & Dashboard (Admin + Super Admin) ============== //
+    $routes->get('sms-test', 'SMSTestController::index');
+    $routes->post('sms-test/send', 'SMSTestController::sendTest');
+    $routes->get('sms-test/recipients', 'SMSTestController::testRecipients');
+    $routes->get('sms-test/logs', 'SMSTestController::getSMSLogs');
 
     // ============== Module: Google Calendar ============== //
     $routes->get('google-calendar/connect', 'GoogleCalendarController::connect');

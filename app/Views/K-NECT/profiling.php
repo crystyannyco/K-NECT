@@ -54,6 +54,39 @@
             }
         }
     </script>
+    <script>
+        // Abort profiling cleanup: send beacon if user leaves before completing.
+        (function(){
+            const PROFILING_SUCCESS_FLAG = 'profiling_completed';
+            // If server indicates success step, mark completed to prevent deletion.
+            const stepSuccess = <?= isset($step) && (int)$step === 6 ? 'true' : 'false' ?>;
+            if (stepSuccess) {
+                sessionStorage.setItem(PROFILING_SUCCESS_FLAG, '1');
+            }
+            function sendAbort(){
+                if (sessionStorage.getItem(PROFILING_SUCCESS_FLAG) === '1') return; // already done
+                // Use sendBeacon for reliability on page unload
+                const url = '<?= base_url('profiling/abort') ?>';
+                try {
+                    const data = new Blob([JSON.stringify({abort:1})], {type:'application/json'});
+                    if (navigator.sendBeacon) {
+                        navigator.sendBeacon(url, data);
+                    } else {
+                        // Fallback fetch keepalive
+                        fetch(url, {method:'POST',body: data, headers:{'Content-Type':'application/json'}, keepalive:true});
+                    }
+                } catch(e) { /* ignore */ }
+            }
+            window.addEventListener('beforeunload', sendAbort);
+            // In case of SPA-like navigation triggers within page forms we don't abort.
+            document.addEventListener('profiling:completed', () => {
+                sessionStorage.setItem(PROFILING_SUCCESS_FLAG,'1');
+            });
+        })();
+    </script>
+    <script>
+        window.__profilingServerAccepted = <?= !empty($account_data['agreement']) ? 'true' : 'false' ?>;
+    </script>
     <style>
         .step-transition {
             transition: all 0.3s ease-in-out;
@@ -129,6 +162,15 @@
         .toast-notification.warning {
             background: #f59e0b;
         }
+        /* Close button styles for toast notifications */
+        .toast-notification button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        .toast-notification button:focus {
+            outline: 2px solid rgba(255, 255, 255, 0.3);
+            outline-offset: 1px;
+        }
         .btn-secondary {
             transition: all 0.2s ease-in-out;
         }
@@ -175,11 +217,6 @@
                 line-height: 1.5;
             }
             
-            /* Better touch targets */
-            button, select, input {
-                min-height: 44px;
-            }
-            
             /* Prevent horizontal scroll */
             * {
                 box-sizing: border-box;
@@ -211,6 +248,8 @@
             position: relative;
             display: inline-block;
             width: 100%;
+            height: 130px; /* fixed height for consistent layout */
+            min-height: 130px;
         }
         
         .file-upload-input {
@@ -226,14 +265,42 @@
             align-items: center;
             justify-content: center;
             width: 100%;
+            height: 100%; /* fill the fixed container height */
             padding: 12px 16px;
             border: 2px dashed #d1d5db;
             border-radius: 8px;
             background-color: #f9fafb;
             transition: all 0.2s ease-in-out;
             cursor: pointer;
-            min-height: 60px;
             overflow: hidden; /* hide overflow from long filenames */
+        }
+        
+        .file-remove-button {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: transparent;
+            color: #4b5563; /* gray-600 */
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 10;
+            transition: transform 0.12s ease-in-out, box-shadow 0.12s ease-in-out, color 0.12s ease-in-out;
+        }
+
+        .file-remove-button:hover {
+            color: #374151; /* gray-700 */
+            transform: scale(1.05);
+        }
+
+        .file-remove-button:active {
+            transform: scale(0.98);
         }
         
         .file-upload-button:hover {
@@ -439,6 +506,13 @@
     </style>
 </head>
 <body class="min-h-screen font-sans">
+<?php if (isset($step) && (int)$step === 6): ?>
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+    document.dispatchEvent(new Event('profiling:completed'));
+});
+</script>
+<?php endif; ?>
     <!-- Main Container -->
     <div class="w-full max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 xl:px-12">
         <div class=" rounded-lg sm:rounded-2xl lg:rounded-3xl mt-2 sm:mt-4 md:mt-6 lg:mt-8 overflow-hidden animate-fade-in">
@@ -466,7 +540,9 @@
                 <?php endif; ?>
 
                 <div class="text-center flex flex-col items-center">
-                    <img src="<?= base_url('/assets/images/K-Nect-Logo.png') ?>" alt="K-NECT Logo" class="w-48 sm:w-56 mx-auto" />
+                    <a href="<?= base_url('/K-NECT') ?>">
+                        <img src="<?= base_url('/assets/images/K-Nect-Logo.png') ?>" alt="K-NECT Logo" class="w-48 sm:w-56 mx-auto" />
+                    </a>
                 </div>
 
                 <?php if ($hasIrigaLogo): ?>
@@ -796,20 +872,21 @@
                 </div>
                 
                 <!-- Call to Action -->
-                <div class="text-center pt-4">
-                    <div class="bg-blue-600 rounded-lg p-6 shadow-md">
-                        <div class="text-center space-y-4">
-                            <h3 class="text-xl font-bold text-white">Ready to Get Started?</h3>
-                            <p class="text-blue-100 text-sm max-w-md mx-auto">
+                <div class="text-center pt-4 px-4 sm:px-0">
+                    <div class="bg-blue-600 rounded-lg p-4 sm:p-6 shadow-md">
+                        <div class="text-center space-y-3 sm:space-y-4">
+                            <h3 class="text-lg sm:text-xl font-bold text-white">Ready to Get Started?</h3>
+                            <p class="text-blue-100 text-xs sm:text-sm max-w-md mx-auto px-2 sm:px-0">
                                 Join thousands of Iriga City youth who have already registered. Your voice matters in shaping our community's future.
                             </p>
-                            <form action="<?= base_url('profiling/step1') ?>" method="post" class="max-w-sm mx-auto" id="qualificationForm">
+                            <form action="<?= base_url('profiling/step1') ?>" method="post" class="max-w-sm mx-auto px-2 sm:px-0" id="qualificationForm" novalidate>
                                 <!-- Terms and Conditions Checkbox -->
-                                <div class="mb-4 text-left">
-                                    <label class="flex items-start space-x-3 cursor-pointer p-3 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
-                                        <input type="checkbox" id="terms-checkbox" name="accept_terms" value="1" required 
-                                               class="mt-1 w-4 h-4 text-blue-600 bg-white border-2 border-white rounded focus:ring-blue-500 focus:ring-2 cursor-pointer">
-                                        <div class="text-white text-sm leading-relaxed">
+                                <div class="mb-3 sm:mb-4 text-left">
+                                    <label class="flex items-start space-x-2 sm:space-x-3 cursor-pointer p-2 sm:p-3 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
+                         <input type="checkbox" id="terms-checkbox" name="accept_terms" value="1" 
+                             class="mt-1 w-3 h-3 sm:w-4 sm:h-4 text-blue-600 bg-white border-2 border-white rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
+                             <?= !empty($account_data['agreement']) ? 'checked' : '' ?> data-server-accepted="<?= !empty($account_data['agreement']) ? '1' : '0' ?>">
+                                        <div class="text-white text-xs sm:text-sm leading-relaxed">
                                             <span>I have read and agree to the </span>
                                             <button type="button" id="show-terms-btn" class="text-blue-200 underline hover:text-white font-medium">Terms and Conditions</button>
                                             <span> and </span>
@@ -819,20 +896,20 @@
                                     </label>
                                 </div>
                                 
-                                <button type="submit" id="continue-btn" disabled 
-                                        class="w-full bg-white text-blue-600 font-semibold py-3 px-6 rounded-lg shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none enabled:hover:bg-blue-50 enabled:hover:shadow-lg enabled:transform enabled:hover:scale-105">
-                                    <span class="flex items-center justify-center space-x-2">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <button type="submit" id="continue-btn" 
+                                        class="w-full bg-white text-blue-600 font-semibold py-2 sm:py-3 px-4 sm:px-6 rounded-lg shadow-md transition-all duration-200 opacity-50 cursor-pointer text-sm sm:text-base">
+                                    <span class="flex items-center justify-center space-x-1 sm:space-x-2">
+                                        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                         </svg>
                                         <span>I Qualify, Let's Continue!</span>
                                     </span>
                                 </button>
-                                <p class="text-blue-100 text-xs mt-3 opacity-75 flex items-center justify-center space-x-1">
+                                <p class="text-blue-100 text-xs mt-2 sm:mt-3 opacity-75 flex items-center justify-center space-x-1 px-2 sm:px-0">
                                     <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                     </svg>
-                                    <span>Registration takes about 5-10 minutes to complete</span>
+                                    <span class="text-center">Registration takes about 5-10 minutes to complete</span>
                                 </p>
                             </form>
                         </div>
@@ -845,7 +922,7 @@
                         <svg class="w-3 h-3 sm:w-4 sm:h-4 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
-                        <span class="text-center">Need help? Contact your local Sangguniang Kabataan office</span>
+                        <span class="text-center">Need help? Contact SK Pederasyon in Iriga City: <a href="https://www.facebook.com/skpedirigacity" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Facebook</a></span>
                     </div>
                 </div>
             </div>
@@ -873,19 +950,6 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
                             <div class="space-y-1 sm:space-y-2">
                                 <label class="block text-xs sm:text-sm font-medium text-slate-700">
-                                    Last Name <span class="text-red-500">*</span>
-                                </label>
-                                <input type="text" name="last_name" placeholder="Dela Cruz"
-                                    value="<?= old('last_name') !== null ? old('last_name') : (isset($profile_data['last_name']) ? esc($profile_data['last_name']) : '') ?>"
-                                    class="form-field w-full p-3 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= session('validation_user') && session('validation_user')->hasError('last_name') ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base"
-                                    data-required="true">
-                                <?php if (session('validation_user') && session('validation_user')->hasError('last_name')): ?>
-                                    <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('validation_user')->getError('last_name') ?></p>
-                                <?php endif; ?>
-                            </div>
-                            
-                            <div class="space-y-1 sm:space-y-2">
-                                <label class="block text-xs sm:text-sm font-medium text-slate-700">
                                     First Name <span class="text-red-500">*</span>
                                 </label>
                                 <input type="text" name="first_name" placeholder="Juan"
@@ -904,6 +968,19 @@
                                 <input type="text" name="middle_name" placeholder="Santos"
                                     value="<?= old('middle_name') !== null ? old('middle_name') : (isset($profile_data['middle_name']) ? esc($profile_data['middle_name']) : '') ?>"
                                     class="form-field w-full p-3 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent border-slate-200 transition-all duration-200 text-sm sm:text-base">
+                            </div>
+                            
+                            <div class="space-y-1 sm:space-y-2">
+                                <label class="block text-xs sm:text-sm font-medium text-slate-700">
+                                    Last Name <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" name="last_name" placeholder="Dela Cruz"
+                                    value="<?= old('last_name') !== null ? old('last_name') : (isset($profile_data['last_name']) ? esc($profile_data['last_name']) : '') ?>"
+                                    class="form-field w-full p-3 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= session('validation_user') && session('validation_user')->hasError('last_name') ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base"
+                                    data-required="true">
+                                <?php if (session('validation_user') && session('validation_user')->hasError('last_name')): ?>
+                                    <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('validation_user')->getError('last_name') ?></p>
+                                <?php endif; ?>
                             </div>
                             
                             <div class="space-y-1 sm:space-y-2">
@@ -1013,9 +1090,12 @@
                                 <label class="block text-xs sm:text-sm font-medium text-slate-700">
                                     Zone/Purok <span class="text-red-500">*</span>
                                 </label>
-                                <input type="number" name="zone_purok" placeholder="Zone/Purok" data-required="true"
+                                <input type="number" name="zone_purok" placeholder="Zone/Purok" data-required="true" maxlength="4" max="9999"
                                     value="<?= old('zone_purok') !== null ? old('zone_purok') : (isset($profile_data['zone_purok']) ? esc($profile_data['zone_purok']) : '') ?>"
-                                    class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= session('validation_address') && session('validation_address')->hasError('zone_purok') ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base">
+                                    class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= session('validation_address') && session('validation_address')->hasError('zone_purok') ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base"
+                                    oninput="if(this.value.length > 4) this.value = this.value.slice(0, 4);"
+                                    onkeydown="if(this.value.length >= 4 && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(event.key)) event.preventDefault();"
+                                >
                                 <?php if (session('validation_address') && session('validation_address')->hasError('zone_purok')): ?>
                                     <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('validation_address')->getError('zone_purok') ?></p>
                                 <?php endif; ?>
@@ -1085,15 +1165,52 @@
                                 
                                 <!-- Date of Birth -->
                                 <div class="space-y-1 sm:space-y-2">
-                                    <label class="block text-xs sm:text-sm font-medium text-slate-700 mb-3">
-                                        Date of Birth <span class="text-red-500">*</span>
-                                    </label>
+                                    <div class="flex items-start justify-between mb-3">
+                                        <label class="block text-xs sm:text-sm font-medium text-slate-700">
+                                            Date of Birth <span class="text-red-500">*</span>
+                                        </label>
+                                        <!-- Info tooltip at top: appears on hover -->
+                                        <div class="relative group ml-3">
+                                            <button type="button" class="text-slate-400 hover:text-slate-700 p-1 focus:outline-none" aria-describedby="birthdate_note" aria-label="Date of birth help">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                    <path fill-rule="evenodd" d="M18 10A8 8 0 11 2 10a8 8 0 0116 0zm-8-4a1 1 0 10-0 2 1 1 0 000-2zm1 8a1 1 0 10-2 0v-4a1 1 0 112 0v4z" clip-rule="evenodd" />
+                                                </svg>
+                                            </button>
+                                            <div id="birthdate_note" role="tooltip" class="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute right-0 top-full mt-2 w-72 bg-white border border-slate-200 text-xs text-slate-700 p-3 rounded shadow-lg z-50 hidden sm:block">
+                                                Note: Some years, months, and dates are disabled because only individuals who are at least 15 years old (or turning 15 within one month) and not older than 30 years old are eligible, in accordance with <u>DILG Memorandum Circular No. 2022-324.</u>
+                                            </div>
+                                        </div>
+                                    </div>
                                     <div class="grid grid-cols-3 gap-2 sm:gap-3">
+                                         <!-- Year -->
+                                        <div>
+                                            <label class="block text-xs text-slate-500 mb-1">Year</label>
+                        <select name="birth_year" data-required="true" aria-describedby="birthdate_note"
+                            class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?php if ((session('validation_user') && session('validation_user')->hasError('birthdate')) || session('age_error')) { echo 'border-red-400 bg-red-50'; } else { echo 'border-slate-200'; } ?> transition-all duration-200 text-xs sm:text-sm">
+                                                <option value="">Year</option>
+                                                <?php 
+                                                $current_year = '';
+                                                if (old('birth_year')) {
+                                                    $current_year = old('birth_year');
+                                                } elseif (isset($profile_data['birthdate']) && $profile_data['birthdate']) {
+                                                    $current_year = date('Y', strtotime($profile_data['birthdate']));
+                                                }
+                                                $current_year_num = date('Y');
+                                                // Only show years that can possibly produce an age within 15..30 (inclusive)
+                                                // earliest allowed year = current_year - 30
+                                                // latest allowed year = current_year - 15 (people turning 15 within 1 month handled in JS)
+                                                $start_year = $current_year_num - 30;
+                                                $end_year = $current_year_num - 15;
+                                                for ($year = $end_year; $year >= $start_year; $year--): ?>
+                                                    <option value="<?= $year ?>" <?= $current_year == $year ? 'selected' : '' ?>><?= $year ?></option>
+                                                <?php endfor; ?>
+                                            </select>
+                                        </div>
                                         <!-- Month -->
                                         <div>
                                             <label class="block text-xs text-slate-500 mb-1">Month</label>
-                                            <select name="birth_month" data-required="true" 
-                                                    class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?php if ((session('validation_user') && session('validation_user')->hasError('birthdate')) || session('age_error')) { echo 'border-red-400 bg-red-50'; } else { echo 'border-slate-200'; } ?> transition-all duration-200 text-xs sm:text-sm">
+                        <select name="birth_month" data-required="true" aria-describedby="birthdate_note"
+                            class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?php if ((session('validation_user') && session('validation_user')->hasError('birthdate')) || session('age_error')) { echo 'border-red-400 bg-red-50'; } else { echo 'border-slate-200'; } ?> transition-all duration-200 text-xs sm:text-sm">
                                                 <option value="">Month</option>
                                                 <?php 
                                                 $months = [
@@ -1115,8 +1232,8 @@
                                         <!-- Day -->
                                         <div>
                                             <label class="block text-xs text-slate-500 mb-1">Day</label>
-                                            <select name="birth_day" data-required="true" 
-                                                    class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?php if ((session('validation_user') && session('validation_user')->hasError('birthdate')) || session('age_error')) { echo 'border-red-400 bg-red-50'; } else { echo 'border-slate-200'; } ?> transition-all duration-200 text-xs sm:text-sm">
+                        <select name="birth_day" data-required="true" aria-describedby="birthdate_note"
+                            class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?php if ((session('validation_user') && session('validation_user')->hasError('birthdate')) || session('age_error')) { echo 'border-red-400 bg-red-50'; } else { echo 'border-slate-200'; } ?> transition-all duration-200 text-xs sm:text-sm">
                                                 <option value="">Day</option>
                                                 <?php 
                                                 $current_day = '';
@@ -1132,30 +1249,15 @@
                                                 <?php endfor; ?>
                                             </select>
                                         </div>
-                                        <!-- Year -->
-                                        <div>
-                                            <label class="block text-xs text-slate-500 mb-1">Year</label>
-                                            <select name="birth_year" data-required="true" 
-                                                    class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?php if ((session('validation_user') && session('validation_user')->hasError('birthdate')) || session('age_error')) { echo 'border-red-400 bg-red-50'; } else { echo 'border-slate-200'; } ?> transition-all duration-200 text-xs sm:text-sm">
-                                                <option value="">Year</option>
-                                                <?php 
-                                                $current_year = '';
-                                                if (old('birth_year')) {
-                                                    $current_year = old('birth_year');
-                                                } elseif (isset($profile_data['birthdate']) && $profile_data['birthdate']) {
-                                                    $current_year = date('Y', strtotime($profile_data['birthdate']));
-                                                }
-                                                $start_year = date('Y') - 50; // 50 years ago
-                                                $end_year = date('Y') - 15; // 15 years ago (minimum age)
-                                                for ($year = $end_year; $year >= $start_year; $year--): ?>
-                                                    <option value="<?= $year ?>" <?= $current_year == $year ? 'selected' : '' ?>><?= $year ?></option>
-                                                <?php endfor; ?>
-                                            </select>
-                                        </div>
                                     </div>
                                     <!-- Hidden input for combined birthdate -->
                                     <input type="hidden" name="birthdate" id="birthdate_hidden" 
                                            value="<?= old('birthdate') !== null ? old('birthdate') : (isset($profile_data['birthdate']) ? esc($profile_data['birthdate']) : '') ?>">
+                                    <div id="birthdate_row" class="mt-2 flex items-center justify-between">
+                                        <span id="birthdate_helper" class="text-xs text-slate-600"></span>
+                                        <span id="birthdate_age" class="ml-3 text-xs font-medium text-blue-700"></span>
+                                    </div>
+                                    <!-- note is now a hover tooltip at the top -->
                                     <?php if (session('validation_user') && session('validation_user')->hasError('birthdate')): ?>
                                         <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('validation_user')->getError('birthdate') ?></p>
                                     <?php endif; ?>
@@ -1208,7 +1310,7 @@
                     </div>
 
                     <!-- Form Actions -->
-                    <div class="flex flex-col sm:flex-row justify-between items-center pt-4 sm:pt-6 space-y-3 sm:space-y-0">
+                    <div class="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center pt-0 sm:pt-2 gap-3 sm:gap-0">
                         <button type="submit" formaction="<?= base_url('profiling/backToStep1') ?>" formmethod="post" formnovalidate 
                             class="btn-secondary bg-slate-300 text-slate-700 text-sm sm:text-base font-semibold py-2 sm:py-3 px-4 sm:px-6 rounded-lg sm:rounded-xl hover:bg-slate-400 transition-all duration-200 flex items-center space-x-2 w-full sm:w-auto justify-center">
                             <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1519,22 +1621,50 @@
                             $birth_cert_file = old('birth_certificate') ?? ($demographic_data['birth_certificate'] ?? ''); 
                             $has_birth_cert_error = session('file_errors') && isset(session('file_errors')['birth_certificate']);
                             $upload_id_file = old('upload_id') ?? ($demographic_data['upload_id'] ?? ''); 
-                            $upload_id_back_file = old('upload_id_back') ?? ($demographic_data['upload_id-back'] ?? '');
+                            $upload_id_back_file = old('upload_id-back') ?? ($demographic_data['upload_id-back'] ?? '');
                             $has_upload_id_error = session('file_errors') && isset(session('file_errors')['upload_id']);
-                            $has_upload_id_back_error = session('file_errors') && isset(session('file_errors')['upload_id_back']);
+                            $has_upload_id_back_error = session('file_errors') && isset(session('file_errors')['upload_id-back']);
+                            
+                            // Helper function to get user-friendly filename
+                            function getUserFriendlyFilename($filename, $type) {
+                                if (empty($filename)) return '';
+                                
+                                $extension = pathinfo($filename, PATHINFO_EXTENSION);
+                                $extension = $extension ? '.' . $extension : '';
+                                
+                                switch($type) {
+                                    case 'birth_certificate':
+                                        return 'Birth Certificate' . $extension;
+                                    case 'upload_id':
+                                        return 'Valid ID (Front)' . $extension;
+                                    case 'upload_id_back':
+                                        return 'Valid ID (Back)' . $extension;
+                                    case 'profile_picture':
+                                        return 'Profile Picture' . $extension;
+                                    default:
+                                        return 'Uploaded File' . $extension;
+                                }
+                            }
                             ?>
                             
                             <!-- Birth Certificate -->
                             <div class="space-y-1 sm:space-y-2">
-                                <label class="block text-xs sm:text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+                                <label class="block text-xs sm:text-sm font-medium text-slate-700 flex items-center gap-2">
                                     Birth Certificate <span class="text-red-500">*</span>
                                     <button type="button" id="showSampleBirthCertBtn" class="text-green-600 underline text-xs hover:text-green-800 transition-colors">Sample</button>
                                 </label>
                                 
-                                <div class="file-upload-container" data-has-existing-file="<?= ($birth_cert_file && !$has_birth_cert_error) ? 'true' : 'false' ?>">
+                                <div class="file-upload-container" data-has-existing-file="<?= ($birth_cert_file) ? 'true' : 'false' ?>">
                                     <input type="file" name="birth_certificate" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" 
                                            class="file-upload-input" id="birth_certificate_input" 
                                            <?= (!$birth_cert_file || $has_birth_cert_error) ? 'data-required="true"' : '' ?>>
+                                    
+                                    <?php if ($birth_cert_file): ?>
+                                    <button type="button" class="file-remove-button" onclick="removeFile('birth_certificate')" title="Remove file">
+                                        ×
+                                    </button>
+                                    <?php endif; ?>
+                                    
                                     <div class="file-upload-button <?= $birth_cert_file && !$has_birth_cert_error ? 'has-file' : '' ?> <?= $has_birth_cert_error ? 'error' : '' ?>" 
                                          id="birth_certificate_button">
                                         <div class="file-upload-text">
@@ -1544,13 +1674,14 @@
                                             <span class="text-xs font-medium text-gray-700" id="birth_certificate_text">
                                                 <?php if ($birth_cert_file && !$has_birth_cert_error): ?>
                                                     <strong>File uploaded:</strong><br>
-                                                    <span class="text-green-600 file-upload-filename" title="<?= esc($birth_cert_file) ?>"><?= esc($birth_cert_file) ?></span><br>
+                                                    <span class="text-green-600 file-upload-filename" title="<?= (isset($birth_cert_file) && strpos($birth_cert_file, 'tmp_') !== 0) ? esc($birth_cert_file) : '' ?>"><?= esc(getUserFriendlyFilename($birth_cert_file, 'birth_certificate')) ?></span><br>
                                                     <span class="text-xs text-blue-500">Click to replace</span>
                                                 <?php elseif ($has_birth_cert_error): ?>
                                                     <strong>File needs to be re-uploaded</strong><br>
                                                     <span class="text-red-500">Previous file had errors</span>
                                                 <?php else: ?>
-                                                    Click to upload or drag and drop
+                                                    Click to upload Birth Certificate<br>
+                                                    <span class="text-xs text-gray-500">JPG, PNG, PDF up to 5MB</span>
                                                 <?php endif; ?>
                                             </span>
                                         </div>
@@ -1567,38 +1698,47 @@
                             <!-- Valid ID -->
                             <div class="space-y-1 sm:space-y-2">
                                 <label class="block text-xs sm:text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
-                                    Valid ID (Front and Back)
+                                    <span class="inline">Valid ID (Front <span class="text-red-500">*</span> and Back)</span>
                                     <button type="button" id="showSampleValidIdBtn" class="text-blue-600 underline text-xs hover:text-blue-800 transition-colors">Sample</button>
                                 </label>
                                 
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                                     <!-- Front -->
                                     <div class="space-y-1 sm:space-y-2">
-                                        <label class="block text-xs text-slate-500 mb-1">Front Side <span class="text-red-500">*</span></label>
-                                        <div class="file-upload-container" data-has-existing-file="<?= ($upload_id_file && !$has_upload_id_error) ? 'true' : 'false' ?>">
+                                        <div class="file-upload-container" data-has-existing-file="<?= ($upload_id_file) ? 'true' : 'false' ?>">
                                             <input type="file" name="upload_id" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" 
                                                    class="file-upload-input" id="upload_id_input" 
                                                    <?= (!$upload_id_file || $has_upload_id_error) ? 'data-required="true"' : '' ?>>
+                                            
+                                            <?php if ($upload_id_file): ?>
+                                            <button type="button" class="file-remove-button" onclick="removeFile('upload_id')" title="Remove file">
+                                                ×
+                                            </button>
+                                            <?php endif; ?>
+                                            
                                             <div class="file-upload-button <?= $upload_id_file && !$has_upload_id_error ? 'has-file' : '' ?> <?= $has_upload_id_error ? 'error' : '' ?>" 
                                                  id="upload_id_button">
                                                 <div class="file-upload-text">
-                                                    <svg class="w-6 h-6 text-gray-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                                    <svg class="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path>
                                                     </svg>
                                                     <span class="text-xs font-medium text-gray-700" id="upload_id_text">
                                                         <?php if ($upload_id_file && !$has_upload_id_error): ?>
-                                                            <strong>Uploaded:</strong><br>
-                                                            <span class="text-green-600 file-upload-filename" title="<?= esc($upload_id_file) ?>"><?= esc($upload_id_file) ?></span>
+                                                            <strong>ID Uploaded:</strong><br>
+                                                            <span class="text-green-600 file-upload-filename" title="<?= (isset($upload_id_file) && strpos($upload_id_file, 'tmp_') !== 0) ? esc($upload_id_file) : '' ?>"><?= esc(getUserFriendlyFilename($upload_id_file, 'upload_id')) ?></span><br>
+                                                            <span class="text-xs text-blue-500">Click to replace</span>
                                                         <?php elseif ($has_upload_id_error): ?>
                                                             <strong>Re-upload needed</strong><br>
                                                             <span class="text-red-500">File had errors</span>
                                                         <?php else: ?>
-                                                            Click to upload
+                                                            <span class="inline">Click to upload Valid ID (Front) <span class="text-red-500">*</span></span><br>
+                                                            <span class="text-xs text-gray-500">JPG, PNG, PDF up to 5MB</span>
                                                         <?php endif; ?>
                                                     </span>
                                                 </div>
                                             </div>
                                         </div>
+                                        
                                         <?php if ($has_upload_id_error): ?>
                                             <div class="validation-message error show" style="color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem; padding: 0.5rem; background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 0.375rem;">
                                                 <?= session('file_errors')['upload_id'] ?>
@@ -1608,33 +1748,42 @@
                                     
                                     <!-- Back (Optional) -->
                                     <div class="space-y-1 sm:space-y-2">
-                                        <label class="block text-xs text-slate-500 mb-1">Back Side <span class="text-slate-400">(Optional)</span></label>
-                                        <div class="file-upload-container" data-has-existing-file="<?= ($upload_id_back_file && !$has_upload_id_back_error) ? 'true' : 'false' ?>">
-                                            <input type="file" name="upload_id_back" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" 
+                                        <div class="file-upload-container" data-has-existing-file="<?= ($upload_id_back_file) ? 'true' : 'false' ?>">
+                                            <input type="file" name="upload_id-back" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" 
                                                    class="file-upload-input" id="upload_id_back_input">
+                                            
+                                            <?php if ($upload_id_back_file): ?>
+                                            <button type="button" class="file-remove-button" onclick="removeFile('upload_id_back')" title="Remove file">
+                                                ×
+                                            </button>
+                                            <?php endif; ?>
+                                            
                                             <div class="file-upload-button <?= $upload_id_back_file && !$has_upload_id_back_error ? 'has-file' : '' ?> <?= $has_upload_id_back_error ? 'error' : '' ?>" 
                                                  id="upload_id_back_button">
                                                 <div class="file-upload-text">
-                                                    <svg class="w-6 h-6 text-gray-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                                    <svg class="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path>
                                                     </svg>
                                                     <span class="text-xs font-medium text-gray-700" id="upload_id_back_text">
                                                         <?php if ($upload_id_back_file && !$has_upload_id_back_error): ?>
-                                                            <strong>Uploaded:</strong><br>
-                                                            <span class="text-green-600 file-upload-filename" title="<?= esc($upload_id_back_file) ?>"><?= esc($upload_id_back_file) ?></span>
+                                                            <strong>ID Back Uploaded:</strong><br>
+                                                            <span class="text-green-600 file-upload-filename" title="<?= (isset($upload_id_back_file) && strpos($upload_id_back_file, 'tmp_') !== 0) ? esc($upload_id_back_file) : '' ?>"><?= esc(getUserFriendlyFilename($upload_id_back_file, 'upload_id_back')) ?></span><br>
+                                                            <span class="text-xs text-blue-500">Click to replace</span>
                                                         <?php elseif ($has_upload_id_back_error): ?>
                                                             <strong>Re-upload needed</strong><br>
                                                             <span class="text-red-500">File had errors</span>
                                                         <?php else: ?>
-                                                            Click to upload
+                                                            Click to upload Valid ID (Back)<br>
+                                                            <span class="text-xs text-gray-500">JPG, PNG, PDF up to 5MB</span>
                                                         <?php endif; ?>
                                                     </span>
                                                 </div>
                                             </div>
                                         </div>
+                                        
                                         <?php if ($has_upload_id_back_error): ?>
                                             <div class="validation-message error show" style="color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem; padding: 0.5rem; background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 0.375rem;">
-                                                <?= session('file_errors')['upload_id_back'] ?>
+                                                <?= session('file_errors')['upload_id-back'] ?>
                                             </div>
                                         <?php endif; ?>
                                     </div>
@@ -1643,7 +1792,7 @@
                         </div>
                     </div>
                     <!-- Form Actions -->
-                    <div class="flex flex-col sm:flex-row justify-between items-center pt-4 sm:pt-6 space-y-3 sm:space-y-0">
+                    <div class="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center pt-0 sm:pt-2 gap-3 sm:gap-0">
                         <button type="submit" formaction="<?= base_url('profiling/backToStep2') ?>" formmethod="post" formnovalidate class="btn-secondary bg-slate-300 text-slate-700 text-sm sm:text-base font-semibold py-2 sm:py-3 px-4 sm:px-6 rounded-lg sm:rounded-xl hover:bg-slate-400 transition-all duration-200 flex items-center space-x-2 w-full sm:w-auto justify-center">
                             <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"></path>
@@ -1701,9 +1850,22 @@
                                 <label class="block text-xs sm:text-sm font-medium text-slate-700">
                                     Password <span class="text-red-500">*</span>
                                 </label>
-                                <input type="password" id="password" name="password" placeholder="Enter your password" data-required="true" 
-                                    value="<?= old('password') !== null ? old('password') : (isset($account_data['password']) ? esc($account_data['password']) : '') ?>" 
-                                    class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= isset($validationAccountErrors['password']) ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base">
+                                <div class="relative">
+                                    <input type="password" id="password" name="password" placeholder="Enter your password" data-required="true" 
+                                        value="<?= old('password') !== null ? old('password') : (isset($account_data['password']) ? esc($account_data['password']) : '') ?>" 
+                                        class="form-field w-full pr-10 p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= isset($validationAccountErrors['password']) ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base">
+                                    <button type="button" class="absolute inset-y-0 right-0 px-3 flex items-center text-slate-500 hover:text-slate-700 focus:outline-none" aria-label="Toggle password visibility" data-toggle-password data-target="#password">
+                                        <svg data-icon="show" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                                            <path d="M2 12c2.5-4 6.5-7 10-7s7.5 3 10 7c-2.5 4-6.5 7-10 7s-7.5-3-10-7z"/>
+                                            <circle cx="12" cy="12" r="2.5"/>
+                                        </svg>
+                                        <svg data-icon="hide" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                                            <path d="M2 12c2.5-4 6.5-7 10-7s7.5 3 10 7c-2.5 4-6.5 7-10 7s-7.5-3-10-7z"/>
+                                            <circle cx="12" cy="12" r="2.5"/>
+                                            <path d="M4 4c5 5 11 11 16 16"/>
+                                        </svg>
+                                    </button>
+                                </div>
                                 <?php if (isset($validationAccountErrors['password'])): ?>
                                     <p class="error-message text-red-500 text-xs sm:text-sm"><?= $validationAccountErrors['password'] ?></p>
                                 <?php endif; ?>
@@ -1749,13 +1911,105 @@
                                 <label class="block text-xs sm:text-sm font-medium text-slate-700">
                                     Confirm Password <span class="text-red-500">*</span>
                                 </label>
-                                <input type="password" name="confirm_password" placeholder="Confirm your password" data-required="true" 
-                                    value="<?= old('confirm_password') !== null ? old('confirm_password') : (isset($account_data['confirm_password']) ? esc($account_data['confirm_password']) : '') ?>" 
-                                    class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= isset($validationAccountErrors['confirm_password']) ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base">
+                                <div class="relative">
+                                    <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm your password" data-required="true" 
+                                        value="<?= old('confirm_password') !== null ? old('confirm_password') : (isset($account_data['confirm_password']) ? esc($account_data['confirm_password']) : '') ?>" 
+                                        class="form-field w-full pr-10 p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= isset($validationAccountErrors['confirm_password']) ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base">
+                                    <button type="button" class="absolute inset-y-0 right-0 px-3 flex items-center text-slate-500 hover:text-slate-700 focus:outline-none" aria-label="Toggle confirm password visibility" data-toggle-password data-target="#confirm_password">
+                                        <svg data-icon="show" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                                            <path d="M2 12c2.5-4 6.5-7 10-7s7.5 3 10 7c-2.5 4-6.5 7-10 7s-7.5-3-10-7z"/>
+                                            <circle cx="12" cy="12" r="2.5"/>
+                                        </svg>
+                                        <svg data-icon="hide" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                                            <path d="M2 12c2.5-4 6.5-7 10-7s7.5 3 10 7c-2.5 4-6.5 7-10 7s-7.5-3-10-7z"/>
+                                            <circle cx="12" cy="12" r="2.5"/>
+                                            <path d="M4 4c5 5 11 11 16 16"/>
+                                        </svg>
+                                    </button>
+                                </div>
                                 <?php if (isset($validationAccountErrors['confirm_password'])): ?>
                                     <p class="error-message text-red-500 text-xs sm:text-sm"><?= $validationAccountErrors['confirm_password'] ?></p>
                                 <?php endif; ?>
+                                
+                                <!-- Password Match Indicator -->
+                                <div id="password-match" class="mt-2 hidden">
+                                    <div class="flex items-center">
+                                        <span id="match-text" class="text-xs font-medium text-red-500">Passwords do not match</span>
+                                    </div>
+                                </div>
                             </div>
+                                                        <script>
+                                                            // Password visibility toggles (profiling form)
+                                                            (() => {
+                                                                const handler = (btn) => {
+                                                                    const targetSel = btn.getAttribute('data-target');
+                                                                    if (!targetSel) return;
+                                                                    const input = document.querySelector(targetSel);
+                                                                    if (!input) return;
+                                                                    const showIcon = btn.querySelector('[data-icon="show"]');
+                                                                    const hideIcon = btn.querySelector('[data-icon="hide"]');
+                                                                    const isPassword = input.type === 'password';
+                                                                    input.type = isPassword ? 'text' : 'password';
+                                                                    if (showIcon && hideIcon) {
+                                                                        if (isPassword) { showIcon.classList.add('hidden'); hideIcon.classList.remove('hidden'); }
+                                                                        else { hideIcon.classList.add('hidden'); showIcon.classList.remove('hidden'); }
+                                                                    }
+                                                                };
+                                                                document.addEventListener('click', (e) => {
+                                                                    const btn = e.target.closest('[data-toggle-password]');
+                                                                    if (!btn) return;
+                                                                    handler(btn);
+                                                                });
+                                                            })();
+                                                            
+                                                            // Real-time password matching validation
+                                                            (() => {
+                                                                const passwordInput = document.getElementById('password');
+                                                                const confirmPasswordInput = document.getElementById('confirm_password');
+                                                                const matchIndicator = document.getElementById('password-match');
+                                                                const matchText = document.getElementById('match-text');
+                                                                
+                                                                function checkPasswordMatch() {
+                                                                    const password = passwordInput.value;
+                                                                    const confirmPassword = confirmPasswordInput.value;
+                                                                    
+                                                                    // Only show indicator if confirm password has content
+                                                                    if (confirmPassword.length === 0) {
+                                                                        matchIndicator.classList.add('hidden');
+                                                                        confirmPasswordInput.classList.remove('border-red-400', 'bg-red-50', 'border-green-400', 'bg-green-50');
+                                                                        confirmPasswordInput.classList.add('border-slate-200');
+                                                                        return;
+                                                                    }
+                                                                    
+                                                                    matchIndicator.classList.remove('hidden');
+
+                                                                    if (password === confirmPassword && password.length > 0) {
+                                                                        // Passwords match
+                                                                        matchText.textContent = 'Passwords match';
+                                                                        matchText.className = 'text-xs font-medium text-green-500';
+
+                                                                        // Update input styling
+                                                                        confirmPasswordInput.classList.remove('border-red-400', 'bg-red-50', 'border-slate-200');
+                                                                        confirmPasswordInput.classList.add('border-green-400', 'bg-green-50');
+                                                                    } else {
+                                                                        // Passwords don't match
+                                                                        matchText.textContent = 'Passwords do not match';
+                                                                        matchText.className = 'text-xs font-medium text-red-500';
+
+                                                                        // Update input styling
+                                                                        confirmPasswordInput.classList.remove('border-green-400', 'bg-green-50', 'border-slate-200');
+                                                                        confirmPasswordInput.classList.add('border-red-400', 'bg-red-50');
+                                                                    }
+                                                                }
+                                                                
+                                                                // Add event listeners
+                                                                if (passwordInput && confirmPasswordInput) {
+                                                                    confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+                                                                    confirmPasswordInput.addEventListener('keyup', checkPasswordMatch);
+                                                                    passwordInput.addEventListener('input', checkPasswordMatch);
+                                                                }
+                                                            })();
+                                                        </script>
                         </div>
                     </div>
                     <!-- Profile Picture Section -->
@@ -1770,7 +2024,7 @@
                         </h3>
                         
                         <div class="space-y-1 sm:space-y-2">
-                            <label class="block text-xs sm:text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+                            <label class="block text-xs sm:text-sm font-medium text-slate-700 flex items-center gap-2">
                                 1x1 Profile Picture (White Background) <span class="text-red-500">*</span>
                                 <button type="button" id="showSamplePicBtn" class="text-blue-600 underline text-xs hover:text-blue-800 transition-colors">Sample</button>
                             </label>
@@ -1780,20 +2034,27 @@
                             $has_profile_pic_error = isset(session('file_errors')['profile_picture']) && session('file_errors')['profile_picture'];
                             ?>
                             
-                            <div class="file-upload-container" data-has-existing-file="<?= ($profile_picture_file && !$has_profile_pic_error) ? 'true' : 'false' ?>">
+                            <div class="file-upload-container" data-has-existing-file="<?= ($profile_picture_file) ? 'true' : 'false' ?>">
                                 <input type="file" name="profile_picture" accept=".jpg,.jpeg,.png,.webp" 
                                        class="file-upload-input" id="profile_picture_input" 
                                        <?= (!$profile_picture_file || $has_profile_pic_error) ? 'data-required="true"' : '' ?>>
+                                
+                                <?php if ($profile_picture_file): ?>
+                                <button type="button" class="file-remove-button" onclick="removeFile('profile_picture')" title="Remove file">
+                                    ×
+                                </button>
+                                <?php endif; ?>
+                                
                                 <div class="file-upload-button <?= $profile_picture_file && !$has_profile_pic_error ? 'has-file' : '' ?> <?= $has_profile_pic_error ? 'error' : '' ?>" 
                                      id="profile_picture_button">
                                     <div class="file-upload-text">
                                         <svg class="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                         </svg>
-                                        <span class="text-sm font-medium text-gray-700" id="profile_picture_text">
+                                        <span class="text-xs font-medium text-gray-700" id="profile_picture_text">
                                             <?php if ($profile_picture_file && !$has_profile_pic_error): ?>
                                                 <strong>Photo uploaded:</strong><br>
-                                                <span class="text-green-600 file-upload-filename" title="<?= esc($profile_picture_file) ?>"><?= esc($profile_picture_file) ?></span><br>
+                                                <span class="text-green-600 file-upload-filename" title="<?= esc($profile_picture_file) ?>"><?= esc(getUserFriendlyFilename($profile_picture_file, 'profile_picture')) ?></span><br>
                                                 <span class="text-xs text-blue-500">Click to replace</span>
                                             <?php elseif ($has_profile_pic_error): ?>
                                                 <strong>Photo needs to be re-uploaded</strong><br>
@@ -1815,7 +2076,7 @@
                         </div>
                     </div>
                     <!-- Form Actions -->
-                    <div class="flex flex-col sm:flex-row justify-between items-center pt-4 sm:pt-6 space-y-3 sm:space-y-0">
+                    <div class="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center pt-0 sm:pt-2 gap-3 sm:gap-0">
                         <button type="submit" formaction="<?= base_url('profiling/backToStep3') ?>" formmethod="post" formnovalidate class="btn-secondary bg-slate-300 text-slate-700 text-sm sm:text-base font-semibold py-2 sm:py-3 px-4 sm:px-6 rounded-lg sm:rounded-xl hover:bg-slate-400 transition-all duration-200 flex items-center space-x-2 w-full sm:w-auto justify-center">
                             <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"></path>
@@ -1833,30 +2094,30 @@
             </div>
         </div>
         <!-- Sample Profile Picture Modal -->
-        <div id="samplePicModal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
-            <div class="bg-white border border-blue-400 text-blue-700 px-8 pt-6 pb-4 rounded-lg shadow-lg relative animate-fade-in max-w-sm w-full flex flex-col items-center z-20">
-                <span class="block text-lg font-semibold mb-2">Sample 1x1 Picture</span>
-                <div style="width: 15rem; height: 15rem; overflow: hidden; border: 1px solid #d1d5db; border-radius: 0.375rem; background: white; margin-bottom: 0.5rem; margin-top: 0;">
-                    <img src="https://i.pinimg.com/736x/d4/5e/77/d45e7768a551280b6597d3cb5caa589b.jpg" alt="Sample 1x1" style="width: 100%; height: 120%; object-fit: cover; object-position: center top; position: relative; top: -20px;">
+        <div id="samplePicModal" class="fixed inset-0 flex items-center justify-center z-50 hidden p-4">
+            <div class="bg-white border border-blue-400 text-blue-700 px-4 sm:px-8 pt-4 sm:pt-6 pb-3 sm:pb-4 rounded-lg shadow-lg relative animate-fade-in max-w-sm w-full mx-2 sm:mx-4 flex flex-col items-center z-20">
+                <span class="block text-base sm:text-lg font-semibold mb-2">Sample 1x1 Picture</span>
+                <div class="w-48 h-48 sm:w-60 sm:h-60 overflow-hidden border border-gray-300 rounded-md bg-white mb-2">
+                    <img src="https://i.pinimg.com/736x/d4/5e/77/d45e7768a551280b6597d3cb5caa589b.jpg" alt="Sample 1x1" class="w-full h-120 object-cover object-top -mt-5">
                 </div>
-                <span class="text-xs text-gray-500 mb-2">White background, clear face, 1x1 ratio</span>
-                <button id="closeSamplePicModal" class="absolute top-2 right-2 text-blue-700 hover:text-blue-900 text-xl font-bold">&times;</button>
+                <span class="text-xs text-gray-500 mb-2 text-center">White background, clear face, 1x1 ratio</span>
+                <button id="closeSamplePicModal" class="absolute top-2 right-2 text-blue-700 hover:text-blue-900 text-lg sm:text-xl font-bold w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center">&times;</button>
             </div>
             <div id="samplePicModalBg" class="fixed inset-0 bg-black opacity-30 z-10"></div>
         </div>
 
         <!-- Sample Birth Certificate Modal -->
-        <div id="sampleBirthCertModal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
-            <div class="bg-white border border-green-400 text-green-700 px-8 pt-6 pb-4 rounded-lg shadow-lg relative animate-fade-in max-w-3xl w-full mx-4 flex flex-col items-center z-20">
-                <span class="block text-lg font-semibold mb-3">Sample Birth Certificate</span>
+        <div id="sampleBirthCertModal" class="fixed inset-0 flex items-center justify-center z-50 hidden p-2 sm:p-4">
+            <div class="bg-white border border-green-400 text-green-700 px-4 sm:px-8 pt-4 sm:pt-6 pb-3 sm:pb-4 rounded-lg shadow-lg relative animate-fade-in max-w-3xl w-full mx-2 sm:mx-4 flex flex-col items-center z-20">
+                <span class="block text-base sm:text-lg font-semibold mb-2 sm:mb-3">Sample Birth Certificate</span>
                 
                 <!-- Content Container -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 w-full">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 sm:gap-6 w-full">
                     <!-- Left Side - Accepted Types (2 columns) -->
                     <div class="md:col-span-2 flex flex-col">
                         <div class="text-sm text-gray-600 text-left">
-                            <h4 class="font-medium mb-4 text-base">Accepted Birth Certificate Types:</h4>
-                            <ul class="text-sm space-y-2">
+                            <h4 class="font-medium mb-3 sm:mb-4 text-sm sm:text-base">Accepted Birth Certificate Types:</h4>
+                            <ul class="text-xs sm:text-sm space-y-1 sm:space-y-2">
                                 <li class="flex items-start">
                                     <span class="text-green-600 mr-2">•</span>
                                     <span>PSA (Philippine Statistics Authority) Birth Certificate</span>
@@ -1901,28 +2162,28 @@
                         </div>
                     </div>
                 
-                <button id="closeSampleBirthCertModal" class="absolute top-2 right-2 text-green-700 hover:text-green-900 text-xl font-bold">&times;</button>
+                <button id="closeSampleBirthCertModal" class="absolute top-2 right-2 text-green-700 hover:text-green-900 text-lg sm:text-xl font-bold w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center">&times;</button>
             </div>
             <div id="sampleBirthCertModalBg" class="fixed inset-0 bg-black opacity-30 z-10"></div>
         </div>
 
         <!-- Sample Valid ID Modal -->
-        <div id="sampleValidIdModal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
-            <div class="bg-white border border-blue-400 text-blue-700 px-8 pt-6 pb-4 rounded-lg shadow-lg relative animate-fade-in max-w-3xl w-full mx-4 flex flex-col items-center z-20">
-                <span class="block text-lg font-semibold mb-3">Sample Valid ID</span>
+        <div id="sampleValidIdModal" class="fixed inset-0 flex items-center justify-center z-50 hidden p-2 sm:p-4">
+            <div class="bg-white border border-blue-400 text-blue-700 px-4 sm:px-8 pt-4 sm:pt-6 pb-3 sm:pb-4 rounded-lg shadow-lg relative animate-fade-in max-w-3xl w-full mx-2 sm:mx-4 flex flex-col items-center z-20">
+                <span class="block text-base sm:text-lg font-semibold mb-2 sm:mb-3">Sample Valid ID</span>
                 
                 <!-- Content wrapper with responsive flex direction -->
                 <div class="flex flex-col-reverse md:flex-col w-full">
                     <!-- ID Images Container - Shows second on mobile (due to flex-col-reverse), first on desktop -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full mb-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 w-full mb-3 sm:mb-4">
                         <!-- Front ID -->
                         <div class="text-center">
-                            <h5 class="text-sm font-medium text-gray-700 mb-2">Front Side</h5>
-                            <div style="width: 100%; height: 200px; overflow: hidden; border: 1px solid #d1d5db; border-radius: 0.375rem; background: #f3f4f6; position: relative;">
+                            <h5 class="text-xs sm:text-sm font-medium text-gray-700 mb-2">Front Side</h5>
+                            <div class="w-full h-32 sm:h-48 md:h-50 overflow-hidden border border-gray-300 rounded-md bg-gray-100 relative">
                                 <!-- Loading placeholder for front -->
                                 <div id="idFrontLoading" class="absolute inset-0 flex items-center justify-center">
-                                    <div class="text-center p-4">
-                                        <svg class="mx-auto h-8 w-8 text-gray-400 mb-2 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div class="text-center p-2 sm:p-4">
+                                        <svg class="mx-auto h-6 w-6 sm:h-8 sm:w-8 text-gray-400 mb-2 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path>
                                         </svg>
                                         <div class="text-xs font-medium text-gray-700">Loading...</div>
@@ -1932,7 +2193,7 @@
                                 <img id="idFrontImage" 
                                      src="https://philsys.gov.ph/wp-content/uploads/2022/11/PhilID-specimen-Front_highres1-768x432.png" 
                                      alt="Sample Valid ID Front" 
-                                     style="width: 100%; height: 100%; object-fit: contain; display: none;"
+                                     class="w-full h-full object-contain hidden"
                                      onload="document.getElementById('idFrontLoading').style.display='none'; this.style.display='block';"
                                      onerror="document.getElementById('idFrontLoading').querySelector('.text-xs').textContent='ID Front';">
                             </div>
@@ -1963,9 +2224,9 @@
                     </div>
                     
                     <!-- Accepted Types Section - Shows first on mobile (due to flex-col-reverse), second on desktop -->
-                    <div class="text-sm text-gray-600 mb-4 text-left w-full">
-                        <h4 class="font-medium mb-2">Accepted Valid ID Types:</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                    <div class="text-sm text-gray-600 mb-3 sm:mb-4 text-left w-full">
+                        <h4 class="font-medium mb-2 text-sm sm:text-base">Accepted Valid ID Types:</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs sm:text-sm">
                             <ul class="space-y-1">
                                 <li>• Driver's License</li>
                                 <li>• SSS ID</li>
@@ -1986,7 +2247,7 @@
                     </div>
                 </div>
                 
-                <button id="closeSampleValidIdModal" class="absolute top-2 right-2 text-blue-700 hover:text-blue-900 text-xl font-bold">&times;</button>
+                <button id="closeSampleValidIdModal" class="absolute top-2 right-2 text-blue-700 hover:text-blue-900 text-lg sm:text-xl font-bold w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center">&times;</button>
             </div>
             <div id="sampleValidIdModalBg" class="fixed inset-0 bg-black opacity-30 z-10"></div>
         </div>
@@ -2059,10 +2320,12 @@
                                 <span class="text-slate-600 font-medium">Gender:</span>
                                 <span class="text-slate-800">
                                     <?php 
-                                    if (isset($profile_data['gender']) && $profile_data['gender'] !== '') {
-                                        switch($profile_data['gender']) {
-                                            case '1': echo 'Male'; break;
-                                            case '2': echo 'Female'; break;
+                                    // Mirror the form logic: prefer old('gender') then saved profile_data
+                                    $gender_val_display = old('gender') !== null ? old('gender') : (isset($profile_data['gender']) ? $profile_data['gender'] : '');
+                                    if ($gender_val_display !== '' && $gender_val_display !== null) {
+                                        switch((string)$gender_val_display) {
+                                            case '1': echo 'Man'; break;
+                                            case '2': echo 'Woman'; break;
                                             case '3': echo 'Non-binary'; break;
                                             case '4': echo 'Prefer not to say'; break;
                                             case '5': echo 'Other'; break;
@@ -2260,26 +2523,50 @@
                     </h3>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Birth Certificate Preview -->
                         <div class="bg-white rounded-lg p-4 border border-blue-200">
-                            <h4 class="font-medium text-slate-700 mb-2">Birth Certificate</h4>
+                            <h4 class="font-medium text-slate-700 mb-3">Birth Certificate</h4>
                             <?php if (isset($demographic_data['birth_certificate']) && $demographic_data['birth_certificate'] && (!session('file_errors') || !isset(session('file_errors')['birth_certificate']))): ?>
-                                <div class="flex items-center space-x-2 mb-2">
+                                <div class="flex items-center space-x-2 mb-3">
                                     <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                     </svg>
                                     <span class="text-sm text-slate-600">Uploaded successfully</span>
                                 </div>
-                                <div class="mt-2">
+                                
+                                <!-- Preview Thumbnail -->
+                                <div class="flex flex-col items-center space-y-3">
+                                    <?php 
+                                    $birth_cert_extension = pathinfo($demographic_data['birth_certificate'], PATHINFO_EXTENSION);
+                                    $is_birth_cert_image = in_array(strtolower($birth_cert_extension), ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+                                    ?>
+                                    <div class="rounded-lg overflow-hidden border-2 border-slate-200 shadow-sm bg-slate-50 flex items-center justify-center" style="width:12rem; aspect-ratio: 4/3;">
+                                        <?php if ($is_birth_cert_image): ?>
+                                            <img src="<?= base_url('uploads/certificate/' . $demographic_data['birth_certificate']) ?>" 
+                                                 alt="Birth Certificate Preview" 
+                                                 class="w-full h-full object-cover">
+                                        <?php else: ?>
+                                            <div class="text-center">
+                                                <svg class="w-10 h-10 text-slate-400 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                </svg>
+                                                <span class="text-xs text-slate-500 uppercase"><?= esc($birth_cert_extension) ?></span>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                    
                                     <button type="button" 
                                             onclick="previewDocument('<?= base_url('uploads/certificate/' . $demographic_data['birth_certificate']) ?>', '<?= esc($demographic_data['birth_certificate']) ?>', 'Birth Certificate')"
                                             class="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition-colors duration-200">
                                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                         </svg>
-                                        Preview Document
+                                        View Full Size
                                     </button>
-                                    <p class="text-xs text-slate-500 mt-1"><?= esc($demographic_data['birth_certificate']) ?></p>
+                                    
+                                    <?php if (!empty($demographic_data['birth_certificate']) && strpos($demographic_data['birth_certificate'], 'tmp_') !== 0): ?>
+                                    <p class="text-xs text-slate-500 text-center truncate max-w-full" title="<?= esc($demographic_data['birth_certificate']) ?>"><?= esc($demographic_data['birth_certificate']) ?></p>
+                                    <?php endif; ?>
                                 </div>
                             <?php else: ?>
                                 <div class="flex items-center space-x-2">
@@ -2296,41 +2583,111 @@
                             <?php endif; ?>
                         </div>
                         
+                        <!-- Valid ID Preview -->
                         <div class="bg-white rounded-lg p-4 border border-blue-200">
-                            <h4 class="font-medium text-slate-700 mb-2">Valid ID</h4>
+                            <h4 class="font-medium text-slate-700 mb-3">Valid ID</h4>
+                            
+                            <!-- ID Front Section -->
                             <?php if (isset($demographic_data['upload_id']) && $demographic_data['upload_id'] && (!session('file_errors') || !isset(session('file_errors')['upload_id']))): ?>
-                                <div class="flex items-center space-x-2 mb-2">
-                                    <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    <span class="text-sm text-slate-600">Uploaded successfully</span>
-                                </div>
-                                <div class="mt-2">
-                                    <button type="button" 
-                                            onclick="previewDocument('<?= base_url('uploads/id/' . $demographic_data['upload_id']) ?>', '<?= esc($demographic_data['upload_id']) ?>', 'Valid ID')"
-                                            class="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition-colors duration-200">
-                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                <div class="mb-4">
+                                    <div class="flex items-center space-x-2 mb-3">
+                                        <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                         </svg>
-                                        Preview Front Side
-                                    </button>
-                                    <p class="text-xs text-slate-500 mt-1"><?= esc($demographic_data['upload_id']) ?></p>
-                                    <?php if (isset($demographic_data['upload_id-back']) && $demographic_data['upload_id-back']): ?>
-                                        <div class="mt-3">
+                                        <span class="text-sm text-slate-600 font-medium">Front side uploaded</span>
+                                    </div>
+                                    
+                                    <!-- ID Front Preview -->
+                                    <div class="flex flex-col items-center space-y-2 mb-4">
+                                        <?php 
+                                        $id_front_extension = pathinfo($demographic_data['upload_id'], PATHINFO_EXTENSION);
+                                        $is_id_front_image = in_array(strtolower($id_front_extension), ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+                                        ?>
+                                        <div class="rounded-lg overflow-hidden border-2 border-slate-200 shadow-sm bg-slate-50 flex items-center justify-center" style="width:10rem; aspect-ratio: 4/3;">
+                                            <?php if ($is_id_front_image): ?>
+                                                <img src="<?= base_url('uploads/id/' . $demographic_data['upload_id']) ?>" 
+                                                     alt="ID Front Preview" 
+                                                     class="w-full h-full object-cover">
+                                            <?php else: ?>
+                                                <div class="text-center">
+                                                    <svg class="w-6 h-6 text-slate-400 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                    </svg>
+                                                    <span class="text-xs text-slate-500 uppercase"><?= esc($id_front_extension) ?></span>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                        
+                                        <button type="button" 
+                                                onclick="previewDocument('<?= base_url('uploads/id/' . $demographic_data['upload_id']) ?>', '<?= esc($demographic_data['upload_id']) ?>', 'Valid ID (Front)')"
+                                                class="inline-flex items-center px-2 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 hover:text-blue-700 transition-colors duration-200">
+                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                            </svg>
+                                            View Front
+                                        </button>
+                                        
+                                        <?php if (!empty($demographic_data['upload_id']) && strpos($demographic_data['upload_id'], 'tmp_') !== 0): ?>
+                                        <p class="text-xs text-slate-500 text-center truncate max-w-full" title="<?= esc($demographic_data['upload_id']) ?>">Front: <?= esc($demographic_data['upload_id']) ?></p>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                                
+                                <!-- ID Back Section -->
+                                <?php if (isset($demographic_data['upload_id-back']) && $demographic_data['upload_id-back']): ?>
+                                    <div class="pt-3 border-t border-slate-100">
+                                        <div class="flex items-center space-x-2 mb-3">
+                                            <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            <span class="text-sm text-slate-600 font-medium">Back side uploaded</span>
+                                        </div>
+                                        
+                                        <!-- ID Back Preview -->
+                                        <div class="flex flex-col items-center space-y-2">
+                                            <?php 
+                                            $id_back_extension = pathinfo($demographic_data['upload_id-back'], PATHINFO_EXTENSION);
+                                            $is_id_back_image = in_array(strtolower($id_back_extension), ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+                                            ?>
+                                            <div class="rounded-lg overflow-hidden border-2 border-slate-200 shadow-sm bg-slate-50 flex items-center justify-center" style="width:10rem; aspect-ratio: 4/3;">
+                                                <?php if ($is_id_back_image): ?>
+                                                    <img src="<?= base_url('uploads/id/' . $demographic_data['upload_id-back']) ?>" 
+                                                         alt="ID Back Preview" 
+                                                         class="w-full h-full object-cover">
+                                                <?php else: ?>
+                                                    <div class="text-center">
+                                                        <svg class="w-6 h-6 text-slate-400 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                        </svg>
+                                                        <span class="text-xs text-slate-500 uppercase"><?= esc($id_back_extension) ?></span>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
+                                            
                                             <button type="button" 
                                                     onclick="previewDocument('<?= base_url('uploads/id/' . $demographic_data['upload_id-back']) ?>', '<?= esc($demographic_data['upload_id-back']) ?>', 'Valid ID (Back)')"
-                                                    class="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition-colors duration-200">
-                                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                    class="inline-flex items-center px-2 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 hover:text-blue-700 transition-colors duration-200">
+                                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                                 </svg>
-                                                Preview Back Side
+                                                View Back
                                             </button>
-                                            <p class="text-xs text-slate-500 mt-1"><?= esc($demographic_data['upload_id-back']) ?></p>
+                                            
+                                            <?php if (!empty($demographic_data['upload_id-back']) && strpos($demographic_data['upload_id-back'], 'tmp_') !== 0): ?>
+                                            <p class="text-xs text-slate-500 text-center truncate max-w-full" title="<?= esc($demographic_data['upload_id-back']) ?>">Back: <?= esc($demographic_data['upload_id-back']) ?></p>
+                                            <?php endif; ?>
                                         </div>
-                                    <?php endif; ?>
-                                </div>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="pt-3 border-t border-slate-100">
+                                        <div class="flex items-center space-x-2">
+                                            <svg class="w-4 h-4 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                            </svg>
+                                            <span class="text-sm text-yellow-600">Back side not uploaded (optional)</span>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
                             <?php else: ?>
                                 <div class="flex items-center space-x-2">
                                     <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2367,10 +2724,10 @@
                 </div>
 
                 <!-- Form Actions -->
-                <div class="flex justify-between items-center pt-6">
-                    <form action="<?= base_url('profiling/backToStep4') ?>" method="post" style="display:inline;">
+                <div class="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center pt-0 sm:pt-2 gap-3 sm:gap-0">
+                    <form action="<?= base_url('profiling/backToStep4') ?>" method="post" class="w-full sm:w-auto" style="display:inline;">
                         <button type="submit" formaction="<?= base_url('profiling/backToStep4') ?>" formmethod="post" formnovalidate
-                            class="btn-secondary bg-slate-300 text-slate-700 font-semibold py-3 px-6 rounded-xl hover:bg-slate-400 transition-all duration-200 flex items-center space-x-2">
+                            class="btn-secondary bg-slate-300 text-slate-700 font-semibold py-3 px-6 rounded-xl hover:bg-slate-400 transition-all duration-200 flex items-center space-x-2 w-full sm:w-auto justify-center">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"></path>
                             </svg>
@@ -2378,9 +2735,9 @@
                         </button>
                     </form>
                     
-                    <form action="<?= base_url('profiling/submit') ?>" method="post" style="display:inline;">
+                    <form action="<?= base_url('profiling/submit') ?>" method="post" class="w-full sm:w-auto" style="display:inline;">
                         <button type="submit" 
-                            class="btn-primary text-white font-semibold py-3 px-8 rounded-xl transition-all duration-200 flex items-center space-x-2 hover:shadow-lg transform hover:scale-105">
+                            class="btn-primary text-white font-semibold py-3 px-8 rounded-xl transition-all duration-200 flex items-center space-x-2 hover:shadow-lg transform hover:scale-105 w-full sm:w-auto justify-center">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
@@ -2437,7 +2794,7 @@
                     </svg>
                 </div>
                 
-                <!-- Success Title -->
+                        <!-- Success Title -->
                 <h3 id="successTitle" class="text-lg font-bold text-green-600 mb-2">Success!</h3>
                 
                 <!-- Success Message -->
@@ -2477,69 +2834,51 @@
     </div>
 
     <!-- Terms and Conditions Modal -->
-    <div id="terms-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-2xl shadow-2xl relative animate-fade-in max-w-5xl max-h-[95vh] w-full mx-4 z-20 border border-gray-100">
+    <div id="terms-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden p-2 sm:p-4">
+        <div class="bg-white rounded-lg sm:rounded-2xl shadow-2xl relative animate-fade-in max-w-5xl max-h-[95vh] w-full mx-2 sm:mx-4 z-20 border border-gray-100 flex flex-col">
             <!-- Modal Header -->
-            <div class="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-2xl">
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex items-center justify-between p-3 sm:p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-lg sm:rounded-t-2xl flex-shrink-0">
+                <div class="flex items-center space-x-2 sm:space-x-3">
+                    <div class="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <svg class="w-4 h-4 sm:w-6 sm:h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                     </div>
-                    <h3 class="text-2xl font-bold text-blue-800">Terms and Conditions</h3>
+                    <h3 class="text-lg sm:text-2xl font-bold text-blue-800">Terms and Conditions</h3>
                 </div>
-                <button id="close-terms-modal" class="text-gray-400 hover:text-gray-600 text-2xl font-bold w-10 h-10 flex items-center justify-center rounded-full hover:bg-white hover:shadow-md transition-all duration-200">
+                <button id="close-terms-modal" class="text-gray-400 hover:text-gray-600 text-xl sm:text-2xl font-bold w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full hover:bg-white hover:shadow-md transition-all duration-200">
                     &times;
                 </button>
             </div>
             
             <!-- Modal Body -->
-            <div class="p-8 max-h-[calc(95vh-200px)] overflow-y-auto custom-scrollbar">
-                <div class="prose prose-sm max-w-none space-y-6">
-                    <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg mb-6">
-                        <div class="flex items-start">
-                            <div class="flex-shrink-0">
-                                <svg class="w-5 h-5 text-blue-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-                                </svg>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm text-blue-700">
-                                    <strong>Last updated:</strong> <?= date('F d, Y') ?>
-                                </p>
-                                <p class="text-sm text-blue-700 mt-2">
-                                    Welcome to the K-NECT Youth Profiling System. These Terms and Conditions ("Terms") govern your use of our youth profiling platform in accordance with DILG Memorandum Circular No. 2022-324.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white border border-gray-200 rounded-xl p-6 mb-6 shadow-sm">
-                        <h4 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                            <span class="bg-blue-100 text-blue-800 text-sm font-medium mr-3 px-2.5 py-0.5 rounded-full">1</span>
+            <div class="p-3 sm:p-8 overflow-y-auto custom-scrollbar flex-grow min-h-0">
+                <div class="prose prose-sm max-w-none space-y-4 sm:space-y-6">
+                    <div class="bg-white border border-gray-200 rounded-lg sm:rounded-xl p-3 sm:p-6 mb-4 sm:mb-6 shadow-sm">
+                        <h4 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4 flex items-center">
+                            <span class="bg-blue-100 text-blue-800 text-xs sm:text-sm font-medium mr-2 sm:mr-3 px-2 sm:px-2.5 py-0.5 rounded-full">1</span>
                             Acceptance of Terms
                         </h4>
-                        <p class="text-gray-700 leading-relaxed">
+                        <p class="text-gray-700 leading-relaxed text-sm sm:text-base">
                             By accessing and using the K-NECT Youth Profiling System, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions and our Privacy Policy.
                         </p>
                     </div>
 
-                    <div class="bg-white border border-gray-200 rounded-xl p-6 mb-6 shadow-sm">
-                        <h4 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                            <span class="bg-blue-100 text-blue-800 text-sm font-medium mr-3 px-2.5 py-0.5 rounded-full">2</span>
+                    <div class="bg-white border border-gray-200 rounded-lg sm:rounded-xl p-3 sm:p-6 mb-4 sm:mb-6 shadow-sm">
+                        <h4 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4 flex items-center">
+                            <span class="bg-blue-100 text-blue-800 text-xs sm:text-sm font-medium mr-2 sm:mr-3 px-2 sm:px-2.5 py-0.5 rounded-full">2</span>
                             Eligibility
                         </h4>
-                        <p class="text-gray-700 leading-relaxed mb-4">
+                        <p class="text-gray-700 leading-relaxed mb-3 sm:mb-4 text-sm sm:text-base">
                             This service is intended for youth aged 15-30 years old who are residents of Iriga City's 36 barangays. By registering, you confirm that:
                         </p>
-                        <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="bg-gray-50 rounded-lg p-3 sm:p-4">
                             <ul class="space-y-2">
-                                <li class="flex items-center text-gray-700">
-                                    <svg class="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <li class="flex items-center text-gray-700 text-sm sm:text-base">
+                                    <svg class="w-3 h-3 sm:w-4 sm:h-4 text-green-500 mr-2 sm:mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
                                     </svg>
-                                    You are between 15-30 years of age
+                                    You are between 15-30 years of age (or turning 15 within 1 month)
                                 </li>
                                 <li class="flex items-center text-gray-700">
                                     <svg class="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -2727,7 +3066,7 @@
                             Contact Information
                         </h4>
                         <p class="text-blue-700 leading-relaxed mb-4">
-                            For questions about these Terms, please contact your local Sangguniang Kabataan office or the Iriga City Youth Development Office.
+                            For questions about these Terms, please contact SK Pederasyon in Iriga City: <a href="https://www.facebook.com/skpedirigacity" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Facebook</a>
                         </p>
                         <div class="flex items-center justify-center">
                             <div class="bg-white rounded-lg p-4 shadow-sm border border-blue-200">
@@ -2737,7 +3076,7 @@
                                     </svg>
                                     <div>
                                         <p class="font-semibold text-blue-800">Need Help?</p>
-                                        <p class="text-sm text-blue-600">Contact your local SK office</p>
+                                        <p class="text-sm text-blue-600">Contact SK Pederasyon in Iriga City: <a href="https://www.facebook.com/skpedirigacity" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Facebook</a></p>
                                     </div>
                                 </div>
                             </div>
@@ -2747,19 +3086,22 @@
             </div>
             
             <!-- Modal Footer -->
-            <div class="flex items-center justify-between p-6 border-t border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-b-2xl">
-                <div class="flex items-center space-x-2">
-                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex flex-col sm:flex-row items-center justify-between p-3 sm:p-6 pb-4 sm:pb-8 border-t border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-b-lg sm:rounded-b-2xl space-y-3 sm:space-y-0 flex-shrink-0">
+                <div class="flex items-center justify-center sm:justify-start space-x-2 text-center sm:text-left">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    <span class="text-sm text-blue-700 font-medium">By accepting, you agree to these terms</span>
+                    <span class="text-xs sm:text-sm text-blue-700 font-medium">By accepting, you agree to these terms</span>
                 </div>
-                <div class="flex space-x-3">
-                    <button id="decline-terms-btn" class="px-6 py-2 text-gray-600 bg-gray-100 border border-gray-300 rounded-lg font-medium hover:bg-gray-200 transition-colors duration-200">
+                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
+                    <button id="decline-terms-btn" class="w-full sm:w-auto px-4 sm:px-6 py-2 text-sm sm:text-base text-gray-600 bg-gray-100 border border-gray-300 rounded-lg font-medium hover:bg-gray-200 transition-colors duration-200 order-2 sm:order-1">
                         Decline
                     </button>
-                    <button id="accept-terms-btn" class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-2 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
-                        I Accept These Terms
+                    <button id="accept-terms-btn" class="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 sm:px-8 py-2 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center text-sm sm:text-base order-1 sm:order-2">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>I Accept These Terms</span>
                     </button>
                 </div>
             </div>
@@ -2768,62 +3110,44 @@
     </div>
 
     <!-- Privacy Policy Modal -->
-    <div id="privacy-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-2xl shadow-2xl relative animate-fade-in max-w-5xl max-h-[95vh] w-full mx-4 z-20 border border-gray-100">
+    <div id="privacy-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden p-2 sm:p-4">
+        <div class="bg-white rounded-lg sm:rounded-2xl shadow-2xl relative animate-fade-in max-w-5xl max-h-[95vh] w-full mx-2 sm:mx-4 z-20 border border-gray-100 flex flex-col">
             <!-- Modal Header -->
-            <div class="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-2xl">
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex items-center justify-between p-3 sm:p-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-lg sm:rounded-t-2xl flex-shrink-0">
+                <div class="flex items-center space-x-2 sm:space-x-3">
+                    <div class="w-8 h-8 sm:w-10 sm:h-10 bg-green-100 rounded-full flex items-center justify-center">
+                        <svg class="w-4 h-4 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
                         </svg>
                     </div>
-                    <h3 class="text-2xl font-bold text-green-800">Privacy Policy</h3>
+                    <h3 class="text-lg sm:text-2xl font-bold text-green-800">Privacy Policy</h3>
                 </div>
-                <button id="close-privacy-modal" class="text-gray-400 hover:text-gray-600 text-2xl font-bold w-10 h-10 flex items-center justify-center rounded-full hover:bg-white hover:shadow-md transition-all duration-200">
+                <button id="close-privacy-modal" class="text-gray-400 hover:text-gray-600 text-xl sm:text-2xl font-bold w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full hover:bg-white hover:shadow-md transition-all duration-200">
                     &times;
                 </button>
             </div>
             
             <!-- Modal Body -->
-            <div class="p-8 max-h-[calc(95vh-200px)] overflow-y-auto custom-scrollbar">
-                <div class="prose prose-sm max-w-none space-y-6">
-                    <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg mb-6">
-                        <div class="flex items-start">
-                            <div class="flex-shrink-0">
-                                <svg class="w-5 h-5 text-green-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-                                </svg>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm text-green-700">
-                                    <strong>Last updated:</strong> <?= date('F d, Y') ?>
-                                </p>
-                                <p class="text-sm text-green-700 mt-2">
-                                    This Privacy Policy describes how the K-NECT Youth Profiling System collects, uses, and protects your personal information in compliance with the Data Privacy Act of 2012 (RA 10173) and other applicable laws.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white border border-gray-200 rounded-xl p-6 mb-6 shadow-sm">
-                        <h4 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                            <span class="bg-green-100 text-green-800 text-sm font-medium mr-3 px-2.5 py-0.5 rounded-full">1</span>
+            <div class="p-3 sm:p-8 overflow-y-auto custom-scrollbar flex-grow min-h-0">
+                <div class="prose prose-sm max-w-none space-y-4 sm:space-y-6">
+                    <div class="bg-white border border-gray-200 rounded-lg sm:rounded-xl p-3 sm:p-6 mb-4 sm:mb-6 shadow-sm">
+                        <h4 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4 flex items-center">
+                            <span class="bg-green-100 text-green-800 text-xs sm:text-sm font-medium mr-2 sm:mr-3 px-2 sm:px-2.5 py-0.5 rounded-full">1</span>
                             Information We Collect
                         </h4>
-                        <p class="text-gray-700 leading-relaxed mb-4">We collect the following types of information:</p>
+                        <p class="text-gray-700 leading-relaxed mb-3 sm:mb-4 text-sm sm:text-base">We collect the following types of information:</p>
                         
-                        <div class="space-y-4">
-                            <div class="bg-green-50 rounded-lg p-4">
-                                <h5 class="text-lg font-semibold text-green-800 mb-3 flex items-center">
-                                    <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="space-y-3 sm:space-y-4">
+                            <div class="bg-green-50 rounded-lg p-3 sm:p-4">
+                                <h5 class="text-base sm:text-lg font-semibold text-green-800 mb-2 sm:mb-3 flex items-center">
+                                    <svg class="w-4 h-4 sm:w-5 sm:h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                     </svg>
                                     Personal Information:
                                 </h5>
                                 <ul class="space-y-2">
-                                    <li class="flex items-center text-gray-700">
-                                        <svg class="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <li class="flex items-center text-gray-700 text-sm sm:text-base">
+                                        <svg class="w-3 h-3 sm:w-4 sm:h-4 text-green-500 mr-2 sm:mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
                                         </svg>
                                         Full name, date of birth, and contact information
@@ -2946,7 +3270,7 @@
                                     <svg class="w-4 h-4 text-yellow-600 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
                                     </svg>
-                                    Local Sangguniang Kabataan offices
+                                    SK Pederasyon in Iriga City
                                 </li>
                                 <li class="flex items-center text-gray-700">
                                     <svg class="w-4 h-4 text-yellow-600 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -3116,7 +3440,7 @@
                                     <div class="space-y-1 text-green-700">
                                         <p class="font-medium">Iriga City Youth Development Office</p>
                                         <p>City Hall, Iriga City, Camarines Sur</p>
-                                        <p class="italic">Or your local Sangguniang Kabataan office</p>
+                                        <p class="italic">Or SK Pederasyon in Iriga City: <a href="https://www.facebook.com/skpedirigacity" target="_blank" class="text-green-600 hover:text-green-800 underline">Facebook</a></p>
                                     </div>
                                 </div>
                             </div>
@@ -3126,19 +3450,22 @@
             </div>
             
             <!-- Modal Footer -->
-            <div class="flex items-center justify-between p-6 border-t border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50 rounded-b-2xl">
-                <div class="flex items-center space-x-2">
-                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex flex-col sm:flex-row items-center justify-between p-3 sm:p-6 pb-4 sm:pb-8 border-t border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50 rounded-b-lg sm:rounded-b-2xl space-y-3 sm:space-y-0 flex-shrink-0">
+                <div class="flex items-center justify-center sm:justify-start space-x-2 text-center sm:text-left">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
                     </svg>
-                    <span class="text-sm text-green-700 font-medium">Your privacy is protected by law</span>
+                    <span class="text-xs sm:text-sm text-green-700 font-medium">Your privacy is protected by law</span>
                 </div>
-                <div class="flex space-x-3">
-                    <button id="decline-privacy-btn" class="px-6 py-2 text-gray-600 bg-gray-100 border border-gray-300 rounded-lg font-medium hover:bg-gray-200 transition-colors duration-200">
+                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
+                    <button id="decline-privacy-btn" class="w-full sm:w-auto px-4 sm:px-6 py-2 text-sm sm:text-base text-gray-600 bg-gray-100 border border-gray-300 rounded-lg font-medium hover:bg-gray-200 transition-colors duration-200 order-2 sm:order-1">
                         Close
                     </button>
-                    <button id="accept-privacy-btn" class="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-8 py-2 rounded-lg font-medium hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
-                        I Understand This Policy
+                    <button id="accept-privacy-btn" class="w-full sm:w-auto bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 sm:px-8 py-2 rounded-lg font-medium hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center text-sm sm:text-base order-1 sm:order-2">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>I Understand This Policy</span>
                     </button>
                 </div>
             </div>
@@ -3152,31 +3479,31 @@
     </div>
 
     <!-- Document Preview Modal -->
-    <div id="document-preview-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-lg shadow-xl relative animate-fade-in max-w-4xl max-h-[90vh] w-full mx-4 z-20">
+    <div id="document-preview-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden p-2 sm:p-4">
+        <div class="bg-white rounded-lg sm:rounded-xl shadow-xl relative animate-fade-in max-w-4xl max-h-[95vh] w-full mx-2 sm:mx-4 z-20">
             <!-- Modal Header -->
-            <div class="flex items-center justify-between p-4 border-b border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-900" id="document-preview-title">Document Preview</h3>
-                <div class="flex items-center space-x-2">
-                    <button id="document-download-btn" class="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition-colors duration-200">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 border-b border-gray-200 space-y-2 sm:space-y-0">
+                <h3 class="text-base sm:text-lg font-semibold text-gray-900" id="document-preview-title">Document Preview</h3>
+                <div class="flex items-center space-x-2 w-full sm:w-auto justify-end sm:justify-start">
+                    <button id="document-download-btn" class="inline-flex items-center px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition-colors duration-200">
+                        <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                         </svg>
                         Download
                     </button>
-                    <button id="document-preview-close" onclick="if(window.closeDocumentPreview) window.closeDocumentPreview(); return false;" class="text-gray-400 hover:text-gray-600 text-xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors duration-200">
+                    <button id="document-preview-close" onclick="if(window.closeDocumentPreview) window.closeDocumentPreview(); return false;" class="text-gray-400 hover:text-gray-600 text-lg sm:text-xl font-bold w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors duration-200">
                         &times;
                     </button>
                 </div>
             </div>
             
             <!-- Modal Body -->
-            <div class="p-4 max-h-[calc(90vh-120px)] overflow-auto">
+            <div class="p-3 sm:p-4 max-h-[calc(95vh-120px)] sm:max-h-[calc(95vh-140px)] overflow-auto">
                 <div id="document-preview-content" class="flex items-center justify-center">
                     <!-- Loading state -->
-                    <div id="document-loading" class="flex flex-col items-center justify-center py-12">
-                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-                        <p class="text-gray-600">Loading document...</p>
+                    <div id="document-loading" class="flex flex-col items-center justify-center py-8 sm:py-12">
+                        <div class="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-blue-600 mb-3 sm:mb-4"></div>
+                        <p class="text-gray-600 text-sm sm:text-base">Loading document...</p>
                     </div>
                     
                     <!-- Preview content will be inserted here -->
@@ -3186,20 +3513,20 @@
                         
                         <!-- For PDFs -->
                         <div id="document-pdf" class="hidden w-full">
-                            <iframe id="pdf-viewer" class="w-full h-96 border rounded-lg" frameborder="0"></iframe>
-                            <p class="text-sm text-gray-600 mt-2 text-center">
+                            <iframe id="pdf-viewer" class="w-full h-64 sm:h-96 border rounded-lg" frameborder="0"></iframe>
+                            <p class="text-xs sm:text-sm text-gray-600 mt-2 text-center px-2 sm:px-0">
                                 If the PDF doesn't display properly, 
                                 <a id="pdf-fallback-link" href="#" target="_blank" class="text-blue-600 hover:text-blue-800 underline">click here to open in a new tab</a>
                             </p>
                         </div>
                         
                         <!-- Error state -->
-                        <div id="document-error" class="hidden flex flex-col items-center justify-center py-12">
-                            <svg class="w-16 h-16 text-red-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div id="document-error" class="hidden flex flex-col items-center justify-center py-8 sm:py-12 px-4">
+                            <svg class="w-12 h-12 sm:w-16 sm:h-16 text-red-400 mb-3 sm:mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
                             </svg>
-                            <h4 class="text-lg font-medium text-gray-900 mb-2">Cannot Preview Document</h4>
-                            <p class="text-gray-600 text-center mb-4">This document type cannot be previewed directly.</p>
+                            <h4 class="text-base sm:text-lg font-medium text-gray-900 mb-2 text-center">Cannot Preview Document</h4>
+                            <p class="text-gray-600 text-center mb-4 text-sm sm:text-base">This document type cannot be previewed directly.</p>
                             <button id="document-error-download" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 transition-colors duration-200">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
@@ -3706,13 +4033,16 @@
                         isValid = ensureValid(firstName, v => nameRegex.test(v.trim()), 'Please enter a valid first name.') && isValid;
                     }
 
-                    // Zone/Purok: positive integer
+                    // Zone/Purok: positive integer with maximum 4 digits
                     const zone = form.querySelector('input[name="zone_purok"]');
                     if (zone && zone.value.trim() !== '') {
-                        isValid = ensureValid(zone, v => { const n = Number(v); return Number.isInteger(n) && n > 0; }, 'Please enter a valid zone/purok number.') && isValid;
+                        isValid = ensureValid(zone, v => { 
+                            const n = Number(v); 
+                            return Number.isInteger(n) && n > 0 && n <= 9999 && v.length <= 4; 
+                        }, 'Please enter a valid zone/purok number (max 4 digits).') && isValid;
                     }
 
-                    // Birthdate: require complete date and age 15-30 inclusive
+                    // Birthdate: require complete date and age 15-30 inclusive (or turning 15 within 1 month)
                     const monthSel = form.querySelector('select[name="birth_month"]');
                     const daySel = form.querySelector('select[name="birth_day"]');
                     const yearSel = form.querySelector('select[name="birth_year"]');
@@ -3724,9 +4054,16 @@
                             let age = today.getFullYear() - birthdate.getFullYear();
                             const mdiff = today.getMonth() - birthdate.getMonth();
                             if (mdiff < 0 || (mdiff === 0 && today.getDate() < birthdate.getDate())) age--;
-                            if (!(age >= 15 && age <= 30)) {
-                                // Anchor error to year select for proper placement
-                                showFieldError(yearSel, 'You must be between 15 and 30 years old.');
+                            
+                            // Check if user will turn 15 within 1 month
+                            const oneMonthFromToday = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate());
+                            const isTurning15Soon = age === 14 && birthdate <= oneMonthFromToday;
+                            
+                            if (age < 15 && !isTurning15Soon) {
+                                showFieldError(yearSel, 'You must be at least 15 years old (or turning 15 within 1 month) to register.');
+                                isValid = false;
+                            } else if (age > 30) {
+                                showFieldError(yearSel, 'Only users aged between 15 to 30 years old are allowed.');
                                 isValid = false;
                             }
                         }
@@ -3943,6 +4280,7 @@
                 
                 // For radio buttons, find the container div and add red border
                 let errorContainer;
+                let insertAfter = false;
                 if (field.type === 'radio') {
                     errorContainer = field.closest('.bg-gray-50');
                     if (errorContainer) {
@@ -3966,9 +4304,16 @@
                     }
                 } else {
                     errorContainer = field.parentNode;
+                    // If the direct parent is a relative wrapper (used for eye icon), insert error after the wrapper
+                    if (errorContainer && errorContainer.classList && errorContainer.classList.contains('relative')) {
+                        insertAfter = true;
+                    }
                 }
                 
-                const existingError = errorContainer.querySelector('.validation-error');
+                // Remove any existing validation error near this field
+                const existingError = insertAfter
+                  ? (errorContainer.nextElementSibling && errorContainer.nextElementSibling.classList && errorContainer.nextElementSibling.classList.contains('validation-error') ? errorContainer.nextElementSibling : null)
+                  : errorContainer.querySelector('.validation-error');
                 if (existingError) {
                     existingError.remove();
                 }
@@ -3976,7 +4321,11 @@
                 const errorElement = document.createElement('p');
                 errorElement.className = 'validation-error text-red-500 text-xs mt-1';
                 errorElement.textContent = message;
-                errorContainer.appendChild(errorElement);
+                if (insertAfter && errorContainer.parentNode) {
+                    errorContainer.parentNode.insertBefore(errorElement, errorContainer.nextSibling);
+                } else {
+                    errorContainer.appendChild(errorElement);
+                }
                 
                 setTimeout(() => {
                     field.classList.remove('shake');
@@ -3988,6 +4337,7 @@
                 
                 // For radio buttons and file inputs, find the container div and remove red border
                 let errorContainer;
+                let removeNext = false;
                 if (field.type === 'radio') {
                     errorContainer = field.closest('.bg-gray-50');
                     if (errorContainer) {
@@ -4004,11 +4354,16 @@
                     errorContainer = uploadWrapper ? uploadWrapper.parentNode : field.parentNode;
                 } else {
                     errorContainer = field.parentNode;
+                    if (errorContainer && errorContainer.classList && errorContainer.classList.contains('relative')) {
+                        removeNext = true;
+                    }
                 }
                 
-                const errorElement = errorContainer.querySelector('.validation-error');
-                if (errorElement) {
-                    errorElement.remove();
+                if (removeNext && errorContainer && errorContainer.nextElementSibling && errorContainer.nextElementSibling.classList.contains('validation-error')) {
+                    errorContainer.nextElementSibling.remove();
+                } else if (errorContainer) {
+                    const errorElement = errorContainer.querySelector('.validation-error');
+                    if (errorElement) errorElement.remove();
                 }
             }
 
@@ -4065,11 +4420,25 @@
                 function initializeFileState(input, button, textElement, hasExistingOrCachedFile) {
                     // Check if there's an existing file
                     const hasError = button.classList.contains('error');
+                    const container = input.closest('.file-upload-container');
                     
                     if (hasExistingOrCachedFile && !hasError) {
                         // File exists and is valid - show as uploaded
                         button.classList.add('has-file');
                         button.classList.remove('error');
+                        
+                        // Ensure remove button is present for client-side state
+                        if (container && !container.querySelector('.file-remove-button')) {
+                            const removeBtn = document.createElement('button');
+                            removeBtn.type = 'button';
+                            removeBtn.className = 'file-remove-button';
+                            removeBtn.title = 'Remove file';
+                            removeBtn.innerText = '×';
+                            // Determine field name from input id (e.g., birth_certificate_input -> birth_certificate)
+                            const fieldName = input.id.replace(/_input$/, '');
+                            removeBtn.addEventListener('click', () => removeFile(fieldName));
+                            container.appendChild(removeBtn);
+                        }
                         
                         // Mark as not required since file exists
                         input.removeAttribute('data-required');
@@ -4143,6 +4512,22 @@
                     // File is valid
                     button.classList.remove('error');
                     button.classList.add('has-file');
+                    // Ensure remove button is present after selecting a new file
+                    try {
+                        const container = input.closest('.file-upload-container');
+                        if (container && !container.querySelector('.file-remove-button')) {
+                            const removeBtn = document.createElement('button');
+                            removeBtn.type = 'button';
+                            removeBtn.className = 'file-remove-button';
+                            removeBtn.title = 'Remove file';
+                            removeBtn.innerText = '×';
+                            const fieldName = input.id.replace(/_input$/, '');
+                            removeBtn.addEventListener('click', () => removeFile(fieldName));
+                            container.appendChild(removeBtn);
+                        }
+                    } catch (e) {
+                        console.error('Error ensuring remove button:', e);
+                    }
                     
                     const fileName = file.name.length > 30 ? 
                         file.name.substring(0, 30) + '...' : file.name;
@@ -4218,11 +4603,34 @@
 
                 function resetFileUpload(input, button, textElement) {
                     button.classList.remove('has-file', 'error');
+                    // Remove any existing remove button in the container
+                    try {
+                        const container = input.closest('.file-upload-container');
+                        const removeBtn = container ? container.querySelector('.file-remove-button') : null;
+                        if (removeBtn) removeBtn.remove();
+                    } catch (e) {
+                        console.error('Error removing remove button during reset:', e);
+                    }
                     
                     if (input.name === 'profile_picture') {
                         textElement.innerHTML = `
                             Click to upload your 1x1 photo<br>
                             <span class="text-xs text-gray-500">JPG, PNG, WEBP up to 5MB</span>
+                        `;
+                    } else if (input.name === 'upload_id') {
+                        textElement.innerHTML = `
+                            Click to upload Valid ID (Front) <span class="text-red-500">*</span><br>
+                            <span class="text-xs text-gray-500">JPG, PNG, PDF up to 5MB</span>
+                        `;
+                    } else if (input.name === 'birth_certificate') {
+                        textElement.innerHTML = `
+                            Click to upload Birth Certificate<br>
+                            <span class="text-xs text-gray-500">JPG, PNG, PDF up to 5MB</span>
+                        `;
+                    } else if (input.name === 'upload_id-back') {
+                        textElement.innerHTML = `
+                            Click to upload Valid ID (Back)<br>
+                            <span class="text-xs text-gray-500">JPG, PNG, PDF up to 5MB</span>
                         `;
                     } else {
                         textElement.innerHTML = `
@@ -4306,13 +4714,19 @@
                     }
                     
                     const age = calculateAge(birthdateValue);
-                    if (age >= 15 && age <= 17) {
+                    const birthDate = new Date(birthdateValue);
+                    const today = new Date();
+                    const oneMonthFromToday = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate());
+                    const isTurning15Soon = age === 14 && birthDate <= oneMonthFromToday;
+                    
+                    if ((age >= 15 && age <= 17) || isTurning15Soon) {
                         ageGroupSelect.value = '1';
                     } else if (age >= 18 && age <= 24) {
                         ageGroupSelect.value = '2';
                     } else if (age >= 25 && age <= 30) {
                         ageGroupSelect.value = '3';
                     } else {
+                        // For ages outside the accepted range
                         ageGroupSelect.value = '';
                     }
                     
@@ -4862,7 +5276,7 @@
 
         // Initialize 30-minute timeout and on-close cleanup with pre-timeout warning
         function initializeProfilingTimeouts() {
-            const TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+            const TIMEOUT_MS = 15 * 60 * 1000; // 30 minutes
             const PREWARN_MS = 60 * 1000; // Show warning when <= 1 minute remains
             const resetEndpoint = '<?= base_url('profiling/reset') ?>';
 
@@ -5597,6 +6011,11 @@
         if (urlParams.get('success') === '1') {
             // Store success type globally for modal
             window.successType = '<?= isset($success_type) ? $success_type : "registration" ?>';
+            // Fresh completion: clear any prior acceptance so next visit must re-read terms
+            try {
+                sessionStorage.removeItem('hasAcceptedTerms');
+                sessionStorage.removeItem('hasAcceptedPrivacy');
+            } catch(e) { /* ignore */ }
             showSuccessState();
         } else {
             // Initialize countdowns for main page if we're on step 6
@@ -5604,6 +6023,23 @@
                 initializeCountdowns();
                 initializePasswordValidation();
                 initializeGenderDropdown();
+                // If we are at the very first step (qualification) ensure checkbox is reset (fresh start logic)
+                try {
+                    const stepIndicator = <?= (int)($step ?? 1) ?>;
+                    const termsCheckbox = document.getElementById('terms-checkbox');
+                    const serverAccepted = Boolean(window.__profilingServerAccepted);
+                    if (stepIndicator === 1) {
+                        if (serverAccepted) {
+                            sessionStorage.setItem('hasAcceptedTerms', 'true');
+                            sessionStorage.setItem('hasAcceptedPrivacy', 'true');
+                            if (termsCheckbox) termsCheckbox.checked = true;
+                        } else {
+                            sessionStorage.removeItem('hasAcceptedTerms');
+                            sessionStorage.removeItem('hasAcceptedPrivacy');
+                            if (termsCheckbox) termsCheckbox.checked = false;
+                        }
+                    }
+                } catch(e) { /* ignore */ }
             });
         }
         
@@ -5633,17 +6069,35 @@
 
             if (!termsCheckbox || !continueBtn) return;
 
-            // Tracking state
-            let hasReadTerms = false;
-            let hasReadPrivacy = false;
-            let termsAccepted = false;
+            const serverAccepted = Boolean(window.__profilingServerAccepted);
 
-            // Check session storage for previous acceptance
-            if (sessionStorage.getItem('termsAccepted') === 'true') {
-                termsAccepted = true;
+            // Tracking state
+            let hasScrolledTerms = false;
+            let hasScrolledPrivacy = false;
+            let hasAcceptedTerms = false;
+            let hasAcceptedPrivacy = false;
+
+            if (serverAccepted) {
+                hasAcceptedTerms = true;
+                hasAcceptedPrivacy = true;
+                hasScrolledTerms = true;
+                hasScrolledPrivacy = true;
                 termsCheckbox.checked = true;
-                updateContinueButton();
+                try {
+                    sessionStorage.setItem('hasAcceptedTerms', 'true');
+                    sessionStorage.setItem('hasAcceptedPrivacy', 'true');
+                } catch(e) { /* ignore */ }
             }
+
+            if (sessionStorage.getItem('hasAcceptedTerms') === 'true' && sessionStorage.getItem('hasAcceptedPrivacy') === 'true') {
+                hasAcceptedTerms = true;
+                hasAcceptedPrivacy = true;
+                hasScrolledTerms = true;
+                hasScrolledPrivacy = true;
+                termsCheckbox.checked = true;
+            }
+
+            updateContinueButton();
 
             // Toast notification functions
             function showToast(message, type = 'error') {
@@ -5657,18 +6111,38 @@
                 
                 if (type === 'success') {
                     toastElement.classList.add('success');
+                } else if (type === 'info') {
+                    toastElement.classList.add('info');
+                } else if (type === 'warning') {
+                    toastElement.classList.add('warning');
                 }
                 
-                const icon = type === 'success' ? 
-                    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>' :
-                    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>';
+                // Define proper icons for each type
+                let icon = '';
+                if (type === 'success') {
+                    icon = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>';
+                } else if (type === 'info') {
+                    icon = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>';
+                } else if (type === 'warning') {
+                    icon = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>';
+                } else {
+                    // error type
+                    icon = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>';
+                }
                 
                 toastElement.innerHTML = `
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            ${icon}
-                        </svg>
-                        <span class="text-sm font-medium">${message}</span>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                ${icon}
+                            </svg>
+                            <span class="text-sm font-medium pr-2">${message}</span>
+                        </div>
+                        <button onclick="closeToast('${toastId}')" class="ml-2 text-current opacity-70 hover:opacity-100 focus:opacity-100 transition-opacity">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
                     </div>
                 `;
                 
@@ -5680,16 +6154,24 @@
                     toastElement.classList.add('show');
                 }, 100);
                 
-                // Auto remove after 3 seconds
+                // Auto remove after 5 seconds (increased for manual close option)
                 setTimeout(() => {
+                    closeToast(toastId);
+                }, 5000);
+            }
+
+            // Close toast function (globally accessible)
+            window.closeToast = function(toastId) {
+                const toastElement = document.getElementById(toastId);
+                if (toastElement) {
                     toastElement.classList.remove('show');
                     setTimeout(() => {
                         if (toastElement.parentNode) {
-                            toastContainer.removeChild(toastElement);
+                            toastElement.parentNode.removeChild(toastElement);
                         }
                     }, 300);
-                }, 3000);
-            }
+                }
+            };
 
             // Scroll tracking function
             function trackScrollComplete(modalContent, callback) {
@@ -5698,46 +6180,39 @@
                     const scrollHeight = modalContent.scrollHeight;
                     const clientHeight = modalContent.clientHeight;
                     
-                    // Check if user has scrolled to bottom (with 10px tolerance)
-                    if (scrollTop + clientHeight >= scrollHeight - 10) {
+                    // Check if user has scrolled to bottom (with 20px tolerance for better detection)
+                    if (scrollTop + clientHeight >= scrollHeight - 20) {
                         callback();
                         modalContent.removeEventListener('scroll', checkScroll);
                     }
                 };
                 
                 modalContent.addEventListener('scroll', checkScroll);
-                // Also check immediately in case content is already visible
+                // Also check immediately in case content is already visible/short enough
                 checkScroll();
             }
 
-            // Enable/disable continue button based on checkbox state
+            // Enable/disable continue button based on both terms being accepted
             function updateContinueButton() {
-                if (termsCheckbox.checked) {
-                    continueBtn.disabled = false;
-                    continueBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                if (hasAcceptedTerms && hasAcceptedPrivacy && termsCheckbox.checked) {
+                    continueBtn.classList.remove('opacity-50');
                     continueBtn.classList.add('hover:bg-blue-50', 'hover:shadow-lg', 'transform', 'hover:scale-105');
                 } else {
-                    continueBtn.disabled = true;
-                    continueBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    continueBtn.classList.add('opacity-50');
                     continueBtn.classList.remove('hover:bg-blue-50', 'hover:shadow-lg', 'transform', 'hover:scale-105');
                 }
+                // Button is always clickable - validation messages will guide the user
             }
 
             // Checkbox click handler with validation
             termsCheckbox.addEventListener('click', function(e) {
-                if (!termsAccepted) {
+                if (!hasAcceptedTerms || !hasAcceptedPrivacy) {
                     e.preventDefault();
-                    showToast('Please read the complete Terms and Conditions and Privacy Policy before accepting.');
+                    showToast('Please read and accept the Terms and Conditions and Privacy Policy to proceed.', 'error');
                     return false;
-                }
-            });
-
-            // Continue button click handler with validation
-            continueBtn.addEventListener('click', function(e) {
-                if (!termsAccepted || !termsCheckbox.checked) {
-                    e.preventDefault();
-                    showToast('Please read and accept the Terms and Conditions and Privacy Policy to continue.');
-                    return false;
+                } else {
+                    // User can now check/uncheck freely
+                    updateContinueButton();
                 }
             });
 
@@ -5748,25 +6223,43 @@
                     termsModal.classList.remove('hidden');
                     document.body.style.overflow = 'hidden';
                     
-                    // Style accept button as disabled but keep it clickable
+                    // Reset button state to disabled with proper styling
                     if (acceptTermsBtn) {
-                        acceptTermsBtn.disabled = false; // Keep clickable
-                        acceptTermsBtn.classList.add('opacity-50');
-                        acceptTermsBtn.classList.remove('cursor-not-allowed'); // Remove cursor blocking
-                        acceptTermsBtn.textContent = 'Read to Accept Terms';
+                        if (!serverAccepted) {
+                            acceptTermsBtn.disabled = true;
+                            acceptTermsBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                            acceptTermsBtn.textContent = 'Read to Bottom to Accept';
+                            hasScrolledTerms = false; // Reset scroll state when reopening
+                        } else {
+                            acceptTermsBtn.disabled = false;
+                            acceptTermsBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                            acceptTermsBtn.innerHTML = `
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                I Accept These Terms
+                            `;
+                        }
                     }
                     
-                    // Start tracking scroll
-                    const modalContent = termsModal.querySelector('.custom-scrollbar');
-                    if (modalContent) {
-                        trackScrollComplete(modalContent, function() {
-                            hasReadTerms = true;
-                            if (acceptTermsBtn) {
-                                acceptTermsBtn.classList.remove('opacity-50');
-                                acceptTermsBtn.textContent = 'I Accept These Terms';
-                                showToast('You can now accept the Terms and Conditions!', 'success');
-                            }
-                        });
+                    if (!serverAccepted) {
+                        // Start tracking scroll
+                        const modalContent = termsModal.querySelector('.custom-scrollbar');
+                        if (modalContent) {
+                            trackScrollComplete(modalContent, function() {
+                                hasScrolledTerms = true;
+                                if (acceptTermsBtn) {
+                                    acceptTermsBtn.disabled = false;
+                                    acceptTermsBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                                    acceptTermsBtn.innerHTML = `
+                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        I Accept These Terms
+                                    `;
+                                }
+                            });
+                        }
                     }
                 });
             }
@@ -5778,25 +6271,43 @@
                     privacyModal.classList.remove('hidden');
                     document.body.style.overflow = 'hidden';
                     
-                    // Style accept button as disabled but keep it clickable
+                    // Reset button state to disabled with proper styling
                     if (acceptPrivacyBtn) {
-                        acceptPrivacyBtn.disabled = false; // Keep clickable
-                        acceptPrivacyBtn.classList.add('opacity-50');
-                        acceptPrivacyBtn.classList.remove('cursor-not-allowed'); // Remove cursor blocking
-                        acceptPrivacyBtn.textContent = 'Read to Understand Policy';
+                        if (!serverAccepted) {
+                            acceptPrivacyBtn.disabled = true;
+                            acceptPrivacyBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                            acceptPrivacyBtn.textContent = 'Read to Bottom to Accept';
+                            hasScrolledPrivacy = false; // Reset scroll state when reopening
+                        } else {
+                            acceptPrivacyBtn.disabled = false;
+                            acceptPrivacyBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                            acceptPrivacyBtn.innerHTML = `
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                I Understand This Policy
+                            `;
+                        }
                     }
                     
-                    // Start tracking scroll
-                    const modalContent = privacyModal.querySelector('.custom-scrollbar');
-                    if (modalContent) {
-                        trackScrollComplete(modalContent, function() {
-                            hasReadPrivacy = true;
-                            if (acceptPrivacyBtn) {
-                                acceptPrivacyBtn.classList.remove('opacity-50');
-                                acceptPrivacyBtn.textContent = 'I Understand This Policy';
-                                showToast('You can now confirm your understanding of the Privacy Policy!', 'success');
-                            }
-                        });
+                    if (!serverAccepted) {
+                        // Start tracking scroll
+                        const modalContent = privacyModal.querySelector('.custom-scrollbar');
+                        if (modalContent) {
+                            trackScrollComplete(modalContent, function() {
+                                hasScrolledPrivacy = true;
+                                if (acceptPrivacyBtn) {
+                                    acceptPrivacyBtn.disabled = false;
+                                    acceptPrivacyBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                                    acceptPrivacyBtn.innerHTML = `
+                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        I Understand This Policy
+                                    `;
+                                }
+                            });
+                        }
                     }
                 });
             }
@@ -5823,33 +6334,27 @@
             if (declineTermsBtn) declineTermsBtn.addEventListener('click', closeTermsModal);
             if (acceptTermsBtn) {
                 acceptTermsBtn.addEventListener('click', function(e) {
-                    // Check if user has read the document
-                    if (!hasReadTerms) {
+                    // Check if user has scrolled to the bottom
+                    if (!hasScrolledTerms) {
                         e.preventDefault();
-                        showToast('Please scroll to the bottom to read the complete Terms and Conditions.');
+                        showToast('Please scroll to the bottom to read the complete Terms and Conditions.', 'warning');
                         return;
                     }
                     
-                    // Check if privacy has also been read
-                    if (!hasReadPrivacy) {
-                        showToast('Please also read the Privacy Policy before proceeding.');
-                        closeTermsModal();
-                        // Auto-open privacy modal
-                        if (privacyModal) {
-                            setTimeout(() => {
-                                showPrivacyBtn.click();
-                            }, 500);
-                        }
-                        return;
-                    }
-                    
-                    // Both documents read, enable everything
-                    termsAccepted = true;
-                    sessionStorage.setItem('termsAccepted', 'true');
-                    termsCheckbox.checked = true;
-                    updateContinueButton();
+                    // Mark terms as accepted
+                    hasAcceptedTerms = true;
+                    sessionStorage.setItem('hasAcceptedTerms', 'true');
                     closeTermsModal();
-                    showToast('Terms accepted! You can now proceed with registration.', 'success');
+                    
+                    // Show success and automatically open Privacy Policy
+                    showToast('Terms and Conditions accepted successfully.', 'success');
+                    
+                    // Auto-open Privacy Policy modal after a short delay
+                    setTimeout(() => {
+                        if (showPrivacyBtn && privacyModal) {
+                            showPrivacyBtn.click();
+                        }
+                    }, 800);
                 });
             }
 
@@ -5859,33 +6364,20 @@
             if (declinePrivacyBtn) declinePrivacyBtn.addEventListener('click', closePrivacyModal);
             if (acceptPrivacyBtn) {
                 acceptPrivacyBtn.addEventListener('click', function(e) {
-                    // Check if user has read the document
-                    if (!hasReadPrivacy) {
+                    // Check if user has scrolled to the bottom
+                    if (!hasScrolledPrivacy) {
                         e.preventDefault();
-                        showToast('Please scroll to the bottom to read the complete Privacy Policy.');
+                        showToast('Please scroll to the bottom to read the complete Privacy Policy.', 'warning');
                         return;
                     }
                     
-                    // Check if terms has also been read
-                    if (!hasReadTerms) {
-                        showToast('Please also read the Terms and Conditions before proceeding.');
-                        closePrivacyModal();
-                        // Auto-open terms modal
-                        if (termsModal) {
-                            setTimeout(() => {
-                                showTermsBtn.click();
-                            }, 500);
-                        }
-                        return;
-                    }
-                    
-                    // Both documents read, enable everything
-                    termsAccepted = true;
-                    sessionStorage.setItem('termsAccepted', 'true');
-                    termsCheckbox.checked = true;
-                    updateContinueButton();
+                    // Mark privacy as accepted
+                    hasAcceptedPrivacy = true;
+                    sessionStorage.setItem('hasAcceptedPrivacy', 'true');
                     closePrivacyModal();
-                    showToast('Privacy Policy acknowledged! You can now proceed with registration.', 'success');
+                    
+                    // Show success notification - both documents now accepted
+                    showToast('Privacy Policy accepted successfully. You may now proceed with registration.', 'success');
                 });
             }
 
@@ -5897,8 +6389,314 @@
                 }
             });
 
+            // Form submission validation
+            const qualificationForm = document.getElementById('qualificationForm');
+            if (qualificationForm) {
+                qualificationForm.addEventListener('submit', function(e) {
+                    // Check if Terms and Conditions and Privacy Policy have been read completely
+                    if (!hasScrolledTerms || !hasScrolledPrivacy) {
+                        e.preventDefault();
+                        showToast('Please read the Terms and Conditions and Privacy Policy before proceeding.', 'warning');
+                        return false;
+                    }
+                    
+                    // Check if Terms and Conditions and Privacy Policy have been accepted
+                    if (!hasAcceptedTerms || !hasAcceptedPrivacy) {
+                        e.preventDefault();
+                        showToast('Please read and accept the Terms and Conditions and Privacy Policy to proceed.', 'warning');
+                        return false;
+                    }
+                    
+                    // Check if checkbox is checked
+                    if (!termsCheckbox.checked) {
+                        e.preventDefault();
+                        showToast('You must agree to the Terms and Conditions and Privacy Policy to continue.', 'warning');
+                        return false;
+                    }
+                    
+                    // All validations passed - allow form submission
+                    return true;
+                });
+            }
+
             // Initial button state
             updateContinueButton();
+        }
+
+        // Age range enforcement (15-30 with 1 month grace for turning 15 soon)
+    (function initBirthdateConstraints(){
+            const monthSel = document.querySelector('select[name="birth_month"]');
+            const daySel = document.querySelector('select[name="birth_day"]');
+            const yearSel = document.querySelector('select[name="birth_year"]');
+            const hidden = document.getElementById('birthdate_hidden');
+            const helper = document.getElementById('birthdate_helper');
+            const ageEl = document.getElementById('birthdate_age');
+            if(!monthSel || !daySel || !yearSel || !hidden) return;
+
+            function computeLimits(){
+                const now = new Date();
+                // Max age 30: earliest date of birth = today - 30 years
+                const earliest = new Date(now.getFullYear()-30, now.getMonth(), now.getDate());
+                // Minimum normal age 15; allow grace: turning 15 within 1 month
+                // So latest allowed birthdate = (today - 14 years) - 1 month
+                const latestNormal = new Date(now.getFullYear()-15, now.getMonth(), now.getDate());
+                const graceLatest = new Date(latestNormal.getTime());
+                graceLatest.setMonth(graceLatest.getMonth()+1); // People who will turn 15 within 1 month (already handled server side)
+                // We'll consider allowed if: dob <= latestNormal OR (dob > latestNormal AND dob <= graceLatest)
+                return {earliest, latestNormal, graceLatest};
+            }
+            const limits = computeLimits();
+
+            function pad(n){return n.toString().padStart(2,'0');}
+            const fallbackDaysByMonth = {
+                1:31,2:29,3:31,4:30,5:31,6:30,
+                7:31,8:31,9:30,10:31,11:30,12:31
+            };
+
+            function daysInMonth(y,m){
+                if(!y){
+                    return fallbackDaysByMonth[m] ?? 31;
+                }
+                return new Date(y, m, 0).getDate();
+            }
+
+            // Disable months that cannot possibly contain a valid DOB given the selected year
+            function refreshMonths(){
+                const y = parseInt(yearSel.value,10);
+                const monthOptions = monthSel.querySelectorAll('option');
+                // If no year selected, enable all months and return
+                if(!y){
+                    monthOptions.forEach(opt => opt.disabled = false);
+                    return;
+                }
+                const {earliest, latestNormal, graceLatest} = limits;
+                // For each month, check if there exists at least one day in that month that produces a DOB within limits
+                monthOptions.forEach(opt => {
+                    if(!opt.value) return; // skip placeholder
+                    const m = parseInt(opt.value,10);
+                    // Check days in that month for the selected year
+                    const total = daysInMonth(y,m);
+                    let possible = false;
+                    for(let d=1; d<=total; d++){
+                        const dob = new Date(y, m-1, d);
+                        if(isNaN(dob.getTime())) continue;
+                        if(dob >= earliest && dob <= graceLatest){
+                            possible = true; break;
+                        }
+                    }
+                    opt.disabled = !possible;
+                });
+                // If currently selected month is disabled, clear it
+                if(monthSel.value){
+                    const curOpt = monthSel.querySelector('option[value="'+monthSel.value+'"]');
+                    if(curOpt && curOpt.disabled){
+                        monthSel.value = '';
+                    }
+                }
+            }
+
+            function calcAgeDetail(dob){
+                const now = new Date();
+                let years = now.getFullYear() - dob.getFullYear();
+                let months = now.getMonth() - dob.getMonth();
+                let days = now.getDate() - dob.getDate();
+                if (days < 0) { months--; days += new Date(now.getFullYear(), now.getMonth(), 0).getDate(); }
+                if (months < 0) { years--; months += 12; }
+                return {years, months, days};
+            }
+
+            function formatAge(detail){
+                if(detail.years < 0) return '';
+                const parts = [];
+                if(detail.years>0) parts.push(detail.years + ' yr' + (detail.years>1?'s':''));
+                if(detail.months>0) parts.push(detail.months + ' mo');
+                if(detail.years===0 && detail.months===0) parts.push(detail.days + ' day' + (detail.days!==1?'s':''));
+                return parts.join(' ');
+            }
+
+            function daysUntil(date){
+                const now = new Date();
+                const diff = date.getTime() - now.getTime();
+                return Math.ceil(diff / 86400000);
+            }
+
+            function validateAndUpdate(){
+                const y = parseInt(yearSel.value,10);
+                const m = parseInt(monthSel.value,10);
+                const d = parseInt(daySel.value,10);
+                helper.textContent='';
+                if(ageEl) ageEl.textContent='';
+                if(!m||!d){ hidden.value=''; return; }
+                if(!y){
+                    hidden.value='';
+                    helper.classList.remove('text-red-600','text-green-600');
+                    helper.classList.add('text-slate-600');
+                    helper.textContent = 'Select your birth year to validate age.';
+                    if(ageEl) ageEl.textContent='';
+                    return;
+                }
+                const dob = new Date(y, m-1, d);
+                if(isNaN(dob.getTime())){ hidden.value=''; return; }
+                const {earliest, latestNormal, graceLatest} = limits;
+                let ok=false; let grace=false;
+                if(dob >= earliest && dob <= latestNormal){ ok=true; }
+                else if(dob > latestNormal && dob <= graceLatest){ ok=true; grace=true; }
+                else if(dob < earliest){ ok=false; }
+                else if(dob > graceLatest){ ok=false; }
+                if(!ok){
+                    hidden.value='';
+                    helper.classList.remove('text-slate-600','text-green-600');
+                    helper.classList.add('text-red-600');
+                    helper.textContent = 'Birthdate must make you 15–30 years old (or turning 15 within 1 month).';
+                } else {
+                    hidden.value = `${y}-${pad(m)}-${pad(d)}`;
+                    helper.classList.remove('text-red-600');
+                    helper.classList.add(grace ? 'text-green-600':'text-slate-600');
+                    helper.textContent = grace ? 'Eligible (turning 15 within 1 month).' : 'Valid age.';
+                    if(ageEl){
+                        const ageDetail = calcAgeDetail(dob);
+                        let ageText = 'Age: ' + formatAge(ageDetail);
+                        if(grace){
+                            // days until 15th birthday
+                            const fifteenth = new Date(dob.getFullYear()+15, dob.getMonth(), dob.getDate());
+                            const daysLeft = daysUntil(fifteenth);
+                            if(daysLeft>=0){
+                                ageText += ` • ${daysLeft} day${daysLeft!==1?'s':''} until 15th birthday`;
+                            }
+                        }
+                        ageEl.textContent = ageText;
+                    }
+                }
+            }
+
+            function refreshDays(){
+                const y = parseInt(yearSel.value,10);
+                const m = parseInt(monthSel.value,10);
+                const currentDay = daySel.value;
+                daySel.innerHTML = '<option value="">Day</option>';
+                if(!m || !y){
+                    daySel.disabled = true;
+                    validateAndUpdate();
+                    return;
+                }
+                const total = daysInMonth(y,m);
+                const {earliest, latestNormal, graceLatest} = limits;
+                for(let i=1;i<=total;i++){
+                    const val = pad(i);
+                    const dob = new Date(y, m-1, i);
+                    const opt = document.createElement('option');
+                    opt.value = val; opt.textContent = i;
+                    // Disable options that produce DOB outside allowed range
+                    if(isNaN(dob.getTime()) || dob < earliest || dob > graceLatest){
+                        opt.disabled = true;
+                    }
+                    daySel.appendChild(opt);
+                }
+                // If all day options (except placeholder) are disabled, keep select disabled
+                const anyEnabled = Array.from(daySel.options).some(o => o.value && !o.disabled);
+                daySel.disabled = !anyEnabled;
+                if(currentDay && parseInt(currentDay,10) <= total){
+                    // Only reselect if the option exists and is not disabled
+                    const opt = daySel.querySelector('option[value="'+pad(parseInt(currentDay,10))+'"]');
+                    if(opt && !opt.disabled) daySel.value = pad(parseInt(currentDay,10)); else daySel.value = '';
+                } else {
+                    daySel.value = '';
+                }
+                validateAndUpdate();
+            }
+
+            [yearSel, monthSel, daySel].forEach(sel=> sel.addEventListener('change', ()=>{
+                if(sel===yearSel){
+                    // When year changes, refresh months (disable impossible months) then refresh days
+                    refreshMonths();
+                    refreshDays();
+                } else if(sel===monthSel){
+                    refreshDays();
+                } else {
+                    validateAndUpdate();
+                }
+            }));
+
+            // Initial run: ensure months and days reflect server-populated selects
+            refreshMonths();
+            refreshDays();
+        })();
+
+        // Function to remove uploaded files
+        function removeFile(fieldName) {
+            const inputElement = document.getElementById(fieldName + '_input');
+            const buttonElement = document.getElementById(fieldName + '_button');
+            const container = inputElement.closest('.file-upload-container');
+            
+            if (!inputElement || !buttonElement || !container) {
+                console.error('Could not find elements for field:', fieldName);
+                return;
+            }
+            
+            // Clear the file input
+            inputElement.value = '';
+            
+            // Update container state
+            container.setAttribute('data-has-existing-file', 'false');
+            
+            // Remove file classes and restore original state
+            buttonElement.classList.remove('has-file');
+            
+            // Update the text content based on field type
+            const textElement = buttonElement.querySelector('#' + fieldName + '_text');
+            if (textElement) {
+                let defaultText = '';
+                let iconSvg = '';
+                
+                switch(fieldName) {
+                    case 'birth_certificate':
+                        defaultText = 'Click to upload Birth Certificate<br><span class="text-xs text-gray-500">JPG, PNG, PDF up to 5MB</span>';
+                        iconSvg = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>';
+                        break;
+                    case 'upload_id':
+                        defaultText = 'Click to upload Valid ID (Front) <span class="text-red-500">*</span><br><span class="text-xs text-gray-500">JPG, PNG, PDF up to 5MB</span>';
+                        iconSvg = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path>';
+                        break;
+                    case 'upload_id_back':
+                        defaultText = 'Click to upload Valid ID (Back)<br><span class="text-xs text-gray-500">JPG, PNG, PDF up to 5MB</span>';
+                        iconSvg = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path>';
+                        break;
+                    case 'profile_picture':
+                        defaultText = 'Click to upload your 1x1 photo<br><span class="text-xs text-gray-500">JPG, PNG, WEBP up to 5MB</span>';
+                        iconSvg = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>';
+                        break;
+                    default:
+                        defaultText = 'Click to upload file<br><span class="text-xs text-gray-500">JPG, PNG, PDF up to 5MB</span>';
+                        iconSvg = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>';
+                }
+                
+                // Update icon
+                const svgElement = buttonElement.querySelector('svg');
+                if (svgElement && iconSvg) {
+                    svgElement.innerHTML = iconSvg;
+                }
+                
+                // Update text
+                textElement.innerHTML = defaultText;
+            }
+            
+            // Remove the remove button
+            const removeButton = container.querySelector('.file-remove-button');
+            if (removeButton) {
+                removeButton.remove();
+            }
+            
+            // Set field as required again if it was required
+            if (fieldName === 'profile_picture' || fieldName === 'birth_certificate' || 
+                fieldName === 'upload_id' || fieldName === 'upload_id_back') {
+                inputElement.setAttribute('data-required', 'true');
+            }
+            
+            // Update form data persistence
+            saveFormData();
+            
+            // Show confirmation message
+            showToast('File removed successfully', 'success');
         }
 
         // Initialize Terms and Conditions when DOM is ready

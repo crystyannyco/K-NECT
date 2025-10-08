@@ -171,12 +171,14 @@ class UserHelper
 
     public static function generateSKUsername($firstName, $lastName)
     {
+        // Unified SK username format for all SK officials (Chairperson, Secretary, Treasurer, Councilor, etc.)
         return 'SK_' . ucfirst(str_replace(' ', '', $firstName)) . ucfirst(str_replace(' ', '', $lastName));
     }
     
+    // Deprecated: Secretary now uses SK_ prefix too. Keeping for backward compatibility if referenced.
     public static function generateSecretaryUsername($firstName, $lastName)
     {
-        return 'SEC_' . ucfirst(str_replace(' ', '', $firstName)) . ucfirst(str_replace(' ', '', $lastName));
+        return self::generateSKUsername($firstName, $lastName);
     }
     
     public static function generatePEDUsername($firstName, $lastName)

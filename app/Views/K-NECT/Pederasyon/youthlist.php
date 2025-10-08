@@ -101,6 +101,63 @@
             border-color: #3b82f6;
         }
 
+        /* Panzoom Controls Styles from youth_profile.php */
+        .panzoom-controls {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            background: white;
+            border-radius: 8px;
+            padding: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            gap: 4px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .panzoom-controls button {
+            width: 32px;
+            height: 32px;
+            border: 1px solid #e5e7eb;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            color: #6b7280;
+        }
+        
+        .panzoom-controls button:hover {
+            background: #f8fafc;
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+        
+        .panzoom-controls button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        
+        .panzoom-container {
+            overflow: hidden;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            background: white;
+            position: relative;
+        }
+        
+        .panzoom-element {
+            cursor: grab;
+        }
+        
+        .panzoom-element:active {
+            cursor: grabbing;
+        }
+
         /* Credentials content styling */
         .credentials-section {
             animation: fadeIn 0.2s ease-in-out;
@@ -146,6 +203,17 @@
                 color: black !important;
                 border: 1px solid black !important;
             }
+        }
+
+        /* Responsive cell classes */
+        .name-cell {
+            white-space: normal !important;
+            word-wrap: break-word;
+            max-width: 200px;
+        }
+        
+        .action-cell {
+            white-space: nowrap !important;
         }
     </style>
         <!-- Main Content -->
@@ -196,7 +264,10 @@
                         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                             <!-- Role Status Tabs -->
                             <div class="flex flex-wrap gap-2">
-                                <button class="status-tab active bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="all">
+                                <button class="status-tab active bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="officials" title="All SK Chairpersons & Pederasyon Officers">
+                                    ALL Officials (<span id="countOfficials">0</span>)
+                                </button>
+                                <button class="status-tab bg-gray-100 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="all">
                                     All (<span id="countAll">0</span>)
                                 </button>
                                 <button class="status-tab bg-green-100 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="pederasyon">
@@ -263,7 +334,12 @@
                                         <?php foreach ($user_list as $user): ?>
                                             <tr class="hover:bg-gray-50"
                                                 data-sk_username="<?= isset($user['sk_username']) ? esc($user['sk_username']) : '' ?>"
-                                                data-sk_password="<?= isset($user['sk_password']) ? esc($user['sk_password']) : '' ?>"
+                                                <?php
+                                                    $sk_pw = $user['sk_password'] ?? '';
+                                                    $is_temp = $sk_pw && !password_get_info($sk_pw)['algo'];
+                                                    $sk_pw_output = $is_temp ? esc($sk_pw) : ($sk_pw ? '******' : '');
+                                                ?>
+                                                data-sk_password="<?= $sk_pw_output ?>"
                                                 data-ped_username="<?= isset($user['ped_username']) ? esc($user['ped_username']) : '' ?>"
                                                 data-ped_password="<?= isset($user['ped_password']) ? esc($user['ped_password']) : '' ?>"
                                                 data-status="<?= isset($user['status']) ? (int)$user['status'] : 1 ?>"
@@ -278,7 +354,7 @@
                                                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     <?= esc(BarangayHelper::getBarangayName($user['barangay'])) ?>
                                                 </td>
-                                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900"><?= esc($user['last_name']) ?>, <?= esc($user['first_name']) ?> <?= esc($user['middle_name']) ?></td>
+                                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 name-cell"><?= esc($user['last_name']) ?>, <?= esc($user['first_name']) ?> <?= esc($user['middle_name']) ?></td>
                                                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900"><?= esc($user['age']) ?></td>
                                                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900"><?= $user['sex'] == '1' ? 'Male' : ($user['sex'] == '2' ? 'Female' : '') ?></td>
                                                 <td class="px-4 py-4 whitespace-nowrap">
@@ -308,7 +384,7 @@
                                                         echo $type == 1 ? 'KK Member' : ($type == 2 ? 'SK Chairperson' : ($type == 3 ? 'Pederasyon' : 'Unknown'));
                                                     ?>
                                                 </td>
-                                                <td class="px-4 py-4 whitespace-nowrap">
+                                                <td class="px-4 py-4 whitespace-nowrap action-cell">
                                                     <button type="button" 
                                                         class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors view-user-btn"
                                                         data-id="<?= esc($user['id']) ?>"
@@ -707,37 +783,6 @@
             });
         }
 
-        // Pop-up modal asking user to download new credentials before logout
-        function promptCredentialsDownload() {
-            if (window.Swal && typeof Swal.fire === 'function') {
-                return Swal.fire({
-                    title: 'Download new credentials required',
-                    html: '<div style="text-align:left;font-size:14px;line-height:1.5">'+
-                          '<p>Please download your updated SK and Pederasyon credentials before logging out to ensure uninterrupted access to the system.</p>'+
-                          '<ul style="margin-top:8px;padding-left:18px;list-style:disc">'+
-                          '<li>Download SK credentials (for SK access)</li>'+
-                          '<li>Download Pederasyon credentials (for Pederasyon access)</li>'+
-                          '</ul>'+
-                          '<p style="margin-top:10px">Logout is disabled until both files have been downloaded.</p>'+
-                          '</div>',
-                    icon: 'warning',
-                    confirmButtonText: 'Okay',
-                    confirmButtonColor: '#3b82f6',
-                    heightAuto: false
-                }).then(() => {
-                    try {
-                        if (typeof openCredentialsPreviewModal === 'function') {
-                            openCredentialsPreviewModal();
-                        }
-                    } catch (e) {}
-                });
-            } else {
-                alert('Please download your updated SK and Pederasyon credentials before logging out. Logout is disabled until both are downloaded.');
-                try { if (typeof openCredentialsPreviewModal === 'function') openCredentialsPreviewModal(); } catch (e) {}
-                return Promise.resolve();
-            }
-        }
-        
         // Store original counts globally
         let originalCounts = {
             all: 0,
@@ -762,12 +807,18 @@
             // DataTable and tab logic
             const table = $('#myTable').DataTable({
                 columnDefs: [
-                    { orderable: false, targets: 0 }
+                    { orderable: false, targets: 0 },
+                    { responsivePriority: 1, targets: 7 }, // Actions
+                    { responsivePriority: 2, targets: 2 }, // Full Name
+                    { responsivePriority: 3, targets: 1 }, // User ID
+                    { responsivePriority: 4, targets: 5 }, // Position
+                    { responsivePriority: 5, targets: 3 }, // Barangay
+                    { responsivePriority: 6, targets: 4 }, // Age
+                    { responsivePriority: 7, targets: 6 }  // Status
                 ],
                 order: [[1, 'asc']],
-                scrollCollapse: true,
-                scrollY: '500px',
-                scrollX: true,
+                responsive: true,
+                autoWidth: false,
                 paging: true,
                 pageLength: 25,
                 info: true,
@@ -793,44 +844,9 @@
                         calculateOriginalCounts();
                         updateDisplayedCounts();
                         restoreFilters();
-                        // If a role change just happened, show the post-reload credentials prompt
-                        try {
-                            if (window.localStorage && localStorage.getItem('knect_show_credentials_prompt') === '1') {
-                                localStorage.removeItem('knect_show_credentials_prompt');
-                                setTimeout(() => { if (typeof promptCredentialsDownload === 'function') promptCredentialsDownload(); }, 300);
-                            }
-                        } catch (e) {}
                     }, 100);
                 }
             });
-
-            // On-load check: if credentials downloads are required, auto-open the modal and warn the user
-            try {
-                fetch('<?= base_url('pederasyon/credential-download-status') ?>', { credentials: 'same-origin' })
-                    .then(r => r.ok ? r.json() : Promise.reject(new Error('Network error')))
-                    .then(st => {
-                        if (st && st.success && st.require) {
-                            const needSk = !st.sk;
-                            const needPed = !st.pederasyon;
-                            const msgs = [];
-                            if (needSk) msgs.push('Please download SK credentials for your updated role.');
-                            if (needPed) msgs.push('Please download Pederasyon credentials for your updated role.');
-                            if (msgs.length) {
-                                // Show stacked toasts
-                                msgs.forEach(m => showNotification(m, 'warning'));
-                                // Open modal and focus the first missing tab
-                                if (typeof openCredentialsPreviewModal === 'function') {
-                                    openCredentialsPreviewModal();
-                                    setTimeout(() => {
-                                        if (needSk) { showCredentialsTab('sk'); }
-                                        else if (needPed) { showCredentialsTab('pederasyon'); }
-                                    }, 250);
-                                }
-                            }
-                        }
-                    })
-                    .catch(() => { /* silent */ });
-            } catch (e) { /* ignore */ }
 
             // Populate barangay filter
             function populateBarangayFilter() {
@@ -895,6 +911,8 @@
             function updateDisplayedCounts() {
                 $('#countAll').text(originalCounts.all);
                 $('#countSK').text(originalCounts.sk);
+                // Officials = SK + Pederasyon (derived)
+                $('#countOfficials').text(originalCounts.sk + originalCounts.pederasyon);
                 $('#countPederasyon').text(originalCounts.pederasyon);
                 $('#countKK').text(originalCounts.kk);
                 
@@ -917,6 +935,7 @@
                     .addClass('bg-gray-100');
                 $('.status-tab[data-role="sk"]').removeClass('bg-gray-100').addClass('bg-yellow-100');
                 $('.status-tab[data-role="pederasyon"]').removeClass('bg-gray-100').addClass('bg-green-100');
+                $('.status-tab[data-role="officials"]').removeClass('bg-gray-100').addClass('bg-indigo-100');
                 $('.status-tab[data-role="kk"]').removeClass('bg-gray-100').addClass('bg-red-100');
                 
                 tab.removeClass('bg-gray-100 bg-yellow-100 bg-green-100 bg-red-100')
@@ -934,17 +953,18 @@
                 
                 // Apply role filter using DataTable column search
                 if (roleFilter !== 'all') {
-                    let searchTerms = [];
+                    let regex = '';
                     if (roleFilter === 'sk') {
-                        searchTerms = ['SK Chairperson', 'SK Chairperson'];
+                        regex = '^(SK Chairperson)$';
                     } else if (roleFilter === 'pederasyon') {
-                        searchTerms = ['Pederasyon'];
+                        regex = '^(Pederasyon)'; // Positions begin with Pederasyon
                     } else if (roleFilter === 'kk') {
-                        searchTerms = ['KK Member'];
+                        regex = '^(KK Member)$';
+                    } else if (roleFilter === 'officials') {
+                        // Combine SK Chairperson + any Pederasyon
+                        regex = '^(SK Chairperson|Pederasyon)';
                     }
-                    
-                    if (searchTerms.length > 0) {
-                        const regex = searchTerms.join('|');
+                    if (regex) {
                         table.column(7).search(regex, true, false);
                     }
                 }
@@ -998,7 +1018,7 @@
 
             // Clear filters
             $('#clearFilters').on('click', function() {
-                $('.status-tab[data-role="all"]').trigger('click');
+                $('.status-tab[data-role="officials"]').trigger('click');
                 $('#statusFilter').val('all');
                 $('#barangayFilter').val('');
                 table.search('').columns().search('').draw();
@@ -1006,11 +1026,12 @@
                 localStorage.removeItem('activeStatusFilter');
                 localStorage.removeItem('activeBarangayFilter');
                 updateDisplayedCounts();
+                showNotification('Filters cleared successfully', 'success');
             });
 
             // Function to restore saved filters
             function restoreFilters() {
-                const savedRoleTab = localStorage.getItem('activeRoleTab') || 'all';
+                const savedRoleTab = localStorage.getItem('activeRoleTab') || 'officials';
                 const savedStatusFilter = localStorage.getItem('activeStatusFilter') || 'all';
                 const savedBarangayFilter = localStorage.getItem('activeBarangayFilter') || '';
                 
@@ -1118,9 +1139,12 @@
             $(document).on('click', '.view-user-btn', function(e) {
                 e.preventDefault();
                 var userId = $(this).data('id');
+                console.log('View button clicked, userId:', userId); // Debug log
                 // Open the SK-style view modal
                 if (typeof openViewModal === 'function') {
                     openViewModal(userId);
+                } else {
+                    console.error('openViewModal function not found'); // Debug log
                 }
             });
 
@@ -1187,7 +1211,7 @@
                 if (uploadIdFile) {
                     const url = '<?= base_url('/previewDocument/id/') ?>' + uploadIdFile;
                     const ext = uploadIdFile.split('.').pop().toLowerCase();
-                    html += `<div class="w-full border border-gray-200 rounded-lg mb-6 bg-gray-50 p-4">
+                    html += `<div class="w-full border border-gray-200 rounded-lg bg-gray-50 p-4">
                         <div class='font-semibold text-gray-700 mb-2'>ID</div>
                         <div class='relative w-full'>`;
                     if (['pdf'].includes(ext)) {
@@ -1204,7 +1228,7 @@
                 if (uploadIdBackFile) {
                     const urlBack = '<?= base_url('/previewDocument/id/') ?>' + uploadIdBackFile;
                     const extBack = uploadIdBackFile.split('.').pop().toLowerCase();
-                    html += `<div class="w-full border border-gray-200 rounded-lg mb-6 bg-gray-50 p-4">
+                    html += `<div class="w-full border border-gray-200 rounded-lg bg-gray-50 p-4">
                         <div class='font-semibold text-gray-700 mb-2'>ID (Back)</div>
                         <div class='relative w-full'>`;
                     if (['pdf'].includes(extBack)) {
@@ -1231,11 +1255,13 @@
                     method: 'POST',
                     data: { user_id: userId },
                     success: function(response) {
+                        console.log('User data received:', response); // Debug log
                         if (!response || !response.success || !response.user) {
                             showNotification('User not found.', 'error');
                             return;
                         }
                         var u = response.user;
+                        console.log('User object:', u); // Debug log
                         // Mappings
                         var civilStatusMap = <?= json_encode($field_mappings['civilStatusMap'] ?? []) ?>;
                         var youthClassificationMap = <?= json_encode($field_mappings['youthClassificationMap'] ?? []) ?>;
@@ -1330,12 +1356,15 @@
                         // Documents from user object (if available)
                         const birthCertFile = u.birth_certificate || '';
                         const uploadIdFile = u.upload_id || '';
-                        const uploadIdBackFile = u.upload_id_back || '';
+                        const uploadIdBackFile = u['upload_id-back'] || '';
+                        console.log('Document files:', { birthCertFile, uploadIdFile, uploadIdBackFile }); // Debug log
                         const docHtml = buildDocPreviewHtml(birthCertFile, uploadIdFile, uploadIdBackFile);
                         document.getElementById('pedModalDocPreview').innerHTML = docHtml;
 
                         // Show modal
+                        console.log('Showing modal'); // Debug log
                         $('#pedPreviewModal').removeClass('hidden');
+                        console.log('Modal classes after show:', $('#pedPreviewModal').attr('class')); // Debug log
 
                         // Initialize panzoom for images after DOM updated
                         setTimeout(() => {
@@ -1363,7 +1392,9 @@
                             pedApplyPerUserRoleRules('#pedRoleSelect', barangayId, userIdForCheck, currentType, '#pedSkChairmanNote');
                         })();
                     },
-                    error: function() {
+                    error: function(xhr, status, error) {
+                        console.error('AJAX Error:', { xhr, status, error }); // Debug log
+                        console.error('Response Text:', xhr.responseText); // Debug log
                         showNotification('Failed to fetch user info.', 'error');
                     }
                 });
@@ -3304,7 +3335,7 @@
                     </div>
                 </div>
                 <!-- Right: Document Preview -->
-                <div class="w-[60%] p-6 flex flex-col gap-8 items-center justify-start relative overflow-y-auto bg-white border-l border-gray-200" id="pedModalDocPreview">
+                <div class="w-[60%] p-6 flex flex-col gap-4 items-center justify-start relative overflow-y-auto bg-white border-l border-gray-200" id="pedModalDocPreview">
                     <!-- Document preview will be injected here -->
                 </div>
             </div>

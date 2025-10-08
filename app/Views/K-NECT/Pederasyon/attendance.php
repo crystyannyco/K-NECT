@@ -2,6 +2,7 @@
     .event-card {
         transition: all 0.2s ease;
         border: 1px solid #e5e7eb;
+        background: #ffffff;
     }
     
     .event-card:hover {
@@ -174,8 +175,8 @@
             </div>
         </div>
 
-        <!-- Events Grid -->
-        <div id="eventsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Events List -->
+        <div id="eventsGrid" class="space-y-4">
             <?php if (!empty($events)): ?>
                 <?php foreach ($events as $event): ?>
                     <?php
@@ -191,6 +192,14 @@
                         $status = 'completed';
                     }
                     
+                    $statusLabel = ucfirst($status);
+                    $statusBadgeClass = 'bg-yellow-100 text-yellow-800';
+                    if ($status === 'ongoing') {
+                        $statusBadgeClass = 'bg-green-100 text-green-800';
+                    } elseif ($status === 'completed') {
+                        $statusBadgeClass = 'bg-gray-100 text-gray-800';
+                    }
+                    
                     // Get category badge class
                     $categoryClass = 'badge-default';
                     if ($event['category']) {
@@ -200,48 +209,24 @@
                         }
                     }
                     ?>
-                    <div class="event-card bg-white rounded-lg overflow-hidden" 
+                    <div class="event-card rounded-lg shadow-sm border border-gray-200 p-5 flex flex-col gap-4 md:flex-row md:items-center" 
                          data-status="<?= $status ?>" 
                          data-category="<?= esc($event['category']) ?>">
-                        
-                        <!-- Event Image -->
-                        <div class="h-48 bg-blue-500 relative overflow-hidden">
-            <?php if (!empty($event['event_banner'])): ?>
-                <img src="<?= base_url('uploads/event/' . $event['event_banner']) ?>" 
-                     alt="<?= esc($event['title']) ?>" 
-                     class="w-full h-full object-cover">
-            <?php else: ?>
-                <img src="<?= base_url('assets/images/default-event-banner.svg') ?>" 
-                     alt="No banner" 
-                     class="w-full h-full object-cover">
-            <?php endif; ?>                            <!-- Status Badge -->
-                            <div class="absolute top-3 right-3">
-                                <?php if ($status === 'upcoming'): ?>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                        Upcoming
-                                    </span>
-                                <?php elseif ($status === 'ongoing'): ?>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                        Ongoing
-                                    </span>
-                                <?php else: ?>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                        Completed
-                                    </span>
-                                <?php endif; ?>
+                        <div class="flex-1">
+                            <div class="flex flex-wrap items-center gap-3">
+                                <h4 class="text-lg font-semibold text-gray-900">
+                                    <?= esc($event['title']) ?>
+                                </h4>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= $statusBadgeClass ?>">
+                                    <?= $statusLabel ?>
+                                </span>
                             </div>
-                        </div>
-                        
-                        <!-- Event Details -->
-                        <div class="p-4">
-                            <div class="flex items-start justify-between mb-2">
-                                <h4 class="text-lg font-semibold text-gray-900 line-clamp-2"><?= esc($event['title']) ?></h4>
-                            </div>
-                            <div class="space-y-2 text-sm text-gray-600 mb-4">
-                                <div class="flex items-center">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="mt-3 space-y-2 text-sm text-gray-600">
+                                <div class="flex items-start">
+                                    <svg class="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                                     </svg>
+                                    <span>
                                     <?php
                                     // Format date range
                                     $startDate = $startDateTime->format('M j');
@@ -264,56 +249,47 @@
                                         }
                                     }
                                     ?>
+                                    </span>
                                 </div>
                                 <?php if ($event['location']): ?>
-                                <div class="flex items-center">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="flex items-start">
+                                    <svg class="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                                     </svg>
-                                    <?= esc($event['location']) ?>
+                                    <span><?= esc($event['location']) ?></span>
                                 </div>
                                 <?php endif; ?>
                                 <?php if ($event['category']): ?>
-                                <div class="mt-1 flex justify-start">
-                                    <div class="capsule-container">
-                                        <span class="category-badge <?= $categoryClass ?>">
-                                            <?= esc(ucfirst($event['category'])) ?>
-                                        </span>
-                                    </div>
+                                <div class="capsule-container">
+                                    <span class="category-badge <?= $categoryClass ?>">
+                                        <?= esc(ucfirst($event['category'])) ?>
+                                    </span>
                                 </div>
                                 <?php endif; ?>
                             </div>
-                            
-                            <?php if ($event['description']): ?>
-                            <p class="text-sm text-gray-600 mb-4 line-clamp-1"><?= esc($event['description']) ?></p>
-                            <?php endif; ?>
-                            
-                            <!-- Action Button -->
+                        </div>
+                        <div class="flex flex-col w-full md:w-56 gap-2">
                             <?php if ($status === 'completed'): ?>
                                 <button onclick="viewAttendanceReport(<?= $event['event_id'] ?>)" 
                                         class="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
                                     View Attendance
                                 </button>
                             <?php else: ?>
-                                <div class="flex gap-2">
-                                    <button onclick="openAttendanceModal(<?= $event['event_id'] ?>)" 
-                                            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
-                                            style="flex-basis: 70%;">
-                                        Manage Attendance
-                                    </button>
-                                    <button onclick="openLiveAttendanceModal(<?= $event['event_id'] ?>)" 
-                                            class="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
-                                            style="flex-basis: 30%;">
-                                        Live
-                                    </button>
-                                </div>
+                                <button onclick="openAttendanceModal(<?= $event['event_id'] ?>)" 
+                                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+                                    Manage Attendance
+                                </button>
+                                <button onclick="openLiveAttendanceModal(<?= $event['event_id'] ?>)" 
+                                        class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+                                    Real-Time Attendance View
+                                </button>
                             <?php endif; ?>
                         </div>
                     </div>
                 <?php endforeach; ?>
             <?php else: ?>
-                <div class="col-span-full text-center py-12">
+                <div class="text-center py-12 bg-white rounded-lg border border-dashed border-gray-300">
                     <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                     </svg>
@@ -415,7 +391,7 @@
                 Cancel
             </button>
             <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
-                <button onclick="saveAttendanceSettings()" 
+                <button id="saveAttendanceBtn" onclick="saveAttendanceSettings()" 
                     class="px-4 py-2 w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-semibold focus:ring-2 focus:ring-blue-400 focus:outline-none">
                     Save Settings
                 </button>
@@ -483,6 +459,7 @@ function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = 'pointer-events-auto p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full min-w-[280px] max-w-md break-words';
     
+    // Choose background color based on type
     switch(type) {
         case 'success':
             notification.className += ' bg-green-500 text-white';
@@ -496,9 +473,27 @@ function showNotification(message, type = 'info') {
         default:
             notification.className += ' bg-blue-500 text-white';
     }
-    
+
+    // Icon SVGs for notification types
+    let icon = '';
+    switch(type) {
+        case 'success':
+            icon = '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>';
+            break;
+        case 'error':
+            icon = '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
+            break;
+        case 'warning':
+            icon = '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h17.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>';
+            break;
+        default:
+            icon = '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01" /></svg>';
+            break;
+    }
+
     notification.innerHTML = `
         <div class="flex items-center">
+            <div class="flex-none mr-3">${icon}</div>
             <div class="flex-1">${message}</div>
             <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white opacity-70 hover:opacity-100">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -580,7 +575,7 @@ function filterEvents() {
             showCard = false;
         }
         
-        card.style.display = showCard ? 'block' : 'none';
+        card.style.display = showCard ? 'flex' : 'none';
     });
 }
 
@@ -602,24 +597,29 @@ function openAttendanceModal(eventId) {
     const startDate = new Date(event.start_datetime);
     
     eventInfo.innerHTML = `
-        <div class="flex items-start space-x-4">
-            <div class="flex-shrink-0">
-                ${event.event_banner ? 
-                    `<img src="${window.location.origin}/uploads/event/${event.event_banner}" alt="${event.title}" class="w-16 h-16 rounded-lg object-cover">` :
-                    `<img src="${window.location.origin}/assets/images/default-event-banner.svg" alt="No banner" class="w-16 h-16 rounded-lg object-cover">`
-                }
-            </div>
-            <div class="flex-1">
-                <h4 class="font-semibold text-gray-900">${event.title}</h4>
-                <p class="text-sm text-gray-600 mt-1">${startDate.toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric', 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                })}</p>
-                ${event.location ? `<p class="text-sm text-gray-500 mt-1">${event.location}</p>` : ''}
-            </div>
+        <div class="space-y-2">
+            <h4 class="text-2xl font-bold text-gray-900 tracking-tight">${event.title}</h4>
+            <p class="text-sm text-gray-600 flex items-center">
+                <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                ${startDate.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })}
+            </p>
+            ${event.location ? `
+                <p class="text-sm text-gray-500 flex items-center">
+                    <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    ${event.location}
+                </p>
+            ` : ''}
         </div>
     `;
     
@@ -933,7 +933,7 @@ function startAttendance() {
     
     // Open attendance display in a new tab
     const attendanceDisplayUrl = `<?= base_url('pederasyon/attendanceDisplay') ?>/${currentEventId}`;
-    window.open(attendanceDisplayUrl, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+    openNewAttendanceWindow(attendanceDisplayUrl, currentEventId);
     
     // Close the modal
     closeAttendanceModal();
@@ -975,6 +975,41 @@ function broadcastSessionUpdate(eventId) {
 
 // Track opened attendance display windows
 window.attendanceDisplayWindows = window.attendanceDisplayWindows || {};
+
+// Helper function to open new attendance display tab/window for a specific event
+function openNewAttendanceWindow(url, eventId) {
+    // Open as a normal tab by using the named target without window features
+    try {
+        const targetName = `attendance_${eventId}`;
+        const attendanceWindow = window.open(url, targetName);
+
+        if (attendanceWindow) {
+            // Track the opened tab/window reference for this event
+            window.attendanceDisplayWindows = window.attendanceDisplayWindows || {};
+            window.attendanceDisplayWindows[eventId] = attendanceWindow;
+
+            // Clean up when tab/window is closed
+            const checkClosed = setInterval(() => {
+                try {
+                    if (attendanceWindow.closed) {
+                        delete window.attendanceDisplayWindows[eventId];
+                        clearInterval(checkClosed);
+                    }
+                } catch (e) {
+                    // Accessing properties can fail if cross-origin; just stop the checker
+                    clearInterval(checkClosed);
+                }
+            }, 1000);
+
+            showNotification('Attendance display opened in new tab', 'success');
+        } else {
+            showNotification('Failed to open attendance display. Please check popup blocker.', 'error');
+        }
+    } catch (err) {
+        console.error('Error opening attendance tab:', err);
+        showNotification('Unable to open attendance display', 'error');
+    }
+}
 
 // Enhanced startAttendance function to save settings first, then track windows
 function startAttendanceEnhanced() {
@@ -1082,28 +1117,55 @@ function startAttendanceEnhanced() {
             // Broadcast session update to attendance display windows
             broadcastSessionUpdate(currentEventId);
             
-            // Wait a moment, then open attendance display
+            // Wait a moment for broadcast, then check for existing tab or open new one
             setTimeout(() => {
                 const attendanceDisplayUrl = `<?= base_url('pederasyon/attendanceDisplay') ?>/${currentEventId}`;
-                const attendanceWindow = window.open(attendanceDisplayUrl, '_blank');
+                const targetName = `pederasyon_attendance_${currentEventId}`;
                 
-                // Track the window for direct messaging
-                if (attendanceWindow) {
-                    window.attendanceDisplayWindows[currentEventId] = attendanceWindow;
-                    
-                    // Clean up when window is closed
-                    const checkClosed = setInterval(() => {
-                        if (attendanceWindow.closed) {
-                            delete window.attendanceDisplayWindows[currentEventId];
-                            clearInterval(checkClosed);
+                // Check if we have a tracked window reference for this event
+                const existingWindow = window.attendanceDisplayWindows && window.attendanceDisplayWindows[currentEventId];
+
+                if (existingWindow && !existingWindow.closed) {
+                    try {
+                        // Focus the existing tab and reload it with fresh settings
+                        existingWindow.focus();
+                        existingWindow.location.reload();
+                        showNotification('Refreshed existing attendance tab', 'success');
+                    } catch (focusError) {
+                        // If focus/reload fails (cross-origin issues), open with same name (replaces if exists)
+                        console.warn('Cannot access existing tab, opening new one:', focusError);
+                        const newWindow = window.open(attendanceDisplayUrl, targetName);
+                        if (newWindow) {
+                            window.attendanceDisplayWindows[currentEventId] = newWindow;
+                            showNotification('Opened new attendance display tab', 'success');
                         }
-                    }, 1000);
+                    }
+                } else {
+                    // No valid window reference; open a new named tab
+                    const newWindow = window.open(attendanceDisplayUrl, targetName);
+                    if (newWindow) {
+                        window.attendanceDisplayWindows = window.attendanceDisplayWindows || {};
+                        window.attendanceDisplayWindows[currentEventId] = newWindow;
+                        showNotification('Opened new attendance display tab', 'success');
+                        
+                        // Clean up when tab/window is closed
+                        const checkClosed = setInterval(() => {
+                            try {
+                                if (newWindow.closed) {
+                                    delete window.attendanceDisplayWindows[currentEventId];
+                                    clearInterval(checkClosed);
+                                }
+                            } catch (e) {
+                                clearInterval(checkClosed);
+                            }
+                        }, 1000);
+                    } else {
+                        showNotification('Failed to open attendance display. Please check popup blocker.', 'error');
+                    }
                 }
                 
                 // Close the modal
                 closeAttendanceModal();
-                
-                showNotification('Attendance display opened in new tab', 'success');
             }, 500);
             
         } else {

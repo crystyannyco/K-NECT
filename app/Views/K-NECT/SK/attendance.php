@@ -2,6 +2,7 @@
     .event-card {
         transition: all 0.2s ease;
         border: 1px solid #e5e7eb;
+        background: #ffffff;
     }
     
     .event-card:hover {
@@ -209,8 +210,8 @@
             </div>
         </div>
 
-        <!-- Events Grid -->
-        <div id="eventsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Events List -->
+        <div id="eventsGrid" class="space-y-4">
             <?php if (!empty($events)): ?>
                 <?php foreach ($events as $event): ?>
                     <?php
@@ -226,6 +227,14 @@
                         $status = 'completed';
                     }
                     
+                    $statusLabel = ucfirst($status);
+                    $statusBadgeClass = 'bg-yellow-100 text-yellow-800';
+                    if ($status === 'ongoing') {
+                        $statusBadgeClass = 'bg-green-100 text-green-800';
+                    } elseif ($status === 'completed') {
+                        $statusBadgeClass = 'bg-gray-100 text-gray-800';
+                    }
+                    
                     // Get category badge class
                     $categoryClass = 'badge-default';
                     if ($event['category']) {
@@ -235,48 +244,24 @@
                         }
                     }
                     ?>
-                    <div class="event-card bg-white rounded-lg overflow-hidden" 
+                    <div class="event-card rounded-lg shadow-sm border border-gray-200 p-5 flex flex-col gap-4 md:flex-row md:items-center" 
                          data-status="<?= $status ?>" 
                          data-category="<?= esc($event['category']) ?>">
-                        
-                        <!-- Event Image -->
-                        <div class="h-48 bg-blue-500 relative overflow-hidden">
-                            <?php if (!empty($event['event_banner'])): ?>
-                                <img src="<?= base_url('uploads/event/' . $event['event_banner']) ?>" 
-                                     alt="<?= esc($event['title']) ?>" 
-                                     class="w-full h-full object-cover">
-                            <?php else: ?>
-                                <img src="<?= base_url('assets/images/default-event-banner.svg') ?>" 
-                                     alt="No banner" 
-                                     class="w-full h-full object-cover">
-                            <?php endif; ?>                            <!-- Status Badge -->
-                            <div class="absolute top-3 right-3">
-                                <?php if ($status === 'upcoming'): ?>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                        Upcoming
-                                    </span>
-                                <?php elseif ($status === 'ongoing'): ?>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                        Ongoing
-                                    </span>
-                                <?php else: ?>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                        Completed
-                                    </span>
-                                <?php endif; ?>
+                        <div class="flex-1">
+                            <div class="flex flex-wrap items-center gap-3">
+                                <h4 class="text-lg font-semibold text-gray-900">
+                                    <?= esc($event['title']) ?>
+                                </h4>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= $statusBadgeClass ?>">
+                                    <?= $statusLabel ?>
+                                </span>
                             </div>
-                        </div>
-                        
-                        <!-- Event Details -->
-                        <div class="p-4">
-                            <div class="flex items-start justify-between mb-2">
-                                <h4 class="text-lg font-semibold text-gray-900 line-clamp-2"><?= esc($event['title']) ?></h4>
-                            </div>
-                            <div class="space-y-2 text-sm text-gray-600 mb-4">
-                                <div class="flex items-center">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="mt-3 space-y-2 text-sm text-gray-600">
+                                <div class="flex items-start">
+                                    <svg class="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                                     </svg>
+                                    <span>
                                     <?php
                                     // Format date range
                                     $startDate = $startDateTime->format('M j');
@@ -299,56 +284,47 @@
                                         }
                                     }
                                     ?>
+                                    </span>
                                 </div>
                                 <?php if ($event['location']): ?>
-                                <div class="flex items-center">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="flex items-start">
+                                    <svg class="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                                     </svg>
-                                    <?= esc($event['location']) ?>
+                                    <span><?= esc($event['location']) ?></span>
                                 </div>
                                 <?php endif; ?>
                                 <?php if ($event['category']): ?>
-                                <div class="mt-1 flex justify-start">
-                                    <div class="capsule-container">
-                                        <span class="category-badge <?= $categoryClass ?>">
-                                            <?= esc(ucfirst($event['category'])) ?>
-                                        </span>
-                                    </div>
+                                <div class="capsule-container">
+                                    <span class="category-badge <?= $categoryClass ?>">
+                                        <?= esc(ucfirst($event['category'])) ?>
+                                    </span>
                                 </div>
                                 <?php endif; ?>
                             </div>
-                            
-                            <?php if ($event['description']): ?>
-                            <p class="text-sm text-gray-600 mb-4 line-clamp-1"><?= esc($event['description']) ?></p>
-                            <?php endif; ?>
-                            
-                            <!-- Action Button -->
+                        </div>
+                        <div class="flex flex-col w-full md:w-56 gap-2">
                             <?php if ($status === 'completed'): ?>
                                 <button onclick="viewAttendanceReport(<?= $event['event_id'] ?>)" 
                                         class="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
                                     View Attendance
                                 </button>
                             <?php else: ?>
-                                <div class="flex gap-2">
-                                    <button onclick="openAttendanceModal(<?= $event['event_id'] ?>)" 
-                                            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
-                                            style="flex-basis: 70%;">
-                                        Manage Attendance
-                                    </button>
-                                    <button onclick="openLiveAttendanceModal(<?= $event['event_id'] ?>)" 
-                                            class="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
-                                            style="flex-basis: 30%;">
-                                        Live
-                                    </button>
-                                </div>
+                                <button onclick="openAttendanceModal(<?= $event['event_id'] ?>)" 
+                                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+                                    Manage Attendance
+                                </button>
+                                <button onclick="openLiveAttendanceModal(<?= $event['event_id'] ?>)" 
+                                        class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+                                    Real-Time Attendance View
+                                </button>
                             <?php endif; ?>
                         </div>
                     </div>
                 <?php endforeach; ?>
             <?php else: ?>
-                <div class="col-span-full text-center py-12">
+                <div class="text-center py-12 bg-white rounded-lg border border-dashed border-gray-300">
                     <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                     </svg>
@@ -604,7 +580,7 @@ function filterEvents() {
             showCard = false;
         }
         
-        card.style.display = showCard ? 'block' : 'none';
+        card.style.display = showCard ? 'flex' : 'none';
     });
 }
 
@@ -627,28 +603,29 @@ function openAttendanceModal(eventId) {
     const startDate = new Date(event.start_datetime);
     
     eventInfo.innerHTML = `
-        <div class="flex items-start space-x-4">
-            <div class="flex-shrink-0">
-                ${event.event_banner ? 
-                    `<img src="${window.location.origin}/uploads/event/${event.event_banner}" alt="${event.title}" class="w-16 h-16 rounded-lg object-cover">` :
-                    `<div class="w-16 h-16 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-                        <svg class="w-8 h-8 text-white opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                        </svg>
-                    </div>`
-                }
-            </div>
-            <div class="flex-1">
-                <h4 class="font-semibold text-gray-900">${event.title}</h4>
-                <p class="text-sm text-gray-600 mt-1">${startDate.toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric', 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                })}</p>
-                ${event.location ? `<p class="text-sm text-gray-500 mt-1">${event.location}</p>` : ''}
-            </div>
+        <div class="space-y-2">
+            <h4 class="text-2xl font-bold text-gray-900 tracking-tight">${event.title}</h4>
+            <p class="text-sm text-gray-600 flex items-center">
+                <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                ${startDate.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })}
+            </p>
+            ${event.location ? `
+                <p class="text-sm text-gray-500 flex items-center">
+                    <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    ${event.location}
+                </p>
+            ` : ''}
         </div>
     `;
     
@@ -1153,31 +1130,60 @@ function startAttendanceEnhanced() {
             // Also send direct message to open attendance tabs
             broadcastToAttendanceTabs(currentEventId, 'settings_updated');
             
-            // Open attendance display in a new tab
-            const attendanceDisplayUrl = `<?= base_url('sk/attendanceDisplay') ?>/${currentEventId}`;
-            const attendanceWindow = window.open(attendanceDisplayUrl, '_blank');
-            
-            // Track the window for direct messaging
-            if (attendanceWindow) {
-                window.attendanceDisplayWindows[currentEventId] = attendanceWindow;
+            // Wait a moment for broadcast, then check for existing tab or open new one
+            setTimeout(() => {
+                const attendanceDisplayUrl = `<?= base_url('sk/attendanceDisplay') ?>/${currentEventId}`;
+                const targetName = `sk_attendance_${currentEventId}`;
                 
-                // Clean up when window is closed
-                const checkClosed = setInterval(() => {
-                    if (attendanceWindow.closed) {
-                        delete window.attendanceDisplayWindows[currentEventId];
-                        clearInterval(checkClosed);
+                // Check if we have a tracked window reference for this event
+                const existingWindow = window.attendanceDisplayWindows && window.attendanceDisplayWindows[currentEventId];
+
+                if (existingWindow && !existingWindow.closed) {
+                    try {
+                        // Focus the existing tab and reload it with fresh settings
+                        existingWindow.focus();
+                        existingWindow.location.reload();
+                        showNotification('Refreshed existing attendance tab', 'success');
+                    } catch (focusError) {
+                        // If focus/reload fails (cross-origin issues), open with same name (replaces if exists)
+                        console.warn('Cannot access existing tab, opening new one:', focusError);
+                        const newWindow = window.open(attendanceDisplayUrl, targetName);
+                        if (newWindow) {
+                            window.attendanceDisplayWindows[currentEventId] = newWindow;
+                            showNotification('Opened new attendance display tab', 'success');
+                        }
                     }
-                }, 1000);
+                } else {
+                    // No valid window reference; open a new named tab
+                    const attendanceWindow = window.open(attendanceDisplayUrl, targetName);
+                    
+                    // Track the window for direct messaging
+                    if (attendanceWindow) {
+                        window.attendanceDisplayWindows[currentEventId] = attendanceWindow;
+                        
+                        // Clean up when window is closed
+                        const checkClosed = setInterval(() => {
+                            try {
+                                if (attendanceWindow.closed) {
+                                    delete window.attendanceDisplayWindows[currentEventId];
+                                    clearInterval(checkClosed);
+                                }
+                            } catch (e) {
+                                clearInterval(checkClosed);
+                            }
+                        }, 1000);
+                        
+                        showNotification('Opened new attendance display tab', 'success');
+                    } else {
+                        showNotification('Failed to open attendance display. Please check popup blocker settings.', 'warning');
+                    }
+                }
                 
-                showNotification('Attendance display opened in new tab', 'success');
-            } else {
-                showNotification('Failed to open attendance display. Please check popup blocker settings.', 'warning');
-            }
-            
-            // Clear modal fields after starting attendance
-            clearAttendanceModalFields();
-            // Close the modal
-            closeAttendanceModal();
+                // Clear modal fields after starting attendance
+                clearAttendanceModalFields();
+                // Close the modal
+                closeAttendanceModal();
+            }, 500);
             
         } else {
             showNotification(data.message || 'Failed to save settings', 'error');
@@ -1203,9 +1209,9 @@ document.getElementById('attendanceModal').addEventListener('click', function(e)
 
 // Live Attendance Monitoring Functions
 function openLiveAttendanceModal(eventId) {
-    // Open live attendance in a new tab
-    const liveAttendanceUrl = `<?= base_url('sk/liveAttendance') ?>/${eventId}`;
-    window.open(liveAttendanceUrl, '_blank');
+    // Open the same attendance display as "Save & Start"
+    const attendanceDisplayUrl = `<?= base_url('sk/liveAttendance') ?>/${eventId}`;
+    window.open(attendanceDisplayUrl, '_blank');
 }
 
 // Function to view attendance report for completed events

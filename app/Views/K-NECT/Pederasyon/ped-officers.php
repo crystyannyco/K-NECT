@@ -609,63 +609,59 @@
         }
         
         function showNotification(message, type = 'info') {
-            const notification = document.createElement('div');
-            notification.className = `fixed top-4 right-4 z-[99999] p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full`;
-            notification.className = `fixed top-4 right-4 z-[99999] p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full`;
-            
-            switch(type) {
-                case 'success':
-                    notification.className += ' bg-green-500 text-white';
-                    break;
-                case 'error':
-                    notification.className += ' bg-red-500 text-white';
-                    break;
-                default:
-                    notification.className += ' bg-blue-500 text-white';
+            // Ensure notification container exists
+            let container = document.getElementById('notificationStackContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'notificationStackContainer';
+                container.className = 'fixed top-4 right-4 z-[99999] flex flex-col gap-2 items-end';
+                document.body.appendChild(container);
             }
-            
-            // Get appropriate icon based on type
-            let icon = '';
+
+            // Notification element
+            const notification = document.createElement('div');
+            let bgClass = '', icon = '';
             switch(type) {
                 case 'success':
+                    bgClass = 'bg-green-500 text-white';
                     icon = '<svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>';
                     break;
                 case 'error':
+                    bgClass = 'bg-red-500 text-white';
                     icon = '<svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" /></svg>';
                     break;
                 case 'info':
                 default:
+                    bgClass = 'bg-blue-500 text-white';
                     icon = '<svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01" /></svg>';
                     break;
             }
-            
+            notification.className = `p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full min-w-[250px] flex items-center ${bgClass}`;
+            notification.setAttribute('role', 'alert');
             notification.innerHTML = `
-                <div class="flex items-center">
-                    ${icon}
-                    <span class="mr-2">${message}</span>
-                    <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-white hover:text-gray-200 focus:outline-none">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                        </svg>
-                    </button>
-                </div>
+                ${icon}
+                <span class="flex-1 mr-2">${message}</span>
+                <button type="button" aria-label="Close notification" class="ml-2 text-white hover:text-gray-200 focus:outline-none" tabindex="0">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                    </svg>
+                </button>
             `;
-            
-            document.body.appendChild(notification);
-            
+            // Close button handler
+            notification.querySelector('button').onclick = function() {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => notification.remove(), 300);
+            };
+            // Add to stack
+            container.appendChild(notification);
             // Animate in
             setTimeout(() => {
                 notification.classList.remove('translate-x-full');
             }, 100);
-            
             // Auto remove after 5 seconds
             setTimeout(() => {
                 notification.classList.add('translate-x-full');
-                setTimeout(() => {
-                    if (notification.parentElement) {
-                        notification.remove();
-                    }
-                }, 300);
+                setTimeout(() => notification.remove(), 300);
             }, 5000);
         }
         
@@ -801,7 +797,7 @@
                 $('.status-tab[data-position="treasurer"]').removeClass('bg-gray-100').addClass('bg-green-100');
                 $('.status-tab[data-position="others"]').removeClass('bg-gray-100').addClass('bg-yellow-100');
                 
-                tab.removeClass('bg-gray-100 bg-purple-100 bg-indigo-100 bg-blue-100 bg-green-100 bg-yellow-100')
+                tab.removeClass('bg-gray-100 bg-blue-100 bg-blue-100 bg-blue-100 bg-green-100 bg-yellow-100')
                     .addClass('active bg-blue-500 text-white');
             }
 
@@ -867,6 +863,7 @@
                 localStorage.removeItem('activePositionTab');
                 localStorage.removeItem('activeBarangayFilter');
                 updateDisplayedCounts();
+                showNotification('Filters cleared successfully', 'success');
             });
 
             // Function to restore saved filters
@@ -1418,6 +1415,13 @@
             const originalHTML = button.innerHTML;
             button.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Preparing Print...';
             button.disabled = true;
+            const officialsCount = document.getElementById('officialListTableBody').children.length;
+            if (officialsCount === 0) {
+                showNotification('No officials to print.', 'error');
+                button.innerHTML = originalHTML;
+                button.disabled = false;
+                return;
+            }
             const printContent = document.getElementById('downloadOfficialContent').cloneNode(true);
             const originalContent = document.body.innerHTML;
             const styles = `
@@ -1445,6 +1449,13 @@
             const originalHTML = button.innerHTML;
             button.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Generating PDF...';
             button.disabled = true;
+            const officialsCount = document.getElementById('officialListTableBody').children.length;
+            if (officialsCount === 0) {
+                showNotification('No officials to download.', 'error');
+                button.innerHTML = originalHTML;
+                button.disabled = false;
+                return;
+            }
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('l', 'mm', 'a4');
             fetch('<?= base_url('documents/logos') ?>')
@@ -1507,6 +1518,13 @@
         function downloadOfficialListWord() {
             const button = event.target; const originalHTML = button.innerHTML;
             button.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Generating Word...'; button.disabled = true;
+            const officialsCount = document.getElementById('officialListTableBody').children.length;
+            if (officialsCount === 0) {
+                showNotification('No officials to download.', 'error');
+                button.innerHTML = originalHTML;
+                button.disabled = false;
+                return;
+            }
             fetch('<?= base_url('pederasyon/generate-official-list-word') ?>', { method:'POST', headers:{ 'Content-Type':'application/json', 'X-Requested-With':'XMLHttpRequest' }, body: JSON.stringify({}) })
                 .then(res => res.json())
                 .then(data => {
@@ -1523,6 +1541,13 @@
         function downloadOfficialListExcel() {
             const button = event.target; const originalHTML = button.innerHTML;
             button.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Generating Excel...'; button.disabled = true;
+            const officialsCount = document.getElementById('officialListTableBody').children.length;
+            if (officialsCount === 0) {
+                showNotification('No officials to download.', 'error');
+                button.innerHTML = originalHTML;
+                button.disabled = false;
+                return;
+            }
             fetch('<?= base_url('pederasyon/generate-official-list-excel') ?>', { method:'POST', headers:{ 'Content-Type':'application/json', 'X-Requested-With':'XMLHttpRequest' }, body: JSON.stringify({}) })
                 .then(res => res.json())
                 .then(data => {
@@ -1629,8 +1654,9 @@
                                 <!-- No officials message (shown when list is empty) -->
                                 <div id="noOfficials" class="text-center py-12 hidden">
                                     <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2M4 13h2m13-8l-4 4-4-4m0 0V3"></path>
+                                        <svg class="w-10 h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01" />
                                         </svg>
                                     </div>
                                     <h3 class="text-lg font-semibold text-gray-900 mb-2">No Officials Found</h3>

@@ -376,8 +376,8 @@
                                 ${index < 3 ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">' + (index + 1) + '</span>' : (index + 1)}
                             </td>
                             <td class="px-6 py-4 text-sm text-gray-900">
-                                <div class="max-w-xs truncate" title="${document.title || document.filename}">
-                                    ${document.title || document.filename}
+                                <div class="max-w-xs truncate" title="${document.filename}">
+                                    ${document.filename}
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${document.category || 'Uncategorized'}</td>

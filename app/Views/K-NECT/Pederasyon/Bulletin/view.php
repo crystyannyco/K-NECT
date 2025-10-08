@@ -64,7 +64,7 @@
 
     <!-- Main Content -->
     <div class="px-4 sm:px-6 lg:px-8 py-6">
-        <div class="max-w-4xl mx-auto">
+        <div class="max-w-7xl mx-auto">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 <!-- Main Article Column -->
@@ -330,14 +330,14 @@ document.getElementById('confirmDelete').addEventListener('click', function() {
         })
         .then(data => {
             if (data.success) {
-                window.location.href = '<?= base_url('/bulletin') ?>';
+                window.location.href = '<?= base_url('/bulletin') ?>?toast=deleted';
             } else {
-                alert('Error deleting post: ' + (data.message || 'Unknown error'));
+                showToast(data.message || 'Failed to delete post', 'error');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert(error.message || 'An error occurred while deleting the post');
+            showToast(error.message || 'An error occurred while deleting the post', 'error');
         });
     }
     
@@ -350,6 +350,33 @@ document.getElementById('deleteModal').addEventListener('click', function(e) {
     if (e.target === this) {
         this.classList.add('hidden');
         postToDelete = null;
+    }
+});
+</script>
+<script>
+function showToast(message, type='success'){
+    let c = document.getElementById('toastContainer');
+    if (!c){
+        c = document.createElement('div');
+        c.id = 'toastContainer';
+        c.className = 'fixed top-4 right-4 z-[100000] flex flex-col gap-2 items-end pointer-events-none';
+        document.body.appendChild(c);
+    }
+    const el = document.createElement('div');
+    el.className = `pointer-events-auto max-w-sm w-80 rounded-lg shadow-lg ring-1 ring-black/10 px-4 py-3 text-sm text-white ${type==='success'?'bg-emerald-600':'bg-rose-600'}`;
+    el.textContent = message;
+    c.appendChild(el);
+    setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateY(-4px)'; el.style.transition='all .25s ease'; }, 2200);
+    setTimeout(()=>{ el.remove(); }, 2600);
+}
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const t = params.get('toast');
+    if (t === 'updated') {
+        showToast('Bulletin post updated successfully');
+        window.history.replaceState({}, document.title, window.location.pathname);
     }
 });
 </script>

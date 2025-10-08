@@ -51,117 +51,95 @@
         </div>
 
         <!-- Event Information Card -->
-        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <div class="flex items-start space-x-6">
-                <div class="flex-1">
-                    <div class="flex items-start justify-between">
-                        <div>
-                            <h1 class="text-2xl font-bold text-gray-900 mb-2"><?= esc($event['title']) ?></h1>
-                            <div class="flex items-center text-gray-500 mb-4">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                </svg>
-                                <span class="text-sm">Event Report</span>
-                            </div>
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-6">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-xl font-bold text-white"><?= esc($event['title']) ?></h1>
+                        <p class="text-blue-100 text-sm mt-1">
+                            <?= date('F j, Y', strtotime($event['start_datetime'])) ?> • 
+                            <?= date('g:i A', strtotime($event['start_datetime'])) ?> - <?= date('g:i A', strtotime($event['end_datetime'])) ?>
+                        </p>
+                    </div>
+                    <div class="bg-white bg-opacity-20 rounded-lg px-4 py-2 text-center">
+                        <div class="text-white">
+                            <div class="text-2xl font-bold"><?= count($attendance_records) ?></div>
+                            <div class="text-xs text-blue-100">Total Attendees</div>
                         </div>
                     </div>
+                </div>
+            </div>
+            
+            <!-- Details -->
+            <div class="px-6 py-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <?php if (!empty($event['description'])): ?>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Description</label>
+                        <p class="text-gray-900 leading-relaxed"><?= nl2br(esc($event['description'])) ?></p>
+                    </div>
+                    <?php endif; ?>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <?php if (!empty($event['description'])): ?>
-                        <div class="flex items-start">
-                            <svg class="w-4 h-4 mr-2 mt-0.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/>
-                            </svg>
-                            <div class="flex-1">
-                                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Description</p>
-                                <div class="text-sm text-gray-900 mt-1 overflow-hidden">
-                                    <div class="line-clamp-2"><?= esc($event['description']) ?></div>
-                                    <button onclick="toggleDescription(this)" class="text-xs text-blue-600 hover:text-blue-800 mt-1 focus:outline-none">
-                                        Show more
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <?php endif; ?>
-                        
-                        <div class="flex items-start">
-                            <svg class="w-4 h-4 mr-2 mt-0.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                            </svg>
-                            <div>
-                                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Date</p>
-                                <p class="text-sm font-medium text-gray-900 mt-1"><?= date('F j, Y', strtotime($event['start_datetime'])) ?></p>
-                            </div>
-                        </div>
-                        
-                        <div class="flex items-start">
-                            <svg class="w-4 h-4 mr-2 mt-0.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            <div>
-                                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Time</p>
-                                <p class="text-sm font-medium text-gray-900 mt-1"><?= date('g:i A', strtotime($event['start_datetime'])) ?> - <?= date('g:i A', strtotime($event['end_datetime'])) ?></p>
-                            </div>
-                        </div>
-                        
-                        <?php if ($event['location']): ?>
-                        <div class="flex items-start">
-                            <svg class="w-4 h-4 mr-2 mt-0.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                            </svg>
-                            <div>
-                                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Location</p>
-                                <p class="text-sm font-medium text-gray-900 mt-1"><?= esc($event['location']) ?></p>
-                            </div>
-                        </div>
-                        <?php endif; ?>
-                        
-                        <?php if ($event['category']): ?>
-                        <div class="flex items-start">
-                            <svg class="w-4 h-4 mr-2 mt-0.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
-                            </svg>
-                            <div>
-                                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Category</p>
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mt-1">
-                                    <?= esc(ucfirst($event['category'])) ?>
-                                </span>
-                            </div>
-                        </div>
-                        <?php endif; ?>
+                    <?php if ($event['location']): ?>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Location</label>
+                        <p class="text-gray-900"><?= esc($event['location']) ?></p>
+                    </div>
+                    <?php endif; ?>
+                    
+                    <?php if ($event['category']): ?>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Category</label>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            <?= esc(ucfirst($event['category'])) ?>
+                        </span>
+                    </div>
+                    <?php endif; ?>
+                    
+                    <!-- Session Stats -->
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Morning Session</label>
+                        <p class="text-green-600 font-semibold"><?= count(array_filter($attendance_records, function($r) { return !empty($r['time-in_am']); })) ?> attendees</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Afternoon Session</label>
+                        <p class="text-blue-600 font-semibold"><?= count(array_filter($attendance_records, function($r) { return !empty($r['time-in_pm']); })) ?> attendees</p>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Attendance Records Table -->
-        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             <!-- Table Header -->
-            <div class="p-4 border-b border-gray-200">
+            <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
                 <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-4">
-                        <h4 class="text-lg font-semibold text-gray-900">Attendance Log</h4>
-                        <span class="text-sm text-gray-500">Total: <span id="totalCount"><?= count($attendance_records) ?></span> attendees</span>
+                    <div>
+                        <h4 class="text-lg font-semibold text-gray-900">Attendance Records</h4>
+                        <p class="text-sm text-gray-500 mt-1">
+                            Total: <span class="font-medium text-gray-700"><?= count($attendance_records) ?></span> attendees
+                        </p>
                     </div>
-                    <div class="flex items-center space-x-2">
-                        <button onclick="downloadAttendanceExcel()" class="inline-flex items-center px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors">
+                    <div class="flex items-center space-x-3">
+                        <button onclick="downloadAttendanceExcel()" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 shadow-sm">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                             </svg>
-                            Excel
+                            Download Excel
                         </button>
-                        <button onclick="downloadAttendancePDF()" class="inline-flex items-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors">
+                        <button onclick="downloadAttendanceWord()" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 shadow-sm">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                             </svg>
-                            PDF
+                            Download Word
                         </button>
-                        <button onclick="downloadAttendanceWord()" class="inline-flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                        <button onclick="downloadAttendancePDF()" class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 shadow-sm">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
                             </svg>
-                            Word
+                            Download PDF
                         </button>
                     </div>
                 </div>
@@ -170,18 +148,23 @@
             <!-- Table Content -->
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+                    <thead class="bg-gray-100">
                         <tr>
-                            <th scope="col" class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">No.</th>
-                            <th scope="col" class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">KK Number</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                            <th scope="col" class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Zone</th>
-                            <th scope="col" class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">AM Time-In</th>
-                            <th scope="col" class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">AM Time-Out</th>
-                            <th scope="col" class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">AM Status</th>
-                            <th scope="col" class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">PM Time-In</th>
-                            <th scope="col" class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">PM Time-Out</th>
-                            <th scope="col" class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">PM Status</th>
+                            <th scope="col" class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">#</th>
+                            <th scope="col" class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">KK ID</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Full Name</th>
+                            <th scope="col" class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Zone/Purok</th>
+                            <th colspan="3" scope="col" class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider bg-blue-50 border-l border-r border-blue-200">Morning Session</th>
+                            <th colspan="3" scope="col" class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider bg-green-50 border-l border-r border-green-200">Afternoon Session</th>
+                        </tr>
+                        <tr class="bg-gray-50">
+                            <th colspan="4" class="border-b border-gray-200"></th>
+                            <th scope="col" class="px-3 py-2 text-center text-xs font-medium text-gray-600 bg-blue-25 border-l border-blue-200">Time In</th>
+                            <th scope="col" class="px-3 py-2 text-center text-xs font-medium text-gray-600 bg-blue-25">Time Out</th>
+                            <th scope="col" class="px-3 py-2 text-center text-xs font-medium text-gray-600 bg-blue-25 border-r border-blue-200">Status</th>
+                            <th scope="col" class="px-3 py-2 text-center text-xs font-medium text-gray-600 bg-green-25 border-l border-green-200">Time In</th>
+                            <th scope="col" class="px-3 py-2 text-center text-xs font-medium text-gray-600 bg-green-25">Time Out</th>
+                            <th scope="col" class="px-3 py-2 text-center text-xs font-medium text-gray-600 bg-green-25 border-r border-green-200">Status</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
@@ -296,15 +279,15 @@
 
 <script>
 // Global event data for document generation
-const eventData = {
-    id: <?= $event['event_id'] ?>,
-    title: '<?= addslashes($event['title']) ?>',
-    description: '<?= addslashes($event['description'] ?? '') ?>',
-    date: '<?= date('F j, Y', strtotime($event['start_datetime'])) ?>',
-    time: '<?= date('g:i A', strtotime($event['start_datetime'])) ?> - <?= date('g:i A', strtotime($event['end_datetime'])) ?>',
-    location: '<?= addslashes($event['location'] ?? '') ?>',
-    category: '<?= addslashes($event['category'] ?? '') ?>'
-};
+const eventData = <?= json_encode([
+    'id' => $event['event_id'],
+    'title' => $event['title'],
+    'description' => $event['description'] ?? '',
+    'date' => date('F j, Y', strtotime($event['start_datetime'])),
+    'time' => date('g:i A', strtotime($event['start_datetime'])) . ' - ' . date('g:i A', strtotime($event['end_datetime'])),
+    'location' => $event['location'] ?? '',
+    'category' => $event['category'] ?? ''
+]) ?>;
 
 // Attendance records data
 const attendanceRecords = <?= json_encode($attendance_records) ?>;
@@ -447,7 +430,8 @@ function downloadAttendancePDF() {
     }
     
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('l', 'mm', 'a4'); // landscape orientation
+    // Use custom page size: 13 x 8.5 inches -> expressed in mm: 13*25.4 = 330.2, 8.5*25.4 = 215.9
+    const doc = new jsPDF('l', 'mm', [330.2, 215.9]); // landscape, custom size in mm
     
     // First fetch logos to include in PDF if available
     fetch('<?= base_url('documents/logos') ?>')
@@ -512,8 +496,11 @@ function generateAttendancePDFWithLogos(doc, skLogo, irigaLogo, button, original
         let yPosition = 15;
         
         // Layout: Logo - 20% space - Header text - 20% space - Logo
-        const pageWidth = doc.internal.pageSize.getWidth(); // ~297mm for A4 landscape
-        const centerX = pageWidth / 2; // Center of page
+    const pageWidth = doc.internal.pageSize.getWidth(); // ~297mm for A4 landscape
+    const centerX = pageWidth / 2; // Center of page
+    // Safe printable margin: 0.5 inch = 12.7 mm
+    const safeMargin = 12.7;
+    const tableWidth = pageWidth - (safeMargin * 2);
         const logoSize = 20; // 20mm logos
         const spaceWidth = pageWidth * 0.2; // 20% of page width for spacing
         
@@ -539,18 +526,10 @@ function generateAttendancePDFWithLogos(doc, skLogo, irigaLogo, button, original
         doc.setFont('helvetica', 'normal');
         doc.text('SANGGUNIANG KABATAAN', centerX, yPosition + 20, { align: 'center' });
         
-        // Add barangay name if available - FIXED: Use barangay_name from controller or fallback to records
+        // Add barangay name from controller (SK session barangay) - FIXED: Don't use user address barangays
         <?php
-        // Try to get barangay name from controller data first, then from records
+        // Use only the barangay_name from controller (SK's session barangay), never from attendance records
         $barangayName = $barangay_name ?? '';
-        if (!$barangayName && !empty($attendance_records)) {
-            foreach ($attendance_records as $record) {
-                if (!empty($record['barangay_name'])) {
-                    $barangayName = $record['barangay_name'];
-                    break;
-                }
-            }
-        }
         ?>
         <?php if ($barangayName): ?>
         doc.text('NG BARANGAY <?= strtoupper(addslashes($barangayName)) ?>', centerX, yPosition + 25, { align: 'center' });
@@ -569,11 +548,13 @@ function generateAttendancePDFWithLogos(doc, skLogo, irigaLogo, button, original
         // Event details
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
-        doc.text('Event: ' + eventData.title, 20, yPosition);
-        doc.text('Date: ' + eventData.date, 20, yPosition + 5);
-        doc.text('Time: ' + eventData.time, 20, yPosition + 10);
+        // Align event details to the table's left edge. Use same centering logic as didDrawPage.
+        const effectiveLeft = Math.max(safeMargin, (pageWidth - tableWidth) / 2);
+        doc.text('Event: ' + eventData.title, effectiveLeft, yPosition);
+        doc.text('Date: ' + eventData.date, effectiveLeft, yPosition + 5);
+        doc.text('Time: ' + eventData.time, effectiveLeft, yPosition + 10);
         if (eventData.location) {
-            doc.text('Location: ' + eventData.location, 20, yPosition + 15);
+            doc.text('Location: ' + eventData.location, effectiveLeft, yPosition + 15);
             yPosition += 5;
         }
         
@@ -655,16 +636,21 @@ function generateAttendancePDFWithLogos(doc, skLogo, irigaLogo, button, original
             ];
         });
         
-        // Add table with proper safe area margins and perfect centering
-        const safeMargin = 15; // 15mm safe margins from edges
-        const tableWidth = pageWidth - (safeMargin * 2); // Full width minus safe margins
-        
-        doc.autoTable({
+    // Add table with proper safe area margins and perfect centering
+    // Use narrow margin: 0.5 inch = 12.7 mm (safeMargin and tableWidth already defined above)
+
+    // Compute column widths proportionally so the table fills the page width
+    // based on the relative widths used previously (sum = 289 units approx)
+    const colRelative = [20, 25, 55, 20, 25, 25, 22, 25, 25, 22];
+    const totalRel = colRelative.reduce((a, b) => a + b, 0);
+    const colWidths = colRelative.map(r => (r / totalRel) * tableWidth);
+
+    doc.autoTable({
             head: [['No.', 'KK Number', 'Name', 'Zone', 'AM Time-In', 'AM Time-Out', 'AM Status', 'PM Time-In', 'PM Time-Out', 'PM Status']],
             body: tableData,
             startY: yPosition,
             margin: { left: safeMargin, right: safeMargin }, // Safe area margins
-            tableWidth: 'wrap', // Let autoTable calculate optimal width
+            tableWidth: tableWidth, // ensure table fills the printable width
             horizontalPageBreak: true,
             styles: {
                 fontSize: 7,
@@ -694,16 +680,16 @@ function generateAttendancePDFWithLogos(doc, skLogo, irigaLogo, button, original
                 valign: 'middle'
             },
             columnStyles: {
-                0: { cellWidth: 20, halign: 'center' },  // No.
-                1: { cellWidth: 25, halign: 'center' },  // KK Number
-                2: { cellWidth: 55, halign: 'left' },    // Name (left aligned for readability)
-                3: { cellWidth: 20, halign: 'center' },  // Zone
-                4: { cellWidth: 25, halign: 'center' },  // AM Time-In
-                5: { cellWidth: 25, halign: 'center' },  // AM Time-Out
-                6: { cellWidth: 22, halign: 'center' },  // AM Status
-                7: { cellWidth: 25, halign: 'center' },  // PM Time-In
-                8: { cellWidth: 25, halign: 'center' },  // PM Time-Out
-                9: { cellWidth: 22, halign: 'center' }   // PM Status
+                0: { cellWidth: colWidths[0], halign: 'center' },
+                1: { cellWidth: colWidths[1], halign: 'center' },
+                2: { cellWidth: colWidths[2], halign: 'left' },
+                3: { cellWidth: colWidths[3], halign: 'center' },
+                4: { cellWidth: colWidths[4], halign: 'center' },
+                5: { cellWidth: colWidths[5], halign: 'center' },
+                6: { cellWidth: colWidths[6], halign: 'center' },
+                7: { cellWidth: colWidths[7], halign: 'center' },
+                8: { cellWidth: colWidths[8], halign: 'center' },
+                9: { cellWidth: colWidths[9], halign: 'center' }
             },
             theme: 'grid',  // Clean grid theme with borders only
             didDrawPage: function (data) {
@@ -716,7 +702,7 @@ function generateAttendancePDFWithLogos(doc, skLogo, irigaLogo, button, original
         });
         
         // Save and download
-        const fileName = `Attendance_Report_${eventData.title.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+        const fileName = `${eventData.title.replace(/[^a-zA-Z0-9]/g, '_')}_Attendance_Report_${new Date().toISOString().split('T')[0]}.pdf`;
         doc.save(fileName);
         
         showNotification('Attendance report PDF generated and downloaded successfully!', 'success');

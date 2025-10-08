@@ -16,8 +16,13 @@ class PublicController extends BaseController
         $events = [];
         $services = [];
         $resources = [];
+        $siteLogoUrl = null;
+        $canonicalUrl = base_url('/');
+        $pageDescription = 'K-NECT: Unified youth engagement platform for announcements, events, resources, and data-driven community impact.';
         try {
             $bulletinModel = new \App\Models\BulletinModel();
+            $analyticsModel = new \App\Models\AnalyticsModel();
+            $systemLogoModel = new \App\Models\SystemLogoModel();
             // Limit to published + visibility public or city
             $posts = $bulletinModel->builder()
                 ->select('bp.id,bp.title,bp.excerpt,bp.content,bp.featured_image,bp.published_at,bp.view_count,bp.is_featured,bp.is_urgent,bc.name as category_name,bc.color as category_color,u.first_name,u.last_name')
@@ -38,6 +43,15 @@ class PublicController extends BaseController
 
             // Recent upcoming events (public view): reuse model method
             $events = $bulletinModel->getRecentEvents(4, 'pederasyon', null);
+            // Fallback: if no upcoming events are found, show the most recent published events
+            if (empty($events)) {
+                $events = $bulletinModel->getRecentEventsAnyDate(4, 'pederasyon', null);
+            }
+
+            // Top performing barangays (30-day window)
+            $topBarangays = $analyticsModel->getTopPerformingBarangays(3, 30);
+            // Active SK logo (optional adornment in public ranking section)
+            $skLogo = $systemLogoModel->getActiveLogoByType('sk');
         } catch (\Throwable $e) {
             log_message('error','Public landing data error: '.$e->getMessage());
         }
@@ -56,13 +70,126 @@ class PublicController extends BaseController
             ['title'=>'Analytics Overview','desc'=>'Understand key demographic trends.','icon'=>'fa-chart-pie'],
         ];
 
+        // Use K-NECT logo for the public landing page
+        $siteLogoUrl = base_url('assets/images/K-Nect-Logo.png');
+
         $data = [
             'page_title' => 'K-NECT Youth Engagement Platform',
             'posts' => $posts,
             'events' => $events,
+            'topBarangays' => $topBarangays ?? [],
+            'topBarangaysWindowDays' => 30,
             'services' => $services,
             'resources' => $resources,
+            'siteLogoUrl' => $siteLogoUrl,
+            'canonicalUrl' => $canonicalUrl,
+            'pageDescription' => $pageDescription,
+            'skLogo' => $skLogo['file_path'] ?? null,
         ];
         return view('K-NECT/public/landing', $data);
+    }
+
+    /**
+     * Public JSON endpoint: Top Performing Barangays ranking
+     * GET params:
+     *  - days: lookback window (default 30, min 7, max 120)
+     *  - limit: number of rows (default 10, 0 or negative = all)
+     */
+    public function topBarangaysData($days = null)
+    {
+        $this->response->setHeader('Content-Type','application/json');
+        try {
+            $req = service('request');
+            $daysParam = $days ?? (int)$req->getGet('days');
+            if(!$daysParam) { $daysParam = 30; }
+            $daysParam = max(7, min(120, (int)$daysParam));
+            $limit = (int)$req->getGet('limit');
+            if(!$limit) { $limit = 10; }
+            $analyticsModel = new \App\Models\AnalyticsModel();
+            $rows = $analyticsModel->getTopPerformingBarangays($limit, $daysParam, true);
+            return $this->response->setStatusCode(200)->setJSON([
+                'ok' => true,
+                'days' => $daysParam,
+                'limit' => $limit,
+                'count' => count($rows),
+                'data' => $rows,
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error','topBarangaysData error: '.$e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'ok' => false,
+                'error' => 'Unable to load rankings'
+            ]);
+        }
+    }
+
+    /**
+     * Public event detail page
+     * Route: /event/{id}
+     * Only published events are visible; returns 404 otherwise.
+     */
+    public function event($id)
+    {
+        $eventModel = new \App\Models\EventModel();
+        $bulletinModel = new \App\Models\BulletinModel(); // leverage DB connection for joins if needed
+        $db = \Config\Database::connect();
+        $event = null;
+        $siteLogoUrl = base_url('favicon.ico');
+        try {
+            $builder = $db->table('event e')
+                ->select('e.*, u.first_name, u.last_name, b.name as barangay_name')
+                ->join('user u','u.id = e.created_by','left')
+                ->join('barangay b','b.barangay_id = e.barangay_id','left')
+                ->where('e.event_id', $id)
+                ->where('e.status','Published')
+                ->limit(1);
+            $event = $builder->get()->getRowArray();
+            // Use K-NECT logo for public event pages
+            $siteLogoUrl = base_url('assets/images/K-Nect-Logo.png');
+        } catch (\Throwable $e) {
+            log_message('error','Public event detail query error: '.$e->getMessage());
+        }
+
+        if(!$event) {
+            // Graceful 404
+            return \Config\Services::response()->setStatusCode(404)->setBody('Event not found');
+        }
+
+        // Temporal status (upcoming / ongoing / completed)
+        $temporalStatus = null;
+        try {
+            $temporalStatus = $eventModel->getEventTemporalStatus($event);
+        } catch (\Throwable $e) {
+            // ignore temporal status failure
+        }
+
+        $page_title = $event['title'] . ' | K-NECT Event';
+        $canonicalUrl = base_url('event/'.$event['event_id']);
+        $pageDescription = mb_strimwidth(strip_tags($event['description'] ?? 'K-NECT Event'), 0, 150, '…');
+
+        // Related upcoming events (exclude current)
+        $related = [];
+        try {
+            $relQ = $db->table('event e')
+                ->select('e.event_id as id, e.title, e.start_datetime, e.event_banner')
+                ->where('e.status','Published')
+                ->where('e.event_id !=', $event['event_id'])
+                ->where('e.start_datetime >=', date('Y-m-d 00:00:00'))
+                ->orderBy('e.start_datetime','ASC')
+                ->limit(3)
+                ->get()->getResultArray();
+            $related = $relQ;
+        } catch (\Throwable $ex) { /* ignore related failure */ }
+
+        $data = [
+            'page_title' => $page_title,
+            'event' => $event,
+            'temporalStatus' => $temporalStatus,
+            'canonicalUrl' => $canonicalUrl,
+            'pageDescription' => $pageDescription,
+            'siteLogoUrl' => $siteLogoUrl,
+            'relatedEvents' => $related,
+        ];
+        return view('K-NECT/public/event_detail', $data);
     }
 }

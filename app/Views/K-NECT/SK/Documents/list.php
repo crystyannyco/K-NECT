@@ -26,8 +26,9 @@
     background: transparent !important;
 }
 </style>
-<div class="max-w-6xl mx-auto p-0">
-    <div class="p-6 rounded-2xl shadow-lg border border-gray-200 bg-white flex flex-col gap-4">
+<div class="max-w-7xl mx-auto p-0">
+    <div class="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200">
+        <div class="px-6 py-4 space-y-4 sm:space-y-6">
         <!-- Header Section -->
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-2">
                 <div>
@@ -46,61 +47,131 @@
             </div>
 
         <!-- Search and Filter Section -->
-        <form method="GET" action="<?= base_url('admin/documents') ?>" class="flex flex-col md:flex-row gap-3 w-full items-center justify-between bg-white/80 rounded-xl shadow-md p-4 border border-blue-200 backdrop-blur-md transition-all duration-300 hover:shadow-lg focus-within:ring-2 focus-within:ring-blue-200">
-                <div class="relative w-full md:w-2/5">
-                <input type="text" name="search" id="search" value="<?= esc($_GET['search'] ?? '') ?>"
-                   class="border border-blue-200 rounded-lg px-4 py-2 w-full focus:ring-2 focus:ring-blue-300 focus:outline-none shadow-sm transition-all duration-300 placeholder-gray-400 text-sm bg-white/70"
-                   placeholder="🔍 Search documents...">
-                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-blue-400 cursor-pointer group" tabindex="0" title="Search by filename or description">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 group-hover:text-blue-600 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
-                        </svg>
-                    </span>
+        <div class="bg-white/80 rounded-xl shadow-md p-4 lg:p-6 border border-blue-200 backdrop-blur-md transition-all duration-300 hover:shadow-lg focus-within:ring-2 focus-within:ring-blue-200">
+            <form method="GET" action="<?= base_url('admin/documents') ?>" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Search Input -->
+                    <div class="sm:col-span-2 lg:col-span-1">
+                        <div class="relative">
+                            <input type="text" name="search" id="search" value="<?= esc($_GET['search'] ?? '') ?>"
+                                   class="w-full pl-10 pr-4 py-2.5 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-300 focus:outline-none shadow-sm transition-all duration-300 placeholder-gray-400 text-sm bg-white/70"
+                                   placeholder="🔍 Search documents...">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </span>
+                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-blue-400 cursor-pointer group" tabindex="0" title="Search by filename or description">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 group-hover:text-blue-600 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
+                                </svg>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Category Filter -->
+                    <div class="lg:col-span-1">
+                        <select name="category" id="category" class="w-full border border-blue-200 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-300 focus:outline-none shadow-sm text-sm bg-white/70">
+                            <option value="">All Categories</option>
+                            <?php foreach (($categories ?? []) as $cat): ?>
+                                <option value="<?= $cat['id'] ?>" <?= (isset($selectedCategory) && $selectedCategory == $cat['id']) ? 'selected' : '' ?>>
+                                    <?= esc($cat['name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <!-- Status Filter -->
+                    <div class="lg:col-span-1">
+                        <select name="status" id="status" class="w-full border border-blue-200 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-300 focus:outline-none shadow-sm text-sm bg-white/70">
+                            <option value="">All Status</option>
+                            <option value="pending" <?= (isset($_GET['status']) && $_GET['status'] === 'pending') ? 'selected' : '' ?>>Pending</option>
+                            <option value="approved" <?= (isset($_GET['status']) && $_GET['status'] === 'approved') ? 'selected' : '' ?>>Approved</option>
+                            <option value="rejected" <?= (isset($_GET['status']) && $_GET['status'] === 'rejected') ? 'selected' : '' ?>>Rejected</option>
+                        </select>
+                    </div>
                 </div>
 
-            <select name="category" id="category" class="border border-blue-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-300 focus:outline-none shadow-sm text-sm bg-white/70">
-                    <option value="">All Categories</option>
-                    <?php foreach (($categories ?? []) as $cat): ?>
-                        <option value="<?= $cat['id'] ?>" <?= (isset($selectedCategory) && $selectedCategory == $cat['id']) ? 'selected' : '' ?>><?= esc($cat['name']) ?></option>
-                    <?php endforeach; ?>
-                </select>
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row gap-3 justify-center sm:justify-start">
+                    <button type="submit" class="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-400 text-white px-6 py-2.5 rounded-lg font-bold shadow-md hover:from-blue-700 hover:to-blue-500 transition-all flex items-center justify-center gap-2 text-sm border-2 border-blue-200 hover:border-blue-400 focus:ring-2 focus:ring-blue-200 outline-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <span class="whitespace-nowrap">Search Documents</span>
+                    </button>
 
-            <select name="status" id="status" class="border border-blue-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-300 focus:outline-none shadow-sm text-sm bg-white/70">
-                <option value="">All Status</option>
-                <option value="pending" <?= (isset($_GET['status']) && $_GET['status'] === 'pending') ? 'selected' : '' ?>>Pending</option>
-                <option value="approved" <?= (isset($_GET['status']) && $_GET['status'] === 'approved') ? 'selected' : '' ?>>Approved</option>
-                <option value="rejected" <?= (isset($_GET['status']) && $_GET['status'] === 'rejected') ? 'selected' : '' ?>>Rejected</option>
-            </select>
-
-            <button type="submit" class="bg-gradient-to-r from-blue-600 to-blue-400 text-white px-6 py-2 rounded-lg font-bold shadow-md hover:from-blue-700 hover:to-blue-500 transition-all flex items-center gap-2 text-sm border-2 border-blue-200 hover:border-blue-400 focus:ring-2 focus:ring-blue-200 outline-none">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                    Search
-                </button>
-
-            <?php if (!empty($_GET['search']) || !empty($_GET['category']) || !empty($_GET['status'])): ?>
-            <a href="<?= base_url('admin/documents') ?>" class="bg-gray-100 text-gray-700 px-6 py-2 rounded-lg font-semibold shadow-sm hover:bg-gray-200 transition flex items-center gap-2 ml-2 border-2 border-gray-200 hover:border-gray-400" title="Show all documents">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6" />
-                </svg>
-                        Show All
+                    <?php if (!empty($_GET['search']) || !empty($_GET['category']) || !empty($_GET['status'])): ?>
+                    <a href="<?= base_url('admin/documents') ?>" class="w-full sm:w-auto bg-gray-100 text-gray-700 px-6 py-2.5 rounded-lg font-semibold shadow-sm hover:bg-gray-200 transition flex items-center justify-center gap-2 border-2 border-gray-200 hover:border-gray-400" title="Show all documents">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6" />
+                        </svg>
+                        <span class="whitespace-nowrap">Show All</span>
                     </a>
-                <?php endif; ?>
+                    <?php endif; ?>
+                </div>
             </form>
+        </div>
         </div>
     </div>
 
+    <script>
+    // Toast notification function - defined early for flash messages
+    function showSuccessToast(message) {
+        // Create toast container if it doesn't exist
+        let toastContainer = document.getElementById('toastContainer');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toastContainer';
+            toastContainer.className = 'fixed top-4 right-4 z-50 space-y-2';
+            document.body.appendChild(toastContainer);
+        }
+        
+        // Create toast element
+        const toast = document.createElement('div');
+        toast.className = 'bg-green-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 transform translate-x-full opacity-0 transition-all duration-300 ease-out max-w-sm';
+        toast.innerHTML = `
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                </svg>
+            </div>
+            <div class="flex-1">
+                <p class="font-medium text-sm">${message}</p>
+            </div>
+            <button onclick="this.parentElement.remove()" class="flex-shrink-0 text-white hover:text-green-200 transition-colors">
+                <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                </svg>
+            </button>
+        `;
+        
+        // Add to container
+        toastContainer.appendChild(toast);
+        
+        // Animate in
+        setTimeout(() => {
+            toast.classList.remove('translate-x-full', 'opacity-0');
+        }, 100);
+        
+        // Auto hide after 5 seconds
+        setTimeout(() => {
+            toast.classList.add('translate-x-full', 'opacity-0');
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.remove();
+                }
+            }, 300);
+        }, 5000);
+    }
+    </script>
+
     <?php if (session()->getFlashdata('success')): ?>
-        <div id="alert" class="mb-6 flex items-center justify-between bg-green-50 border border-green-200 text-green-800 px-6 py-4 rounded-lg shadow-sm animate-fade-in" role="alert">
-        <span class="flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-            </svg>
-            <?= session()->getFlashdata('success') ?>
-        </span>
-            <button onclick="document.getElementById('alert').remove()" class="ml-4 text-green-700 hover:text-green-900 text-xl">&times;</button>
-        </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                showSuccessToast('<?= addslashes(session()->getFlashdata('success')) ?>');
+            });
+        </script>
     <?php endif; ?>
 
     <?php if (session('role') === 'super_admin'):
@@ -251,7 +322,7 @@
                     <div class="flex items-center justify-between">
                             <h2 class="text-lg font-bold text-blue-900 truncate">
                                 <button onclick="openDocumentModal(<?= $doc['id'] ?>)" class="hover:underline text-left">
-                                    <?= esc($doc['title'] ?? ($doc['filename'] ?? 'Untitled document')) ?>
+                                    <?= esc($doc['filename'] ?? 'Untitled document') ?>
                                 </button>
                       </h2>
                       <div class="flex items-center gap-3">
@@ -880,7 +951,7 @@ async function fetchDocumentDetails(documentId) {
 // Populate modal with document data
 function populateModal(doc) {
     // Update header
-    document.getElementById('modalTitle').textContent = doc.title || doc.filename || 'Untitled Document';
+    document.getElementById('modalTitle').textContent = doc.filename || 'Untitled Document';
     document.getElementById('modalSubtitle').textContent = `Uploaded on ${new Date(doc.uploaded_at || doc.created_at).toLocaleDateString()}`;
     
     // Update status - handle missing approval_status gracefully

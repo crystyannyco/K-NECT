@@ -29,6 +29,37 @@
         color: white;
         border-color: #3b82f6;
     }
+
+    /* Responsive adjustments for user management table */
+    .table-responsive-wrapper {
+        overflow-x: auto; /* allow horizontal scroll on small screens */
+    }
+
+    /* Allow name cells to wrap and break long words */
+    #usersTable td.name-cell,
+    #inactiveTable td.name-cell,
+    #deactivatedTable td.name-cell {
+        white-space: normal;
+        word-break: break-word;
+        max-width: 18rem; /* give them a sensible max width so they wrap */
+    }
+
+    /* Keep action cell contents together and prevent collapsing */
+    #usersTable td.action-cell,
+    #inactiveTable td.action-cell,
+    #deactivatedTable td.action-cell {
+        white-space: nowrap;
+    }
+
+    /* Small-screen tweaks to reduce padding and make table fit */
+    @media (max-width: 768px) {
+        #usersTable th, #usersTable td,
+        #inactiveTable th, #inactiveTable td,
+        #deactivatedTable th, #deactivatedTable td {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+    }
 </style>
 
 <!-- ===== MAIN CONTENT AREA ===== -->
@@ -114,7 +145,7 @@
             <div class="p-6">
                 <!-- Table Content - Server-side rendered like youth_profile -->
                 <div id="tableContent">
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto table-responsive-wrapper">
                         <!-- Verified Users Table -->
                         <table id="usersTable" class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
@@ -140,9 +171,9 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                                 <?= esc($user['user_id']) ?>
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                <?= esc($user['full_name']) ?>
-                                            </td>
+                                            <td class="px-6 py-4 text-sm text-gray-900 name-cell">
+                                                    <?= esc($user['full_name']) ?>
+                                                </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                 <?= esc($user['zone_display']) ?>
                                             </td>
@@ -160,7 +191,7 @@
                                                     <?= esc($user['status_reason']) ?>
                                                 </span>
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            <td class="px-6 py-4 text-sm font-medium action-cell">
                                                 <div class="flex space-x-2">
                                                     <button onclick="viewUserDetails(<?= $user['id'] ?>)" class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
                                                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

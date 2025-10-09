@@ -815,6 +815,20 @@
     </div>
     <!-- Toast Container (shared across SK pages) -->
     <div id="toastContainer" class="fixed top-4 right-4 z-[100000] flex flex-col gap-2 items-end pointer-events-none"></div>
+    
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="fixed inset-0 z-[100001] hidden bg-black bg-opacity-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-2xl p-8 flex flex-col items-center space-y-4">
+            <div class="relative">
+                <div class="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+            </div>
+            <div class="text-center">
+                <p id="loadingText" class="text-lg font-semibold text-gray-800">Processing...</p>
+                <p class="text-sm text-gray-500 mt-1">Please wait while we send notifications</p>
+            </div>
+        </div>
+    </div>
+    
     <script>
     // Barangay mapping from PHP
     const barangayMap = <?= json_encode($barangay_map) ?>;
@@ -1451,6 +1465,19 @@
     });
 
     // Add functions to handle API calls
+    // Loading screen functions
+    function showLoadingScreen(message = 'Processing...') {
+        const loadingScreen = document.getElementById('loadingScreen');
+        const loadingText = document.getElementById('loadingText');
+        loadingText.textContent = message;
+        loadingScreen.classList.remove('hidden');
+    }
+
+    function hideLoadingScreen() {
+        const loadingScreen = document.getElementById('loadingScreen');
+        loadingScreen.classList.add('hidden');
+    }
+
     // Toast notification function (shared style with SK pages)
     function showNotification(message, type = 'info') {
         // Ensure toast container exists and is styled for stacking
@@ -1525,6 +1552,11 @@
 
     function handleAcceptUser() {
         if (!currentUserId) return;
+        
+        // Close confirmation modal and show loading screen
+        closeConfirmationModal();
+        showLoadingScreen('Approving user and sending notifications...');
+        
         fetch(`<?= rtrim(base_url('/approved'), '/') ?>/${currentUserId}`, {
             method: 'POST'
         })
@@ -1534,26 +1566,34 @@
             try {
                 data = JSON.parse(text);
             } catch (e) {
+                hideLoadingScreen();
                 showNotification('An error occurred while accepting the user', 'error');
                 return;
             }
             if (response.ok && data.success) {
-                showNotification('User accepted successfully', 'success');
-                closeConfirmationModal();
+                hideLoadingScreen();
                 closePreviewModal();
+                showNotification('User accepted successfully! Notifications sent.', 'success');
                 setTimeout(() => location.reload(), 1200);
             } else {
+                hideLoadingScreen();
                 showNotification('Failed to accept user: ' + (data.message || 'Unknown error'), 'error');
             }
         })
         .catch(error => {
             console.error('Error:', error);
+            hideLoadingScreen();
             showNotification('An error occurred while accepting the user', 'error');
         });
     }
 
     function handleRejectUser(reason) {
         if (!currentUserId) return;
+        
+        // Close confirmation modal and show loading screen
+        closeConfirmationModal();
+        showLoadingScreen('Rejecting user and sending notifications...');
+        
         const formData = new FormData();
         formData.append('reason', reason);
         fetch(`<?= rtrim(base_url('/reject'), '/') ?>/${currentUserId}`, {
@@ -1566,20 +1606,23 @@
             try {
                 data = JSON.parse(text);
             } catch (e) {
+                hideLoadingScreen();
                 showNotification('An error occurred while rejecting the user', 'error');
                 return;
             }
             if (response.ok && data.success) {
-                showNotification('User rejected successfully', 'success');
-                closeConfirmationModal();
+                hideLoadingScreen();
                 closePreviewModal();
+                showNotification('User rejected successfully!  Notifications sent.', 'success');
                 setTimeout(() => location.reload(), 1200);
             } else {
+                hideLoadingScreen();
                 showNotification('Failed to reject user: ' + (data.message || 'Unknown error'), 'error');
             }
         })
         .catch(error => {
             console.error('Error:', error);
+            hideLoadingScreen();
             showNotification('An error occurred while rejecting the user', 'error');
         });
     }

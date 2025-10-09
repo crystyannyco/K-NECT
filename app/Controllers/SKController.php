@@ -591,12 +591,17 @@ class SKController extends BaseController
     // Modal-based verify user (accept)
     public function approved($userId)
     {
+        // Load required helpers
+        helper(['sms', 'otp']);
+        
         try {
             if (!$userId || !is_numeric($userId)) {
                 return $this->response->setStatusCode(400)->setJSON(['success' => false, 'message' => 'Missing or invalid user_id']);
             }
 
             $userModel = new UserModel();
+            $addressModel = new AddressModel();
+            
             $user = $userModel->find($userId);
             if (!$user) {
                 return $this->response->setStatusCode(404)->setJSON(['success' => false, 'message' => 'User not found']);
@@ -641,6 +646,30 @@ class SKController extends BaseController
                 return $this->response->setStatusCode(500)->setJSON(['success' => false, 'message' => $errorMsg]);
             }
 
+            // Get updated user data and address for notifications
+            $updatedUser = $userModel->find($userId);
+            $address = $addressModel->where('user_id', $userId)->first();
+            
+            // Send approval notifications (Email & SMS)
+            try {
+                $notificationResult = send_account_approved_notification($updatedUser, $address);
+                
+                if ($notificationResult['email']) {
+                    log_message('info', "Account approval email sent for user ID {$userId}");
+                }
+                if ($notificationResult['sms']) {
+                    log_message('info', "Account approval SMS sent for user ID {$userId}");
+                }
+                
+                // Note: We don't fail the approval if notifications fail
+                if (!$notificationResult['email'] && !$notificationResult['sms']) {
+                    log_message('warning', "Failed to send any notification for approved user ID {$userId}");
+                }
+            } catch (\Throwable $notifException) {
+                log_message('error', "Notification exception for approved user ID {$userId}: " . $notifException->getMessage());
+                // Continue even if notification fails
+            }
+
             return $this->response->setJSON([
                 'success' => true,
                 'message' => 'User accepted successfully',
@@ -657,6 +686,9 @@ class SKController extends BaseController
 
     public function reject($userId)
     {
+        // Load required helpers
+        helper(['sms', 'otp']);
+        
         $reason = $this->request->getPost('reason');
         if (!$userId || empty($reason)) {
             return $this->response->setStatusCode(400)->setJSON(['success' => false, 'message' => 'Missing user_id or reason']);
@@ -664,6 +696,12 @@ class SKController extends BaseController
         
         $userModel = new UserModel();
         $userExtInfoModel = new UserExtInfoModel();
+        
+        // Get user data before rejection for notifications
+        $user = $userModel->find($userId);
+        if (!$user) {
+            return $this->response->setStatusCode(404)->setJSON(['success' => false, 'message' => 'User not found']);
+        }
         
         $db = \Config\Database::connect();
         $db->transStart();
@@ -675,6 +713,26 @@ class SKController extends BaseController
         
         if ($db->transStatus() === false) {
             return $this->response->setStatusCode(500)->setJSON(['success' => false, 'message' => 'Failed to reject user']);
+        }
+        
+        // Send rejection notifications (Email & SMS)
+        try {
+            $notificationResult = send_account_rejected_notification($user, $reason);
+            
+            if ($notificationResult['email']) {
+                log_message('info', "Account rejection email sent for user ID {$userId}");
+            }
+            if ($notificationResult['sms']) {
+                log_message('info', "Account rejection SMS sent for user ID {$userId}");
+            }
+            
+            // Note: We don't fail the rejection if notifications fail
+            if (!$notificationResult['email'] && !$notificationResult['sms']) {
+                log_message('warning', "Failed to send any notification for rejected user ID {$userId}");
+            }
+        } catch (\Throwable $notifException) {
+            log_message('error', "Notification exception for rejected user ID {$userId}: " . $notifException->getMessage());
+            // Continue even if notification fails
         }
         
         return $this->response->setJSON(['success' => true, 'message' => 'User rejected successfully']);

@@ -15,6 +15,23 @@
                     <a href="<?= base_url('/bulletin/create') ?>" class="inline-flex items-center gap-1.5 bg-white border border-blue-200 hover:bg-blue-50 text-blue-600 px-4 py-1.5 rounded-md text-xs font-medium shadow-sm transition"><i class="fa-solid fa-plus"></i> Bulletin</a>
                     <a href="<?= base_url('/bulletin') ?>" class="inline-flex items-center gap-1.5 bg-white border border-blue-200 hover:bg-blue-50 text-blue-600 px-4 py-1.5 rounded-md text-xs font-medium shadow-sm transition"><i class="fa-solid fa-grid"></i> Manage</a>
                 </div>
+<!-- Main content wrapper (aligned beside fixed sidebar) -->
+<div class="flex-1 flex flex-col min-h-0 ml-0 lg:ml-64 pt-16">
+    <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
+        <div class="max-w-7xl mx-auto p-6">
+            <div class="space-y-8">
+    <!-- Welcome Section (Unified Style) -->
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 border-l-4 border-blue-600 relative overflow-hidden">
+        <div class="flex items-start justify-between gap-6">
+            <div class="space-y-1">
+                <h1 class="text-xl font-bold leading-snug">Welcome back, <?= esc(session('username')) ?>!</h1>
+                <p class="text-sm text-gray-700">You're logged in as <span class="font-semibold">SK Admin</span></p>
+                <p class="text-xs text-gray-500">Manage your documents and collaborate with your team.</p>
+                <div class="pt-3 flex flex-wrap gap-2">
+                    <a href="<?= base_url('admin/documents/upload') ?>" class="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-md text-xs font-medium shadow-sm transition"><i class="fa-solid fa-file-arrow-up"></i> Upload</a>
+                    <a href="<?= base_url('/bulletin/create') ?>" class="inline-flex items-center gap-1.5 bg-white border border-blue-200 hover:bg-blue-50 text-blue-600 px-4 py-1.5 rounded-md text-xs font-medium shadow-sm transition"><i class="fa-solid fa-plus"></i> Bulletin</a>
+                    <a href="<?= base_url('/bulletin') ?>" class="inline-flex items-center gap-1.5 bg-white border border-blue-200 hover:bg-blue-50 text-blue-600 px-4 py-1.5 rounded-md text-xs font-medium shadow-sm transition"><i class="fa-solid fa-grid"></i> Manage</a>
+                </div>
             </div>
             <div class="hidden md:flex items-start gap-3">
                 <div class="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
@@ -178,7 +195,7 @@
                             </div>
                             <div class="p-4">
                                 <h3 class="text-sm font-semibold text-gray-900 truncate" title="<?= esc($doc['filename'] ?? 'Untitled Document') ?>"><?= esc($doc['filename'] ?? 'Untitled Document') ?></h3>
-                                <div class="mt-2 flex items-center justify-between text-xs text-gray-500"><span><?= !empty($doc['created_at'])?date('M d, Y',strtotime($doc['created_at'])):'' ?></span><span class="px-2 py-0.5 rounded-full text-[10px] font-medium <?= $doc['approval_status']==='approved'?'bg-green-100 text-green-700':($doc['approval_status']==='pending'?'bg-yellow-100 text-yellow-700':'bg-red-100 text-red-700') ?>"><?= ucfirst($doc['approval_status']) ?></span></div>
+                                <div class="mt-2 flex items-center justify-between text-xs text-gray-500"><span><?= !empty($doc['created_at'])?date('M d, Y',strtotime($doc['created_at'])):'' ?></span><span class="px-2 py-0.5 rounded-full text-[10px] font-medium <?= ($doc['visibility'] ?? 'sk')==='pederasyon'?'bg-purple-100 text-purple-700':(($doc['visibility'] ?? 'sk')==='sk'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700') ?>"><?= ucfirst($doc['visibility'] ?? 'SK') ?></span></div>
                             </div>
                         </article>
                     <?php endforeach; ?>

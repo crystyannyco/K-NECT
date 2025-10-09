@@ -93,13 +93,65 @@ class PederasyonController extends BaseController
             [$username]
         )->getResultArray();
 
+        $userId = $session->get('user_id');
+        $username = $session->get('username');
+
+        // Database connection
+        $db = \Config\Database::connect();
+
+        // Document statistics (per current logged-in PED officer)
+        $totalDocuments = $db->query(
+            "SELECT COUNT(*) AS count FROM documents WHERE LOWER(TRIM(uploaded_by)) = LOWER(TRIM(?))",
+            [$username]
+        )->getRowArray()['count'] ?? 0;
+
+        $pederasyonDocuments = $db->query(
+            "SELECT COUNT(*) AS count FROM documents WHERE LOWER(TRIM(uploaded_by)) = LOWER(TRIM(?)) AND visibility = 'pederasyon'",
+            [$username]
+        )->getRowArray()['count'] ?? 0;
+
+        $skDocuments = $db->query(
+            "SELECT COUNT(*) AS count FROM documents WHERE LOWER(TRIM(uploaded_by)) = LOWER(TRIM(?)) AND visibility = 'sk'",
+            [$username]
+        )->getRowArray()['count'] ?? 0;
+
+        $sharedDocuments = $db->query(
+            "SELECT COUNT(DISTINCT document_id) AS count FROM document_shares 
+                WHERE is_active = 1 
+                  AND (expires_at IS NULL OR expires_at > NOW()) 
+                  AND LOWER(TRIM(shared_with)) = LOWER(TRIM(?))",
+            [$username]
+        )->getRowArray()['count'] ?? 0;
+
+        // Bulletin data (city-wide visibility scope for federation role)
+        $bulletinModel = new \App\Models\BulletinModel();
+        $featuredPosts = $bulletinModel->getFeaturedPosts(5, 'pederasyon');
+        $urgentPosts = $bulletinModel->getUrgentPosts(3, 'pederasyon');
+        $recentPosts = $bulletinModel->getVisiblePosts('pederasyon', null, 6) ?? [];
+
+        // Upcoming events (next 6 city-wide)
+        $eventModel = new \App\Models\EventModel();
+        $upcomingEvents = $eventModel
+            ->where('status', 'Published')
+            ->where('start_datetime >=', date('Y-m-d H:i:s'))
+            ->orderBy('start_datetime', 'ASC')
+            ->limit(6)
+            ->find();
+
+        // Recent documents uploaded by this user (limit 8)
+        $recentDocuments = $db->query(
+            "SELECT id, filename, filepath AS file_path, uploaded_at AS created_at, visibility 
+             FROM documents WHERE LOWER(TRIM(uploaded_by)) = LOWER(TRIM(?)) ORDER BY uploaded_at DESC LIMIT 8",
+            [$username]
+        )->getResultArray();
+
         $data = [
             'user_id' => $userId,
             'username' => $username,
             // Document stats
             'totalDocuments' => $totalDocuments,
-            'pendingApproval' => $pendingApproval,
-            'approvedDocuments' => $approvedDocuments,
+            'pederasyonDocuments' => $pederasyonDocuments,
+            'skDocuments' => $skDocuments,
             'sharedDocuments' => $sharedDocuments,
             // Bulletin/events/documents overview
             'featuredPosts' => $featuredPosts,
@@ -110,6 +162,7 @@ class PederasyonController extends BaseController
         ];
 
         return 
+            $this->loadView('K-NECT/Pederasyon/template/header', $data) .
             $this->loadView('K-NECT/Pederasyon/template/header', $data) .
             $this->loadView('K-NECT/Pederasyon/template/sidebar') .
             $this->loadView('K-NECT/Pederasyon/dashboard', $data);

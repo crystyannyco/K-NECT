@@ -59,6 +59,67 @@ if (!function_exists('ped_resolve_image')) {
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                             </svg>
                         </div>
+<?php
+// Helper to resolve image path safely
+if (!function_exists('ped_resolve_image')) {
+    function ped_resolve_image($path) {
+        if (empty($path)) return null;
+        $trim = ltrim($path, '/');
+        // Absolute URL
+        if (preg_match('~^https?://~i', $trim)) return $trim;
+        // If file exists relative to public
+        $full = FCPATH . $trim;
+        if (is_file($full)) {
+            return base_url($trim);
+        }
+        // Sometimes stored with leading 'public/' – strip it
+        if (str_starts_with($trim, 'public/')) {
+            $alt = substr($trim, 7);
+            if (is_file(FCPATH . $alt)) return base_url($alt);
+        }
+        // Attempt common uploads prefixes
+        $candidates = [
+            'uploads/' . $trim,
+            'uploads/bulletin/' . $trim,
+        ];
+        foreach ($candidates as $cand) {
+            if (is_file(FCPATH . $cand)) return base_url($cand);
+        }
+        return null; // Unresolved
+    }
+}
+?>
+<div class="flex-1 flex flex-col min-h-0 ml-64 pt-16">
+    <main class="flex-1 overflow-auto px-6 pb-10 pt-6 bg-gray-50">
+        <!-- Welcome Card (SK-style) -->
+        <div class="mb-6">
+            <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 border-l-4 border-blue-600 relative overflow-hidden">
+                <div class="flex items-start justify-between gap-4">
+                    <div class="space-y-1">
+                        <h1 class="text-xl font-bold leading-snug">Welcome back, <?= esc($username ?? 'User') ?>!</h1>
+                        <p class="text-sm text-gray-700">You're logged in as <span class="font-semibold">Federation Admin</span></p>
+                        <p class="text-xs text-gray-500">Manage federation bulletins, events, and shared documents.</p>
+                        <div class="pt-3 flex flex-wrap gap-2">
+                            <a href="<?= base_url('pederasyon/analytics') ?>" class="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-md text-xs font-medium shadow-sm transition">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3a1 1 0 00-1 1v12.382l-1.447-1.724a1 1 0 10-1.53 1.284l3 3.571a1 1 0 001.53 0l3-3.571a1 1 0 10-1.53-1.284L12 16.382V4a1 1 0 00-1-1z"/></svg>
+                                Analytics
+                            </a>
+                            <a href="<?= base_url('bulletin/create') ?>" class="inline-flex items-center gap-1.5 bg-white border border-blue-200 hover:bg-blue-50 text-blue-600 px-4 py-1.5 rounded-md text-xs font-medium shadow-sm transition">
+                                <i class="fa-solid fa-plus"></i>
+                                Bulletin
+                            </a>
+                            <a href="<?= base_url('admin/documents/upload') ?>" class="inline-flex items-center gap-1.5 bg-white border border-blue-200 hover:bg-blue-50 text-blue-600 px-4 py-1.5 rounded-md text-xs font-medium shadow-sm transition">
+                                <i class="fa-solid fa-file-arrow-up"></i>
+                                Document
+                            </a>
+                        </div>
+                    </div>
+                    <div class="hidden md:flex items-center justify-center">
+                        <div class="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                        </div>
                     </div>
                 </div>
                 <span class="absolute top-2 right-2 inline-flex items-center px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] font-semibold">Beta</span>
@@ -304,7 +365,7 @@ if (!function_exists('ped_resolve_image')) {
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-start justify-between gap-3">
                                         <p class="text-sm font-semibold text-gray-900 truncate group-hover:text-blue-600 transition" title="<?= esc($doc['filename'] ?? 'Untitled') ?>"><?= esc($doc['filename'] ?? 'Untitled') ?></p>
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium <?php if(($doc['approval_status'] ?? '')==='approved'): ?> bg-green-50 text-green-600 <?php elseif(($doc['approval_status'] ?? '')==='pending'): ?> bg-yellow-50 text-yellow-600 <?php else: ?> bg-gray-100 text-gray-500 <?php endif; ?>"><?= esc(ucfirst($doc['approval_status'] ?? 'N/A')) ?></span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium <?php if(($doc['visibility'] ?? 'pederasyon')==='pederasyon'): ?> bg-purple-50 text-purple-600 <?php elseif(($doc['visibility'] ?? 'pederasyon')==='sk'): ?> bg-blue-50 text-blue-600 <?php else: ?> bg-green-50 text-green-600 <?php endif; ?>"><?= esc(ucfirst($doc['visibility'] ?? 'Pederasyon')) ?></span>
                                     </div>
                                     <div class="mt-1 flex items-center gap-3 text-[11px] text-gray-500 flex-wrap">
                                         <span><?= isset($doc['created_at']) ? date('M d, Y g:i A', strtotime($doc['created_at'])) : '' ?></span>
@@ -312,9 +373,6 @@ if (!function_exists('ped_resolve_image')) {
                                     </div>
                                     <div class="mt-3 flex items-center justify-between">
                                         <button type="button" onclick="window.open('<?= !empty($doc['file_path']) ? base_url($doc['file_path']) : '#' ?>','_blank')" class="text-xs font-medium text-blue-600 hover:text-blue-700 inline-flex items-center gap-1"><i class="fa-regular fa-eye"></i> Open</button>
-                                        <?php if(($doc['approval_status'] ?? '')==='pending'): ?>
-                                            <span class="text-[10px] text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded">Awaiting approval</span>
-                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>

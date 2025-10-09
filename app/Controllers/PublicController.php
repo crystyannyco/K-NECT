@@ -19,8 +19,13 @@ class PublicController extends BaseController
         $siteLogoUrl = null;
         $canonicalUrl = base_url('/');
         $pageDescription = 'K-NECT: Unified youth engagement platform for announcements, events, resources, and data-driven community impact.';
+        $siteLogoUrl = null;
+        $canonicalUrl = base_url('/');
+        $pageDescription = 'K-NECT: Unified youth engagement platform for announcements, events, resources, and data-driven community impact.';
         try {
             $bulletinModel = new \App\Models\BulletinModel();
+            $analyticsModel = new \App\Models\AnalyticsModel();
+            $systemLogoModel = new \App\Models\SystemLogoModel();
             $analyticsModel = new \App\Models\AnalyticsModel();
             $systemLogoModel = new \App\Models\SystemLogoModel();
             // Limit to published + visibility public or city
@@ -52,6 +57,15 @@ class PublicController extends BaseController
             $topBarangays = $analyticsModel->getTopPerformingBarangays(3, 30);
             // Active SK logo (optional adornment in public ranking section)
             $skLogo = $systemLogoModel->getActiveLogoByType('sk');
+            // Fallback: if no upcoming events are found, show the most recent published events
+            if (empty($events)) {
+                $events = $bulletinModel->getRecentEventsAnyDate(4, 'pederasyon', null);
+            }
+
+            // Top performing barangays (30-day window)
+            $topBarangays = $analyticsModel->getTopPerformingBarangays(3, 30);
+            // Active SK logo (optional adornment in public ranking section)
+            $skLogo = $systemLogoModel->getActiveLogoByType('sk');
         } catch (\Throwable $e) {
             log_message('error','Public landing data error: '.$e->getMessage());
         }
@@ -70,8 +84,32 @@ class PublicController extends BaseController
             ['title'=>'Analytics Overview','desc'=>'Understand key demographic trends.','icon'=>'fa-chart-pie'],
         ];
 
-        // Use K-NECT logo for the public landing page
-        $siteLogoUrl = base_url('assets/images/K-Nect-Logo.png');
+        // Determine site logo URL (fallback to first available logo if logo.png is missing)
+        try {
+            $logoRelPath = 'uploads/logos/logo.png';
+            $logoFsPath = FCPATH . $logoRelPath; // FCPATH = public/ path
+            if (is_file($logoFsPath)) {
+                $siteLogoUrl = base_url($logoRelPath);
+            } else {
+                $logosDir = FCPATH . 'uploads/logos/';
+                if (is_dir($logosDir)) {
+                    $files = scandir($logosDir);
+                    foreach ($files as $f) {
+                        if ($f === '.' || $f === '..') { continue; }
+                        $ext = strtolower(pathinfo($f, PATHINFO_EXTENSION));
+                        if (in_array($ext, ['png','jpg','jpeg','webp'])) {
+                            $siteLogoUrl = base_url('uploads/logos/' . $f);
+                            break;
+                        }
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // noop, fallback below
+        }
+        if (!$siteLogoUrl) {
+            $siteLogoUrl = base_url('favicon.ico');
+        }
 
         $data = [
             'page_title' => 'K-NECT Youth Engagement Platform',
@@ -79,8 +117,14 @@ class PublicController extends BaseController
             'events' => $events,
             'topBarangays' => $topBarangays ?? [],
             'topBarangaysWindowDays' => 30,
+            'topBarangays' => $topBarangays ?? [],
+            'topBarangaysWindowDays' => 30,
             'services' => $services,
             'resources' => $resources,
+            'siteLogoUrl' => $siteLogoUrl,
+            'canonicalUrl' => $canonicalUrl,
+            'pageDescription' => $pageDescription,
+            'skLogo' => $skLogo['file_path'] ?? null,
             'siteLogoUrl' => $siteLogoUrl,
             'canonicalUrl' => $canonicalUrl,
             'pageDescription' => $pageDescription,
@@ -144,8 +188,27 @@ class PublicController extends BaseController
                 ->where('e.status','Published')
                 ->limit(1);
             $event = $builder->get()->getRowArray();
-            // Use K-NECT logo for public event pages
-            $siteLogoUrl = base_url('assets/images/K-Nect-Logo.png');
+            // Determine site logo (same fallback as landing)
+            try {
+                $logoRelPath = 'uploads/logos/logo.png';
+                $logoFsPath = FCPATH . $logoRelPath;
+                if (is_file($logoFsPath)) {
+                    $siteLogoUrl = base_url($logoRelPath);
+                } else {
+                    $logosDir = FCPATH . 'uploads/logos/';
+                    if (is_dir($logosDir)) {
+                        $files = scandir($logosDir);
+                        foreach ($files as $f) {
+                            if ($f === '.' || $f === '..') { continue; }
+                            $ext = strtolower(pathinfo($f, PATHINFO_EXTENSION));
+                            if (in_array($ext, ['png','jpg','jpeg','webp'])) {
+                                $siteLogoUrl = base_url('uploads/logos/' . $f);
+                                break;
+                            }
+                        }
+                    }
+                }
+            } catch (\Throwable $ie) { /* ignore logo errors */ }
         } catch (\Throwable $e) {
             log_message('error','Public event detail query error: '.$e->getMessage());
         }

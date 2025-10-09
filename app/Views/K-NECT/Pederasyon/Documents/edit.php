@@ -251,8 +251,100 @@
                                     Tags make your document easier to find with search
                                 </p>
                             </div>
+
+                            <!-- Visibility Settings -->
+                            <div class="space-y-4">
+                                <label class="block text-sm font-semibold text-gray-700 flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                    </svg>
+                                    Visibility Settings <span class="text-red-500">*</span>
+                                </label>
+                                <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                                    <div class="space-y-3">
+                                        <label class="flex items-center p-3 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 cursor-pointer">
+                                            <input type="radio" name="visibility" value="pederasyon" class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500" <?= ($doc['visibility'] ?? '') === 'pederasyon' ? 'checked' : '' ?>>
+                                            <div class="ml-3">
+                                                <span class="text-sm font-medium text-gray-900">Pederasyon Only</span>
+                                                <p class="text-xs text-gray-500">Visible to Pederasyon administrators only</p>
+                                            </div>
+                                        </label>
+                                        <label class="flex items-center p-3 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 cursor-pointer">
+                                            <input type="radio" name="visibility" value="sk" class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500" <?= ($doc['visibility'] ?? '') === 'sk' ? 'checked' : '' ?>>
+                                            <div class="ml-3">
+                                                <span class="text-sm font-medium text-gray-900">SK Admins</span>
+                                                <p class="text-xs text-gray-500">Visible to SK administrators (city-wide or barangay-specific)</p>
+                                            </div>
+                                        </label>
+                                        <label class="flex items-center p-3 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 cursor-pointer">
+                                            <input type="radio" name="visibility" value="kk" class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500" <?= ($doc['visibility'] ?? '') === 'kk' ? 'checked' : '' ?>>
+                                            <div class="ml-3">
+                                                <span class="text-sm font-medium text-gray-900">KK Users</span>
+                                                <p class="text-xs text-gray-500">Visible to KK users and viewers (city-wide or barangay-specific)</p>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
+
+                    <?php if (session('role') === 'super_admin'): ?>
+                    <!-- Barangay-specific visibility (Pederasyon only) -->
+                    <div class="space-y-4">
+                        <label class="block text-sm font-semibold text-gray-700 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            Visibility Scope
+                        </label>
+                        
+                        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                            <!-- Visibility Scope Selector -->
+                            <div class="space-y-3 mb-4">
+                                <label class="flex items-center p-3 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 cursor-pointer">
+                                    <input type="radio" name="visibility_scope" value="all" class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500" <?= ($doc['visibility_scope'] ?? 'all') === 'all' ? 'checked' : '' ?> id="scopeAll">
+                                    <div class="ml-3">
+                                        <span class="text-sm font-medium text-gray-900">City-wide</span>
+                                        <p class="text-xs text-gray-500">Document visible to all users of the selected visibility level across all barangays</p>
+                                    </div>
+                                </label>
+                                <label class="flex items-center p-3 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 cursor-pointer">
+                                    <input type="radio" name="visibility_scope" value="specific_barangay" class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500" <?= ($doc['visibility_scope'] ?? '') === 'specific_barangay' ? 'checked' : '' ?> id="scopeSpecific">
+                                    <div class="ml-3">
+                                        <span class="text-sm font-medium text-gray-900">Barangay-specific</span>
+                                        <p class="text-xs text-gray-500">Restrict document access to users from a specific barangay</p>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <!-- Barangay Selector (shown only when specific_barangay is selected) -->
+                            <div id="barangaySelector" class="<?= ($doc['visibility_scope'] ?? 'all') === 'specific_barangay' ? '' : 'hidden' ?>">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Select Barangay <span class="text-red-500">*</span>
+                                </label>
+                                <select name="barangay_id" id="barangaySelect" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 text-gray-900 shadow-sm hover:shadow-md">
+                                    <option value="">-- Select a barangay --</option>
+                                    <?php if (!empty($barangays)): ?>
+                                        <?php foreach ($barangays as $barangay): ?>
+                                            <option value="<?= esc($barangay['barangay_id']) ?>" <?= ($doc['barangay_id'] ?? '') == $barangay['barangay_id'] ? 'selected' : '' ?>>
+                                                <?= esc($barangay['name']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </select>
+                                <p class="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    This document will only be visible to users from the selected barangay (based on their address)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
 
                     <!-- Action Buttons -->
                     <div class="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200">
@@ -369,6 +461,35 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('input[name="categories[]"]').forEach(checkbox => {
         checkbox.addEventListener('change', updateCategoryCounter);
     });
+    
+    // Visibility scope toggle (Pederasyon only)
+    const scopeAll = document.getElementById('scopeAll');
+    const scopeSpecific = document.getElementById('scopeSpecific');
+    const barangaySelector = document.getElementById('barangaySelector');
+    const barangaySelect = document.getElementById('barangaySelect');
+    
+    if (scopeAll && scopeSpecific && barangaySelector) {
+        // Toggle barangay selector visibility
+        scopeAll.addEventListener('change', function() {
+            if (this.checked) {
+                barangaySelector.classList.add('hidden');
+                barangaySelect.removeAttribute('required');
+            }
+        });
+        
+        scopeSpecific.addEventListener('change', function() {
+            if (this.checked) {
+                barangaySelector.classList.remove('hidden');
+                barangaySelect.setAttribute('required', 'required');
+            }
+        });
+        
+        // Set initial state
+        if (scopeSpecific.checked) {
+            barangaySelector.classList.remove('hidden');
+            barangaySelect.setAttribute('required', 'required');
+        }
+    }
 });
 
 // CSS Animation

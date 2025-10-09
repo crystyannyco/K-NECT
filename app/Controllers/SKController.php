@@ -11,6 +11,7 @@ use App\Models\EventModel;
 use App\Models\AttendanceModel;
 use App\Models\EventAttendanceModel;
 use App\Models\BulletinModel;
+use App\Models\BulletinModel;
 use App\Libraries\UserHelper;
 use App\Libraries\BarangayHelper;
 use App\Libraries\ZoneHelper;
@@ -240,13 +241,14 @@ class SKController extends BaseController
             [$username]
         )->getRowArray()['count'];
 
-        $pendingApproval = $db->query(
-            "SELECT COUNT(*) AS count FROM documents WHERE LOWER(TRIM(uploaded_by)) = LOWER(TRIM(?)) AND approval_status = 'pending'",
+        // Count documents by visibility
+        $pederasyonDocuments = $db->query(
+            "SELECT COUNT(*) AS count FROM documents WHERE LOWER(TRIM(uploaded_by)) = LOWER(TRIM(?)) AND visibility = 'pederasyon'",
             [$username]
         )->getRowArray()['count'];
 
-        $approvedDocuments = $db->query(
-            "SELECT COUNT(*) AS count FROM documents WHERE LOWER(TRIM(uploaded_by)) = LOWER(TRIM(?)) AND approval_status = 'approved'",
+        $skDocuments = $db->query(
+            "SELECT COUNT(*) AS count FROM documents WHERE LOWER(TRIM(uploaded_by)) = LOWER(TRIM(?)) AND visibility = 'sk'",
             [$username]
         )->getRowArray()['count'];
         
@@ -279,7 +281,7 @@ class SKController extends BaseController
 
         // Recent documents list (limit 8) - adapt to actual schema (filepath, uploaded_at)
         $recentDocuments = $db->query(
-            "SELECT id, filename, filepath AS file_path, uploaded_at AS created_at, approval_status 
+            "SELECT id, filename, filepath AS file_path, uploaded_at AS created_at, visibility 
              FROM documents WHERE LOWER(TRIM(uploaded_by)) = LOWER(TRIM(?)) ORDER BY uploaded_at DESC LIMIT 8",
             [$username]
         )->getResultArray();
@@ -290,8 +292,8 @@ class SKController extends BaseController
             'sk_barangay' => $skBarangay,
             'barangay_name' => $barangayName,
             'totalDocuments' => $totalDocuments,
-            'pendingApproval' => $pendingApproval,
-            'approvedDocuments' => $approvedDocuments,
+            'pederasyonDocuments' => $pederasyonDocuments,
+            'skDocuments' => $skDocuments,
             'sharedDocuments' => $sharedDocuments,
             // New overview payload
             'featuredPosts' => $featuredPosts,

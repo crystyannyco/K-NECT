@@ -24,16 +24,27 @@
                         </div>
                     </div>
         <div class="flex flex-col items-end gap-3">
+          <!-- Visibility Badge -->
           <span class="px-5 py-2 rounded-full text-lg font-bold shadow-lg transition-all
-            <?php if ($document['approval_status'] === 'approved') echo 'bg-green-200 text-green-900'; elseif ($document['approval_status'] === 'pending') echo 'bg-yellow-200 text-yellow-900'; else echo 'bg-red-200 text-red-900'; ?> animate-pulse">
-            <?php if ($document['approval_status'] === 'approved'): ?>
-              <svg class="inline h-6 w-6 mr-1 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-            <?php elseif ($document['approval_status'] === 'pending'): ?>
-              <svg class="inline h-6 w-6 mr-1 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <?php 
+                if (($document['visibility'] ?? '') === 'pederasyon') echo 'bg-purple-200 text-purple-900'; 
+                elseif (($document['visibility'] ?? '') === 'sk') echo 'bg-blue-200 text-blue-900'; 
+                else echo 'bg-green-200 text-green-900'; 
+            ?>">
+            <?php if (($document['visibility'] ?? '') === 'pederasyon'): ?>
+              <svg class="inline h-6 w-6 mr-1 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            <?php elseif (($document['visibility'] ?? '') === 'sk'): ?>
+              <svg class="inline h-6 w-6 mr-1 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
                             <?php else: ?>
-              <svg class="inline h-6 w-6 mr-1 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              <svg class="inline h-6 w-6 mr-1 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
                             <?php endif; ?>
-                            <?= ucfirst($document['approval_status']) ?>
+                            <?= strtoupper($document['visibility'] ?? 'N/A') ?>
           </span>
           <span class="text-xs text-white/80">Uploaded: <?= date('M j, Y g:i A', strtotime($document['uploaded_at'])) ?></span>
                         </div>
@@ -111,32 +122,66 @@
               <span class="font-semibold text-green-700">Upload Date:</span>
               <span class="text-gray-800"> <?= date('M j, Y g:i A', strtotime($document['uploaded_at'])) ?> </span>
             </div>
-            <?php if ($document['approval_status'] === 'approved' && !empty($document['approver'])): ?>
-            <div class="flex items-center gap-3">
-              <span class="font-semibold text-green-700">Approved By:</span>
-              <span class="text-gray-800"> <?= esc($document['approver']) ?> </span>
+            
+            <!-- Visibility Information -->
+            <div class="bg-gradient-to-r from-blue-50 to-green-50 rounded-lg p-4 space-y-3 border border-green-200">
+              <h4 class="font-semibold text-green-800 flex items-center gap-2">
+                <svg class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                Visibility Information
+              </h4>
+              <div class="flex items-center gap-3">
+                <span class="font-semibold text-green-700">Visible To:</span>
+                <span class="px-3 py-1 rounded-lg text-sm font-semibold
+                  <?php 
+                    if (($document['visibility'] ?? '') === 'pederasyon') echo 'bg-purple-100 text-purple-800'; 
+                    elseif (($document['visibility'] ?? '') === 'sk') echo 'bg-blue-100 text-blue-800'; 
+                    else echo 'bg-green-100 text-green-800'; 
+                  ?>">
+                  <?= strtoupper($document['visibility'] ?? 'N/A') ?>
+                </span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="font-semibold text-green-700">Scope:</span>
+                <span class="text-gray-800">
+                  <?php if (($document['visibility_scope'] ?? 'all') === 'all'): ?>
+                    <span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded">
+                      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      City-wide
+                    </span>
+                  <?php else: ?>
+                    <span class="inline-flex items-center gap-1 px-2 py-1 bg-green-50 text-green-700 rounded">
+                      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                      </svg>
+                      Specific Barangay
+                    </span>
+                  <?php endif; ?>
+                </span>
+              </div>
+              <?php if (($document['visibility_scope'] ?? 'all') === 'specific_barangay' && !empty($document['barangay_id'])): ?>
+              <div class="flex items-center gap-3">
+                <span class="font-semibold text-green-700">Barangay:</span>
+                <span class="text-gray-900 font-medium">
+                  <?php 
+                    $docModel = new \App\Models\DocumentModel();
+                    $barangayName = $docModel->getBarangayName($document['barangay_id']);
+                    echo esc($barangayName ?? 'Unknown');
+                  ?>
+                </span>
+              </div>
+              <?php endif; ?>
             </div>
-            <div class="flex items-center gap-3">
-              <span class="font-semibold text-green-700">Approval Date:</span>
-              <span class="text-gray-800"> <?= date('M j, Y g:i A', strtotime($document['approval_at'])) ?> </span>
-                    </div>
-                    <?php endif; ?>
-            <?php if ($document['approval_status'] === 'rejected' && !empty($document['approval_comment'])): ?>
-            <div class="flex items-start gap-3">
-              <span class="font-semibold text-green-700 mt-1">Rejection Reason:</span>
-              <span class="text-gray-800"> <?= esc($document['approval_comment']) ?> </span>
-                    </div>
-                    <?php endif; ?>
+            
             <div class="flex items-center gap-3">
               <span class="font-semibold text-green-700">Downloadable:</span>
               <span class="text-gray-800"> <?= ($document['downloadable'] ?? 1) ? 'Yes' : 'No' ?> </span>
                 </div>
-            <?php if (!empty($document['visibility'])): ?>
-            <div class="flex items-center gap-3">
-              <span class="font-semibold text-green-700">Visibility:</span>
-              <span class="text-gray-800"> <?= esc($document['visibility']) ?> </span>
-                </div>
-                <?php endif; ?>
             </div>
         </div>
     </div>

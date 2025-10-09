@@ -1,7 +1,7 @@
 <?php
 // SKP Documents List View for Super Admin
 // Safe defaults for optional filters to prevent undefined variable notices
-$selectedStatus = $selectedStatus ?? ($_GET['status'] ?? '');
+$selectedVisibility = $selectedVisibility ?? ($_GET['visibility'] ?? '');
 $selectedDate   = $selectedDate   ?? ($_GET['date_filter'] ?? '');
 ?>
 <style>
@@ -50,7 +50,7 @@ $totalPages = (int) max(1, ceil($total / max(1, $perPage)));
                         </svg>
                         Document Management
                     </h1>
-                    <div class="text-sm text-blue-700 mt-1 font-medium opacity-80">Super Admin - Complete document control and approval system</div>
+                    <div class="text-sm text-blue-700 mt-1 font-medium opacity-80">Super Admin - Complete document control and visibility management</div>
         </div>
         <div class="flex items-center gap-3">
                     <button onclick="openCategoryModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm hover:bg-green-700 transition-colors flex items-center gap-2">
@@ -84,13 +84,13 @@ $totalPages = (int) max(1, ceil($total / max(1, $perPage)));
                                 </div>
                             </div>
 
-                            <!-- Status Filter -->
+                            <!-- Visibility Filter -->
                             <div class="lg:col-span-1">
-                                <select name="status" class="w-full px-3 py-2.5 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm bg-white shadow-sm">
-                                    <option value="">All Status</option>
-                                    <option value="pending" <?= $selectedStatus === 'pending' ? 'selected' : '' ?>>Pending</option>
-                                    <option value="approved" <?= $selectedStatus === 'approved' ? 'selected' : '' ?>>Approved</option>
-                                    <option value="rejected" <?= $selectedStatus === 'rejected' ? 'selected' : '' ?>>Rejected</option>
+                                <select name="visibility" class="w-full px-3 py-2.5 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm bg-white shadow-sm">
+                                    <option value="">All Visibility</option>
+                                    <option value="pederasyon" <?= $selectedVisibility === 'pederasyon' ? 'selected' : '' ?>>Pederasyon</option>
+                                    <option value="sk" <?= $selectedVisibility === 'sk' ? 'selected' : '' ?>>SK</option>
+                                    <option value="kk" <?= $selectedVisibility === 'kk' ? 'selected' : '' ?>>KK</option>
                                 </select>
                             </div>
 
@@ -114,7 +114,7 @@ $totalPages = (int) max(1, ceil($total / max(1, $perPage)));
                                     </svg>
                                     <span class="hidden sm:inline">Search</span>
                                 </button>
-                                <?php if (!empty($_GET['search']) || !empty($_GET['category']) || !empty($_GET['status']) || !empty($_GET['date_filter'])): ?>
+                                <?php if (!empty($_GET['search']) || !empty($_GET['category']) || !empty($_GET['visibility']) || !empty($_GET['date_filter'])): ?>
                                 <a href="<?= base_url('admin/documents') ?>" class="w-full sm:flex-1 bg-gray-500 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors flex items-center justify-center gap-2 shadow-sm">
                                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
@@ -305,30 +305,23 @@ function showSuccessToast(message) {
                         </a>
                     </h2>
                     <div class="flex items-center gap-2 flex-shrink-0">
-                        <span class="px-2 py-1 rounded-full text-xs font-medium <?= $doc['approval_status'] === 'approved' ? 'bg-green-100 text-green-700' : ($doc['approval_status'] === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700') ?>">
-                            <?= ucfirst($doc['approval_status']) ?>
+                        <!-- Visibility Badge -->
+                        <span class="px-2 py-1 rounded-full text-xs font-medium <?= 
+                            $doc['visibility'] === 'pederasyon' ? 'bg-purple-100 text-purple-700' : 
+                            ($doc['visibility'] === 'sk' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700') 
+                        ?>">
+                            <?= strtoupper($doc['visibility'] ?? 'N/A') ?>
                         </span>
-                        <?php if (session('role') === 'super_admin' && $doc['approval_status'] === 'pending'): ?>
-                        <div class="flex gap-1">
-                            <form action="<?= base_url('admin/documents/approve/' . $doc['id']) ?>" method="post" class="approve-form">
-                                <?= csrf_field() ?>
-                                <button type="submit" class="bg-green-500 text-white hover:bg-green-600 px-2 py-1 rounded text-xs font-medium flex items-center gap-1 transition focus:outline-none focus:ring-2 focus:ring-green-200" title="Approve document">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                    </svg>
-                                    <span class="hidden sm:inline">Approve</span>
-                                </button>
-                            </form>
-                            <form action="<?= base_url('admin/documents/reject/' . $doc['id']) ?>" method="post" class="reject-form">
-                                <?= csrf_field() ?>
-                                <button type="submit" class="bg-red-500 text-white hover:bg-red-600 px-2 py-1 rounded text-xs font-medium flex items-center gap-1 transition focus:outline-none focus:ring-2 focus:ring-red-200" title="Reject document">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                    <span class="hidden sm:inline">Reject</span>
-                                </button>
-                            </form>
-                        </div>
+                        
+                        <!-- Visibility Scope Badge -->
+                        <?php if (!empty($doc['visibility_scope'])): ?>
+                            <span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                                <?php if ($doc['visibility_scope'] === 'specific_barangay' && !empty($doc['barangay_name'])): ?>
+                                    <?= esc($doc['barangay_name']) ?>
+                                <?php else: ?>
+                                    City-wide
+                                <?php endif; ?>
+                            </span>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -666,20 +659,6 @@ function showSuccessToast(message) {
                     Download
                 </button>
                 
-                <!-- Super Admin Approval buttons -->
-                <button id="modalApproveBtn" class="hidden px-3 py-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition-colors text-xs font-medium" title="Approve Document">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                    Approve
-                </button>
-                <button id="modalRejectBtn" class="hidden px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors text-xs font-medium" title="Reject Document">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                    Reject
-                </button>
-                
                 <!-- Edit/Delete buttons -->
                 <button id="modalEditBtn" class="px-3 py-2 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 rounded-lg transition-colors text-xs font-medium" title="Edit Document">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -837,23 +816,23 @@ function populateModal(doc) {
         let statusClass = '';
         let statusText = '';
         
-        const status = doc.approval_status || 'unknown';
-        switch(status) {
-            case 'approved':
+        const visibility = doc.visibility || 'unknown';
+        switch(visibility) {
+            case 'pederasyon':
+                statusClass = 'inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800';
+                statusText = '👥 PEDERASYON';
+                break;
+            case 'sk':
+                statusClass = 'inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800';
+                statusText = '🎓 SK';
+                break;
+            case 'kk':
                 statusClass = 'inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800';
-                statusText = '✓ Approved';
-                break;
-            case 'pending':
-                statusClass = 'inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800';
-                statusText = '⏳ Pending';
-                break;
-            case 'rejected':
-                statusClass = 'inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800';
-                statusText = '✗ Rejected';
+                statusText = '👤 KK';
                 break;
             default:
                 statusClass = 'inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800';
-                statusText = status || 'Unknown';
+                statusText = visibility || 'Unknown';
         }
         
         statusElement.innerHTML = `<span class="${statusClass}">${statusText}</span>`;
@@ -942,16 +921,9 @@ function setupSuperAdminButtons(doc) {
         confirmDocumentDelete(doc.id, doc.filename || 'this document');
     };
     
-    // Approval buttons for pending documents
-    if (doc.approval_status === 'pending') {
-        approveBtn.classList.remove('hidden');
-        rejectBtn.classList.remove('hidden');
-        approveBtn.onclick = () => updateDocumentStatus(doc.id, 'approved');
-        rejectBtn.onclick = () => updateDocumentStatus(doc.id, 'rejected');
-    } else {
-        approveBtn.classList.add('hidden');
-        rejectBtn.classList.add('hidden');
-    }
+    // Hide approval buttons (no longer needed with new visibility system)
+    if (approveBtn) approveBtn.classList.add('hidden');
+    if (rejectBtn) rejectBtn.classList.add('hidden');
 }
 
 // Generate preview in modal

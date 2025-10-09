@@ -81,13 +81,13 @@
                         </select>
                     </div>
 
-                    <!-- Status Filter -->
+                    <!-- Visibility Filter -->
                     <div class="lg:col-span-1">
-                        <select name="status" id="status" class="w-full border border-blue-200 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-300 focus:outline-none shadow-sm text-sm bg-white/70">
-                            <option value="">All Status</option>
-                            <option value="pending" <?= (isset($_GET['status']) && $_GET['status'] === 'pending') ? 'selected' : '' ?>>Pending</option>
-                            <option value="approved" <?= (isset($_GET['status']) && $_GET['status'] === 'approved') ? 'selected' : '' ?>>Approved</option>
-                            <option value="rejected" <?= (isset($_GET['status']) && $_GET['status'] === 'rejected') ? 'selected' : '' ?>>Rejected</option>
+                        <select name="visibility" id="visibility" class="w-full border border-blue-200 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-300 focus:outline-none shadow-sm text-sm bg-white/70">
+                            <option value="">All Visibility</option>
+                            <option value="pederasyon" <?= (isset($_GET['visibility']) && $_GET['visibility'] === 'pederasyon') ? 'selected' : '' ?>>Pederasyon</option>
+                            <option value="sk" <?= (isset($_GET['visibility']) && $_GET['visibility'] === 'sk') ? 'selected' : '' ?>>SK</option>
+                            <option value="kk" <?= (isset($_GET['visibility']) && $_GET['visibility'] === 'kk') ? 'selected' : '' ?>>KK</option>
                         </select>
                     </div>
                 </div>
@@ -325,10 +325,28 @@
                                     <?= esc($doc['filename'] ?? 'Untitled document') ?>
                                 </button>
                       </h2>
-                      <div class="flex items-center gap-3">
-                                <span class="px-3 py-1 rounded-full text-xs font-bold <?= $doc['approval_status'] === 'approved' ? 'bg-green-100 text-green-800' : ($doc['approval_status'] === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') ?> shadow">
-                                    <?= ucfirst($doc['approval_status']) ?>
+                      <div class="flex items-center gap-2">
+                                <!-- Visibility Badge -->
+                                <span class="px-3 py-1 rounded-full text-xs font-bold shadow
+                                    <?php 
+                                        if (($doc['visibility'] ?? '') === 'pederasyon') echo 'bg-purple-100 text-purple-800'; 
+                                        elseif (($doc['visibility'] ?? '') === 'sk') echo 'bg-blue-100 text-blue-800'; 
+                                        else echo 'bg-green-100 text-green-800'; 
+                                    ?>">
+                                    <?= strtoupper($doc['visibility'] ?? 'N/A') ?>
                                 </span>
+                                <!-- Barangay Scope Badge -->
+                                <?php if (($doc['visibility_scope'] ?? 'all') === 'specific_barangay' && !empty($doc['barangay_id'])): ?>
+                                    <span class="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-700 shadow-sm">
+                                        <?php 
+                                            $docModel = new \App\Models\DocumentModel();
+                                            $barangayName = $docModel->getBarangayName($doc['barangay_id']);
+                                            echo esc($barangayName ?? 'Unknown');
+                                        ?>
+                                    </span>
+                                <?php else: ?>
+                                    <span class="px-2 py-1 rounded text-xs font-medium bg-blue-50 text-blue-600 shadow-sm">City-wide</span>
+                                <?php endif; ?>
                       </div>
                     </div>
                         
@@ -786,22 +804,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     Download
                 </button>
                 
-                <?php if (session('role') === 'super_admin'): ?>
-                <!-- Approval buttons for super admin -->
-                <button id="modalApproveBtn" class="hidden px-3 py-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition-colors text-xs font-medium" title="Approve Document">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                    Approve
-                </button>
-                <button id="modalRejectBtn" class="hidden px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors text-xs font-medium" title="Reject Document">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                    Reject
-                </button>
-                <?php endif; ?>
-                
                 <!-- Edit/Delete buttons (role-based) -->
                 <button id="modalEditBtn" class="hidden px-3 py-2 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 rounded-lg transition-colors text-xs font-medium" title="Edit Document">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -954,25 +956,25 @@ function populateModal(doc) {
     document.getElementById('modalTitle').textContent = doc.filename || 'Untitled Document';
     document.getElementById('modalSubtitle').textContent = `Uploaded on ${new Date(doc.uploaded_at || doc.created_at).toLocaleDateString()}`;
     
-    // Update status - handle missing approval_status gracefully
+    // Update visibility - handle missing visibility gracefully
     const statusElement = document.getElementById('modalStatus');
     if (statusElement) {
         let statusClass = '';
         let statusText = '';
         
-        const status = doc.approval_status || 'unknown';
-        switch(status) {
-            case 'approved':
+        const visibility = doc.visibility || 'unknown';
+        switch(visibility) {
+            case 'pederasyon':
+                statusClass = 'inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800';
+                statusText = 'PEDERASYON';
+                break;
+            case 'sk':
+                statusClass = 'inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800';
+                statusText = 'SK';
+                break;
+            case 'kk':
                 statusClass = 'inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800';
-                statusText = '✓ Approved';
-                break;
-            case 'pending':
-                statusClass = 'inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800';
-                statusText = '⏳ Pending';
-                break;
-            case 'rejected':
-                statusClass = 'inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800';
-                statusText = '✗ Rejected';
+                statusText = 'KK';
                 break;
             default:
                 statusClass = 'inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800';
@@ -1054,8 +1056,6 @@ function populateModal(doc) {
 function setupAdminButtons(doc) {
     const editBtn = document.getElementById('modalEditBtn');
     const deleteBtn = document.getElementById('modalDeleteBtn');
-    const approveBtn = document.getElementById('modalApproveBtn');
-    const rejectBtn = document.getElementById('modalRejectBtn');
     
     // Show/hide edit and delete buttons based on permissions
     <?php if (session('role') === 'super_admin'): ?>
@@ -1067,17 +1067,6 @@ function setupAdminButtons(doc) {
     deleteBtn.onclick = () => {
         confirmDocumentDelete(doc.id, doc.filename || 'this document');
     };
-    
-    // Approval buttons for pending documents
-    if (doc.approval_status === 'pending') {
-        approveBtn.classList.remove('hidden');
-        rejectBtn.classList.remove('hidden');
-        approveBtn.onclick = () => updateDocumentStatus(doc.id, 'approved');
-        rejectBtn.onclick = () => updateDocumentStatus(doc.id, 'rejected');
-    } else {
-        approveBtn.classList.add('hidden');
-        rejectBtn.classList.add('hidden');
-    }
     <?php elseif (session('role') === 'admin'): ?>
     // SK admin can only edit/delete their own documents, not super_admin documents
     if (doc.uploaded_by === '<?= session('username') ?>' && doc.uploader_role !== 'super_admin') {

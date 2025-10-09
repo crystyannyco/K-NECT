@@ -20,7 +20,7 @@
                     </svg>
                     Document Library
                 </h1>
-                <div class="text-sm text-blue-700 mt-1 font-medium opacity-80">KK Viewer - Browse and search approved documents</div>
+                <div class="text-sm text-blue-700 mt-1 font-medium opacity-80">KK Viewer - Browse and search documents</div>
             </div>
         </div>
 

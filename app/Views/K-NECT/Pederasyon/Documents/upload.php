@@ -131,24 +131,33 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                 </svg>
-                                Visibility Settings
+                                Visibility Settings <span class="text-red-500">*</span>
                             </h3>
                             <div class="space-y-4">
                                 <div>
                                     <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer">
-                                        <input type="radio" name="visibility" value="SK" class="form-radio text-blue-600 focus:ring-2 focus:ring-blue-400" checked>
+                                        <input type="radio" name="visibility" value="pederasyon" class="form-radio text-blue-600 focus:ring-2 focus:ring-blue-400" <?= old('visibility', 'pederasyon') == 'pederasyon' ? 'checked' : '' ?>>
                                         <div class="ml-3">
-                                            <span class="text-sm font-medium text-gray-900">SK Admins</span>
-                                            <p class="text-xs text-gray-500">Visible to SK administrators only</p>
+                                            <span class="text-sm font-medium text-gray-900">Pederasyon Only</span>
+                                            <p class="text-xs text-gray-500">Visible to Pederasyon administrators only</p>
                                         </div>
                                     </label>
                                 </div>
                                 <div>
                                     <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer">
-                                        <input type="radio" name="visibility" value="KK" class="form-radio text-blue-600 focus:ring-2 focus:ring-blue-400">
+                                        <input type="radio" name="visibility" value="sk" class="form-radio text-blue-600 focus:ring-2 focus:ring-blue-400" <?= old('visibility') == 'sk' ? 'checked' : '' ?>>
                                         <div class="ml-3">
-                                            <span class="text-sm font-medium text-gray-900">KK / Viewer</span>
-                                            <p class="text-xs text-gray-500">Visible to KK users and viewers</p>
+                                            <span class="text-sm font-medium text-gray-900">SK Admins</span>
+                                            <p class="text-xs text-gray-500">Visible to SK administrators (city-wide or barangay-specific)</p>
+                                        </div>
+                                    </label>
+                                </div>
+                                <div>
+                                    <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer">
+                                        <input type="radio" name="visibility" value="kk" class="form-radio text-blue-600 focus:ring-2 focus:ring-blue-400" <?= old('visibility') == 'kk' ? 'checked' : '' ?>>
+                                        <div class="ml-3">
+                                            <span class="text-sm font-medium text-gray-900">KK Users</span>
+                                            <p class="text-xs text-gray-500">Visible to KK users and viewers (city-wide or barangay-specific)</p>
                                         </div>
                                     </label>
                                 </div>
@@ -175,39 +184,50 @@
                 </div>
 
                 <?php if (session('role') === 'super_admin'): ?>
-                <!-- Barangay-specific visibility (Super Admin only) -->
+                <!-- Barangay-specific visibility (Pederasyon only) -->
                 <div class="bg-white rounded-lg border border-blue-100 shadow-sm p-6">
                     <h3 class="text-lg font-semibold text-blue-900 mb-4 flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                         </svg>
-                        Barangay Restrictions (Optional)
+                        Visibility Scope
                     </h3>
-                    <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer">
-                        <input type="checkbox" id="toggleBarangay" class="form-checkbox text-blue-600 focus:ring-2 focus:ring-blue-400 rounded">
-                        <div class="ml-3">
-                            <span class="text-sm font-medium text-gray-900">Limit visibility to selected barangays</span>
-                            <p class="text-xs text-gray-500">Restrict document access to specific barangays</p>
-                        </div>
-                    </label>
-                    <input type="hidden" name="barangays_serialized" id="barangaysSerialized" />
-                    <div id="barangayList" class="mt-4 hidden">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-64 overflow-y-auto p-4 border border-blue-200 rounded-lg bg-blue-50/30">
-                            <?php
-                                $barangays = [
-                                    'Antipolo','Cristo Rey','Del Rosario (Banao)','Francia','La Anunciacion','La Medalla','La Purisima','La Trinidad','Niño Jesus','Perpetual Help','Sagrada','Salvacion','San Agustin','San Andres','San Antonio','San Francisco (Pob.)','San Isidro','San Jose','San Juan','San Miguel','San Nicolas','San Pedro','San Rafael','San Ramon','San Roque (Pob.)','San Vicente Norte','San Vicente Sur','Santa Cruz Norte','Santa Cruz Sur','Santa Elena','Santa Isabel','Santa Maria','Santa Teresita','Santiago','Santo Domingo','Santo Niño'
-                                ];
-                                $oldBrgys = old('barangays') ?? [];
-                            ?>
-                            <?php foreach ($barangays as $b): ?>
-                                <label class="flex items-center p-2 bg-white rounded-lg border border-blue-100 hover:border-blue-200 transition-colors cursor-pointer">
-                                    <input type="checkbox" name="barangays[]" value="<?= esc($b) ?>" class="form-checkbox text-blue-600 focus:ring-2 focus:ring-blue-400 rounded" <?= in_array($b, $oldBrgys) ? 'checked' : '' ?>>
-                                    <span class="ml-2 text-sm text-gray-700"><?= esc($b) ?></span>
-                                </label>
-                            <?php endforeach; ?>
-                        </div>
-                        <p class="text-xs text-gray-500 mt-2">If none are selected, the document will be visible to the chosen role above.</p>
+                    
+                    <!-- Visibility Scope Selector -->
+                    <div class="space-y-3 mb-4">
+                        <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer">
+                            <input type="radio" name="visibility_scope" value="all" class="form-radio text-blue-600 focus:ring-2 focus:ring-blue-400" <?= old('visibility_scope', 'all') == 'all' ? 'checked' : '' ?> id="scopeAll">
+                            <div class="ml-3">
+                                <span class="text-sm font-medium text-gray-900">City-wide</span>
+                                <p class="text-xs text-gray-500">Document visible to all users of the selected visibility level across all barangays</p>
+                            </div>
+                        </label>
+                        <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer">
+                            <input type="radio" name="visibility_scope" value="specific_barangay" class="form-radio text-blue-600 focus:ring-2 focus:ring-blue-400" <?= old('visibility_scope') == 'specific_barangay' ? 'checked' : '' ?> id="scopeSpecific">
+                            <div class="ml-3">
+                                <span class="text-sm font-medium text-gray-900">Barangay-specific</span>
+                                <p class="text-xs text-gray-500">Restrict document access to users from a specific barangay</p>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Barangay Selector (shown only when specific_barangay is selected) -->
+                    <div id="barangaySelector" class="<?= old('visibility_scope') == 'specific_barangay' ? '' : 'hidden' ?>">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Select Barangay <span class="text-red-500">*</span>
+                        </label>
+                        <select name="barangay_id" id="barangaySelect" class="w-full border border-blue-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-300 focus:border-blue-500 outline-none text-sm bg-white">
+                            <option value="">-- Select a barangay --</option>
+                            <?php if (!empty($barangays)): ?>
+                                <?php foreach ($barangays as $barangay): ?>
+                                    <option value="<?= esc($barangay['barangay_id']) ?>" <?= old('barangay_id') == $barangay['barangay_id'] ? 'selected' : '' ?>>
+                                        <?= esc($barangay['name']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-2">This document will only be visible to users from the selected barangay (based on their address)</p>
                     </div>
                 </div>
                 <?php endif; ?>
@@ -255,19 +275,33 @@
     dropzone.addEventListener('drop', e => { e.preventDefault(); dropzone.classList.remove('bg-blue-200'); fileInput.files = e.dataTransfer.files; fileName.textContent = fileInput.files[0].name; });
     fileInput.addEventListener('change', () => { if (fileInput.files.length > 0) fileName.textContent = fileInput.files[0].name; });
 
-    // Barangay toggle (super admin only)
-    const toggleBarangay = document.getElementById('toggleBarangay');
-    const barangayList = document.getElementById('barangayList');
-    const barangaysSerialized = document.getElementById('barangaysSerialized');
-    if (toggleBarangay) {
-        toggleBarangay.addEventListener('change', () => {
-            barangayList.classList.toggle('hidden', !toggleBarangay.checked);
+    // Visibility scope toggle (Pederasyon only)
+    const scopeAll = document.getElementById('scopeAll');
+    const scopeSpecific = document.getElementById('scopeSpecific');
+    const barangaySelector = document.getElementById('barangaySelector');
+    const barangaySelect = document.getElementById('barangaySelect');
+    
+    if (scopeAll && scopeSpecific && barangaySelector) {
+        // Toggle barangay selector visibility
+        scopeAll.addEventListener('change', function() {
+            if (this.checked) {
+                barangaySelector.classList.add('hidden');
+                barangaySelect.removeAttribute('required');
+            }
         });
-        // Keep a serialized list if needed server-side later
-        document.getElementById('uploadForm').addEventListener('change', () => {
-            const selected = Array.from(document.querySelectorAll('input[name="barangays[]"]:checked')).map(i => i.value);
-            barangaysSerialized.value = selected.join(',');
+        
+        scopeSpecific.addEventListener('change', function() {
+            if (this.checked) {
+                barangaySelector.classList.remove('hidden');
+                barangaySelect.setAttribute('required', 'required');
+            }
         });
+        
+        // Set initial state
+        if (scopeSpecific.checked) {
+            barangaySelector.classList.remove('hidden');
+            barangaySelect.setAttribute('required', 'required');
+        }
     }
 
     // Progress bar for upload

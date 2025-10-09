@@ -19,12 +19,10 @@ class DocumentModel extends Model
         'description',
         'tags',
         'downloadable',
-        'approval_status',
-        'approver',
-        'approval_at',
-        'approval_comment',
         'thumbnail_path',
         'visibility',
+        'barangay_id',
+        'visibility_scope',
     ];
     protected $useTimestamps = false;
     protected bool $allowEmptyInserts = false;
@@ -40,12 +38,10 @@ class DocumentModel extends Model
         'description' => 'permit_empty|max_length[65535]',
         'tags' => 'permit_empty|max_length[255]',
         'downloadable' => 'permit_empty|in_list[0,1]',
-        'approval_status' => 'permit_empty|in_list[pending,approved,rejected]',
-        'approver' => 'permit_empty|max_length[100]',
-        'approval_at' => 'permit_empty|valid_date',
-        'approval_comment' => 'permit_empty|max_length[65535]',
         'thumbnail_path' => 'permit_empty|max_length[255]',
-        'visibility' => 'permit_empty|in_list[SK,KK]',
+        'visibility' => 'permit_empty|in_list[pederasyon,sk,kk]',
+        'barangay_id' => 'permit_empty|integer',
+        'visibility_scope' => 'permit_empty|in_list[all,specific_barangay]',
     ];
 
     protected $validationMessages = [
@@ -74,61 +70,13 @@ class DocumentModel extends Model
             'required' => 'MIME type is required',
             'max_length' => 'MIME type cannot exceed 100 characters'
         ],
-        'approval_status' => [
-            'in_list' => 'Approval status must be pending, approved, or rejected'
-        ],
         'visibility' => [
-            'in_list' => 'Visibility must be SK or KK'
+            'in_list' => 'Visibility must be pederasyon, sk, or kk'
+        ],
+        'visibility_scope' => [
+            'in_list' => 'Visibility scope must be all or specific_barangay'
         ]
     ];
-
-    /**
-     * Submit a document for approval (set status to pending)
-     */
-    public function submitForApproval($documentId)
-    {
-        return $this->update($documentId, [
-            'approval_status' => 'pending',
-            'approver' => null,
-            'approval_at' => null,
-            'approval_comment' => null,
-        ]);
-    }
-
-    /**
-     * Approve a document
-     */
-    public function approve($documentId, $approver, $comment = null)
-    {
-        return $this->update($documentId, [
-            'approval_status' => 'approved',
-            'approver' => $approver,
-            'approval_at' => date('Y-m-d H:i:s'),
-            'approval_comment' => $comment,
-        ]);
-    }
-
-    /**
-     * Reject a document
-     */
-    public function reject($documentId, $approver, $comment = null)
-    {
-        return $this->update($documentId, [
-            'approval_status' => 'rejected',
-            'approver' => $approver,
-            'approval_at' => date('Y-m-d H:i:s'),
-            'approval_comment' => $comment,
-        ]);
-    }
-
-    /**
-     * Get approval status and history for a document
-     */
-    public function getApprovalStatus($documentId)
-    {
-        return $this->select('approval_status, approver, approval_at, approval_comment')
-            ->find($documentId);
-    }
 
     /**
      * Get documents with their categories
@@ -151,12 +99,20 @@ class DocumentModel extends Model
 
     /**
      * Get documents by visibility and role
+     * Updated to support new visibility system
      */
-    public function getDocumentsByRole($role, $limit = null, $offset = null)
+    public function getDocumentsByVisibility($visibility, $barangayId = null, $limit = null, $offset = null)
     {
-        $builder = $this->where('visibility', $role)
-            ->where('approval_status', 'approved')
+        $builder = $this->where('visibility', $visibility)
             ->orderBy('uploaded_at', 'DESC');
+
+        // If barangay_id is specified, filter by it
+        if ($barangayId !== null) {
+            $builder->groupStart()
+                ->where('barangay_id', $barangayId)
+                ->orWhere('barangay_id', null) // Include city-wide documents
+                ->groupEnd();
+        }
 
         if ($limit) {
             $builder->limit($limit, $offset);
@@ -181,9 +137,9 @@ class DocumentModel extends Model
     }
 
     /**
-     * Search documents
+     * Search documents with new visibility system
      */
-    public function searchDocuments($query, $role = null, $limit = null, $offset = null)
+    public function searchDocuments($query, $visibility = null, $barangayId = null, $limit = null, $offset = null)
     {
         $builder = $this->groupStart()
             ->like('filename', $query)
@@ -191,12 +147,18 @@ class DocumentModel extends Model
             ->orLike('tags', $query)
             ->groupEnd();
 
-        if ($role) {
-            $builder->where('visibility', $role);
+        if ($visibility) {
+            $builder->where('visibility', $visibility);
         }
 
-        $builder->where('approval_status', 'approved')
-            ->orderBy('uploaded_at', 'DESC');
+        if ($barangayId !== null) {
+            $builder->groupStart()
+                ->where('barangay_id', $barangayId)
+                ->orWhere('barangay_id', null)
+                ->groupEnd();
+        }
+
+        $builder->orderBy('uploaded_at', 'DESC');
 
         if ($limit) {
             $builder->limit($limit, $offset);
@@ -206,7 +168,7 @@ class DocumentModel extends Model
     }
 
     /**
-     * Get document statistics
+     * Get document statistics with new visibility system
      */
     public function getDocumentStats()
     {
@@ -215,17 +177,21 @@ class DocumentModel extends Model
         // Total documents
         $stats['total'] = $this->countAll();
 
-        // By approval status
-        $stats['pending'] = $this->where('approval_status', 'pending')->countAllResults(false);
-        $stats['approved'] = $this->where('approval_status', 'approved')->countAllResults(false);
-        $stats['rejected'] = $this->where('approval_status', 'rejected')->countAllResults(false);
-
         // By visibility
-        $stats['sk_documents'] = $this->where('visibility', 'SK')->countAllResults(false);
-        $stats['kk_documents'] = $this->where('visibility', 'KK')->countAllResults(false);
+        $stats['pederasyon_documents'] = $this->where('visibility', 'pederasyon')->countAllResults(false);
+        $stats['sk_documents'] = $this->where('visibility', 'sk')->countAllResults(false);
+        $stats['kk_documents'] = $this->where('visibility', 'kk')->countAllResults(false);
 
         // Recent uploads (last 7 days)
         $stats['recent'] = $this->where('uploaded_at >=', date('Y-m-d H:i:s', strtotime('-7 days')))
+            ->countAllResults(false);
+
+        // By visibility scope
+        $stats['city_wide'] = $this->where('visibility_scope', 'all')
+            ->orWhere('barangay_id', null)
+            ->countAllResults(false);
+        $stats['barangay_specific'] = $this->where('visibility_scope', 'specific_barangay')
+            ->where('barangay_id IS NOT NULL')
             ->countAllResults(false);
 
         return $stats;
@@ -257,14 +223,23 @@ class DocumentModel extends Model
     }
 
     /**
-     * Get documents for KK users (approved documents from SK/super_admin)
+     * Get documents for KK users (documents with 'kk' visibility)
+     * Supports barangay-specific filtering
      */
-    public function getKKDocuments($username = null, $limit = null, $offset = null)
+    public function getKKDocuments($barangayId = null, $username = null, $limit = null, $offset = null)
     {
-        $builder = $this->where('approval_status', 'approved')
-            ->where('visibility', 'KK')
+        $builder = $this->where('visibility', 'kk')
             ->orderBy('uploaded_at', 'DESC');
 
+        // Filter by barangay if specified
+        if ($barangayId !== null) {
+            $builder->groupStart()
+                ->where('barangay_id', $barangayId)
+                ->orWhere('barangay_id', null) // Include city-wide KK documents
+                ->groupEnd();
+        }
+
+        // Optionally filter by uploader
         if ($username) {
             $builder->orWhere('uploaded_by', $username);
         }
@@ -277,14 +252,23 @@ class DocumentModel extends Model
     }
 
     /**
-     * Get documents for SK users (approved documents from super_admin)
+     * Get documents for SK users (documents with 'sk' visibility)
+     * Supports barangay-specific filtering
      */
-    public function getSKDocuments($username = null, $limit = null, $offset = null)
+    public function getSKDocuments($barangayId = null, $username = null, $limit = null, $offset = null)
     {
-        $builder = $this->where('approval_status', 'approved')
-            ->where('visibility', 'SK')
+        $builder = $this->where('visibility', 'sk')
             ->orderBy('uploaded_at', 'DESC');
 
+        // Filter by barangay if specified
+        if ($barangayId !== null) {
+            $builder->groupStart()
+                ->where('barangay_id', $barangayId)
+                ->orWhere('barangay_id', null) // Include city-wide SK documents
+                ->groupEnd();
+        }
+
+        // Optionally filter by uploader
         if ($username) {
             $builder->orWhere('uploaded_by', $username);
         }
@@ -681,6 +665,44 @@ class DocumentModel extends Model
             default:
                 return 'user'; // Default fallback
         }
+    }
+
+    /**
+     * Get user's barangay ID by username
+     */
+    public function getUserBarangayId(string $username)
+    {
+        $result = $this->db->table('user')
+            ->select('address.barangay')
+            ->join('address', 'user.id = address.user_id', 'left')
+            ->where('user.username', $username)
+            ->get()->getRowArray();
+        
+        return $result ? $result['barangay'] : null;
+    }
+
+    /**
+     * Get barangay name by ID
+     */
+    public function getBarangayName(int $barangayId)
+    {
+        $result = $this->db->table('barangay')
+            ->select('name')
+            ->where('barangay_id', $barangayId)
+            ->get()->getRowArray();
+        
+        return $result ? $result['name'] : null;
+    }
+
+    /**
+     * Get all barangays for dropdown/selection
+     */
+    public function getAllBarangays()
+    {
+        return $this->db->table('barangay')
+            ->select('barangay_id, name')
+            ->orderBy('name', 'ASC')
+            ->get()->getResultArray();
     }
 
     /**

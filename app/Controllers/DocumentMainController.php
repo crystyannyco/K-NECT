@@ -65,6 +65,7 @@ class DocumentMainController extends BaseController
 
     /**
      * Helper: Check if current user can access a document for a given action (preview/download)
+     * Updated for new visibility system without approval workflow
      * @param array $doc Document row
      * @param string $action 'preview'|'download'
      * @return bool
@@ -73,10 +74,10 @@ class DocumentMainController extends BaseController
     {
         // Normalize inputs
         $role = strtolower((string) session('role'));
+        $userType = strtolower((string) session('user_type'));
         $user = strtolower(trim((string) (session('username') ?? '')));
         $uploader = strtolower(trim((string) ($doc['uploaded_by'] ?? '')));
-        $docVisibility = (string) ($doc['visibility'] ?? 'SK');
-        $isApproved = (($doc['approval_status'] ?? null) === 'approved');
+        $docVisibility = (string) ($doc['visibility'] ?? 'pederasyon');
         $isDownloadable = isset($doc['downloadable']) ? (bool) $doc['downloadable'] : true;
 
         if (empty($doc) || empty($doc['id'])) {
@@ -89,59 +90,89 @@ class DocumentMainController extends BaseController
         $hasViewShare = $model->hasPermission((int) $doc['id'], $user, 'view');
         $hasDownloadShare = $model->hasPermission((int) $doc['id'], $user, 'download');
 
-        // Fetch uploader role (optional; used for policy clarity)
-        $uploaderRole = null;
-        if ($uploader) {
-            $uploaderUser = $model->getUserByUsername($uploader);
-            $uploaderRole = $uploaderUser['role'] ?? null;
-        }
-
-        // Super admin: unrestricted
-        if ($role === 'super_admin') {
-            return true;
-        }
-
         // Owner: full access (preview/download)
         if ($uploader === $user) {
             return true;
         }
 
-        // Explicit share overrides normal visibility/approval checks
+        // Explicit share overrides normal visibility checks
         if ($hasViewShare || $hasDownloadShare) {
             if ($action === 'preview') {
                 return true;
             }
             if ($action === 'download') {
-                // Download allowed if shared with download permission OR file is generally downloadable
                 return $hasDownloadShare || $isDownloadable;
             }
         }
 
-        // Role-based default policy
-        if ($role === 'admin') {
-            // SK can access approved SK-visible docs
-            if ($docVisibility !== 'SK') {
-                return false;
-            }
+        // Get user's barangay ID for barangay-specific checks
+        $userBarangayId = $model->getUserBarangayId($user);
+        $docBarangayId = $doc['barangay_id'] ?? null;
+
+        // Super admin / Pederasyon: Can access all documents
+        if ($role === 'super_admin' || $userType === 'pederasyon') {
             if ($action === 'preview') {
-                return $isApproved;
+                return true;
             }
             if ($action === 'download') {
-                return $isApproved && $isDownloadable;
+                return $isDownloadable;
             }
         }
 
-        if ($role === 'user' || $role === 'viewer') {
-            // KK/Viewer can access approved KK-visible docs
-            if ($docVisibility !== 'KK') {
-                return false;
+        // SK Admin access logic
+        if ($role === 'admin' || $userType === 'sk') {
+            // Can access 'pederasyon' visibility documents
+            if ($docVisibility === 'pederasyon') {
+                if ($action === 'preview') {
+                    return true;
+                }
+                if ($action === 'download') {
+                    return $isDownloadable;
+                }
             }
-            if ($action === 'preview') {
-                return $isApproved;
+
+            // Can access 'sk' visibility documents
+            if ($docVisibility === 'sk') {
+                // Check if document is city-wide or in user's barangay
+                if ($docBarangayId === null || $docBarangayId == $userBarangayId) {
+                    if ($action === 'preview') {
+                        return true;
+                    }
+                    if ($action === 'download') {
+                        return $isDownloadable;
+                    }
+                }
             }
-            if ($action === 'download') {
-                return $isApproved && $isDownloadable;
+
+            return false;
+        }
+
+        // KK User / Viewer access logic
+        if ($role === 'user' || $role === 'viewer' || $userType === 'kk') {
+            // Can access 'pederasyon' visibility documents
+            if ($docVisibility === 'pederasyon') {
+                if ($action === 'preview') {
+                    return true;
+                }
+                if ($action === 'download') {
+                    return $isDownloadable;
+                }
             }
+
+            // Can access 'kk' visibility documents
+            if ($docVisibility === 'kk') {
+                // Check if document is city-wide or in user's barangay
+                if ($docBarangayId === null || $docBarangayId == $userBarangayId) {
+                    if ($action === 'preview') {
+                        return true;
+                    }
+                    if ($action === 'download') {
+                        return $isDownloadable;
+                    }
+                }
+            }
+
+            return false;
         }
 
         return false;
@@ -214,36 +245,49 @@ class DocumentMainController extends BaseController
             }
         }
         $user = strtolower(trim((string) session('username')));
-        $filteredDocuments = array_filter($allDocuments, function($doc) use ($role, $user, $userRoles) {
+        
+        // Get user's barangay for filtering
+        $userBarangayId = $model->getUserBarangayId($user);
+        
+        $filteredDocuments = array_filter($allDocuments, function($doc) use ($role, $userType, $user, $userBarangayId) {
             $uploadedBy = strtolower(trim($doc['uploaded_by'] ?? ''));
-            $uploaderRole = $userRoles[$uploadedBy] ?? null;
-            $docVisibility = $doc['visibility'] ?? 'SK';
-            $docApprovalStatus = $doc['approval_status'] ?? null;
-            $docDownloadable = $doc['downloadable'] ?? 1;
+            $docVisibility = $doc['visibility'] ?? 'pederasyon';
+            $docBarangayId = $doc['barangay_id'] ?? null;
 
-            // Super admin can see everything
-            if ($role === 'super_admin') {
+            // Super admin / Pederasyon can see everything
+            if ($role === 'super_admin' || $userType === 'pederasyon') {
+                return true;
+            }
+
+            // Owner can always see their own documents
+            if ($uploadedBy === $user) {
                 return true;
             }
 
             // SK Admin logic
-            if ($role === 'admin') {
-                // Always show own uploads regardless of visibility/approval
-                if ($uploadedBy === $user) {
+            if ($role === 'admin' || $userType === 'sk') {
+                // Can see 'pederasyon' visibility documents
+                if ($docVisibility === 'pederasyon') {
                     return true;
                 }
-                // Show other approved SK-visible documents (regardless of uploader role)
-                if ($docVisibility === 'SK') {
-                    return $docApprovalStatus === 'approved';
+                // Can see 'sk' visibility documents in their barangay or city-wide
+                if ($docVisibility === 'sk') {
+                    return ($docBarangayId === null || $docBarangayId == $userBarangayId);
                 }
                 return false;
             }
 
-            // KK/Viewer logic
-            if ($role === 'user' || $role === 'viewer') {
-                // Show approved KK-visible documents (regardless of uploader role)
-                return $docVisibility === 'KK'
-                    && $docApprovalStatus === 'approved';
+            // KK User / Viewer logic
+            if ($role === 'user' || $role === 'viewer' || $userType === 'kk') {
+                // Can see 'pederasyon' visibility documents
+                if ($docVisibility === 'pederasyon') {
+                    return true;
+                }
+                // Can see 'kk' visibility documents in their barangay or city-wide
+                if ($docVisibility === 'kk') {
+                    return ($docBarangayId === null || $docBarangayId == $userBarangayId);
+                }
+                return false;
             }
 
             return false;
@@ -253,9 +297,10 @@ class DocumentMainController extends BaseController
         $page = max(1, $page);
         $offset = ($page - 1) * $perPage;
         $documents = array_slice($filteredDocuments, $offset, $perPage);
-        // Compute pagination values for views
         // Return role-specific document list
         $userRole = session('role');
+        $barangays = $model->getAllBarangays();
+        
         $viewData = [
             'documents' => $documents,
             'categories' => $categories,
@@ -267,6 +312,8 @@ class DocumentMainController extends BaseController
             'allTags' => $allTags,
             'selectedTags' => $selectedTags,
             'userRoles' => $userRoles, // pass uploader roles to view
+            'barangays' => $barangays,
+            'userBarangayId' => $userBarangayId,
         ];
         
         if ($userRole === 'super_admin') {
@@ -359,7 +406,38 @@ class DocumentMainController extends BaseController
                 $description = $this->request->getPost('description');
                 $tagsInput = $this->request->getPost('tags');
                 $downloadable = $this->request->getPost('downloadable') ? 1 : 0;
-                $visibility = $this->request->getPost('visibility') ?? 'SK';
+                
+                // NEW: Handle visibility and barangay selection
+                $userRole = session('role');
+                $userType = session('user_type');
+                $userBarangayId = $model->getUserBarangayId(session('username'));
+                
+                // Get visibility from form, with role-based defaults
+                $visibility = $this->request->getPost('visibility');
+                if (!$visibility) {
+                    // Set default based on user role
+                    if ($userRole === 'super_admin' || $userType == 3) {
+                        $visibility = 'pederasyon';
+                    } elseif ($userRole === 'admin' || $userType == 2) {
+                        $visibility = 'sk';
+                    } else {
+                        $visibility = 'kk';
+                    }
+                }
+                
+                // Get visibility scope and barangay
+                $visibilityScope = $this->request->getPost('visibility_scope') ?? 'all';
+                $barangayId = null;
+                
+                // If specific_barangay is selected, get the barangay_id
+                if ($visibilityScope === 'specific_barangay') {
+                    $barangayId = $this->request->getPost('barangay_id');
+                    // For SK/KK users, default to their own barangay if not specified
+                    if (!$barangayId && $userBarangayId) {
+                        $barangayId = $userBarangayId;
+                    }
+                }
+                
                 $tagsArray = [];
                 if ($tagsInput) {
                     $decoded = json_decode($tagsInput, true);
@@ -387,18 +465,6 @@ class DocumentMainController extends BaseController
                     $uploadedByUsername = $sessionUsername; // Use the actual logged-in username directly
                     
                     // Get all info BEFORE move
-                    // Determine initial approval status based on user role
-                    $userRole = session('role');
-                    $approvalStatus = 'pending'; // Default for SK admin uploads
-                    $approver = null;
-                    $approvalAt = null;
-                    
-                    if ($userRole === 'super_admin') {
-                        $approvalStatus = 'approved'; // Super admin uploads are auto-approved
-                        $approver = $uploadedByUsername; // Super admin approves their own documents
-                        $approvalAt = date('Y-m-d H:i:s');
-                    }
-
                     $saveData = [
                         'filename' => $userFilename,
                         'filepath' => 'uploads/documents/' . $newName,
@@ -408,11 +474,10 @@ class DocumentMainController extends BaseController
                         'mimetype' => $file->getMimeType(),
                         'description' => $description,
                         'tags' => implode(',', $tagsArray),
-                        'approval_status' => $approvalStatus,
-                        'approver' => $approver,
-                        'approval_at' => $approvalAt,
                         'downloadable' => $downloadable,
                         'visibility' => $visibility,
+                        'barangay_id' => $barangayId,
+                        'visibility_scope' => $visibilityScope,
                     ];
                     file_put_contents($logFile, "Attempting to move file to: " . FCPATH . 'uploads/documents/' . $newName . "\n", FILE_APPEND);
                     $moveResult = $file->move(FCPATH . 'uploads/documents', $newName);
@@ -490,14 +555,7 @@ class DocumentMainController extends BaseController
                             file_put_contents($logFile, "Document saved successfully with ID: " . $model->getInsertID() . "\n", FILE_APPEND);
                         }
                         $docId = $model->getInsertID();
-                        // After saving, if super admin, update approver fields
-                        if ($userRole === 'super_admin' && $docId) {
-                            $model->update($docId, [
-                                'approver' => session('username'),
-                                'approval_at' => date('Y-m-d H:i:s'),
-                                'approval_comment' => 'Auto-approved (Super Admin upload)'
-                            ]);
-                        }
+                        
                         // TAGS: Save tags for new document
                         if ($docId && !empty($tagsArray)) {
                             try {
@@ -565,7 +623,15 @@ class DocumentMainController extends BaseController
         }
         // Return role-specific upload view
         $userRole = session('role');
-        $viewData = ['categories' => $categories, 'errorMsg' => $errorMsg];
+        $barangays = $model->getAllBarangays();
+        $userBarangayId = $model->getUserBarangayId(session('username'));
+        
+        $viewData = [
+            'categories' => $categories,
+            'errorMsg' => $errorMsg,
+            'barangays' => $barangays,
+            'userBarangayId' => $userBarangayId,
+        ];
         
         if ($userRole === 'super_admin') {
             return $this->renderWithTemplate('K-NECT/Pederasyon/Documents/upload', $viewData);
@@ -776,6 +842,19 @@ class DocumentMainController extends BaseController
             $description = $this->request->getPost('description');
             $tagsInput = $this->request->getPost('tags');
             $downloadable = $this->request->getPost('downloadable') ? 1 : 0;
+            
+            // NEW: Handle visibility and barangay updates
+            $visibility = $this->request->getPost('visibility') ?? $doc['visibility'];
+            $visibilityScope = $this->request->getPost('visibility_scope') ?? $doc['visibility_scope'] ?? 'all';
+            $barangayId = null;
+            
+            if ($visibilityScope === 'specific_barangay') {
+                $barangayId = $this->request->getPost('barangay_id');
+                if (!$barangayId) {
+                    $barangayId = $doc['barangay_id']; // Keep existing barangay if not changed
+                }
+            }
+            
             $tagsArray = [];
             if ($tagsInput) {
                 $decoded = json_decode($tagsInput, true);
@@ -802,6 +881,9 @@ class DocumentMainController extends BaseController
                 'description' => $description,
                 'tags' => $tagsInput,
                 'downloadable' => $downloadable,
+                'visibility' => $visibility,
+                'barangay_id' => $barangayId,
+                'visibility_scope' => $visibilityScope,
             ]);
             if (!empty($model->errors())) {
                 file_put_contents(WRITEPATH . 'logs/tag_debug.log', "[EDIT] Model validation errors: " . print_r($model->errors(), true) . "\n", FILE_APPEND);
@@ -844,11 +926,16 @@ class DocumentMainController extends BaseController
         file_put_contents(WRITEPATH . 'logs/tag_debug.log', "[EDIT] Returning: End of edit() method, rendering view.\n", FILE_APPEND);
         // Return role-specific edit view
         $userRole = session('role');
+        $barangays = $model->getAllBarangays();
+        $userBarangayId = $model->getUserBarangayId(session('username'));
+        
         $viewData = [
             'doc' => $doc,
             'categories' => $categories,
             'selectedCats' => $selectedCats,
-            'errorMsg' => $errorMsg
+            'errorMsg' => $errorMsg,
+            'barangays' => $barangays,
+            'userBarangayId' => $userBarangayId,
         ];
         
         if ($userRole === 'super_admin') {
@@ -869,17 +956,9 @@ class DocumentMainController extends BaseController
             throw new \CodeIgniter\Exceptions\PageNotFoundException('Document not found');
         }
         
-        // Simple access check - super admin can preview all documents
-        $role = session('role');
-        if ($role !== 'super_admin') {
-            // For other roles, check if document is approved or they own it
-            $username = session('username');
-            $isOwner = strtolower(trim($doc['uploaded_by'] ?? '')) === strtolower(trim($username));
-            $isApproved = ($doc['approval_status'] ?? '') === 'approved';
-            
-            if (!$isOwner && !$isApproved) {
-                throw new \CodeIgniter\Exceptions\PageNotFoundException('Access denied');
-            }
+        // Use canAccessDocument for access control
+        if (!$this->canAccessDocument($doc, 'preview')) {
+            throw new \CodeIgniter\Exceptions\PageNotFoundException('Access denied');
         }
         
         $filePath = FCPATH . $doc['filepath'];
@@ -1268,241 +1347,6 @@ class DocumentMainController extends BaseController
             // KK users can view shared documents but with limited access
             return $this->renderWithTemplate('K-NECT/KK/Documents/shared_documents', $viewData);
         }
-    }
-
-    /**
-     * Submit a document for approval (admin or user action)
-     */
-    public function submitForApproval($id)
-    {
-        $model = new DocumentModel();
-        $result = $model->submitForApproval($id);
-        if ($result) {
-            return $this->response->setJSON(['success' => true, 'message' => 'Document submitted for approval.']);
-        } else {
-            return $this->response->setJSON(['success' => false, 'message' => 'Failed to submit document for approval.']);
-        }
-    }
-
-    /**
-     * Approve a document (admin action)
-     */
-    public function approveDocument($id)
-    {
-        try {
-            if (session('role') !== 'super_admin') {
-                return $this->response->setJSON(['success' => false, 'message' => 'Access denied. Only super admins can approve documents.']);
-            }
-            
-            $model = new DocumentModel();
-            
-            // Get comment from POST form data (not JSON)
-            $comment = $this->request->getPost('comment') ?: 'Approved';
-            $approver = session('username') ?? 'super_admin';
-            
-            // Check if document exists
-            $document = $model->find($id);
-            if (!$document) {
-                return $this->response->setJSON(['success' => false, 'message' => 'Document not found.']);
-            }
-            
-            log_message('info', "Attempting to approve document ID: $id by user: $approver");
-            
-            $result = $model->approve($id, $approver, $comment);
-            
-            if ($result) {
-                // Audit log
-                $audit = $model;
-                $audit->save([
-                    'document_id' => $id,
-                    'action' => 'approve',
-                    'performed_by' => $approver,
-                    'performed_at' => date('Y-m-d H:i:s'),
-                ]);
-
-                log_message('info', "Document ID: $id approved successfully by: $approver");
-                if ($this->request->isAJAX()) {
-                    return $this->response->setJSON([
-                        'success' => true,
-                        'message' => 'Document approved successfully.',
-                        'document_id' => $id,
-                        'new_status' => 'approved'
-                    ]);
-                }
-                return redirect()->to(base_url('admin/documents'))
-                    ->with('success', 'Document approved successfully.');
-            } else {
-                $errors = $model->errors();
-                log_message('error', "Failed to approve document ID: $id. Errors: " . json_encode($errors));
-                if ($this->request->isAJAX()) {
-                    return $this->response->setJSON(['success' => false, 'message' => 'Failed to approve document: ' . implode(', ', $errors)]);
-                }
-                return redirect()->back()->with('error', 'Failed to approve document: ' . implode(', ', $errors));
-            }
-        } catch (\Throwable $e) {
-            log_message('error', "Exception in approveDocument: " . $e->getMessage());
-            return $this->response->setJSON(['success' => false, 'message' => 'An error occurred while approving the document: ' . $e->getMessage()]);
-        }
-    }
-
-    /**
-     * Reject a document (admin action)
-     */
-    public function rejectDocument($id)
-    {
-        try {
-            if (session('role') !== 'super_admin') {
-                return $this->response->setJSON(['success' => false, 'message' => 'Access denied. Only super admins can reject documents.']);
-            }
-            
-            $model = new DocumentModel();
-            
-            // Get comment from POST form data (not JSON)
-            $comment = $this->request->getPost('comment') ?: 'Rejected';
-            $approver = session('username') ?? 'super_admin';
-            
-            // Check if document exists
-            $document = $model->find($id);
-            if (!$document) {
-                return $this->response->setJSON(['success' => false, 'message' => 'Document not found.']);
-            }
-            
-            log_message('info', "Attempting to reject document ID: $id by user: $approver");
-            
-            $result = $model->reject($id, $approver, $comment);
-            
-            if ($result) {
-                // Audit log
-                $audit = $model;
-                $audit->save([
-                    'document_id' => $id,
-                    'action' => 'reject',
-                    'performed_by' => $approver,
-                    'performed_at' => date('Y-m-d H:i:s'),
-                ]);
-
-                log_message('info', "Document ID: $id rejected successfully by: $approver");
-                if ($this->request->isAJAX()) {
-                    return $this->response->setJSON([
-                        'success' => true,
-                        'message' => 'Document rejected successfully.',
-                        'document_id' => $id,
-                        'new_status' => 'rejected'
-                    ]);
-                }
-                return redirect()->to(base_url('admin/documents/detail/' . $id))
-                    ->with('success', 'Document rejected successfully.');
-            } else {
-                $errors = $model->errors();
-                log_message('error', "Failed to reject document ID: $id. Errors: " . json_encode($errors));
-                if ($this->request->isAJAX()) {
-                    return $this->response->setJSON(['success' => false, 'message' => 'Failed to reject document: ' . implode(', ', $errors)]);
-                }
-                return redirect()->back()->with('error', 'Failed to reject document: ' . implode(', ', $errors));
-            }
-        } catch (\Throwable $e) {
-            log_message('error', "Exception in rejectDocument: " . $e->getMessage());
-            return $this->response->setJSON(['success' => false, 'message' => 'An error occurred while rejecting the document: ' . $e->getMessage()]);
-        }
-    }
-
-    /**
-     * Get approval status for a document
-     */
-    public function getApprovalStatus($id)
-    {
-        $model = new DocumentModel();
-        $status = $model->getApprovalStatus($id);
-        if ($status) {
-            return $this->response->setJSON(['success' => true, 'status' => $status]);
-        } else {
-            return $this->response->setJSON(['success' => false, 'message' => 'Document not found.']);
-        }
-    }
-
-    /**
-     * TEMP: Normalize all uploaded_by values and set downloadable=1 for approved SK docs
-     * Only super_admin can run this
-     */
-    public function fixDocumentData()
-    {
-        if (session('role') !== 'super_admin') {
-            return $this->response->setStatusCode(403)->setBody('Access denied');
-        }
-        $model = new DocumentModel();
-        $docs = $model->findAll();
-        $fixed = 0;
-        foreach ($docs as $doc) {
-            $newUploadedBy = strtolower(trim($doc['uploaded_by']));
-            $update = false;
-            $data = [];
-            if ($doc['uploaded_by'] !== $newUploadedBy) {
-                $data['uploaded_by'] = $newUploadedBy;
-                $update = true;
-            }
-            if ($newUploadedBy === 'sk' && ($doc['approval_status'] ?? null) === 'approved' && ($doc['downloadable'] ?? 0) != 1) {
-                $data['downloadable'] = 1;
-                $update = true;
-            }
-            if ($update) {
-                $model->update($doc['id'], $data);
-                $fixed++;
-            }
-        }
-        return $this->response->setBody("Fixed $fixed documents. <a href='" . base_url('admin/documents') . "'>Back to documents</a>");
-    }
-
-    /**
-     * TEMP: Fix all super admin documents to approved
-     */
-    public function fixSuperAdminApprovals()
-    {
-        if (session('role') !== 'super_admin') {
-            return $this->response->setStatusCode(403)->setBody('Access denied');
-        }
-        $model = new DocumentModel();
-        $userModel = $model;
-        $superAdmins = $userModel->where('role', 'super_admin')->findAll();
-        $superAdminUsernames = array_map(function($u) { return strtolower(trim($u['username'])); }, $superAdmins);
-        $docs = $model->findAll();
-        $fixed = 0;
-        foreach ($docs as $doc) {
-            $uploadedBy = strtolower(trim($doc['uploaded_by']));
-            if (in_array($uploadedBy, $superAdminUsernames) && $doc['approval_status'] !== 'approved') {
-                $model->update($doc['id'], [
-                    'approval_status' => 'approved',
-                    'approver' => $uploadedBy,
-                    'approval_at' => date('Y-m-d H:i:s'),
-                    'approval_comment' => 'Auto-fixed: Super Admin upload'
-                ]);
-
-                $fixed++;
-            }
-        }
-        return $this->response->setBody("Fixed $fixed super admin documents. <a href='" . base_url('admin/documents') . "'>Back to documents</a>");
-    }
-
-    /**
-     * One-time fix: Re-push correct status for all super admin documents to Firebase
-     */
-    public function repushSuperAdminApprovals()
-    {
-        if (session('role') !== 'super_admin') {
-            return $this->response->setStatusCode(403)->setBody('Access denied');
-        }
-        $model = new DocumentModel();
-        $userModel = $model;
-        $superAdmins = $userModel->where('role', 'super_admin')->findAll();
-        $superAdminUsernames = array_map(function($u) { return strtolower(trim($u['username'])); }, $superAdmins);
-        $docs = $model->findAll();
-        $fixed = 0;
-        foreach ($docs as $doc) {
-            $uploadedBy = strtolower(trim($doc['uploaded_by']));
-            if (in_array($uploadedBy, $superAdminUsernames)) {
-                $fixed++;
-            }
-        }
-        return $this->response->setBody("Re-pushed $fixed super admin documents to Firebase. <a href='" . base_url('admin/documents') . "'>Back to documents</a>");
     }
 
 }

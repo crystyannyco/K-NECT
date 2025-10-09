@@ -178,7 +178,7 @@
                             </div>
                             <div class="p-4">
                                 <h3 class="text-sm font-semibold text-gray-900 truncate" title="<?= esc($doc['filename'] ?? 'Untitled Document') ?>"><?= esc($doc['filename'] ?? 'Untitled Document') ?></h3>
-                                <div class="mt-2 flex items-center justify-between text-xs text-gray-500"><span><?= !empty($doc['created_at'])?date('M d, Y',strtotime($doc['created_at'])):'' ?></span><span class="px-2 py-0.5 rounded-full text-[10px] font-medium <?= $doc['approval_status']==='approved'?'bg-green-100 text-green-700':($doc['approval_status']==='pending'?'bg-yellow-100 text-yellow-700':'bg-red-100 text-red-700') ?>"><?= ucfirst($doc['approval_status']) ?></span></div>
+                                <div class="mt-2 flex items-center justify-between text-xs text-gray-500"><span><?= !empty($doc['created_at'])?date('M d, Y',strtotime($doc['created_at'])):'' ?></span><span class="px-2 py-0.5 rounded-full text-[10px] font-medium <?= ($doc['visibility'] ?? 'sk')==='pederasyon'?'bg-purple-100 text-purple-700':(($doc['visibility'] ?? 'sk')==='sk'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700') ?>"><?= ucfirst($doc['visibility'] ?? 'SK') ?></span></div>
                             </div>
                         </article>
                     <?php endforeach; ?>

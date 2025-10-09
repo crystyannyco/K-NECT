@@ -53,13 +53,13 @@ class PederasyonController extends BaseController
             [$username]
         )->getRowArray()['count'] ?? 0;
 
-        $pendingApproval = $db->query(
-            "SELECT COUNT(*) AS count FROM documents WHERE LOWER(TRIM(uploaded_by)) = LOWER(TRIM(?)) AND approval_status = 'pending'",
+        $pederasyonDocuments = $db->query(
+            "SELECT COUNT(*) AS count FROM documents WHERE LOWER(TRIM(uploaded_by)) = LOWER(TRIM(?)) AND visibility = 'pederasyon'",
             [$username]
         )->getRowArray()['count'] ?? 0;
 
-        $approvedDocuments = $db->query(
-            "SELECT COUNT(*) AS count FROM documents WHERE LOWER(TRIM(uploaded_by)) = LOWER(TRIM(?)) AND approval_status = 'approved'",
+        $skDocuments = $db->query(
+            "SELECT COUNT(*) AS count FROM documents WHERE LOWER(TRIM(uploaded_by)) = LOWER(TRIM(?)) AND visibility = 'sk'",
             [$username]
         )->getRowArray()['count'] ?? 0;
 
@@ -88,7 +88,7 @@ class PederasyonController extends BaseController
 
         // Recent documents uploaded by this user (limit 8)
         $recentDocuments = $db->query(
-            "SELECT id, filename, filepath AS file_path, uploaded_at AS created_at, approval_status 
+            "SELECT id, filename, filepath AS file_path, uploaded_at AS created_at, visibility 
              FROM documents WHERE LOWER(TRIM(uploaded_by)) = LOWER(TRIM(?)) ORDER BY uploaded_at DESC LIMIT 8",
             [$username]
         )->getResultArray();
@@ -98,8 +98,8 @@ class PederasyonController extends BaseController
             'username' => $username,
             // Document stats
             'totalDocuments' => $totalDocuments,
-            'pendingApproval' => $pendingApproval,
-            'approvedDocuments' => $approvedDocuments,
+            'pederasyonDocuments' => $pederasyonDocuments,
+            'skDocuments' => $skDocuments,
             'sharedDocuments' => $sharedDocuments,
             // Bulletin/events/documents overview
             'featuredPosts' => $featuredPosts,

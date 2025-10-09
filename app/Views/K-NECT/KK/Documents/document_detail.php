@@ -30,21 +30,21 @@
                     </div>
                     <div class="flex flex-col items-end gap-2">
                         <span class="px-3 py-1.5 rounded-lg text-sm font-semibold shadow-md transition-all
-                            <?php if ($document['approval_status'] === 'approved') echo 'bg-green-100 text-green-800'; elseif ($document['approval_status'] === 'pending') echo 'bg-yellow-100 text-yellow-800'; else echo 'bg-red-100 text-red-800'; ?>">
-                            <?php if ($document['approval_status'] === 'approved'): ?>
-                                <svg class="inline h-4 w-4 mr-1 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            <?php if ($document['visibility'] === 'pederasyon') echo 'bg-purple-100 text-purple-800'; elseif ($document['visibility'] === 'sk') echo 'bg-blue-100 text-blue-800'; else echo 'bg-green-100 text-green-800'; ?>">
+                            <?php if ($document['visibility'] === 'pederasyon'): ?>
+                                <svg class="inline h-4 w-4 mr-1 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                                 </svg>
-                            <?php elseif ($document['approval_status'] === 'pending'): ?>
-                                <svg class="inline h-4 w-4 mr-1 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <?php elseif ($document['visibility'] === 'sk'): ?>
+                                <svg class="inline h-4 w-4 mr-1 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                                 </svg>
                             <?php else: ?>
-                                <svg class="inline h-4 w-4 mr-1 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                <svg class="inline h-4 w-4 mr-1 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
                             <?php endif; ?>
-                            <?= ucfirst($document['approval_status']) ?>
+                            <?= ucfirst($document['visibility']) ?>
                         </span>
                         <span class="text-xs text-white/80">Uploaded: <?= date('M j, Y g:i A', strtotime($document['uploaded_at'])) ?></span>
                     </div>
@@ -145,32 +145,42 @@
                                     <span class="font-medium text-gray-700">Downloadable:</span>
                                     <span class="text-gray-900"><?= ($document['downloadable'] ?? 1) ? 'Yes' : 'No' ?></span>
                                 </div>
-                                <?php if (!empty($document['visibility'])): ?>
                                 <div class="flex items-center justify-between">
                                     <span class="font-medium text-gray-700">Visibility:</span>
-                                    <span class="text-gray-900"><?= esc($document['visibility']) ?></span>
+                                    <span class="px-2 py-1 rounded-lg text-sm font-semibold
+                                        <?php if ($document['visibility'] === 'pederasyon') echo 'bg-purple-100 text-purple-800'; elseif ($document['visibility'] === 'sk') echo 'bg-blue-100 text-blue-800'; else echo 'bg-green-100 text-green-800'; ?>">
+                                        <?= ucfirst(esc($document['visibility'])) ?>
+                                    </span>
                                 </div>
-                                <?php endif; ?>
                             </div>
                         </div>
 
-                        <?php if ($document['approval_status'] !== 'pending' && !empty($document['approved_by'])): ?>
+                        <!-- Visibility Information -->
                         <div class="bg-white rounded-lg p-4 border border-blue-100 shadow-sm">
-                            <h4 class="font-medium text-gray-700 mb-2">Approval Details</h4>
-                            <div class="space-y-2">
+                            <h4 class="font-medium text-gray-700 mb-3">Visibility Information</h4>
+                            <div class="space-y-3">
                                 <div class="flex items-center justify-between">
-                                    <span class="text-sm text-gray-600"><?= $document['approval_status'] === 'approved' ? 'Approved By' : 'Rejected By' ?>:</span>
-                                    <span class="text-sm font-medium text-gray-900"><?= esc($document['approved_by']) ?></span>
+                                    <span class="text-sm text-gray-600">Visible To:</span>
+                                    <span class="px-2 py-1 rounded-lg text-sm font-semibold
+                                        <?php if ($document['visibility'] === 'pederasyon') echo 'bg-purple-100 text-purple-800'; elseif ($document['visibility'] === 'sk') echo 'bg-blue-100 text-blue-800'; else echo 'bg-green-100 text-green-800'; ?>">
+                                        <?= ucfirst(esc($document['visibility'])) ?>
+                                    </span>
                                 </div>
-                                <?php if (!empty($document['approval_comment'])): ?>
-                                <div class="flex items-start justify-between">
-                                    <span class="text-sm text-gray-600">Comments:</span>
-                                    <span class="text-sm text-gray-900 max-w-xs text-right"><?= esc($document['approval_comment']) ?></span>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-gray-600">Scope:</span>
+                                    <span class="px-2 py-1 rounded-lg text-sm font-medium
+                                        <?php if (($document['visibility_scope'] ?? 'all') === 'all') echo 'bg-blue-50 text-blue-700'; else echo 'bg-green-50 text-green-700'; ?>">
+                                        <?= ($document['visibility_scope'] ?? 'all') === 'all' ? 'City-wide' : 'Specific Barangay' ?>
+                                    </span>
+                                </div>
+                                <?php if (($document['visibility_scope'] ?? 'all') === 'specific_barangay' && !empty($document['barangay_name'])): ?>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-gray-600">Barangay:</span>
+                                    <span class="text-sm font-medium text-gray-900"><?= esc($document['barangay_name']) ?></span>
                                 </div>
                                 <?php endif; ?>
                             </div>
                         </div>
-                        <?php endif; ?>
                     </div>
 
                     <!-- File Preview -->

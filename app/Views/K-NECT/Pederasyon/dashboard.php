@@ -304,7 +304,7 @@ if (!function_exists('ped_resolve_image')) {
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-start justify-between gap-3">
                                         <p class="text-sm font-semibold text-gray-900 truncate group-hover:text-blue-600 transition" title="<?= esc($doc['filename'] ?? 'Untitled') ?>"><?= esc($doc['filename'] ?? 'Untitled') ?></p>
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium <?php if(($doc['approval_status'] ?? '')==='approved'): ?> bg-green-50 text-green-600 <?php elseif(($doc['approval_status'] ?? '')==='pending'): ?> bg-yellow-50 text-yellow-600 <?php else: ?> bg-gray-100 text-gray-500 <?php endif; ?>"><?= esc(ucfirst($doc['approval_status'] ?? 'N/A')) ?></span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium <?php if(($doc['visibility'] ?? 'pederasyon')==='pederasyon'): ?> bg-purple-50 text-purple-600 <?php elseif(($doc['visibility'] ?? 'pederasyon')==='sk'): ?> bg-blue-50 text-blue-600 <?php else: ?> bg-green-50 text-green-600 <?php endif; ?>"><?= esc(ucfirst($doc['visibility'] ?? 'Pederasyon')) ?></span>
                                     </div>
                                     <div class="mt-1 flex items-center gap-3 text-[11px] text-gray-500 flex-wrap">
                                         <span><?= isset($doc['created_at']) ? date('M d, Y g:i A', strtotime($doc['created_at'])) : '' ?></span>
@@ -312,9 +312,6 @@ if (!function_exists('ped_resolve_image')) {
                                     </div>
                                     <div class="mt-3 flex items-center justify-between">
                                         <button type="button" onclick="window.open('<?= !empty($doc['file_path']) ? base_url($doc['file_path']) : '#' ?>','_blank')" class="text-xs font-medium text-blue-600 hover:text-blue-700 inline-flex items-center gap-1"><i class="fa-regular fa-eye"></i> Open</button>
-                                        <?php if(($doc['approval_status'] ?? '')==='pending'): ?>
-                                            <span class="text-[10px] text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded">Awaiting approval</span>
-                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>

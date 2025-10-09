@@ -339,11 +339,6 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('/admin/documents/share/(:num)', 'DocumentMainController::share/$1');
     $routes->get('/admin/documents/revoke-share/(:num)/(:num)', 'DocumentMainController::revokeShare/$1/$2');
     $routes->get('/admin/documents/shared', 'DocumentMainController::sharedDocuments');
-    $routes->post('/admin/documents/submit-for-approval/(:num)', 'DocumentMainController::submitForApproval/$1');
-    $routes->post('/admin/documents/approve/(:num)', 'DocumentMainController::approveDocument/$1');
-    $routes->post('/admin/documents/reject/(:num)', 'DocumentMainController::rejectDocument/$1');
-    $routes->get('/admin/documents/approval-status/(:num)', 'DocumentMainController::getApprovalStatus/$1');
-    $routes->get('/admin/documents/fix-data', 'DocumentMainController::fixDocumentData');
     // Serve uploaded files through controller
     $routes->get('uploads/(.*)', 'FileController::serve/$1');
 
@@ -387,11 +382,6 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('/admin/documents/share/(:num)', 'DocumentMainController::share/$1');
     $routes->get('/admin/documents/revoke-share/(:num)/(:num)', 'DocumentMainController::revokeShare/$1/$2');
     $routes->get('/admin/documents/shared', 'DocumentMainController::sharedDocuments');
-    $routes->post('/admin/documents/submit-for-approval/(:num)', 'DocumentMainController::submitForApproval/$1');
-    $routes->post('/admin/documents/approve/(:num)', 'DocumentMainController::approveDocument/$1');
-    $routes->post('/admin/documents/reject/(:num)', 'DocumentMainController::rejectDocument/$1');
-    $routes->get('/admin/documents/approval-status/(:num)', 'DocumentMainController::getApprovalStatus/$1');
-    $routes->get('/admin/documents/fix-data', 'DocumentMainController::fixDocumentData');
     $routes->get('uploads/(:any)', 'Shared\FileController::serve/$1');
 
     // ============================================================================

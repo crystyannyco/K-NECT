@@ -186,20 +186,20 @@
                     <div id="workStatusChart" style="height: 300px;"></div>
                 </div>
             </div>
+        </div>
 
-            <!-- Educational Background Chart -->
-            <div class="bg-white rounded-lg shadow-sm">
-                <div class="p-6 border-b border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-900 flex items-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-                        </svg>
-                        Educational Background
-                    </h3>
-                </div>
-                <div class="p-6">
-                    <div id="educationalBackgroundChart" style="height: 300px;"></div>
-                </div>
+        <!-- Educational Background Chart - Full Width -->
+        <div class="bg-white rounded-lg shadow-sm mb-8">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                    </svg>
+                    Educational Background
+                </h3>
+            </div>
+            <div class="p-6">
+                <div id="educationalBackgroundChart" style="height: 400px;"></div>
             </div>
         </div>
 
@@ -390,13 +390,19 @@
                             valueSuffix: '%'
                         }
                     },
+                    legend: {
+                        enabled: true,
+                        layout: 'horizontal',
+                        align: 'center',
+                        verticalAlign: 'bottom'
+                    },
                     plotOptions: {
                         pie: {
                             allowPointSelect: true,
                             cursor: 'pointer',
                             dataLabels: {
                                 enabled: true,
-                                format: '<b>{point.name}</b>: {point.percentage:.1f} %'
+                                format: '{point.percentage:.1f} %'
                             },
                             showInLegend: true,
                             // Prevent artificial separation in single-slice pies
@@ -477,14 +483,21 @@
                             valueSuffix: '%'
                         }
                     },
+                    legend: {
+                        enabled: true,
+                        layout: 'horizontal',
+                        align: 'center',
+                        verticalAlign: 'bottom'
+                    },
                     plotOptions: {
                         pie: {
                             allowPointSelect: true,
                             cursor: 'pointer',
                             dataLabels: {
                                 enabled: true,
-                                format: '<b>{point.name}</b>: {point.percentage:.1f} %'
-                            }
+                                format: '{point.percentage:.1f} %'
+                            },
+                            showInLegend: true
                         }
                     },
                     series: [{
@@ -555,6 +568,9 @@
                             }
                         }
                     },
+                    legend: {
+                        enabled: false
+                    },
                     colors: ['#28a745'],
                     series: [{
                         name: 'Count',
@@ -606,7 +622,7 @@
                             cursor: 'pointer',
                             dataLabels: {
                                 enabled: true,
-                                format: '<b>{point.name}</b>: {point.percentage:.1f} %'
+                                format: '{point.percentage:.1f} %'
                             },
                             showInLegend: true,
                             innerSize: '40%'
@@ -664,7 +680,7 @@
                             cursor: 'pointer',
                             dataLabels: {
                                 enabled: true,
-                                format: '<b>{point.name}</b>: {point.percentage:.1f} %'
+                                format: '{point.percentage:.1f} %'
                             },
                             showInLegend: true
                         }
@@ -742,6 +758,9 @@
                             }
                         }
                     },
+                    legend: {
+                        enabled: false
+                    },
                     colors: ['#6f42c1'],
                     series: [{
                         name: 'Count',
@@ -774,7 +793,7 @@
             .done(function(data) {
                 educationalBackgroundChart = Highcharts.chart('educationalBackgroundChart', {
                     chart: {
-                        type: 'bar'
+                        type: 'column'
                     },
                     title: {
                         text: null
@@ -800,11 +819,16 @@
                         useHTML: true
                     },
                     plotOptions: {
-                        bar: {
+                        column: {
+                            pointPadding: 0.2,
+                            borderWidth: 0,
                             dataLabels: {
                                 enabled: true
                             }
                         }
+                    },
+                    legend: {
+                        enabled: false
                     },
                     colors: ['#fd7e14'],
                     series: [{
@@ -859,35 +883,22 @@
                         min: 0,
                         title: {
                             text: 'Number of Youth'
-                        },
-                        stackLabels: {
-                            enabled: true,
-                            style: {
-                                fontWeight: 'bold',
-                                color: 'gray'
-                            }
                         }
                     },
                     legend: {
-                        align: 'right',
-                        x: -30,
-                        verticalAlign: 'top',
-                        y: 25,
-                        floating: true,
-                        backgroundColor: 'white',
-                        borderColor: '#CCC',
-                        borderWidth: 1,
-                        shadow: false
+                        enabled: true,
+                        layout: 'horizontal',
+                        align: 'center',
+                        verticalAlign: 'bottom'
                     },
                     tooltip: {
                         headerFormat: '<b>{point.x}</b><br/>',
-                        pointFormat: '{series.name}: {point.y}<br/>Total: {point.stackTotal}'
+                        pointFormat: '{series.name}: <b>{point.y}</b>'
                     },
                     plotOptions: {
                         column: {
-                            stacking: 'normal',
                             dataLabels: {
-                                enabled: false
+                                enabled: true
                             }
                         }
                     },

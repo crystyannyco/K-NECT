@@ -30,8 +30,14 @@ $barangay_name = isset($barangay_name) ? $barangay_name : 'Unknown Barangay';
                     <div class="flex flex-wrap items-center justify-between gap-4">
                         <!-- Status Filter Tabs -->
                         <div class="flex flex-wrap gap-2">
-                            <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all bg-blue-600 text-white border border-blue-600" data-status="Published">
-                                <i class="fas fa-check-circle mr-2"></i>Published
+                            <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all bg-blue-600 text-white border border-blue-600" data-status="ongoing">
+                                <i class="fas fa-play-circle mr-2"></i>Ongoing
+                            </button>
+                            <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all border border-gray-300 bg-white text-gray-600 hover:border-blue-600 hover:text-blue-600" data-status="upcoming">
+                                <i class="fas fa-calendar-plus mr-2"></i>Upcoming
+                            </button>
+                            <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all border border-gray-300 bg-white text-gray-600 hover:border-blue-600 hover:text-blue-600" data-status="completed">
+                                <i class="fas fa-check-circle mr-2"></i>Completed
                             </button>
                             <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all border border-gray-300 bg-white text-gray-600 hover:border-blue-600 hover:text-blue-600" data-status="Draft">
                                 <i class="fas fa-file-alt mr-2"></i>Draft
@@ -104,7 +110,7 @@ $barangay_name = isset($barangay_name) ? $barangay_name : 'Unknown Barangay';
                                                     }
                                                 }
                                             ?>
-                                            <div class="flex items-center w-full event-row" data-status="<?= $status ?>" data-category="<?= esc($category) ?>">
+                                            <div class="flex items-center w-full event-row" data-status="<?= $status ?>" data-category="<?= esc($category) ?>" data-temporal="<?= $temporalStatus ?>">
                                                 <div class="flex-shrink-0 flex flex-col items-center justify-center h-full pr-2" onclick="event.stopPropagation();">
                                                     <input type="checkbox" class="event-checkbox w-5 h-5" value="<?= $event['event_id'] ?>">
                                                 </div>
@@ -164,8 +170,8 @@ $barangay_name = isset($barangay_name) ? $barangay_name : 'Unknown Barangay';
                                                         <h4 class="text-xl font-bold text-gray-900 group-hover:text-blue-700 mb-2"><?= esc($event['title']) ?></h4>
                                                         <p class="mt-1 text-sm font-normal text-gray-700 leading-5 mb-2"><?= $shortDesc ?></p>
                                                         <div class="flex flex-col text-xs text-gray-500 mb-2">
-                                                            <span><strong>Start:</strong> <?= date('m-d-Y h:i A', strtotime($event['start_datetime'])) ?></span>
-                                                            <span><strong>End:</strong> <?= date('m-d-Y h:i A', strtotime($event['end_datetime'])) ?></span>
+                                                            <span><strong>Start:</strong> <?= date('F d, Y \a\t h:i A', strtotime($event['start_datetime'])) ?></span>
+                                                            <span><strong>End:</strong> <?= date('F d, Y \a\t h:i A', strtotime($event['end_datetime'])) ?></span>
                                                             <span><strong>Location:</strong> <?= esc($event['location']) ?></span>
                                                         </div>
                                                     </div>
@@ -653,17 +659,37 @@ function handleFormSubmit(e) {
             } else {
                 // Other errors - handle as before
                 hideLoadingScreen();
-                const fileErrorEl = document.getElementById('file-error');
-                if (fileErrorEl && data.message) {
-                    fileErrorEl.textContent = data.message;
-                    fileErrorEl.classList.remove('hidden');
-                    const input = document.getElementById('event_banner');
-                    if (input) {
-                        input.classList.add('border-red-500');
-                        input.classList.remove('border-gray-300');
+                
+                // Check if error is related to target_participants
+                if (data.message && data.message.toLowerCase().includes('target') && data.message.toLowerCase().includes('participant')) {
+                    const targetErrorEl = document.getElementById('target_participants-error');
+                    const targetInput = document.getElementById('target_participants');
+                    if (targetErrorEl && targetInput) {
+                        targetErrorEl.textContent = data.message;
+                        targetErrorEl.style.display = 'block';
+                        targetInput.classList.add('field-error', 'shake');
+                        targetInput.focus();
+                        setTimeout(() => {
+                            targetInput.classList.remove('shake');
+                        }, 500);
+                    } else {
+                        showNotificationWithLoading('Error: ' + data.message, 'error');
                     }
-                } else {
-                    showNotificationWithLoading('Error: ' + (data.message || 'Unknown error occurred'), 'error');
+                }
+                // Check if error is related to file upload
+                else {
+                    const fileErrorEl = document.getElementById('file-error');
+                    if (fileErrorEl && data.message && (data.message.toLowerCase().includes('file') || data.message.toLowerCase().includes('banner') || data.message.toLowerCase().includes('upload'))) {
+                        fileErrorEl.textContent = data.message;
+                        fileErrorEl.classList.remove('hidden');
+                        const input = document.getElementById('event_banner');
+                        if (input) {
+                            input.classList.add('border-red-500');
+                            input.classList.remove('border-gray-300');
+                        }
+                    } else {
+                        showNotificationWithLoading('Error: ' + (data.message || 'Unknown error occurred'), 'error');
+                    }
                 }
             }
         }
@@ -724,7 +750,7 @@ function clearSchedulingError() {
 }
 
 function clearAllFieldErrors() {
-    const errorFields = ['title', 'category', 'location', 'description', 'start_datetime', 'end_datetime'];
+    const errorFields = ['title', 'category', 'location', 'target_participants', 'description', 'start_datetime', 'end_datetime'];
     errorFields.forEach(fieldName => {
         const errorElement = document.getElementById(fieldName + '-error');
         const inputElement = document.getElementById(fieldName);
@@ -777,6 +803,7 @@ function validateFields(form, submitAction) {
         { id: 'title', name: 'Title' },
         { id: 'category', name: 'Category' },
         { id: 'location', name: 'Location' },
+        { id: 'target_participants', name: 'Target No. of Participants' },
         { id: 'description', name: 'Description' },
         { id: 'start_datetime', name: 'Start Date & Time' },
         { id: 'end_datetime', name: 'End Date & Time' }
@@ -790,6 +817,17 @@ function validateFields(form, submitAction) {
             if (!firstErrorField) firstErrorField = fieldElement;
         }
     });
+    
+    // Additional validation for target_participants (must be >= 1)
+    const targetParticipantsField = form.querySelector('#target_participants');
+    if (targetParticipantsField && targetParticipantsField.value.trim()) {
+        const value = parseInt(targetParticipantsField.value);
+        if (isNaN(value) || value < 1) {
+            showFieldError('target_participants', 'Target No. of Participants must be at least 1.');
+            isValid = false;
+            if (!firstErrorField) firstErrorField = targetParticipantsField;
+        }
+    }
     
     // Validate datetime order if both are provided
     const startField = form.querySelector('#start_datetime');
@@ -1109,7 +1147,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const rows = document.querySelectorAll('.event-row');
     const categoryFilter = document.getElementById('categoryFilter');
     const clearFiltersBtn = document.getElementById('clearFilters');
-    let activeStatus = 'Published';
+    let activeStatus = 'ongoing'; // Default to ongoing
     
     function filterEvents() {
         const activeCategory = categoryFilter ? categoryFilter.value : '';
@@ -1117,12 +1155,21 @@ document.addEventListener('DOMContentLoaded', function() {
         rows.forEach(row => {
             const rowStatus = row.dataset.status;
             const rowCategory = row.dataset.category || '';
+            const rowTemporal = row.dataset.temporal || '';
             
             let showRow = true;
             
-            // Filter by status
-            if (rowStatus !== activeStatus) {
-                showRow = false;
+            // Filter by status - handle temporal statuses for Published events
+            if (activeStatus === 'ongoing' || activeStatus === 'upcoming' || activeStatus === 'completed') {
+                // For temporal statuses, show only Published events with matching temporal status
+                if (rowStatus !== 'Published' || rowTemporal !== activeStatus) {
+                    showRow = false;
+                }
+            } else {
+                // For Draft and Scheduled, filter by exact status
+                if (rowStatus !== activeStatus) {
+                    showRow = false;
+                }
             }
             
             // Filter by category
@@ -1169,10 +1216,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Clear filters event listener
     if (clearFiltersBtn) {
         clearFiltersBtn.addEventListener('click', function() {
-            // Reset status filter to Published
-            setActiveTab('Published');
-            
-            // Reset category filter
+            // Don't reset status filter - keep current tab
+            // Only reset category filter
             if (categoryFilter) {
                 categoryFilter.value = '';
             }
@@ -1182,8 +1227,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Initialize with Published status
-    setActiveTab('Published');
+    // Initialize with ongoing status
+    setActiveTab('ongoing');
 })();
 
 // Initialize event form upload behaviors from parent scope

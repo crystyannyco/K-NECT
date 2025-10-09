@@ -563,6 +563,16 @@ class AnalyticsModel extends Model
 
     /**
      * Get attendance consistency by barangay
+     * 
+     * Consistency Rate Formula:
+     * (Total Attendances / Total Possible Attendances) × 100
+     * 
+     * Where:
+     * - Total Attendances = Count of all actual attendance records (status_am or status_pm = 'Present' or 'Late')
+     * - Total Possible Attendances = Total Participants × Total Events
+     * 
+     * Example: If 50 participants attended 10 events, and there were 400 actual attendances:
+     * Consistency Rate = (400 / (50 × 10)) × 100 = (400 / 500) × 100 = 80%
      */
     public function getAttendanceConsistency($barangayId = null)
     {
@@ -577,7 +587,16 @@ class AnalyticsModel extends Model
                 b.name as barangay,
                 COUNT(DISTINCT e.event_id) as total_events,
                 COUNT(DISTINCT a.user_id) as total_attendees,
-                ROUND((COUNT(DISTINCT a.user_id) / NULLIF(COUNT(DISTINCT e.event_id), 0)) * 100, 2) as consistency_rate
+                COUNT(a.attendance_id) as total_attendances,
+                CASE 
+                    WHEN COUNT(DISTINCT a.user_id) > 0 AND COUNT(DISTINCT e.event_id) > 0 THEN
+                        LEAST(100, ROUND(
+                            (COUNT(a.attendance_id) / 
+                             (COUNT(DISTINCT a.user_id) * COUNT(DISTINCT e.event_id))
+                            ) * 100, 2
+                        ))
+                    ELSE 0
+                END as consistency_rate
             FROM event e
             JOIN barangay b ON e.barangay_id = b.barangay_id
             LEFT JOIN attendance a ON e.event_id = a.event_id
@@ -771,11 +790,15 @@ class AnalyticsModel extends Model
             $query = $this->db->query("
                 SELECT 
                     b.name as barangay,
-                    -- Event participation score (0-100) - percentage of published events that have attendance
+                    -- Event participation score (0-100) - average participation rate based on target_participants
                     COALESCE(ROUND(
                         CASE 
-                            WHEN COUNT(DISTINCT e.event_id) > 0 THEN
-                                (COUNT(DISTINCT CASE WHEN a.attendance_id IS NOT NULL THEN e.event_id END) * 100.0 / COUNT(DISTINCT e.event_id))
+                            WHEN COUNT(DISTINCT CASE WHEN e.target_participants > 0 THEN e.event_id END) > 0 THEN
+                                AVG(CASE 
+                                    WHEN e.target_participants > 0 THEN 
+                                        LEAST(100, (event_attendee_count.attendee_count * 100.0 / e.target_participants))
+                                    ELSE NULL 
+                                END)
                             ELSE 0
                         END, 2
                     ), 0) as event_participation_score,
@@ -790,11 +813,14 @@ class AnalyticsModel extends Model
                          AND d.uploaded_at >= DATE_SUB(NOW(), INTERVAL 1 YEAR)) * 8.33, 2
                     )), 0) as document_activity_score,
                     
-                    -- Attendance consistency score (0-100) - average attendees per event
+                    -- Attendance consistency score (0-100)
+                    -- Formula: (Total Attendances / Total Possible Attendances) × 100
+                    -- Total Possible Attendances = Total Unique Participants × Total Events
                     COALESCE(ROUND(
                         CASE 
-                            WHEN COUNT(DISTINCT e.event_id) > 0 THEN
-                                LEAST(100, (COUNT(a.attendance_id) * 10.0 / COUNT(DISTINCT e.event_id)))
+                            WHEN COUNT(DISTINCT e.event_id) > 0 AND COUNT(DISTINCT a.user_id) > 0 THEN
+                                LEAST(100, (COUNT(a.attendance_id) * 100.0 / 
+                                           (COUNT(DISTINCT a.user_id) * COUNT(DISTINCT e.event_id))))
                             ELSE 0
                         END, 2
                     ), 0) as attendance_consistency_score,
@@ -813,6 +839,11 @@ class AnalyticsModel extends Model
                 LEFT JOIN event e ON b.barangay_id = e.barangay_id 
                     AND e.status = 'Published' 
                     AND e.start_datetime >= DATE_SUB(NOW(), INTERVAL 1 YEAR)
+                LEFT JOIN (
+                    SELECT event_id, COUNT(DISTINCT user_id) as attendee_count
+                    FROM attendance
+                    GROUP BY event_id
+                ) event_attendee_count ON e.event_id = event_attendee_count.event_id
                 LEFT JOIN attendance a ON e.event_id = a.event_id
                 WHERE b.name != 'City-wide' AND b.name IS NOT NULL {$whereClause}
                 GROUP BY b.barangay_id, b.name
@@ -904,7 +935,31 @@ class AnalyticsModel extends Model
             {$whereClause}
         ");
         
-        return $query->getRowArray();
+        $summary = $query->getRowArray();
+        
+        // Calculate average participation rate
+        $rateQuery = $this->db->query("
+            SELECT 
+                ROUND(AVG(participation_rate), 2) as avg_participation_rate
+            FROM (
+                SELECT 
+                    CASE 
+                        WHEN e.target_participants IS NOT NULL AND e.target_participants > 0 
+                        THEN (COUNT(DISTINCT a.user_id) / e.target_participants) * 100
+                        ELSE NULL
+                    END as participation_rate
+                FROM event e
+                LEFT JOIN attendance a ON e.event_id = a.event_id
+                {$whereClause}
+                GROUP BY e.event_id, e.target_participants
+                HAVING participation_rate IS NOT NULL
+            ) as rates
+        ");
+        
+        $rateData = $rateQuery->getRowArray();
+        $summary['avg_participation_rate'] = $rateData['avg_participation_rate'] ?? 0;
+        
+        return $summary;
     }
 
     /**
@@ -931,7 +986,72 @@ class AnalyticsModel extends Model
             WHERE e.barangay_id > 0
         ");
         
-        return $query->getRowArray();
+        $summary = $query->getRowArray();
+        
+        // Calculate average participation rate
+        $rateQuery = $this->db->query("
+            SELECT 
+                ROUND(AVG(participation_rate), 2) as avg_participation_rate
+            FROM (
+                SELECT 
+                    CASE 
+                        WHEN e.target_participants IS NOT NULL AND e.target_participants > 0 
+                        THEN (COUNT(DISTINCT a.user_id) / e.target_participants) * 100
+                        ELSE NULL
+                    END as participation_rate
+                FROM event e
+                LEFT JOIN attendance a ON e.event_id = a.event_id
+                WHERE e.barangay_id > 0
+                GROUP BY e.event_id, e.target_participants
+                HAVING participation_rate IS NOT NULL
+            ) as rates
+        ");
+        
+        $rateData = $rateQuery->getRowArray();
+        $summary['avg_participation_rate'] = $rateData['avg_participation_rate'] ?? 0;
+        
+        return $summary;
+    }
+
+    /**
+     * Get event participation rate details
+     * Returns individual events with their participation rates
+     */
+    public function getEventParticipationRates($barangayId = null, $limit = null)
+    {
+        $whereClause = "WHERE e.status = 'Published' AND e.target_participants IS NOT NULL AND e.target_participants > 0";
+        
+        if ($barangayId !== null && $barangayId >= 0) {
+            $whereClause .= " AND e.barangay_id = " . (int)$barangayId;
+        }
+        
+        $limitClause = "";
+        if ($limit !== null && $limit > 0) {
+            $limitClause = "LIMIT " . (int)$limit;
+        }
+        
+        $query = $this->db->query("
+            SELECT 
+                e.event_id,
+                e.title,
+                e.start_datetime,
+                e.end_datetime,
+                e.target_participants,
+                COUNT(DISTINCT a.user_id) as actual_attendees,
+                CASE 
+                    WHEN e.target_participants IS NOT NULL AND e.target_participants > 0 
+                    THEN ROUND((COUNT(DISTINCT a.user_id) / e.target_participants) * 100, 2)
+                    ELSE 0
+                END as participation_rate_percent
+            FROM event e
+            LEFT JOIN attendance a ON e.event_id = a.event_id
+            {$whereClause}
+            GROUP BY e.event_id, e.title, e.start_datetime, e.end_datetime, e.target_participants
+            ORDER BY e.start_datetime DESC
+            {$limitClause}
+        ");
+        
+        return $query->getResultArray();
     }
 
     /**
@@ -996,7 +1116,12 @@ class AnalyticsModel extends Model
             SELECT 
                 CASE 
                     WHEN gender IS NULL OR gender = '' THEN 'Not Specified'
-                    ELSE gender
+                    WHEN gender = '1' THEN 'Man'
+                    WHEN gender = '2' THEN 'Woman'
+                    WHEN gender = '3' THEN 'Non-binary'
+                    WHEN gender = '4' THEN 'Prefer not to say'
+                    WHEN gender = '5' THEN 'Other'
+                    ELSE 'Not Specified'
                 END AS gender_identity,
                 COUNT(*) AS total
             FROM user
@@ -1004,7 +1129,12 @@ class AnalyticsModel extends Model
             GROUP BY 
                 CASE 
                     WHEN gender IS NULL OR gender = '' THEN 'Not Specified'
-                    ELSE gender
+                    WHEN gender = '1' THEN 'Man'
+                    WHEN gender = '2' THEN 'Woman'
+                    WHEN gender = '3' THEN 'Non-binary'
+                    WHEN gender = '4' THEN 'Prefer not to say'
+                    WHEN gender = '5' THEN 'Other'
+                    ELSE 'Not Specified'
                 END
             ORDER BY total DESC
         ");
@@ -1027,7 +1157,12 @@ class AnalyticsModel extends Model
                 b.name AS barangay,
                 CASE 
                     WHEN u.gender IS NULL OR u.gender = '' THEN 'Not Specified'
-                    ELSE u.gender
+                    WHEN u.gender = '1' THEN 'Man'
+                    WHEN u.gender = '2' THEN 'Woman'
+                    WHEN u.gender = '3' THEN 'Non-binary'
+                    WHEN u.gender = '4' THEN 'Prefer not to say'
+                    WHEN u.gender = '5' THEN 'Other'
+                    ELSE 'Not Specified'
                 END AS gender_identity,
                 COUNT(*) AS total
             FROM user u
@@ -1037,7 +1172,12 @@ class AnalyticsModel extends Model
             GROUP BY b.name, 
                 CASE 
                     WHEN u.gender IS NULL OR u.gender = '' THEN 'Not Specified'
-                    ELSE u.gender
+                    WHEN u.gender = '1' THEN 'Man'
+                    WHEN u.gender = '2' THEN 'Woman'
+                    WHEN u.gender = '3' THEN 'Non-binary'
+                    WHEN u.gender = '4' THEN 'Prefer not to say'
+                    WHEN u.gender = '5' THEN 'Other'
+                    ELSE 'Not Specified'
                 END
             ORDER BY b.name, total DESC
         ");
@@ -1064,7 +1204,12 @@ class AnalyticsModel extends Model
                 END AS sex_assigned,
                 CASE 
                     WHEN u.gender IS NULL OR u.gender = '' THEN 'Not Specified'
-                    ELSE u.gender
+                    WHEN u.gender = '1' THEN 'Man'
+                    WHEN u.gender = '2' THEN 'Woman'
+                    WHEN u.gender = '3' THEN 'Non-binary'
+                    WHEN u.gender = '4' THEN 'Prefer not to say'
+                    WHEN u.gender = '5' THEN 'Other'
+                    ELSE 'Not Specified'
                 END AS gender_identity,
                 COUNT(*) AS total
             FROM user u
@@ -1094,7 +1239,12 @@ class AnalyticsModel extends Model
                 e.category,
                 CASE 
                     WHEN u.gender IS NULL OR u.gender = '' THEN 'Not Specified'
-                    ELSE u.gender
+                    WHEN u.gender = '1' THEN 'Man'
+                    WHEN u.gender = '2' THEN 'Woman'
+                    WHEN u.gender = '3' THEN 'Non-binary'
+                    WHEN u.gender = '4' THEN 'Prefer not to say'
+                    WHEN u.gender = '5' THEN 'Other'
+                    ELSE 'Not Specified'
                 END as gender_identity,
                 COUNT(DISTINCT att.user_id) as participant_count
             FROM events e
@@ -1184,5 +1334,189 @@ class AnalyticsModel extends Model
             foreach ($rows as &$r) { $r['score_percent'] = 0; }
         }
         return $rows;
+    }
+
+    /**
+     * Get participation rate trend by month
+     * @param int|null $barangayId Barangay filter
+     * @param int $months Number of months to look back
+     * @return array
+     */
+    public function getParticipationRateTrendByMonth($barangayId = null, $months = 12): array
+    {
+        $whereClause = "WHERE e.status = 'Published' AND e.target_participants IS NOT NULL AND e.target_participants > 0";
+        
+        if ($barangayId !== null && $barangayId > 0) {
+            $whereClause .= " AND e.barangay_id = " . (int)$barangayId;
+        }
+        
+        $query = $this->db->query("
+            SELECT 
+                DATE_FORMAT(e.start_datetime, '%Y-%m') as month,
+                DATE_FORMAT(e.start_datetime, '%b %Y') as month_name,
+                e.event_id,
+                e.target_participants,
+                COUNT(DISTINCT a.user_id) as actual_participants,
+                ROUND((COUNT(DISTINCT a.user_id) / NULLIF(e.target_participants, 0)) * 100, 1) as participation_rate
+            FROM event e
+            LEFT JOIN attendance a ON e.event_id = a.event_id
+            {$whereClause}
+            AND e.start_datetime >= DATE_SUB(NOW(), INTERVAL {$months} MONTH)
+            GROUP BY e.event_id, month, month_name, e.target_participants
+            ORDER BY month ASC
+        ");
+        
+        $results = $query->getResultArray();
+        
+        // Group by month and calculate average across all events in that month
+        $monthlyData = [];
+        foreach ($results as $row) {
+            $month = $row['month'];
+            if (!isset($monthlyData[$month])) {
+                $monthlyData[$month] = [
+                    'month' => $month,
+                    'month_name' => $row['month_name'],
+                    'rates' => []
+                ];
+            }
+            $monthlyData[$month]['rates'][] = (float)$row['participation_rate'];
+        }
+        
+        // Calculate average rate per month
+        $finalResults = [];
+        foreach ($monthlyData as $data) {
+            $finalResults[] = [
+                'month' => $data['month'],
+                'month_name' => $data['month_name'],
+                'avg_participation_rate' => count($data['rates']) > 0 
+                    ? round(array_sum($data['rates']) / count($data['rates']), 1)
+                    : 0
+            ];
+        }
+        
+        return $finalResults;
+    }
+
+    /**
+     * Get categories by average participation rate
+     * @param int|null $barangayId Barangay filter
+     * @return array
+     */
+    public function getCategoriesByParticipationRate($barangayId = null): array
+    {
+        $whereClause = "WHERE e.status = 'Published' AND e.target_participants IS NOT NULL AND e.target_participants > 0";
+        
+        if ($barangayId !== null && $barangayId > 0) {
+            $whereClause .= " AND e.barangay_id = " . (int)$barangayId;
+        }
+        
+        $query = $this->db->query("
+            SELECT 
+                e.event_id,
+                e.category,
+                e.target_participants,
+                COUNT(DISTINCT a.user_id) as actual_participants,
+                ROUND((COUNT(DISTINCT a.user_id) / NULLIF(e.target_participants, 0)) * 100, 1) as participation_rate
+            FROM event e
+            LEFT JOIN attendance a ON e.event_id = a.event_id
+            {$whereClause}
+            GROUP BY e.event_id, e.category, e.target_participants
+            ORDER BY e.category
+        ");
+        
+        $results = $query->getResultArray();
+        
+        // Group by category and calculate average
+        $categoryData = [];
+        foreach ($results as $row) {
+            $category = $row['category'];
+            if (!isset($categoryData[$category])) {
+                $categoryData[$category] = [
+                    'category' => $category,
+                    'rates' => []
+                ];
+            }
+            $categoryData[$category]['rates'][] = (float)$row['participation_rate'];
+        }
+        
+        // Calculate final average per category
+        $finalResults = [];
+        foreach ($categoryData as $data) {
+            $finalResults[] = [
+                'category' => $data['category'],
+                'avg_participation_rate' => count($data['rates']) > 0 
+                    ? round(array_sum($data['rates']) / count($data['rates']), 1)
+                    : 0
+            ];
+        }
+        
+        // Sort by participation rate descending
+        usort($finalResults, function($a, $b) {
+            return $b['avg_participation_rate'] <=> $a['avg_participation_rate'];
+        });
+        
+        return $finalResults;
+    }
+
+    /**
+     * Get top barangays by average participation rate
+     * @return array
+     */
+    public function getTopBarangaysByParticipationRate(): array
+    {
+        // First, get participation rate for each event
+        $query = $this->db->query("
+            SELECT 
+                e.event_id,
+                b.barangay_id,
+                b.name as barangay,
+                e.target_participants,
+                COUNT(DISTINCT a.user_id) as actual_attendees,
+                (COUNT(DISTINCT a.user_id) / NULLIF(e.target_participants, 0)) * 100 as participation_rate
+            FROM event e
+            JOIN barangay b ON e.barangay_id = b.barangay_id
+            LEFT JOIN attendance a ON e.event_id = a.event_id
+            WHERE e.status = 'Published' 
+            AND e.target_participants IS NOT NULL 
+            AND e.target_participants > 0
+            AND e.barangay_id > 0
+            GROUP BY e.event_id, b.barangay_id, b.name, e.target_participants
+        ");
+        
+        $results = $query->getResultArray();
+        
+        // Group by barangay and calculate average
+        $barangayData = [];
+        foreach ($results as $row) {
+            $barangay = $row['barangay'];
+            if (!isset($barangayData[$barangay])) {
+                $barangayData[$barangay] = [
+                    'barangay' => $barangay,
+                    'rates' => [],
+                    'event_count' => 0
+                ];
+            }
+            $barangayData[$barangay]['rates'][] = (float)$row['participation_rate'];
+            $barangayData[$barangay]['event_count']++;
+        }
+        
+        // Calculate final average per barangay
+        $finalResults = [];
+        foreach ($barangayData as $data) {
+            $finalResults[] = [
+                'barangay' => $data['barangay'],
+                'event_count' => $data['event_count'],
+                'avg_participation_rate' => count($data['rates']) > 0 
+                    ? round(array_sum($data['rates']) / count($data['rates']), 1)
+                    : 0
+            ];
+        }
+        
+        // Sort by participation rate descending
+        usort($finalResults, function($a, $b) {
+            return $b['avg_participation_rate'] <=> $a['avg_participation_rate'];
+        });
+        
+        return $finalResults;
     }
 }

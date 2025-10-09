@@ -305,12 +305,19 @@ class EventController extends BaseController
         $action = $this->request->getPost('submit_action');
         $isDraft = ($action === 'draft');
         
+        // Validate target_participants for non-draft events
+        $targetParticipants = $this->request->getPost('target_participants');
+        if (!$isDraft && (empty($targetParticipants) || $targetParticipants < 1)) {
+            return $this->handleErrorResponse('Target number of participants is required and must be at least 1.');
+        }
+        
         $data = [
             'title' => $this->request->getPost('title') ?: ($isDraft ? 'Draft Event' : ''),
             'description' => $this->request->getPost('description') ?: '',
             'start_datetime' => $this->request->getPost('start_datetime') ?: '',
             'end_datetime' => $this->request->getPost('end_datetime') ?: '',
             'location' => $this->request->getPost('location') ?: '',
+            'target_participants' => $targetParticipants ?: ($isDraft ? null : 0),
             'created_by' => $createdBy,
             'barangay_id' => $inputBarangayId,
             'category' => $this->request->getPost('category') ?: '',
@@ -702,12 +709,19 @@ class EventController extends BaseController
         $action = $this->request->getPost('submit_action');
         $isDraft = ($action === 'draft');
         
+        // Validate target_participants for non-draft events
+        $targetParticipants = $this->request->getPost('target_participants');
+        if (!$isDraft && (empty($targetParticipants) || $targetParticipants < 1)) {
+            return $this->handleErrorResponse('Target number of participants is required and must be at least 1.');
+        }
+        
         $data = [
             'title' => $this->request->getPost('title') ?: ($isDraft ? 'Draft Event' : ''),
             'description' => $this->request->getPost('description') ?: '',
             'start_datetime' => $this->request->getPost('start_datetime') ?: '',
             'end_datetime' => $this->request->getPost('end_datetime') ?: '',
             'location' => $this->request->getPost('location') ?: '',
+            'target_participants' => $targetParticipants ?: ($isDraft ? null : 0),
             'category' => $this->request->getPost('category') ?: '',
         ];
 
@@ -1553,9 +1567,13 @@ class EventController extends BaseController
     }
     
     private function formatSmsMessage($event, $action = 'add') {
-        $startDate = (new \DateTime($event['start_datetime']))->format('F d, Y');
-        $startTime = (new \DateTime($event['start_datetime']))->format('h:i A');
-        $endTime = (new \DateTime($event['end_datetime']))->format('h:i A');
+        $startDateTime = new \DateTime($event['start_datetime']);
+        $endDateTime = new \DateTime($event['end_datetime']);
+        
+        $startDate = $startDateTime->format('F d, Y');
+        $endDate = $endDateTime->format('F d, Y');
+        $startTime = $startDateTime->format('h:i A');
+        $endTime = $endDateTime->format('h:i A');
         
         // Determine header based on event scope
         if ($event['barangay_id'] == 0) {
@@ -1583,12 +1601,25 @@ class EventController extends BaseController
                 break;
             case 'cancel':
                 $message .= "EVENT CANCELLED\n\n";
-                $message .= "We regret to inform you that the {$event['title']} on {$startDate} has been cancelled.";
+                // For cancelled events, show date range if multi-day
+                if ($startDate !== $endDate) {
+                    $message .= "We regret to inform you that the {$event['title']} scheduled from {$startDate} to {$endDate} has been cancelled.";
+                } else {
+                    $message .= "We regret to inform you that the {$event['title']} on {$startDate} has been cancelled.";
+                }
                 return $message;
         }
         
-        $message .= "Date: {$startDate}\n";
-        $message .= "Time: {$startTime} - {$endTime}\n";
+        // Show date range if event spans multiple days
+        if ($startDate !== $endDate) {
+            $message .= "Start: {$startDate} at {$startTime}\n";
+            $message .= "End: {$endDate} at {$endTime}\n";
+        } else {
+            // Same day event
+            $message .= "Date: {$startDate}\n";
+            $message .= "Time: {$startTime} - {$endTime}\n";
+        }
+        
         $message .= "Location: {$event['location']}\n\n";
         $message .= "{$event['description']}";
         

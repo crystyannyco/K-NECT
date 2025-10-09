@@ -298,6 +298,10 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->get('pederasyon/event-analytics', 'AnalyticsController::pederasyonEventAnalytics');
     $routes->get('analytics/pederasyon/event-summary', 'AnalyticsController::getFilteredEventSummary');
     $routes->get('analytics/pederasyon/event-participation-trend', 'AnalyticsController::getEventParticipationTrend');
+    $routes->get('analytics/pederasyon/participation-rate-per-event', 'AnalyticsController::getParticipationRatePerEvent');
+    $routes->get('analytics/pederasyon/participation-rate-trend', 'AnalyticsController::getParticipationRateTrend');
+    $routes->get('analytics/pederasyon/categories-by-participation-rate', 'AnalyticsController::getCategoriesByParticipationRate');
+    $routes->get('analytics/pederasyon/top-barangays-by-participation-rate', 'AnalyticsController::getTopBarangaysByParticipationRate');
     $routes->get('analytics/pederasyon/top-engaged-barangays', 'AnalyticsController::getTopEngagedBarangays');
     $routes->get('analytics/pederasyon/top-active-members', 'AnalyticsController::getTopActiveMembers');
     $routes->get('analytics/pederasyon/top-active-sk-officials', 'AnalyticsController::getTopActiveSKOfficials');
@@ -336,6 +340,9 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->get('sk/event-analytics', 'AnalyticsController::skEventAnalytics');
     $routes->get('analytics/sk/event-summary', 'AnalyticsController::getFilteredEventSummary');
     $routes->get('analytics/sk/event-participation-trend', 'AnalyticsController::getEventParticipationTrend');
+    $routes->get('analytics/sk/participation-rate-per-event', 'AnalyticsController::getParticipationRatePerEvent');
+    $routes->get('analytics/sk/participation-rate-trend', 'AnalyticsController::getParticipationRateTrend');
+    $routes->get('analytics/sk/categories-by-participation-rate', 'AnalyticsController::getCategoriesByParticipationRate');
     $routes->get('analytics/sk/top-active-members', 'AnalyticsController::getTopActiveMembers');
     $routes->get('analytics/sk/top-active-sk-officials', 'AnalyticsController::getTopActiveSKOfficials');
     $routes->get('analytics/sk/top-active-kk-members', 'AnalyticsController::getTopActiveKKMembers');

@@ -14,6 +14,7 @@ class EventModel extends Model
         'start_datetime',
         'end_datetime',
         'location',
+        'target_participants',
         'created_by',
         'barangay_id',
         'google_event_id',
@@ -96,6 +97,7 @@ class EventModel extends Model
             'start_datetime',
             'end_datetime',
             'location',
+            'target_participants',
             'category',
             'event_banner'
         ];

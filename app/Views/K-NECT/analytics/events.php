@@ -49,14 +49,6 @@
                             <option value="24">Last 24 months</option>
                         </select>
                     </div>
-                    <div>
-                        <button type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md transition-colors" onclick="refreshCharts()">
-                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                            </svg>
-                            Apply Filter
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>
@@ -92,16 +84,16 @@
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 summary-card" data-metric="total_attendances">
+            <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 summary-card" data-metric="avg_participation_rate">
                 <div class="flex items-center">
-                    <div class="p-3 bg-gradient-to-br from-gray-600 to-gray-500 rounded-xl shadow-sm">
+                    <div class="p-3 bg-gradient-to-br from-blue-600 to-blue-500 rounded-xl shadow-sm">
                         <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                         </svg>
                     </div>
                     <div class="ml-4">
-                        <p class="text-sm text-gray-500 font-medium metric-label">Total Attendances</p>
-                        <p class="text-2xl font-bold text-gray-800 metric-value"><?= $event_summary['total_attendances'] ?? 0 ?></p>
+                        <p class="text-sm text-gray-500 font-medium metric-label">Avg Participation Rate</p>
+                        <p class="text-2xl font-bold text-gray-800 metric-value"><?= round($event_summary['avg_participation_rate'] ?? 0, 1) ?>%</p>
                     </div>
                 </div>
             </div>
@@ -121,16 +113,33 @@
             </div>
         </div>
 
+        <!-- Top Engaged Barangays / Participation Rate Per Event - Full Width -->
+        <div id="participationRateSection" class="bg-white rounded-lg shadow-sm mb-6">
+            <div class="p-6 border-b border-gray-200">
+                <h3 id="participationRateSectionTitle" class="text-lg font-semibold text-gray-900 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                    <span id="participationRateTitleText"><?= $view_type === 'citywide' ? 'Top Engaged Barangays' : 'Participation Rate Per Event' ?></span>
+                    <span id="participationRateSubtitle" class="ml-2 text-sm font-normal text-gray-500"><?= $view_type === 'citywide' ? '(Avg Participation Rate %)' : '(Actual Attendees / Target Participants)' ?></span>
+                </h3>
+            </div>
+            <div class="p-6">
+                <div id="participationRatePerEventChart" style="height: 400px;"></div>
+            </div>
+        </div>
+
         <!-- Charts Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <!-- Event Participation Trend -->
+            <!-- Event Participation Rate Trend -->
             <div class="bg-white rounded-lg shadow-sm">
                 <div class="p-6 border-b border-gray-200">
                     <h3 class="text-lg font-semibold text-gray-900 flex items-center">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                         </svg>
-                        Event Participation Trend
+                        Participation Rate Trend
+                        <span class="ml-2 text-sm font-normal text-gray-500">(%)</span>
                     </h3>
                 </div>
                 <div class="p-6">
@@ -138,14 +147,15 @@
                 </div>
             </div>
 
-            <!-- Most Popular Event Categories -->
+            <!-- Event Categories by Participation Rate -->
             <div class="bg-white rounded-lg shadow-sm">
                 <div class="p-6 border-b border-gray-200">
                     <h3 class="text-lg font-semibold text-gray-900 flex items-center">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/>
                         </svg>
-                        Most Popular Event Categories
+                        Categories by Participation Rate
+                        <span class="ml-2 text-sm font-normal text-gray-500">(%)</span>
                     </h3>
                 </div>
                 <div class="p-6">
@@ -271,44 +281,66 @@
     const baseApiUrl = viewType === 'citywide' ? '/analytics/pederasyon' : '/analytics/sk';
 
     // Chart instances
-    let participationTrendChart, popularCategoriesChart, topBarangaysChart, genderParticipationChart;
+    let participationRatePerEventChart, participationTrendChart, popularCategoriesChart, topBarangaysChart, genderParticipationChart;
 
     // Initialize charts when document is ready
     $(document).ready(function() {
+        <?php if ($view_type === 'citywide'): ?>
+        // Load appropriate chart based on initial filter selection
+        const initialBarangay = $('#barangayFilter').val();
+        loadParticipationRateChart(initialBarangay);
+        <?php else: ?>
+        loadParticipationRatePerEventChart();
+        <?php endif; ?>
+        
         loadParticipationTrendChart();
         loadPopularCategoriesChart();
-        loadGenderParticipationChart();
         loadTopActiveSKOfficialsTable();
         loadTopActiveKKMembersTable();
         loadAttendanceConsistencyTable();
         
         <?php if ($view_type === 'citywide'): ?>
-        // Initially load top barangays chart (for "All Barangays" view)
-        loadTopBarangaysChart();
+        // Initialize visibility based on initial filter selection
+        const initialBarangaySelection = $('#barangayFilter').val();
+        toggleTopBarangaysSection(initialBarangaySelection);
+        <?php else: ?>
+        // For SK view, always load gender participation chart
+        loadGenderParticipationChart();
+        <?php endif; ?>
         
-        // Add event listener for filter changes
+        <?php if ($view_type === 'citywide'): ?>
+        
+        // Add event listeners for auto-refresh on filter changes
         $('#barangayFilter').on('change', function() {
-            const selectedValue = $(this).val();
-            toggleTopBarangaysSection(selectedValue);
+            refreshCharts(); // Auto-refresh all charts when barangay filter changes
+        });
+        
+        $('#monthsFilter').on('change', function() {
+            refreshCharts(); // Auto-refresh all charts when time range filter changes
         });
         <?php endif; ?>
     });
 
     // Function to refresh all charts (for filter changes)
     function refreshCharts() {
+        <?php if ($view_type === 'citywide'): ?>
+        // Load appropriate chart based on filter selection
+        const selectedBarangay = $('#barangayFilter').val();
+        loadParticipationRateChart(selectedBarangay);
+        toggleTopBarangaysSection(selectedBarangay);
+        
+        // Gender participation chart is loaded within toggleTopBarangaysSection for non-"All Barangays" selections
+        <?php else: ?>
+        loadParticipationRatePerEventChart();
+        loadGenderParticipationChart();
+        <?php endif; ?>
+        
         loadParticipationTrendChart();
         loadPopularCategoriesChart();
-        loadGenderParticipationChart();
         loadTopActiveSKOfficialsTable();
         loadTopActiveKKMembersTable();
         loadAttendanceConsistencyTable();
         loadEventSummaryCards(); // Refresh summary cards with filtered data
-        
-        <?php if ($view_type === 'citywide'): ?>
-        // Handle top barangays section visibility
-        const selectedBarangay = $('#barangayFilter').val();
-        toggleTopBarangaysSection(selectedBarangay);
-        <?php endif; ?>
     }
 
     <?php if ($view_type === 'citywide'): ?>
@@ -318,14 +350,22 @@
         const genderParticipationSection = $('#genderParticipationSection');
         
         if (selectedValue === 'all') {
-            // Show barangays section and make gender participation normal width
+            // Show Top Engaged Barangays ONLY for "All Barangays" filter
             topBarangaysSection.show();
-            genderParticipationSection.removeClass('lg:col-span-2');
+            genderParticipationSection.hide();
+            
+            // Load barangays chart
             loadTopBarangaysChart();
         } else {
-            // Hide barangays section and expand gender participation to full width
+            // Hide Top Engaged Barangays for "City-wide" and specific barangay selections
             topBarangaysSection.hide();
+            
+            // Show gender participation chart with full width
+            genderParticipationSection.show();
             genderParticipationSection.addClass('lg:col-span-2');
+            
+            // Load gender participation chart
+            loadGenderParticipationChart();
             
             // Trigger chart resize to fit new container width
             setTimeout(function() {
@@ -367,6 +407,8 @@
                     if (data[metric] !== undefined) {
                         if (metric === 'avg_attendance_duration') {
                             $valueElement.text(Math.round(data[metric] || 0) + ' min');
+                        } else if (metric === 'avg_participation_rate') {
+                            $valueElement.text(Math.round((data[metric] || 0) * 10) / 10 + '%');
                         } else {
                             $valueElement.text(data[metric] || 0);
                         }
@@ -378,7 +420,168 @@
             });
     }
 
-    // Load Event Participation Trend Chart
+    <?php if ($view_type === 'citywide'): ?>
+    // Load appropriate chart based on filter selection
+    function loadParticipationRateChart(selectedBarangay) {
+        if (selectedBarangay === 'all') {
+            // Show Top Engaged Barangays by Participation Rate
+            $('#participationRateTitleText').text('Top Engaged Barangays');
+            $('#participationRateSubtitle').text('(Avg Participation Rate %)');
+            loadTopEngagedBarangaysByRate();
+        } else {
+            // Show Participation Rate Per Event
+            $('#participationRateTitleText').text('Participation Rate Per Event');
+            $('#participationRateSubtitle').text('(Actual Attendees / Target Participants)');
+            loadParticipationRatePerEventChart();
+        }
+    }
+
+    // Load Top Engaged Barangays by Participation Rate
+    function loadTopEngagedBarangaysByRate() {
+        $.get(`${baseApiUrl}/top-barangays-by-participation-rate`)
+            .done(function(data) {
+                participationRatePerEventChart = Highcharts.chart('participationRatePerEventChart', {
+                    chart: {
+                        type: 'column'
+                    },
+                    title: {
+                        text: null
+                    },
+                    xAxis: {
+                        categories: data.categories,
+                        title: {
+                            text: 'Barangays'
+                        },
+                        labels: {
+                            rotation: -45,
+                            style: {
+                                fontSize: '11px'
+                            }
+                        }
+                    },
+                    yAxis: {
+                        min: 0,
+                        max: 100,
+                        title: {
+                            text: 'Average Participation Rate (%)'
+                        }
+                    },
+                    tooltip: {
+                        headerFormat: '<span style="font-size:11px"><b>{point.key}</b></span><br/>',
+                        pointFormat: '<span style="color:{point.color}">●</span> Avg Participation Rate: <b>{point.y:.1f}%</b><br/>' +
+                            '<span style="color:#999">Total Events: {point.eventCount}</span>',
+                        useHTML: true
+                    },
+                    plotOptions: {
+                        column: {
+                            pointPadding: 0.2,
+                            borderWidth: 0,
+                            dataLabels: {
+                                enabled: true,
+                                format: '{point.y:.1f}%'
+                            },
+                            colorByPoint: false
+                        }
+                    },
+                    colors: ['#8b5cf6'],
+                    legend: {
+                        enabled: false
+                    },
+                    series: [{
+                        name: 'Participation Rate',
+                        data: data.series
+                    }],
+                    exporting: {
+                        enabled: true
+                    }
+                });
+            })
+            .fail(function() {
+                $('#participationRatePerEventChart').html('<div class="text-center text-gray-500">Error loading top barangays by participation rate data</div>');
+            });
+    }
+    <?php endif; ?>
+
+    // Load Participation Rate Per Event Chart
+    function loadParticipationRatePerEventChart() {
+        const params = new URLSearchParams({
+            view_type: viewType
+        });
+        
+        if (viewType === 'citywide') {
+            const barangayId = $('#barangayFilter').val();
+            
+            // Always send barangay_id to backend to distinguish between all/city-wide/specific
+            if (barangayId) {
+                params.append('barangay_id', barangayId);
+            }
+        }
+
+        $.get(`${baseApiUrl}/participation-rate-per-event?${params.toString()}`)
+            .done(function(data) {
+                participationRatePerEventChart = Highcharts.chart('participationRatePerEventChart', {
+                    chart: {
+                        type: 'column'
+                    },
+                    title: {
+                        text: null
+                    },
+                    xAxis: {
+                        categories: data.categories,
+                        title: {
+                            text: 'Events'
+                        },
+                        labels: {
+                            rotation: -45,
+                            style: {
+                                fontSize: '10px'
+                            }
+                        }
+                    },
+                    yAxis: {
+                        min: 0,
+                        max: 100,
+                        title: {
+                            text: 'Participation Rate (%)'
+                        }
+                    },
+                    tooltip: {
+                        headerFormat: '<span style="font-size:11px"><b>{point.key}</b></span><br/>',
+                        pointFormat: '<span style="color:{point.color}">●</span> Participation Rate: <b>{point.y:.1f}%</b><br/>' +
+                            '<span style="color:#999">Target: {point.target}</span><br/>' +
+                            '<span style="color:#999">Actual: {point.actual}</span>',
+                        useHTML: true
+                    },
+                    plotOptions: {
+                        column: {
+                            pointPadding: 0.2,
+                            borderWidth: 0,
+                            dataLabels: {
+                                enabled: true,
+                                format: '{point.y:.1f}%'
+                            },
+                            colorByPoint: false
+                        }
+                    },
+                    colors: ['#3b82f6'],
+                    legend: {
+                        enabled: false
+                    },
+                    series: [{
+                        name: 'Participation Rate',
+                        data: data.series
+                    }],
+                    exporting: {
+                        enabled: true
+                    }
+                });
+            })
+            .fail(function() {
+                $('#participationRatePerEventChart').html('<div class="text-center text-gray-500">Error loading participation rate per event data</div>');
+            });
+    }
+
+    // Load Participation Rate Trend Chart
     function loadParticipationTrendChart() {
         const params = new URLSearchParams({
             view_type: viewType
@@ -397,7 +600,7 @@
             }
         }
 
-        $.get(`${baseApiUrl}/event-participation-trend?${params.toString()}`)
+        $.get(`${baseApiUrl}/participation-rate-trend?${params.toString()}`)
             .done(function(data) {
                 participationTrendChart = Highcharts.chart('participationTrendChart', {
                     chart: {
@@ -414,21 +617,25 @@
                     },
                     yAxis: {
                         min: 0,
+                        max: 100,
                         title: {
-                            text: 'Total Participants'
+                            text: 'Average Participation Rate (%)'
                         }
                     },
                     tooltip: {
                         headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
-                        pointFormat: '<tr><td style="color:{series.color};padding:0">Participants: </td>' +
-                            '<td style="padding:0"><b>{point.y}</b></td></tr>',
+                        pointFormat: '<tr><td style="color:{series.color};padding:0">Participation Rate: </td>' +
+                            '<td style="padding:0"><b>{point.y:.1f}%</b></td></tr>',
                         footerFormat: '</table>',
                         shared: true,
                         useHTML: true
                     },
                     colors: ['#4A90E2'],
+                    legend: {
+                        enabled: false
+                    },
                     series: [{
-                        name: 'Participants',
+                        name: 'Participation Rate',
                         data: data.series[0],
                         marker: {
                             enabled: true,
@@ -441,11 +648,11 @@
                 });
             })
             .fail(function() {
-                $('#participationTrendChart').html('<div class="text-center text-gray-500">Error loading participation trend data</div>');
+                $('#participationTrendChart').html('<div class="text-center text-gray-500">Error loading participation rate trend data</div>');
             });
     }
 
-    // Load Most Popular Event Categories Chart
+    // Load Event Categories by Participation Rate Chart
     function loadPopularCategoriesChart() {
         const params = new URLSearchParams({
             view_type: viewType
@@ -460,11 +667,11 @@
             }
         }
 
-        $.get(`${baseApiUrl}/popular-event-categories?${params.toString()}`)
+        $.get(`${baseApiUrl}/categories-by-participation-rate?${params.toString()}`)
             .done(function(data) {
                 popularCategoriesChart = Highcharts.chart('popularCategoriesChart', {
                     chart: {
-                        type: 'bar'
+                        type: 'column'
                     },
                     title: {
                         text: null
@@ -473,21 +680,38 @@
                         categories: data.categories,
                         title: {
                             text: 'Event Categories'
+                        },
+                        labels: {
+                            rotation: -45,
+                            style: {
+                                fontSize: '11px'
+                            }
                         }
                     },
                     yAxis: {
                         min: 0,
+                        max: 100,
                         title: {
-                            text: 'Total Participants'
+                            text: 'Average Participation Rate (%)'
+                        }
+                    },
+                    plotOptions: {
+                        column: {
+                            pointPadding: 0.2,
+                            borderWidth: 0,
+                            dataLabels: {
+                                enabled: true,
+                                format: '{point.y:.1f}%'
+                            }
                         }
                     },
                     colors: ['#28a745'],
+                    legend: {
+                        enabled: false
+                    },
                     series: [{
-                        name: 'Participants',
-                        data: data.series,
-                        dataLabels: {
-                            enabled: true
-                        }
+                        name: 'Participation Rate',
+                        data: data.series
                     }],
                     exporting: {
                         enabled: true
@@ -506,7 +730,7 @@
             .done(function(data) {
                 topBarangaysChart = Highcharts.chart('topBarangaysChart', {
                     chart: {
-                        type: 'bar'
+                        type: 'column'
                     },
                     title: {
                         text: null
@@ -515,21 +739,34 @@
                         categories: data.categories,
                         title: {
                             text: 'Barangays'
+                        },
+                        labels: {
+                            rotation: -45,
+                            style: {
+                                fontSize: '11px'
+                            }
                         }
                     },
                     yAxis: {
                         min: 0,
+                        allowDecimals: false,
                         title: {
                             text: 'Total Participants'
+                        }
+                    },
+                    plotOptions: {
+                        column: {
+                            pointPadding: 0.2,
+                            borderWidth: 0,
+                            dataLabels: {
+                                enabled: true
+                            }
                         }
                     },
                     colors: ['#6f42c1'],
                     series: [{
                         name: 'Participants',
-                        data: data.series,
-                        dataLabels: {
-                            enabled: true
-                        }
+                        data: data.series
                     }],
                     exporting: {
                         enabled: true
@@ -580,22 +817,24 @@
                     },
                     yAxis: {
                         min: 0,
+                        allowDecimals: false,
                         title: {
                             text: 'Participants'
-                        },
-                        stackLabels: {
-                            enabled: true,
-                            style: {
-                                fontWeight: 'bold',
-                                color: 'gray'
-                            }
                         }
+                    },
+                    legend: {
+                        enabled: true,
+                        align: 'center',
+                        verticalAlign: 'bottom',
+                        layout: 'horizontal'
                     },
                     plotOptions: {
                         column: {
-                            stacking: 'normal',
+                            pointPadding: 0.2,
+                            borderWidth: 0,
                             dataLabels: {
-                                enabled: false
+                                enabled: true,
+                                format: '{point.y}'
                             }
                         }
                     },

@@ -420,7 +420,14 @@ class AnalyticsController extends BaseController
         $months = $request->getGet('months') ?? 12;
         
         if ($viewType === 'citywide') {
-            $filterBarangay = ($barangayId && $barangayId !== 'all' && $barangayId !== 'city-wide') ? $barangayId : null;
+            // Handle city-wide filter properly
+            if ($barangayId === 'city-wide') {
+                $filterBarangay = 0; // Only city-wide events
+            } elseif ($barangayId && $barangayId !== 'all') {
+                $filterBarangay = $barangayId; // Specific barangay
+            } else {
+                $filterBarangay = null; // All barangays
+            }
             $data = $this->analyticsModel->getEventParticipationTrend($filterBarangay, $months);
         } else {
             $session = session();
@@ -440,6 +447,162 @@ class AnalyticsController extends BaseController
         return $this->response->setJSON([
             'categories' => $categories,
             'series' => [$series]
+        ]);
+    }
+
+    /**
+     * Get participation rate per event
+     */
+    public function getParticipationRatePerEvent()
+    {
+        $request = $this->request;
+        $barangayId = $request->getGet('barangay_id');
+        $viewType = $request->getGet('view_type');
+        
+        if ($viewType === 'citywide') {
+            if ($barangayId === 'city-wide') {
+                // Show only city-wide events (barangay_id = 0)
+                $filterBarangay = 0;
+            } elseif ($barangayId && $barangayId !== 'all') {
+                // Show specific barangay
+                $filterBarangay = $barangayId;
+            } else {
+                // Show all barangays (barangay_id > 0)
+                $filterBarangay = null;
+            }
+            $data = $this->analyticsModel->getEventParticipationRates($filterBarangay, 20);
+        } else {
+            $session = session();
+            $skBarangay = $session->get('sk_barangay');
+            $data = $this->analyticsModel->getEventParticipationRates($skBarangay, 20);
+        }
+        
+        // Transform data for column chart
+        $categories = [];
+        $series = [];
+        
+        foreach ($data as $item) {
+            $categories[] = $item['title'];
+            $series[] = [
+                'y' => round((float)$item['participation_rate_percent'], 1),
+                'target' => (int)$item['target_participants'],
+                'actual' => (int)$item['actual_attendees']
+            ];
+        }
+        
+        return $this->response->setJSON([
+            'categories' => $categories,
+            'series' => $series
+        ]);
+    }
+
+    /**
+     * Get participation rate trend over time
+     */
+    public function getParticipationRateTrend()
+    {
+        $request = $this->request;
+        $barangayId = $request->getGet('barangay_id');
+        $viewType = $request->getGet('view_type');
+        $months = $request->getGet('months') ?? 12;
+        
+        if ($viewType === 'citywide') {
+            if ($barangayId === 'city-wide') {
+                // Show only city-wide events (barangay_id = 0)
+                $filterBarangay = 0;
+            } elseif ($barangayId && $barangayId !== 'all') {
+                // Show specific barangay
+                $filterBarangay = $barangayId;
+            } else {
+                // Show all barangays (barangay_id > 0)
+                $filterBarangay = null;
+            }
+            $data = $this->analyticsModel->getParticipationRateTrendByMonth($filterBarangay, $months);
+        } else {
+            $session = session();
+            $skBarangay = $session->get('sk_barangay');
+            $data = $this->analyticsModel->getParticipationRateTrendByMonth($skBarangay, $months);
+        }
+        
+        // Transform data for line chart
+        $categories = [];
+        $series = [];
+        
+        foreach ($data as $item) {
+            $categories[] = $item['month_name'];
+            $series[] = round($item['avg_participation_rate'], 1);
+        }
+        
+        return $this->response->setJSON([
+            'categories' => $categories,
+            'series' => [$series]
+        ]);
+    }
+
+    /**
+     * Get event categories by participation rate
+     */
+    public function getCategoriesByParticipationRate()
+    {
+        $request = $this->request;
+        $barangayId = $request->getGet('barangay_id');
+        $viewType = $request->getGet('view_type');
+        
+        if ($viewType === 'citywide') {
+            if ($barangayId === 'city-wide') {
+                // Show only city-wide events (barangay_id = 0)
+                $filterBarangay = 0;
+            } elseif ($barangayId && $barangayId !== 'all') {
+                // Show specific barangay
+                $filterBarangay = $barangayId;
+            } else {
+                // Show all barangays (barangay_id > 0)
+                $filterBarangay = null;
+            }
+            $data = $this->analyticsModel->getCategoriesByParticipationRate($filterBarangay);
+        } else {
+            $session = session();
+            $skBarangay = $session->get('sk_barangay');
+            $data = $this->analyticsModel->getCategoriesByParticipationRate($skBarangay);
+        }
+        
+        // Transform data for column chart
+        $categories = [];
+        $series = [];
+        
+        foreach ($data as $item) {
+            $categories[] = $item['category'];
+            $series[] = round($item['avg_participation_rate'], 1);
+        }
+        
+        return $this->response->setJSON([
+            'categories' => $categories,
+            'series' => $series
+        ]);
+    }
+
+    /**
+     * Get top barangays by participation rate
+     */
+    public function getTopBarangaysByParticipationRate()
+    {
+        $data = $this->analyticsModel->getTopBarangaysByParticipationRate();
+        
+        // Transform data for column chart
+        $categories = [];
+        $series = [];
+        
+        foreach ($data as $item) {
+            $categories[] = $item['barangay'];
+            $series[] = [
+                'y' => round((float)$item['avg_participation_rate'], 1),
+                'eventCount' => (int)$item['event_count']
+            ];
+        }
+        
+        return $this->response->setJSON([
+            'categories' => $categories,
+            'series' => $series
         ]);
     }
 
@@ -475,12 +638,48 @@ class AnalyticsController extends BaseController
         $viewType = $request->getGet('view_type');
         
         if ($viewType === 'citywide') {
-            $filterBarangay = ($barangayId && $barangayId !== 'all') ? $barangayId : null;
+            // Handle city-wide filter properly
+            if ($barangayId === 'city-wide') {
+                $filterBarangay = 0; // Only city-wide events
+            } elseif ($barangayId && $barangayId !== 'all') {
+                $filterBarangay = $barangayId; // Specific barangay
+            } else {
+                $filterBarangay = null; // All barangays
+            }
             $data = $this->analyticsModel->getTopActiveMembers($filterBarangay);
         } else {
             $session = session();
             $skBarangay = $session->get('sk_barangay');
             $data = $this->analyticsModel->getTopActiveMembers($skBarangay);
+        }
+        
+        return $this->response->setJSON($data);
+    }
+
+    /**
+     * Get event participation rates
+     */
+    public function getEventParticipationRates()
+    {
+        $request = $this->request;
+        $barangayId = $request->getGet('barangay_id');
+        $viewType = $request->getGet('view_type');
+        $limit = $request->getGet('limit') ?? 10;
+        
+        if ($viewType === 'citywide') {
+            // Handle city-wide filter properly
+            if ($barangayId === 'city-wide') {
+                $filterBarangay = 0; // Only city-wide events
+            } elseif ($barangayId && $barangayId !== 'all') {
+                $filterBarangay = $barangayId; // Specific barangay
+            } else {
+                $filterBarangay = null; // All barangays
+            }
+            $data = $this->analyticsModel->getEventParticipationRates($filterBarangay, $limit);
+        } else {
+            $session = session();
+            $skBarangay = $session->get('sk_barangay');
+            $data = $this->analyticsModel->getEventParticipationRates($skBarangay, $limit);
         }
         
         return $this->response->setJSON($data);
@@ -496,7 +695,16 @@ class AnalyticsController extends BaseController
         $viewType = $request->getGet('view_type');
         
         if ($viewType === 'citywide') {
-            $filterBarangay = ($barangayId && $barangayId !== 'all') ? $barangayId : null;
+            if ($barangayId === 'city-wide') {
+                // Show only city-wide events (barangay_id = 0)
+                $filterBarangay = 0;
+            } elseif ($barangayId && $barangayId !== 'all') {
+                // Show specific barangay
+                $filterBarangay = $barangayId;
+            } else {
+                // Show all barangays (barangay_id > 0)
+                $filterBarangay = null;
+            }
             $data = $this->analyticsModel->getTopActiveSKOfficials($filterBarangay, 5);
         } else {
             $session = session();
@@ -517,7 +725,16 @@ class AnalyticsController extends BaseController
         $viewType = $request->getGet('view_type');
         
         if ($viewType === 'citywide') {
-            $filterBarangay = ($barangayId && $barangayId !== 'all') ? $barangayId : null;
+            if ($barangayId === 'city-wide') {
+                // Show only city-wide events (barangay_id = 0)
+                $filterBarangay = 0;
+            } elseif ($barangayId && $barangayId !== 'all') {
+                // Show specific barangay
+                $filterBarangay = $barangayId;
+            } else {
+                // Show all barangays (barangay_id > 0)
+                $filterBarangay = null;
+            }
             $data = $this->analyticsModel->getTopActiveKKMembers($filterBarangay, 5);
         } else {
             $session = session();
@@ -538,7 +755,14 @@ class AnalyticsController extends BaseController
         $viewType = $request->getGet('view_type');
         
         if ($viewType === 'citywide') {
-            $filterBarangay = ($barangayId && $barangayId !== 'all') ? $barangayId : null;
+            // Handle city-wide filter properly
+            if ($barangayId === 'city-wide') {
+                $filterBarangay = 0; // Only city-wide events
+            } elseif ($barangayId && $barangayId !== 'all') {
+                $filterBarangay = $barangayId; // Specific barangay
+            } else {
+                $filterBarangay = null; // All barangays
+            }
             $data = $this->analyticsModel->getAttendanceConsistency($filterBarangay);
         } else {
             $session = session();
@@ -559,7 +783,14 @@ class AnalyticsController extends BaseController
         $viewType = $request->getGet('view_type');
         
         if ($viewType === 'citywide') {
-            $filterBarangay = ($barangayId && $barangayId !== 'all') ? $barangayId : null;
+            // Handle city-wide filter properly
+            if ($barangayId === 'city-wide') {
+                $filterBarangay = 0; // Only city-wide events
+            } elseif ($barangayId && $barangayId !== 'all') {
+                $filterBarangay = $barangayId; // Specific barangay
+            } else {
+                $filterBarangay = null; // All barangays
+            }
             $data = $this->analyticsModel->getMostPopularEventCategories($filterBarangay);
         } else {
             $session = session();
@@ -630,7 +861,14 @@ class AnalyticsController extends BaseController
         $viewType = $request->getGet('view_type');
         
         if ($viewType === 'citywide') {
-            $filterBarangay = ($barangayId && $barangayId !== 'all') ? $barangayId : null;
+            // Handle city-wide filter properly
+            if ($barangayId === 'city-wide') {
+                $filterBarangay = 0; // Only city-wide events
+            } elseif ($barangayId && $barangayId !== 'all') {
+                $filterBarangay = $barangayId; // Specific barangay
+            } else {
+                $filterBarangay = null; // All barangays
+            }
             $data = $this->analyticsModel->getParticipationByGenderPerEvent($filterBarangay);
         } else {
             $session = session();
@@ -796,7 +1034,15 @@ class AnalyticsController extends BaseController
         }
         
         // Transform data for histogram
-        $groupedData = [];
+        // Initialize all categories with 0 to ensure all ranges appear
+        $groupedData = [
+            'Same day' => 0,
+            '1 day' => 0,
+            '2-3 days' => 0,
+            '4-7 days' => 0,
+            '1-2 weeks' => 0,
+            '2+ weeks' => 0
+        ];
         
         foreach ($data as $item) {
             $days = (int)$item['approval_days'];
@@ -806,9 +1052,6 @@ class AnalyticsController extends BaseController
                        ($days <= 7 ? '4-7 days' : 
                        ($days <= 14 ? '1-2 weeks' : '2+ weeks'))));
             
-            if (!isset($groupedData[$dayRange])) {
-                $groupedData[$dayRange] = 0;
-            }
             $groupedData[$dayRange] += (int)$item['document_count'];
         }
         

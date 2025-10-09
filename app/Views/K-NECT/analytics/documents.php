@@ -246,7 +246,7 @@
             .done(function(data) {
                 documentCategoriesChart = Highcharts.chart('documentCategoriesChart', {
                     chart: {
-                        type: 'bar'
+                        type: 'column'
                     },
                     title: {
                         text: null
@@ -255,10 +255,17 @@
                         categories: data.categories,
                         title: {
                             text: 'Document Categories'
+                        },
+                        labels: {
+                            rotation: -45,
+                            style: {
+                                fontSize: '11px'
+                            }
                         }
                     },
                     yAxis: {
                         min: 0,
+                        allowDecimals: false,
                         title: {
                             text: 'Total Downloads'
                         }
@@ -319,6 +326,7 @@
                     },
                     yAxis: {
                         min: 0,
+                        allowDecimals: false,
                         title: {
                             text: 'Number of Documents'
                         }

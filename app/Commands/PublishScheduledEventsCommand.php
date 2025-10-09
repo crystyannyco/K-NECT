@@ -284,13 +284,26 @@ class PublishScheduledEventsCommand extends BaseCommand
     
     private function formatSmsMessage($event)
     {
-        $startDate = (new \DateTime($event['start_datetime']))->format('F d, Y');
-        $startTime = (new \DateTime($event['start_datetime']))->format('h:i A');
-        $endTime = (new \DateTime($event['end_datetime']))->format('h:i A');
+        $startDateTime = new \DateTime($event['start_datetime']);
+        $endDateTime = new \DateTime($event['end_datetime']);
+        
+        $startDate = $startDateTime->format('F d, Y');
+        $endDate = $endDateTime->format('F d, Y');
+        $startTime = $startDateTime->format('h:i A');
+        $endTime = $endDateTime->format('h:i A');
         
         $message = "NEW EVENT: {$event['title']}\n";
-        $message .= "Date: {$startDate}\n";
-        $message .= "Time: {$startTime} - {$endTime}\n";
+        
+        // Show date range if event spans multiple days
+        if ($startDate !== $endDate) {
+            $message .= "Start: {$startDate} at {$startTime}\n";
+            $message .= "End: {$endDate} at {$endTime}\n";
+        } else {
+            // Same day event
+            $message .= "Date: {$startDate}\n";
+            $message .= "Time: {$startTime} - {$endTime}\n";
+        }
+        
         $message .= "Location: {$event['location']}\n";
         $message .= "Description: {$event['description']}";
         

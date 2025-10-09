@@ -86,17 +86,35 @@ $isSuperAdmin = $userRole === 'super_admin';
         </div>
     </div>
 
-    <div class="form-group mb-4">
-        <label for="location" class="block text-sm font-medium text-gray-700 mb-2">Location <span class="text-red-500">*</span></label>
-        <input 
-            type="text" 
-            id="location" 
-            name="location" 
-            value="<?= isset($event) ? esc($event['location']) : '' ?>"
-            class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-            placeholder="Enter event location"
-        >
-        <p id="location-error" class="text-red-500 text-xs sm:text-sm mt-1" style="display: none;"></p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+            <label for="location" class="block text-sm font-medium text-gray-700 mb-2">Location <span class="text-red-500">*</span></label>
+            <input 
+                type="text" 
+                id="location" 
+                name="location" 
+                value="<?= isset($event) ? esc($event['location']) : '' ?>"
+                class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                placeholder="Enter event location"
+            >
+            <p id="location-error" class="text-red-500 text-xs sm:text-sm mt-1" style="display: none;"></p>
+        </div>
+
+        <div>
+            <label for="target_participants" class="block text-sm font-medium text-gray-700 mb-2">
+                Target No. of Participants <span class="text-red-500">*</span>
+            </label>
+            <input 
+                type="number" 
+                id="target_participants" 
+                name="target_participants" 
+                value="<?= isset($event) ? esc($event['target_participants']) : '' ?>"
+                min="1"
+                class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                placeholder="Enter expected number of attendees"
+            >
+            <p id="target_participants-error" class="text-red-500 text-xs sm:text-sm mt-1" style="display: none;"></p>
+        </div>
     </div>
 
     <div>

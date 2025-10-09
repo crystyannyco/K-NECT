@@ -50,14 +50,20 @@ $barangay_name = isset($barangay_name) ? $barangay_name : 'Unknown Barangay';
                 </div>
             </div>
 
-            <!-- Status Filter Tabs - Only Published for KK users -->
+            <!-- Status Filter Tabs -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
                 <div class="p-4 border-b border-gray-200">
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                        <!-- Status Filter Tabs - Only Published -->
+                        <!-- Status Filter Tabs - Ongoing, Upcoming, Completed -->
                         <div class="flex flex-wrap gap-2">
-                            <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all bg-blue-600 text-white border border-blue-600" data-status="Published">
-                                <i class="fas fa-check-circle mr-2"></i>Published
+                            <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all bg-blue-600 text-white border border-blue-600" data-status="ongoing">
+                                <i class="fas fa-play-circle mr-2"></i>Ongoing
+                            </button>
+                            <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all bg-white text-gray-700 border border-gray-300 hover:bg-gray-50" data-status="upcoming">
+                                <i class="fas fa-calendar-alt mr-2"></i>Upcoming
+                            </button>
+                            <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all bg-white text-gray-700 border border-gray-300 hover:bg-gray-50" data-status="completed">
+                                <i class="fas fa-check-circle mr-2"></i>Completed
                             </button>
                         </div>
                         
@@ -89,16 +95,37 @@ $barangay_name = isset($barangay_name) ? $barangay_name : 'Unknown Barangay';
                             <div>
                                 <div class="space-y-4 flex flex-col" style="cursor: auto;">
                                     <?php if (!empty($events)): ?>
-                                        <?php foreach ($events as $event): ?>
-                                            <?php
-                                                $desc = esc($event['description']);
-                                                $shortDesc = mb_strlen($desc) > 120 ? mb_substr($desc, 0, 120) . '...' : $desc;
-                                                $modalId = 'eventModal_' . $event['event_id'];
-                                                $status = isset($event['status']) ? $event['status'] : 'Published';
-                                                $banner = !empty($event['event_banner']) ? "/uploads/event/" . esc($event['event_banner']) : "/assets/images/default-event-banner.svg";
-                                                $category = isset($event['category']) ? $event['category'] : '';
-                                            ?>
-                                            <div class="flex items-center w-full event-row" data-status="<?= $status ?>" data-category="<?= esc($category) ?>">
+                                        <?php 
+                                        $currentDateTime = new DateTime();
+                                        foreach ($events as $event): 
+                                            $desc = esc($event['description']);
+                                            $shortDesc = mb_strlen($desc) > 120 ? mb_substr($desc, 0, 120) . '...' : $desc;
+                                            $modalId = 'eventModal_' . $event['event_id'];
+                                            $banner = !empty($event['event_banner']) ? "/uploads/event/" . esc($event['event_banner']) : "/assets/images/default-event-banner.svg";
+                                            $category = isset($event['category']) ? $event['category'] : '';
+                                            
+                                            // Determine event status based on dates
+                                            $startDateTime = new DateTime($event['start_datetime']);
+                                            $endDateTime = new DateTime($event['end_datetime']);
+                                            
+                                            if ($currentDateTime < $startDateTime) {
+                                                $eventStatus = 'upcoming';
+                                                $statusLabel = 'Upcoming';
+                                                $statusColor = 'bg-yellow-100 text-yellow-800 border-yellow-200';
+                                                $statusDotColor = 'text-yellow-500';
+                                            } elseif ($currentDateTime >= $startDateTime && $currentDateTime <= $endDateTime) {
+                                                $eventStatus = 'ongoing';
+                                                $statusLabel = 'Ongoing';
+                                                $statusColor = 'bg-green-100 text-green-800 border-green-200';
+                                                $statusDotColor = 'text-green-500';
+                                            } else {
+                                                $eventStatus = 'completed';
+                                                $statusLabel = 'Completed';
+                                                $statusColor = 'bg-gray-100 text-gray-800 border-gray-200';
+                                                $statusDotColor = 'text-gray-500';
+                                            }
+                                        ?>
+                                            <div class="flex items-center w-full event-row" data-status="<?= $eventStatus ?>" data-category="<?= esc($category) ?>">
                                                 <div class="group bg-white rounded-lg shadow p-4 flex flex-col md:flex-row items-start md:items-stretch gap-4 w-full cursor-pointer transition-transform duration-200 hover:shadow-lg hover:-translate-y-0.5" onclick="openEventModal('<?= $modalId ?>')">
                                                 <div class="flex-shrink-0 w-full md:w-64 h-40 md:h-40 mb-2 md:mb-0">
                                                     <img class="object-cover shadow-lg rounded-lg group-hover:opacity-75 w-full h-full" src="<?= $banner ?>" alt="Event Banner">
@@ -112,16 +139,16 @@ $barangay_name = isset($barangay_name) ? $barangay_name : 'Unknown Barangay';
                                                                     <?= ucfirst(esc($category)) ?>
                                                                 </span>
                                                             <?php endif; ?>
-                                                            <span class="inline-flex items-center leading-none px-2.5 py-1.5 text-xs font-medium bg-green-100 text-green-800 rounded-full border border-green-200">
-                                                                <svg class="mr-1.5 h-2 w-2 text-green-500" fill="currentColor" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3"></circle></svg>
-                                                                <?= esc($status) ?>
+                                                            <span class="inline-flex items-center leading-none px-2.5 py-1.5 text-xs font-medium <?= $statusColor ?> rounded-full border">
+                                                                <svg class="mr-1.5 h-2 w-2 <?= $statusDotColor ?>" fill="currentColor" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3"></circle></svg>
+                                                                <?= $statusLabel ?>
                                                             </span>
                                                         </div>
                                                         <h4 class="text-xl font-bold text-gray-900 group-hover:text-blue-700 mb-2"><?= esc($event['title']) ?></h4>
                                                         <p class="mt-1 text-sm font-normal text-gray-700 leading-5 mb-2"><?= $shortDesc ?></p>
                                                         <div class="flex flex-col text-xs text-gray-500 mb-2">
-                                                            <span><strong>Start:</strong> <?= date('m-d-Y h:i A', strtotime($event['start_datetime'])) ?></span>
-                                                            <span><strong>End:</strong> <?= date('m-d-Y h:i A', strtotime($event['end_datetime'])) ?></span>
+                                                            <span><strong>Start:</strong> <?= date('F d, Y \a\t h:i A', strtotime($event['start_datetime'])) ?></span>
+                                                            <span><strong>End:</strong> <?= date('F d, Y \a\t h:i A', strtotime($event['end_datetime'])) ?></span>
                                                             <span><strong>Location:</strong> <?= esc($event['location']) ?></span>
                                                         </div>
                                                     </div>
@@ -317,22 +344,26 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// Category filtering functionality
+// Status and Category filtering functionality
 (function() {
+    const statusTabs = document.querySelectorAll('.status-tab');
     const categoryFilter = document.getElementById('categoryFilter');
     const clearFiltersBtn = document.getElementById('clearFilters');
     const eventRows = document.querySelectorAll('.event-row');
+    let currentStatus = 'ongoing'; // Default to ongoing
 
     function filterEvents() {
         const selectedCategory = categoryFilter ? categoryFilter.value.toLowerCase() : '';
         
         eventRows.forEach(row => {
+            const eventStatus = row.dataset.status ? row.dataset.status.toLowerCase() : '';
             const eventCategory = row.dataset.category ? row.dataset.category.toLowerCase() : '';
             
-            // Show row if no category filter or category matches
+            // Show row if status matches AND (no category filter or category matches)
+            const statusMatch = eventStatus === currentStatus;
             const categoryMatch = !selectedCategory || eventCategory === selectedCategory;
             
-            if (categoryMatch) {
+            if (statusMatch && categoryMatch) {
                 row.style.display = '';
             } else {
                 row.style.display = 'none';
@@ -340,22 +371,48 @@ document.addEventListener('keydown', function(e) {
         });
     }
 
-    // Event listeners
+    // Status tab click handlers
+    statusTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            // Remove active class from all tabs
+            statusTabs.forEach(t => {
+                t.classList.remove('bg-blue-600', 'text-white');
+                t.classList.add('bg-white', 'text-gray-700', 'border-gray-300', 'hover:bg-gray-50');
+            });
+            
+            // Add active class to clicked tab
+            this.classList.remove('bg-white', 'text-gray-700', 'border-gray-300', 'hover:bg-gray-50');
+            this.classList.add('bg-blue-600', 'text-white');
+            
+            // Update current status
+            currentStatus = this.dataset.status;
+            
+            // Apply filters
+            filterEvents();
+        });
+    });
+
+    // Category filter change handler
     if (categoryFilter) {
         categoryFilter.addEventListener('change', filterEvents);
     }
 
+    // Clear filters button handler
     if (clearFiltersBtn) {
         clearFiltersBtn.addEventListener('click', function() {
-            // Reset category filter
+            // Don't reset status filter - keep current tab
+            // Only reset category filter
             if (categoryFilter) {
                 categoryFilter.value = '';
             }
             
-            // Apply filters (show all)
+            // Apply filters (maintains current status tab)
             filterEvents();
         });
     }
+
+    // Initial filter on page load
+    filterEvents();
 })();
 </script>
 

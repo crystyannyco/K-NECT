@@ -35,7 +35,7 @@ class UserAnalyticsController extends BaseController
             'user_summary' => $this->userAnalyticsModel->getUserSummary($userId),
             'event_stats' => $this->userAnalyticsModel->getUserEventStats($userId),
             'profile_completeness' => $this->userAnalyticsModel->getUserProfileCompleteness($userId),
-            'recent_attendance' => $this->userAnalyticsModel->getUserRecentAttendance($userId, 8),
+            'recent_attendance' => $this->userAnalyticsModel->getUserRecentAttendance($userId, 5),
             'favorite_categories' => $this->userAnalyticsModel->getUserFavoriteEventCategories($userId),
             'achievements' => $this->userAnalyticsModel->getUserAchievements($userId),
             'barangay_comparison' => $this->userAnalyticsModel->getUserBarangayComparison($userId),

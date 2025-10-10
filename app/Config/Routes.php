@@ -291,6 +291,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->get('analytics/pederasyon/youth-classification', 'AnalyticsController::getYouthClassificationDistribution');
     $routes->get('analytics/pederasyon/civil-status', 'AnalyticsController::getCivilStatusDistribution');
     $routes->get('analytics/pederasyon/work-status', 'AnalyticsController::getWorkStatusDistribution');
+    $routes->get('analytics/pederasyon/voter-classification', 'AnalyticsController::getVoterClassificationDistribution');
     $routes->get('analytics/pederasyon/educational-background', 'AnalyticsController::getEducationalBackgroundDistribution');
     $routes->get('analytics/pederasyon/gender-by-barangay', 'AnalyticsController::getGenderByBarangay');
 
@@ -315,7 +316,6 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->get('pederasyon/document-analytics', 'AnalyticsController::pederasyonDocumentAnalytics');
     $routes->get('analytics/pederasyon/document-summary', 'AnalyticsController::getFilteredDocumentSummary');
     $routes->get('analytics/pederasyon/document-categories', 'AnalyticsController::getMostAccessedDocumentCategories');
-    $routes->get('analytics/pederasyon/document-approval-time', 'AnalyticsController::getDocumentApprovalTime');
     $routes->get('analytics/pederasyon/top-downloaded-documents', 'AnalyticsController::getTopDownloadedDocuments');
 
     // Performance Analytics
@@ -334,6 +334,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->get('analytics/sk/youth-classification', 'AnalyticsController::getYouthClassificationDistribution');
     $routes->get('analytics/sk/civil-status', 'AnalyticsController::getCivilStatusDistribution');
     $routes->get('analytics/sk/work-status', 'AnalyticsController::getWorkStatusDistribution');
+    $routes->get('analytics/sk/voter-classification', 'AnalyticsController::getVoterClassificationDistribution');
     $routes->get('analytics/sk/educational-background', 'AnalyticsController::getEducationalBackgroundDistribution');
 
     // SK Event Analytics
@@ -354,7 +355,6 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->get('sk/document-analytics', 'AnalyticsController::skDocumentAnalytics');
     $routes->get('analytics/sk/document-summary', 'AnalyticsController::getFilteredDocumentSummary');
     $routes->get('analytics/sk/document-categories', 'AnalyticsController::getMostAccessedDocumentCategories');
-    $routes->get('analytics/sk/document-approval-time', 'AnalyticsController::getDocumentApprovalTime');
     $routes->get('analytics/sk/top-downloaded-documents', 'AnalyticsController::getTopDownloadedDocuments');
 
     // SK Performance Analytics

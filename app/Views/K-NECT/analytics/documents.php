@@ -23,7 +23,6 @@
                         <label for="barangayFilter" class="block text-sm font-medium text-gray-700 mb-2">Filter by Barangay:</label>
                         <select id="barangayFilter" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="all">All Barangays</option>
-                            <option value="city-wide">City-wide</option>
                             <?php if (isset($barangays)): ?>
                                 <?php foreach ($barangays as $barangay): ?>
                                     <option value="<?= $barangay['barangay_id'] ?>"><?= $barangay['name'] ?></option>
@@ -37,35 +36,19 @@
         <?php endif; ?>
 
         <!-- Summary Cards -->
-        <div class="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div class="bg-white rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 p-6 summary-card" data-metric="total_approved_documents">
+        <div class="mb-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 p-6 summary-card" data-metric="total_uploads">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
                         <div class="w-10 h-10 bg-gradient-to-br from-blue-900 to-blue-800 rounded-xl flex items-center justify-center shadow-sm">
                             <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                             </svg>
                         </div>
                     </div>
                     <div class="ml-4 flex-1">
-                        <h3 class="text-sm font-medium text-gray-500 metric-label">Approved Documents</h3>
-                        <p class="text-2xl font-bold text-gray-800 metric-value"><?= $document_summary['total_approved_documents'] ?? 0 ?></p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 p-6 summary-card" data-metric="total_pending_documents">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-10 h-10 bg-gradient-to-br from-gray-700 to-gray-600 rounded-xl flex items-center justify-center shadow-sm">
-                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="ml-4 flex-1">
-                        <h3 class="text-sm font-medium text-gray-500 metric-label">Pending Approval</h3>
-                        <p class="text-2xl font-bold text-gray-800 metric-value"><?= $document_summary['total_pending_documents'] ?? 0 ?></p>
+                        <h3 class="text-sm font-medium text-gray-500 metric-label">Total Uploads</h3>
+                        <p class="text-2xl font-bold text-gray-800 metric-value"><?= $document_summary['total_uploads'] ?? 0 ?></p>
                     </div>
                 </div>
             </div>
@@ -85,27 +68,10 @@
                     </div>
                 </div>
             </div>
-
-            <div class="bg-white rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 p-6 summary-card" data-metric="avg_approval_time_days">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-10 h-10 bg-gradient-to-br from-slate-700 to-slate-600 rounded-xl flex items-center justify-center shadow-sm">
-                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="ml-4 flex-1">
-                        <h3 class="text-sm font-medium text-gray-500 metric-label">Avg Approval Time</h3>
-                        <p class="text-2xl font-bold text-gray-800 metric-value"><?= round($document_summary['avg_approval_time_days'] ?? 0, 1) ?> days</p>
-                    </div>
-                </div>
-            </div>
         </div>
 
-        <!-- Charts Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <!-- Most Accessed Document Categories -->
+        <!-- Most Accessed Document Categories Chart -->
+        <div class="mb-6">
             <div class="bg-white rounded-lg shadow-sm">
                 <div class="p-6 border-b border-gray-200">
                     <h3 class="text-lg font-semibold text-gray-900 flex items-center">
@@ -117,21 +83,6 @@
                 </div>
                 <div class="p-6">
                     <div id="documentCategoriesChart" style="height: 300px;"></div>
-                </div>
-            </div>
-
-            <!-- Document Approval Time -->
-            <div class="bg-white rounded-lg shadow-sm">
-                <div class="p-6 border-b border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-900 flex items-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        Document Approval Time Distribution
-                    </h3>
-                </div>
-                <div class="p-6">
-                    <div id="approvalTimeChart" style="height: 300px;"></div>
                 </div>
             </div>
         </div>
@@ -167,12 +118,11 @@
     const baseApiUrl = viewType === 'citywide' ? '/analytics/pederasyon' : '/analytics/sk';
 
     // Chart instances
-    let documentCategoriesChart, approvalTimeChart;
+    let documentCategoriesChart;
 
     // Initialize charts when document is ready
     $(document).ready(function() {
         loadDocumentCategoriesChart();
-        loadApprovalTimeChart();
         loadTopDocumentsTable();
         
         <?php if ($view_type === 'citywide'): ?>
@@ -187,7 +137,6 @@
     // Function to refresh all charts (for filter changes)
     function refreshCharts() {
         loadDocumentCategoriesChart();
-        loadApprovalTimeChart();
         loadTopDocumentsTable();
         loadDocumentSummaryCards(); // Refresh summary cards with filtered data
     }
@@ -216,11 +165,7 @@
                     const $valueElement = $card.find('.metric-value');
                     
                     if (data[metric] !== undefined) {
-                        if (metric === 'avg_approval_time_days') {
-                            $valueElement.text(Math.round(data[metric] * 10) / 10 + ' days');
-                        } else {
-                            $valueElement.text(data[metric] || 0);
-                        }
+                        $valueElement.text(data[metric] || 0);
                     }
                 });
             })
@@ -293,67 +238,6 @@
             })
             .fail(function() {
                 $('#documentCategoriesChart').html('<div class="text-center text-gray-500">Error loading document categories data</div>');
-            });
-    }
-
-    // Load Document Approval Time Chart
-    function loadApprovalTimeChart() {
-        const params = new URLSearchParams({
-            view_type: viewType
-        });
-        
-        if (viewType === 'citywide') {
-            const barangayId = $('#barangayFilter').val();
-            if (barangayId) {
-                params.append('barangay_id', barangayId);
-            }
-        }
-
-        $.get(`${baseApiUrl}/document-approval-time?${params.toString()}`)
-            .done(function(data) {
-                approvalTimeChart = Highcharts.chart('approvalTimeChart', {
-                    chart: {
-                        type: 'column'
-                    },
-                    title: {
-                        text: null
-                    },
-                    xAxis: {
-                        categories: data.categories,
-                        title: {
-                            text: 'Approval Time Range'
-                        }
-                    },
-                    yAxis: {
-                        min: 0,
-                        allowDecimals: false,
-                        title: {
-                            text: 'Number of Documents'
-                        }
-                    },
-                    tooltip: {
-                        headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
-                        pointFormat: '<tr><td style="color:{series.color};padding:0">Documents: </td>' +
-                            '<td style="padding:0"><b>{point.y}</b></td></tr>',
-                        footerFormat: '</table>',
-                        shared: true,
-                        useHTML: true
-                    },
-                    colors: ['#6f42c1'],
-                    series: [{
-                        name: 'Documents',
-                        data: data.series,
-                        dataLabels: {
-                            enabled: true
-                        }
-                    }],
-                    exporting: {
-                        enabled: true
-                    }
-                });
-            })
-            .fail(function() {
-                $('#approvalTimeChart').html('<div class="text-center text-gray-500">Error loading approval time data</div>');
             });
     }
 

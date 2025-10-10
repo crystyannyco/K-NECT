@@ -33,7 +33,6 @@
                         <label for="barangayFilter" class="block text-sm font-medium text-gray-700 mb-2">Filter by Barangay:</label>
                         <select id="barangayFilter" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="all">All Barangays</option>
-                            <option value="city-wide">City-wide</option>
                             <?php if (isset($barangays)): ?>
                                 <?php foreach ($barangays as $barangay): ?>
                                     <option value="<?= $barangay['barangay_id'] ?>"><?= $barangay['name'] ?></option>
@@ -350,12 +349,16 @@
         const genderParticipationSection = $('#genderParticipationSection');
         
         if (selectedValue === 'all') {
-            // Show Top Engaged Barangays ONLY for "All Barangays" filter
-            topBarangaysSection.show();
-            genderParticipationSection.hide();
+            // Hide the Top Engaged Barangays section for "All Barangays" filter
+            // Keep only the "Top Engaged Barangays (Avg Participation Rate %)" in the participation rate section above
+            topBarangaysSection.hide();
             
-            // Load barangays chart
-            loadTopBarangaysChart();
+            // Show gender participation chart with full width
+            genderParticipationSection.show();
+            genderParticipationSection.addClass('lg:col-span-2');
+            
+            // Load gender participation chart
+            loadGenderParticipationChart();
         } else {
             // Hide Top Engaged Barangays for "City-wide" and specific barangay selections
             topBarangaysSection.hide();

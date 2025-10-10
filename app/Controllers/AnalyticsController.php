@@ -189,7 +189,7 @@ class AnalyticsController extends BaseController
         $chartData = [];
         foreach ($data as $item) {
             $chartData[] = [
-                'name' => $item['voter_classification'],
+                'name' => $item['youth_classification'],
                 'y' => (int)$item['total']
             ];
         }
@@ -287,6 +287,215 @@ class AnalyticsController extends BaseController
         
         foreach ($data as $item) {
             $categories[] = $item['educational_background'];
+            $series[] = (int)$item['total'];
+        }
+        
+        return $this->response->setJSON([
+            'categories' => $categories,
+            'series' => $series
+        ]);
+    }
+
+    /**
+     * AJAX endpoint to get SK voter distribution data
+     */
+    public function getSKVoterDistribution()
+    {
+        $request = $this->request;
+        $barangayId = $request->getGet('barangay_id');
+        $viewType = $request->getGet('view_type');
+        
+        if ($viewType === 'citywide') {
+            $filterBarangay = ($barangayId && $barangayId !== 'all') ? $barangayId : null;
+            $data = $this->analyticsModel->getSKVoterDistribution($filterBarangay);
+        } else {
+            $session = session();
+            $skBarangay = $session->get('sk_barangay');
+            $data = $this->analyticsModel->getSKVoterDistribution($skBarangay);
+        }
+        
+        $chartData = [];
+        foreach ($data as $item) {
+            $chartData[] = [
+                'name' => $item['sk_voter'],
+                'y' => (int)$item['total']
+            ];
+        }
+        
+        return $this->response->setJSON($chartData);
+    }
+
+    /**
+     * AJAX endpoint to get SK election participation distribution data
+     */
+    public function getSKElectionDistribution()
+    {
+        $request = $this->request;
+        $barangayId = $request->getGet('barangay_id');
+        $viewType = $request->getGet('view_type');
+        
+        if ($viewType === 'citywide') {
+            $filterBarangay = ($barangayId && $barangayId !== 'all') ? $barangayId : null;
+            $data = $this->analyticsModel->getSKElectionDistribution($filterBarangay);
+        } else {
+            $session = session();
+            $skBarangay = $session->get('sk_barangay');
+            $data = $this->analyticsModel->getSKElectionDistribution($skBarangay);
+        }
+        
+        $chartData = [];
+        foreach ($data as $item) {
+            $chartData[] = [
+                'name' => $item['sk_election'],
+                'y' => (int)$item['total']
+            ];
+        }
+        
+        return $this->response->setJSON($chartData);
+    }
+
+    /**
+     * AJAX endpoint to get national voter distribution data
+     */
+    public function getNationalVoterDistribution()
+    {
+        $request = $this->request;
+        $barangayId = $request->getGet('barangay_id');
+        $viewType = $request->getGet('view_type');
+        
+        if ($viewType === 'citywide') {
+            $filterBarangay = ($barangayId && $barangayId !== 'all') ? $barangayId : null;
+            $data = $this->analyticsModel->getNationalVoterDistribution($filterBarangay);
+        } else {
+            $session = session();
+            $skBarangay = $session->get('sk_barangay');
+            $data = $this->analyticsModel->getNationalVoterDistribution($skBarangay);
+        }
+        
+        $chartData = [];
+        foreach ($data as $item) {
+            $chartData[] = [
+                'name' => $item['national_voter'],
+                'y' => (int)$item['total']
+            ];
+        }
+        
+        return $this->response->setJSON($chartData);
+    }
+
+    /**
+     * AJAX endpoint to get KK assembly attendance distribution data
+     */
+    public function getKKAssemblyDistribution()
+    {
+        $request = $this->request;
+        $barangayId = $request->getGet('barangay_id');
+        $viewType = $request->getGet('view_type');
+        
+        if ($viewType === 'citywide') {
+            $filterBarangay = ($barangayId && $barangayId !== 'all') ? $barangayId : null;
+            $data = $this->analyticsModel->getKKAssemblyDistribution($filterBarangay);
+        } else {
+            $session = session();
+            $skBarangay = $session->get('sk_barangay');
+            $data = $this->analyticsModel->getKKAssemblyDistribution($skBarangay);
+        }
+        
+        $chartData = [];
+        foreach ($data as $item) {
+            $chartData[] = [
+                'name' => $item['kk_assembly'],
+                'y' => (int)$item['total']
+            ];
+        }
+        
+        return $this->response->setJSON($chartData);
+    }
+
+    /**
+     * AJAX endpoint to get KK assembly frequency distribution data
+     */
+    public function getKKAssemblyFrequencyDistribution()
+    {
+        $request = $this->request;
+        $barangayId = $request->getGet('barangay_id');
+        $viewType = $request->getGet('view_type');
+        
+        if ($viewType === 'citywide') {
+            $filterBarangay = ($barangayId && $barangayId !== 'all') ? $barangayId : null;
+            $data = $this->analyticsModel->getKKAssemblyFrequencyDistribution($filterBarangay);
+        } else {
+            $session = session();
+            $skBarangay = $session->get('sk_barangay');
+            $data = $this->analyticsModel->getKKAssemblyFrequencyDistribution($skBarangay);
+        }
+        
+        $categories = [];
+        $series = [];
+        
+        foreach ($data as $item) {
+            $categories[] = $item['frequency'];
+            $series[] = (int)$item['total'];
+        }
+        
+        return $this->response->setJSON([
+            'categories' => $categories,
+            'series' => $series
+        ]);
+    }
+
+    /**
+     * AJAX endpoint to get voter classification distribution data
+     */
+    public function getVoterClassificationDistribution()
+    {
+        $request = $this->request;
+        $barangayId = $request->getGet('barangay_id');
+        $viewType = $request->getGet('view_type');
+        
+        if ($viewType === 'citywide') {
+            $filterBarangay = ($barangayId && $barangayId !== 'all') ? $barangayId : null;
+            $data = $this->analyticsModel->getVoterClassificationDistribution($filterBarangay);
+        } else {
+            $session = session();
+            $skBarangay = $session->get('sk_barangay');
+            $data = $this->analyticsModel->getVoterClassificationDistribution($skBarangay);
+        }
+        
+        $chartData = [];
+        foreach ($data as $item) {
+            $chartData[] = [
+                'name' => $item['voter_classification'],
+                'y' => (int)$item['total']
+            ];
+        }
+        
+        return $this->response->setJSON($chartData);
+    }
+
+    /**
+     * AJAX endpoint to get youth age group distribution data
+     */
+    public function getYouthAgeGroupDistribution()
+    {
+        $request = $this->request;
+        $barangayId = $request->getGet('barangay_id');
+        $viewType = $request->getGet('view_type');
+        
+        if ($viewType === 'citywide') {
+            $filterBarangay = ($barangayId && $barangayId !== 'all') ? $barangayId : null;
+            $data = $this->analyticsModel->getYouthAgeGroupDistribution($filterBarangay);
+        } else {
+            $session = session();
+            $skBarangay = $session->get('sk_barangay');
+            $data = $this->analyticsModel->getYouthAgeGroupDistribution($skBarangay);
+        }
+        
+        $categories = [];
+        $series = [];
+        
+        foreach ($data as $item) {
+            $categories[] = $item['age_group'];
             $series[] = (int)$item['total'];
         }
         
@@ -1011,53 +1220,6 @@ class AnalyticsController extends BaseController
         return $this->response->setJSON([
             'categories' => $categories,
             'series' => $series
-        ]);
-    }
-
-    /**
-     * Get document approval time
-     */
-    public function getDocumentApprovalTime()
-    {
-        $request = $this->request;
-        $barangayId = $request->getGet('barangay_id');
-        $viewType = $request->getGet('view_type');
-        
-        if ($viewType === 'citywide') {
-            $filterBarangay = ($barangayId && $barangayId !== 'all' && $barangayId !== 'city-wide') ? $barangayId : null;
-            $data = $this->analyticsModel->getDocumentApprovalTime($filterBarangay);
-        } else {
-            // SK view - barangay specific
-            $session = session();
-            $skBarangay = $session->get('sk_barangay');
-            $data = $this->analyticsModel->getDocumentApprovalTime($skBarangay);
-        }
-        
-        // Transform data for histogram
-        // Initialize all categories with 0 to ensure all ranges appear
-        $groupedData = [
-            'Same day' => 0,
-            '1 day' => 0,
-            '2-3 days' => 0,
-            '4-7 days' => 0,
-            '1-2 weeks' => 0,
-            '2+ weeks' => 0
-        ];
-        
-        foreach ($data as $item) {
-            $days = (int)$item['approval_days'];
-            $dayRange = $days == 0 ? 'Same day' : 
-                       ($days == 1 ? '1 day' : 
-                       ($days <= 3 ? '2-3 days' : 
-                       ($days <= 7 ? '4-7 days' : 
-                       ($days <= 14 ? '1-2 weeks' : '2+ weeks'))));
-            
-            $groupedData[$dayRange] += (int)$item['document_count'];
-        }
-        
-        return $this->response->setJSON([
-            'categories' => array_keys($groupedData),
-            'series' => array_values($groupedData)
         ]);
     }
 

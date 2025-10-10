@@ -5,7 +5,7 @@
         <!-- Page Header -->
         <div class="mb-6">
             <h1 class="text-2xl font-bold text-gray-900">My Analytics Dashboard</h1>
-            <p class="text-gray-600">Track your participation and engagement in K-NECT activities</p>
+            <p class="text-gray-600">Track your participation and engagement in SK activities</p>
         </div>
 
         <!-- User Summary Cards -->

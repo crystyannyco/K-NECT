@@ -25,24 +25,13 @@
     <main class="flex-1 overflow-auto p-6 bg-gray-50">
         
         <div class="max-w-7xl mx-auto">
-            <!-- Header -->
-            <div class="flex justify-between items-center mb-6">
-                <div>
-                    <h1 class="text-3xl font-bold text-blue-700">City-wide Event List</h1>
-                    <p class="text-gray-600 mt-1">Manage events across all barangays</p>
-                </div>
-                <div>
-                    <button id="addCityWideBtn" onclick="openEventModal('add')" class="bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-blue-700 transition duration-200">
-                        <i class="fas fa-plus mr-2"></i>Add New City-wide Event
-                    </button>
-                </div>
-            </div>
-
-            <!-- Tabbed Google Calendar UI -->
+            <!-- Tabbed Google Calendar UI with Add Button -->
             <?php if (!empty($calendar_tabs)): ?>
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
                     <div class="p-4">
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center justify-between gap-4">
+                            <!-- Left side: Tabs with scroll buttons -->
+                            <div class="flex items-center gap-2 flex-1 min-w-0">
                             <!-- Left Arrow Button -->
                             <button 
                                 id="scrollLeft" 
@@ -57,6 +46,10 @@
                             <!-- Scrollable tabs container -->
                             <div id="tabBarWrapper" class="overflow-x-auto whitespace-nowrap scrollbar-hide cursor-grab select-none bg-gray-100 p-1 rounded-lg relative flex-1 min-w-0" style="user-select: none;">
                                 <?php foreach ($calendar_tabs as $i => $tab): ?>
+                                    <?php 
+                                    // Skip duplicate City-wide tab if it's not the first one
+                                    if ($i > 0 && $tab['label'] === 'City-wide') continue;
+                                    ?>
                                     <button 
                                         data-barangay-id="<?= isset($barangays[$i]['barangay_id']) ? (int)$barangays[$i]['barangay_id'] : 0 ?>"
                                         class="<?= $i === 0 ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:text-gray-900' ?> px-4 py-2 rounded-md font-medium transition duration-200 inline-block"
@@ -78,6 +71,14 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                                 </svg>
                             </button>
+                            </div>
+                            
+                            <!-- Right side: Add Event Button -->
+                            <div class="flex-shrink-0">
+                                <button id="addCityWideBtn" onclick="openEventModal('add')" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-200 shadow-sm hover:shadow-md whitespace-nowrap">
+                                    <i class="fas fa-plus mr-2"></i>Add New City-wide Event
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -118,12 +119,13 @@
             })();
 
             // Global filtering state
-            let globalActiveStatus = 'ongoing';
+            let globalActiveStatus = 'all';
             let globalActiveBarangayId = 0;
             let globalActiveCategory = '';
 
             // Consolidated filtering function
             function filterEvents() {
+                let visibleCount = 0;
                 document.querySelectorAll('.event-row').forEach(function(row) {
                     const rowStatus = row.getAttribute('data-status');
                     const rowBarangayId = parseInt(row.getAttribute('data-barangay-id'));
@@ -135,7 +137,10 @@
                     // Check if viewing city-wide tab or specific barangay
                     if (globalActiveBarangayId === 0) {
                         // City-wide: apply status/temporal filtering
-                        if (globalActiveStatus === 'ongoing' || globalActiveStatus === 'upcoming' || globalActiveStatus === 'completed') {
+                        if (globalActiveStatus === 'all') {
+                            // Show only ongoing, upcoming, and completed (exclude Draft and Scheduled)
+                            shouldShow = (rowStatus === 'Published' && ['ongoing', 'upcoming', 'completed'].includes(rowTemporal));
+                        } else if (globalActiveStatus === 'ongoing' || globalActiveStatus === 'upcoming' || globalActiveStatus === 'completed') {
                             // For temporal statuses, show only Published events with matching temporal status
                             shouldShow = (rowStatus === 'Published' && rowTemporal === globalActiveStatus);
                         } else {
@@ -156,7 +161,93 @@
                     }
                     
                     row.style.display = shouldShow ? '' : 'none';
+                    if (shouldShow) visibleCount++;
                 });
+                
+                // Show/hide "no events" message
+                updateNoEventsMessage(visibleCount);
+            }
+            
+            // Function to show/hide no events message
+            function updateNoEventsMessage(visibleCount) {
+                let noEventsMsg = document.getElementById('noEventsMessage');
+                
+                // Get the current status for dynamic message
+                let statusText = '';
+                let statusIcon = 'fa-calendar-times';
+                let iconColor = 'text-gray-300';
+                let suggestion = 'Try adjusting your filters or selecting a different tab.';
+                
+                switch(globalActiveStatus) {
+                    case 'all':
+                        statusText = 'No events found.';
+                        statusIcon = 'fa-calendar-times';
+                        iconColor = 'text-gray-300';
+                        suggestion = 'There are no ongoing, upcoming, or completed events. Create a new event to get started.';
+                        break;
+                    case 'ongoing':
+                        statusText = 'No ongoing events found.';
+                        statusIcon = 'fa-calendar-times';
+                        iconColor = 'text-gray-300';
+                        suggestion = 'There are no events currently in progress. Check upcoming events or try a different tab.';
+                        break;
+                    case 'upcoming':
+                        statusText = 'No upcoming events found.';
+                        statusIcon = 'fa-calendar-times';
+                        iconColor = 'text-gray-300';
+                        suggestion = 'There are no scheduled upcoming events. Check other tabs or create a new event.';
+                        break;
+                    case 'completed':
+                        statusText = 'No completed events found.';
+                        statusIcon = 'fa-calendar-times';
+                        iconColor = 'text-gray-300';
+                        suggestion = 'There are no completed events yet. Check ongoing or upcoming events.';
+                        break;
+                    case 'Draft':
+                        statusText = 'No draft events found.';
+                        statusIcon = 'fa-calendar-times';
+                        iconColor = 'text-gray-300';
+                        suggestion = 'There are no draft events. All events may be published or you can create a new draft.';
+                        break;
+                    case 'Scheduled':
+                        statusText = 'No scheduled events found.';
+                        statusIcon = 'fa-calendar-times';
+                        iconColor = 'text-gray-300';
+                        suggestion = 'There are no events scheduled for auto-publishing. Check other status tabs.';
+                        break;
+                    default:
+                        statusText = 'No events found.';
+                }
+                
+                if (visibleCount === 0) {
+                    if (!noEventsMsg) {
+                        // Create the message if it doesn't exist
+                        noEventsMsg = document.createElement('div');
+                        noEventsMsg.id = 'noEventsMessage';
+                        noEventsMsg.className = 'text-center text-gray-500 py-16';
+                        // Insert after the last event-row or at the beginning if no events
+                        const container = document.querySelector('.custom-scrollbar > div');
+                        if (container) {
+                            container.appendChild(noEventsMsg);
+                        }
+                    }
+                    
+                    // Update the message content with dynamic status
+                    noEventsMsg.innerHTML = `
+                        <div class="max-w-md mx-auto">
+                            <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gray-100 mb-6">
+                                <i class="fas ${statusIcon} text-5xl ${iconColor}"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-700 mb-3">${statusText}</h3>
+                            <p class="text-sm text-gray-500 leading-relaxed">${suggestion}</p>
+                        </div>
+                    `;
+                    noEventsMsg.style.display = 'block';
+                } else {
+                    if (noEventsMsg) {
+                        noEventsMsg.style.display = 'none';
+                    }
+                }
             }
 
             // On tab click, filter events
@@ -203,98 +294,110 @@
                 // Show add button only for first tab
                 const addBtn = document.getElementById('addCityWideBtn');
                 addBtn.style.display = '';
+                
+                // Update current month/year display
+                const currentMonthYear = document.getElementById('currentMonthYear');
+                if (currentMonthYear) {
+                    const now = new Date();
+                    const options = { month: 'long', year: 'numeric' };
+                    currentMonthYear.textContent = now.toLocaleDateString('en-US', options);
+                }
             });
             </script>
             
-            <!-- Side-by-side layout: Events Table on left, Calendar on right -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Events Cards - Takes 2/3 of the space -->
-                <div class="lg:col-span-2">
+            <!-- Improved Side-by-side layout: Events on left, Calendar on right -->
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-6" style="align-items: stretch;">
+                <!-- Events Cards - Takes 3/5 of the space (60%) -->
+                <div class="lg:col-span-3 flex flex-col">
                     <!-- Dynamic Container for City-wide Events -->
-                    <div id="cityWideContainer" class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+                    <div id="cityWideContainer" class="bg-white rounded-lg shadow-sm border border-gray-200 mb-4 flex-shrink-0">
                         <div class="p-4 border-b border-gray-200">
-                            <div class="flex flex-wrap items-center justify-between gap-4">
-                                <!-- Status Filter Tabs -->
-                                <div id="statusTabsWrapper" class="flex flex-wrap gap-2">
-                                    <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all bg-blue-600 text-white border border-blue-600" data-status="ongoing">
-                                        <i class="fas fa-play-circle mr-2"></i>Ongoing
-                                    </button>
-                                    <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all border border-gray-300 bg-white text-gray-600 hover:border-blue-600 hover:text-blue-600" data-status="upcoming">
-                                        <i class="fas fa-calendar-plus mr-2"></i>Upcoming
-                                    </button>
-                                    <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all border border-gray-300 bg-white text-gray-600 hover:border-blue-600 hover:text-blue-600" data-status="completed">
-                                        <i class="fas fa-check-circle mr-2"></i>Completed
-                                    </button>
-                                    <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all border border-gray-300 bg-white text-gray-600 hover:border-blue-600 hover:text-blue-600" data-status="Draft">
-                                        <i class="fas fa-file-alt mr-2"></i>Draft
-                                    </button>
-                                    <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all border border-gray-300 bg-white text-gray-600 hover:border-blue-600 hover:text-blue-600" data-status="Scheduled">
-                                        <i class="fas fa-clock mr-2"></i>Scheduled
-                                    </button>
-                                </div>
-                                
-                                <!-- Add New Event Button and Category Filter -->
-                                <div class="flex items-center gap-4">
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-sm font-medium text-gray-600">Category:</span>
-                                        <select id="categoryFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                            <option value="">All Categories</option>
-                                            <?php if (!empty($categories)): ?>
-                                                <?php foreach ($categories as $category): ?>
-                                                    <option value="<?= esc($category) ?>"><?= esc(ucfirst($category)) ?></option>
-                                                <?php endforeach; ?>
-                                            <?php endif; ?>
-                                        </select>
-                                        <button id="clearFilters" class="px-3 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors duration-200">
-                                            Clear Filters
-                                        </button>
-                                    </div>
-                                </div>
+                            <!-- Status Filter Tabs -->
+                            <div id="statusTabsWrapper" class="flex flex-wrap gap-2">
+                                <button class="status-tab px-3 py-2 rounded-lg text-xs font-semibold transition-all border border-gray-300 bg-blue-600 text-white shadow-sm hover:shadow-md" data-status="all">
+                                    <i class="fas fa-list mr-1.5"></i>All
+                                </button>
+                                <button class="status-tab px-3 py-2 rounded-lg text-xs font-semibold transition-all border border-gray-300 bg-white text-gray-700 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50" data-status="ongoing">
+                                    <i class="fas fa-play-circle mr-1.5"></i>Ongoing
+                                </button>
+                                <button class="status-tab px-3 py-2 rounded-lg text-xs font-semibold transition-all border border-gray-300 bg-white text-gray-700 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50" data-status="upcoming">
+                                    <i class="fas fa-calendar-plus mr-1.5"></i>Upcoming
+                                </button>
+                                <button class="status-tab px-3 py-2 rounded-lg text-xs font-semibold transition-all border border-gray-300 bg-white text-gray-700 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50" data-status="completed">
+                                    <i class="fas fa-check-circle mr-1.5"></i>Completed
+                                </button>
+                                <button class="status-tab px-3 py-2 rounded-lg text-xs font-semibold transition-all border border-gray-300 bg-white text-gray-700 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50" data-status="Draft">
+                                    <i class="fas fa-file-alt mr-1.5"></i>Draft
+                                </button>
+                                <button class="status-tab px-3 py-2 rounded-lg text-xs font-semibold transition-all border border-gray-300 bg-white text-gray-700 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50" data-status="Scheduled">
+                                    <i class="fas fa-clock mr-1.5"></i>Scheduled
+                                </button>
                             </div>
                         </div>
                     </div>
                     
                     <!-- Header for Barangay-specific Events -->
-                    <div id="barangaySpecificContainer" class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 hidden">
+                    <div id="barangaySpecificContainer" class="bg-white rounded-lg shadow-sm border border-gray-200 mb-4 hidden flex-shrink-0">
                         <div class="p-4 border-b border-gray-200">
-                            <div class="flex flex-wrap items-center justify-between gap-4">
+                            <div class="space-y-3">
                                 <!-- Barangay-specific Events Title -->
                                 <div>
-                                    <h2 class="text-2xl font-bold text-gray-800">Barangay-specific Events</h2>
-                                    <p class="text-sm text-gray-600 mt-1">Published events from this barangay</p>
+                                    <h2 class="text-xl font-bold text-gray-800 flex items-center">
+                                        <i class="fas fa-map-marked-alt text-blue-600 mr-2"></i>
+                                        Barangay-specific Events
+                                    </h2>
+                                    <p class="text-xs text-gray-600 mt-1 ml-7">Published events from this barangay</p>
                                 </div>
                                 
                                 <!-- Category Filter for Barangay Events -->
-                                <div class="flex items-center gap-4">
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-sm font-medium text-gray-600">Category:</span>
-                                        <select id="barangayCategoryFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                            <option value="">All Categories</option>
-                                            <?php if (!empty($categories)): ?>
-                                                <?php foreach ($categories as $category): ?>
-                                                    <option value="<?= esc($category) ?>"><?= esc(ucfirst($category)) ?></option>
-                                                <?php endforeach; ?>
-                                            <?php endif; ?>
-                                        </select>
-                                        <button id="clearBarangayFilters" class="px-3 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors duration-200">
-                                            Clear Filters
-                                        </button>
-                                    </div>
+                                <div class="flex items-center gap-2">
+                                    <label for="barangayCategoryFilter" class="text-xs font-semibold text-gray-600 whitespace-nowrap">
+                                        <i class="fas fa-filter mr-1"></i>Category:
+                                    </label>
+                                    <select id="barangayCategoryFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white flex-1">
+                                        <option value="">All Categories</option>
+                                        <?php if (!empty($categories)): ?>
+                                            <?php foreach ($categories as $category): ?>
+                                                <option value="<?= esc($category) ?>"><?= esc(ucfirst($category)) ?></option>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
+                                    </select>
+                                    <button id="clearBarangayFilters" class="px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white text-xs font-medium rounded-md transition-colors duration-200 whitespace-nowrap">
+                                        <i class="fas fa-times mr-1.5"></i>Clear Filters
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="space-y-4">
-                        <div class="w-full max-w-5xl mx-auto">
-                            <div>
-                                <!-- Select All Checkbox above event cards - only for city-wide events -->
-                                <div id="selectAllContainer" class="mb-4 flex items-center gap-2" style="display: none;">
-                                    <input type="checkbox" id="selectAllCheckbox" class="w-4 h-4">
-                                    <span class="text-sm text-gray-600">Select All</span>
-                                </div>
-                                
-                                <div class="space-y-4 flex flex-col" style="cursor: auto;">
+                    <!-- Select All Checkbox and Category Filter - only for city-wide events -->
+                    <div id="selectAllContainer" class="mb-4 flex items-center justify-between gap-4 px-1 flex-shrink-0" style="display: none;">
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" id="selectAllCheckbox" class="w-4 h-4 cursor-pointer">
+                            <span class="text-sm font-medium text-gray-700">Select All</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label for="categoryFilter" class="text-xs font-semibold text-gray-600 whitespace-nowrap">
+                                <i class="fas fa-filter mr-1"></i>Category:
+                            </label>
+                            <select id="categoryFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                                <option value="">All Categories</option>
+                                <?php if (!empty($categories)): ?>
+                                    <?php foreach ($categories as $category): ?>
+                                        <option value="<?= esc($category) ?>"><?= esc(ucfirst($category)) ?></option>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </select>
+                            <button id="clearFilters" class="px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white text-xs font-medium rounded-md transition-colors duration-200 whitespace-nowrap">
+                                <i class="fas fa-times mr-1.5"></i>Clear Filters
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Scrollable Events Container with Fixed Height -->
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col" style="height: calc(100vh - 320px);">
+                        <div class="overflow-y-auto custom-scrollbar flex-1">
+                            <div class="px-4 pt-2 pb-4 space-y-4">
                             <?php if (!empty($events)): ?>
                                 <?php foreach ($events as $event): ?>
                                     <?php
@@ -339,71 +442,108 @@
                                         // Apply temporal restrictions - completed events cannot be edited regardless of permissions
                                         $canEdit = $canEditDelete && $canEditTemporal;
                                     ?>
-                                    <div class="flex items-center w-full event-row" data-barangay-id="<?= (int)$event['barangay_id'] ?>" data-status="<?= $status ?>" data-category="<?= esc($category) ?>" data-temporal="<?= $temporalStatus ?>">
+                                    <div class="flex items-center gap-2 w-full event-row" data-barangay-id="<?= (int)$event['barangay_id'] ?>" data-status="<?= $status ?>" data-category="<?= esc($category) ?>" data-temporal="<?= $temporalStatus ?>">
                                         <?php if ($canEditDelete && $isCityWide): ?>
-                                        <div class="flex-shrink-0 flex flex-col items-center justify-center h-full pr-2" onclick="event.stopPropagation();">
-                                            <input type="checkbox" class="event-checkbox w-5 h-5" value="<?= $event['event_id'] ?>">
+                                        <div class="flex-shrink-0 self-center" onclick="event.stopPropagation();">
+                                            <input type="checkbox" class="event-checkbox w-5 h-5 cursor-pointer text-blue-600 focus:ring-blue-500 focus:ring-2 rounded" value="<?= $event['event_id'] ?>">
                                         </div>
                                         <?php endif; ?>
-                                        <div class="group bg-white rounded-lg shadow p-4 flex flex-col md:flex-row items-start md:items-stretch gap-4 w-full cursor-pointer transition-transform duration-200 hover:shadow-lg hover:-translate-y-0.5" onclick="openEventModal('<?= $modalId ?>')">
-                                            <div class="flex-shrink-0 w-full md:w-64 h-40 md:h-40 mb-2 md:mb-0">
-                                                <img class="object-cover shadow-lg rounded-lg group-hover:opacity-75 w-full h-full" src="<?= $banner ?>" alt="Event Banner">
+                                        <div class="group bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col sm:flex-row gap-4 w-full cursor-pointer transition-all duration-200 hover:shadow-md hover:border-blue-300" onclick="openEventModal('<?= $modalId ?>')">
+                                            <div class="flex-shrink-0 w-full sm:w-56 h-40 overflow-hidden rounded-lg">
+                                                <img class="object-cover w-full h-full transition-transform duration-200 group-hover:scale-105" src="<?= $banner ?>" alt="Event Banner">
                                             </div>
-                                            <div class="flex flex-col flex-1 h-full justify-between">
-                                                <div>
-                                                    <div class="flex flex-wrap gap-2 mb-2">
-                                                        <?php if ($category): ?>
-                                                            <span class="inline-flex items-center leading-none px-2.5 py-1.5 text-xs font-medium bg-blue-100 text-blue-800 rounded-full border border-blue-200">
-                                                                <svg class="mr-1.5 h-2 w-2 text-blue-500" fill="currentColor" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3"></circle></svg>
-                                                                <?= ucfirst($category) ?>
-                                                            </span>
-                                                        <?php endif; ?>
-                                                        <!-- Status Badge -->
-                                                        <span class="inline-flex items-center leading-none px-2.5 py-1.5 text-xs font-medium rounded-full border
+                                            <div class="flex flex-col flex-1 min-w-0">
+                                                <div class="flex flex-wrap gap-1.5 mb-2">
+                                                    <?php if ($category): ?>
+                                                        <span class="inline-flex items-center leading-none px-3 py-1.5 text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-300 rounded-full">
+                                                            <i class="fas fa-tag mr-1 text-[10px]"></i>
+                                                            <?= ucfirst($category) ?>
+                                                        </span>
+                                                    <?php endif; ?>
+                                                    <!-- Status Badge -->
+                                                    <span class="inline-flex items-center leading-none px-3 py-1.5 text-[11px] font-medium rounded-full border
+                                                        <?php
+                                                        switch($status) {
+                                                            case 'Draft':
+                                                                echo 'bg-yellow-50 text-yellow-700 border-yellow-300';
+                                                                break;
+                                                            case 'Scheduled':
+                                                                echo 'bg-orange-50 text-orange-700 border-orange-300';
+                                                                break;
+                                                            case 'Published':
+                                                                echo 'bg-green-50 text-green-700 border-green-300';
+                                                                break;
+                                                            default:
+                                                                echo 'bg-gray-50 text-gray-700 border-gray-300';
+                                                        }
+                                                        ?>">
+                                                        <?php
+                                                        switch($status) {
+                                                            case 'Draft':
+                                                                echo '<i class="far fa-file-alt mr-1 text-[10px]"></i>';
+                                                                break;
+                                                            case 'Scheduled':
+                                                                echo '<i class="far fa-clock mr-1 text-[10px]"></i>';
+                                                                break;
+                                                            case 'Published':
+                                                                echo '<i class="fas fa-check-circle mr-1 text-[10px]"></i>';
+                                                                break;
+                                                            default:
+                                                                echo '<i class="fas fa-circle mr-1 text-[8px]"></i>';
+                                                        }
+                                                        ?>
+                                                        <?= $status ?>
+                                                    </span>
+                                                    
+                                                    <!-- Temporal Status Badge for Published Events -->
+                                                    <?php if ($status === 'Published' && $temporalStatus): ?>
+                                                        <span class="inline-flex items-center leading-none px-3 py-1.5 text-[11px] font-medium rounded-full border
                                                             <?php
-                                                            switch($status) {
-                                                                case 'Draft':
-                                                                    echo 'bg-yellow-100 text-yellow-800 border-yellow-200';
+                                                            switch($temporalStatus) {
+                                                                case 'upcoming':
+                                                                    echo 'bg-blue-50 text-blue-700 border-blue-300';
                                                                     break;
-                                                                case 'Scheduled':
-                                                                    echo 'bg-orange-100 text-orange-800 border-orange-200';
+                                                                case 'ongoing':
+                                                                    echo 'bg-purple-50 text-purple-700 border-purple-300';
                                                                     break;
-                                                                case 'Published':
-                                                                    echo 'bg-green-100 text-green-800 border-green-200';
+                                                                case 'completed':
+                                                                    echo 'bg-gray-50 text-gray-700 border-gray-300';
                                                                     break;
-                                                                default:
-                                                                    echo 'bg-gray-100 text-gray-800 border-gray-200';
                                                             }
                                                             ?>">
-                                                            <?= $status ?>
+                                                            <?php
+                                                            switch($temporalStatus) {
+                                                                case 'upcoming':
+                                                                    echo '<i class="far fa-calendar-alt mr-1 text-[10px]"></i>';
+                                                                    break;
+                                                                case 'ongoing':
+                                                                    echo '<i class="fas fa-play-circle mr-1 text-[10px]"></i>';
+                                                                    break;
+                                                                case 'completed':
+                                                                    echo '<i class="fas fa-check-circle mr-1 text-[10px]"></i>';
+                                                                    break;
+                                                            }
+                                                            ?>
+                                                            <?= ucfirst($temporalStatus) ?>
                                                         </span>
-                                                        
-                                                        <!-- Temporal Status Badge for Published Events -->
-                                                        <?php if ($status === 'Published' && $temporalStatus): ?>
-                                                            <span class="inline-flex items-center leading-none px-2.5 py-1.5 text-xs font-medium rounded-full border
-                                                                <?php
-                                                                switch($temporalStatus) {
-                                                                    case 'upcoming':
-                                                                        echo 'bg-blue-100 text-blue-800 border-blue-200';
-                                                                        break;
-                                                                    case 'ongoing':
-                                                                        echo 'bg-purple-100 text-purple-800 border-purple-200';
-                                                                        break;
-                                                                    case 'completed':
-                                                                        echo 'bg-gray-100 text-gray-800 border-gray-200';
-                                                                        break;
-                                                                }
-                                                                ?>">
-                                                                <?= ucfirst($temporalStatus) ?>
-                                                            </span>
-                                                        <?php endif; ?>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <h3 class="text-lg font-bold text-gray-900 mb-1.5 line-clamp-2 group-hover:text-blue-600 transition-colors"><?= esc($event['title']) ?></h3>
+                                                <p class="text-sm text-gray-600 line-clamp-2"><?= $shortDesc ?></p>
+                                                <div class="space-y-1.5 text-xs text-gray-500 mt-2">
+                                                    <div class="flex items-start gap-2">
+                                                        <i class="fas fa-clock mt-0.5 text-gray-400 flex-shrink-0"></i>
+                                                        <span class="flex-1">
+                                                            <span class="font-medium text-gray-700">Start:</span> <?= date('M d, Y', strtotime($event['start_datetime'])) ?> at <?= date('g:i A', strtotime($event['start_datetime'])) ?> 
+                                                            <span class="mx-1">•</span> 
+                                                            <span class="font-medium text-gray-700">End:</span> <?= date('M d, Y', strtotime($event['end_datetime'])) ?> at <?= date('g:i A', strtotime($event['end_datetime'])) ?>
+                                                        </span>
                                                     </div>
-                                                    <div class="text-xl font-bold text-gray-900 mb-2 text-left"><?= esc($event['title']) ?></div>
-                                                    <p class="mt-1 text-sm font-normal text-gray-700 leading-5 mb-2"><?= $shortDesc ?></p>
-                                                    <div class="flex flex-col text-xs text-gray-500 mb-2">
-                                                        <span><strong>Start:</strong> <?= date('F d, Y \a\t h:i A', strtotime($event['start_datetime'])) ?></span>
-                                                        <span><strong>End:</strong> <?= date('F d, Y \a\t h:i A', strtotime($event['end_datetime'])) ?></span>
-                                                        <span><strong>Location:</strong> <?= esc($event['location']) ?></span>
+                                                    <div class="flex items-start gap-2">
+                                                        <i class="fas fa-map-marker-alt mt-0.5 text-gray-400 flex-shrink-0"></i>
+                                                        <span class="flex-1 line-clamp-1">
+                                                            <span class="font-medium text-gray-700">Location:</span> <?= esc($event['location']) ?>
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -550,46 +690,59 @@
                                     </div>
                                 <?php endforeach; ?>
                             <?php else: ?>
-                                <div class="col-span-3 text-center text-gray-500 py-8">No events found.</div>
-                            <?php endif; ?>
+                                <div class="text-center text-gray-500 py-12">
+                                    <i class="fas fa-calendar-times text-5xl text-gray-300 mb-4"></i>
+                                    <p class="text-lg font-medium">No events found.</p>
+                                    <p class="text-sm text-gray-400 mt-2">Try adjusting your filters or create a new event.</p>
                                 </div>
+                            <?php endif; ?>
                             </div>
                         </div>
                     </div>
                     
                     <!-- Bulk Delete Bar -->
                     <div id="bulkDeleteBar" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 hidden">
-                        <div class="bg-white rounded-lg shadow-lg p-4 flex items-center space-x-4">
-                            <span id="selectedCount" class="text-gray-700 font-medium">0 events selected</span>
-                            <button id="bulkDeleteBtn" class="bg-red-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-red-700 transition duration-200">
+                        <div class="bg-white rounded-lg shadow-xl border border-gray-200 p-4 flex items-center space-x-4">
+                            <span id="selectedCount" class="text-gray-700 font-medium">
+                                <i class="fas fa-check-circle text-blue-600 mr-2"></i>
+                                <span class="font-bold text-blue-600">0</span> events selected
+                            </span>
+                            <button id="bulkDeleteBtn" class="bg-red-600 text-white font-semibold py-2.5 px-6 rounded-lg hover:bg-red-700 transition duration-200 shadow-md hover:shadow-lg">
                                 <i class="fas fa-trash-alt mr-2"></i>Delete Selected
                             </button>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Calendar - Takes 1/3 of the space -->
-                <div class="lg:col-span-1">
-                    <div class="bg-white rounded-lg shadow-lg p-6">
-                        <h2 class="text-xl font-bold text-gray-800 mb-4">Calendar View</h2>
-                        <?php foreach ($calendar_tabs as $i => $tab): ?>
-                            <div id="cal<?= $i ?>" class="calendar-embed<?= $i === 0 ? ' active' : '' ?>">
-                                <div class="flex justify-center">
-                                    <iframe 
-                                        src="<?= $i === 0 ? 'https://calendar.google.com/calendar/embed?src=' . urlencode($tab['calendar_id']) . '&ctz=Asia%2FManila&showTitle=0&showPrint=0&showCalendars=0&mode=MONTH&bgcolor=%23FFFFFF' : 'about:blank' ?>"
-                                        data-src="https://calendar.google.com/calendar/embed?src=<?= urlencode($tab['calendar_id']) ?>&ctz=Asia%2FManila&showTitle=0&showPrint=0&showCalendars=0&mode=MONTH&bgcolor=%23FFFFFF"
-                                        style="border: 0; opacity: 0; transition: opacity 0.3s ease;" 
-                                        width="100%" 
-                                        height="400" 
-                                        frameborder="0" 
-                                        scrolling="no"
-                                        class="rounded-lg shadow-md calendar-iframe"
-                                        loading="lazy"
-                                        onload="this.style.opacity=1"
-                                    ></iframe>
-                                </div>
+                <!-- Calendar View - Takes 2/5 of the space (40%) -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-lg shadow-lg px-6 pt-4 pb-6 cursor-pointer hover:shadow-xl transition-shadow duration-200 group h-full flex flex-col" onclick="openCalendarModal()">
+                        <div class="flex items-center justify-between mb-3 flex-shrink-0">
+                            <h2 class="text-xl font-bold text-gray-800">Calendar View</h2>
+                            <div class="text-blue-600 group-hover:text-blue-700 transition-colors">
+                                <i class="fas fa-expand-alt text-sm"></i>
+                                <span class="text-xs ml-1">Click to enlarge</span>
                             </div>
-                        <?php endforeach; ?>
+                        </div>
+                        <div class="flex-1 relative">
+                            <?php foreach ($calendar_tabs as $i => $tab): ?>
+                                <div id="cal<?= $i ?>" class="calendar-embed<?= $i === 0 ? ' active' : '' ?> absolute inset-0">
+                                    <div class="flex justify-center relative h-full">
+                                        <div class="absolute inset-0 bg-blue-50 opacity-0 group-hover:opacity-10 transition-opacity duration-200 rounded-lg"></div>
+                                        <iframe 
+                                            src="<?= $i === 0 ? 'https://calendar.google.com/calendar/embed?src=' . urlencode($tab['calendar_id']) . '&ctz=Asia%2FManila&showTitle=0&showPrint=0&showCalendars=0&mode=MONTH&bgcolor=%23FFFFFF' : 'about:blank' ?>"
+                                            data-src="https://calendar.google.com/calendar/embed?src=<?= urlencode($tab['calendar_id']) ?>&ctz=Asia%2FManila&showTitle=0&showPrint=0&showCalendars=0&mode=MONTH&bgcolor=%23FFFFFF"
+                                            style="border: 0; opacity: 0; transition: opacity 0.3s ease; pointer-events: none; width: 100%; height: 100%;" 
+                                            frameborder="0" 
+                                            scrolling="no"
+                                            class="rounded-lg shadow-md calendar-iframe"
+                                            loading="lazy"
+                                            onload="this.style.opacity=1"
+                                        ></iframe>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -645,11 +798,122 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Calendar Modal - Full screen view with tabs -->
+        <div id="calendarModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[10000] hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; margin: 0; padding: 0;">
+            <div class="bg-white rounded-xl shadow-2xl max-w-6xl w-full mx-4 transform scale-95 transition-all duration-300 ease-in-out" style="height: 90vh;">
+                <!-- Modal Header with Tabs -->
+                <div class="border-b border-gray-200">
+                    <div class="flex items-center justify-between p-6 pb-0">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800">Calendar View</h2>
+                            <p class="text-sm text-gray-600 mt-1">City-wide Event Calendar</p>
+                        </div>
+                        <button onclick="closeCalendarModal()" class="text-gray-400 hover:text-gray-600 text-2xl font-bold w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-all duration-200">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Calendar Tabs in Modal -->
+                    <?php if (!empty($calendar_tabs)): ?>
+                    <div class="px-6 pt-4 pb-2">
+                        <div class="flex items-center gap-2">
+                            <!-- Left Arrow Button -->
+                            <button 
+                                id="modalScrollLeft" 
+                                class="bg-white border border-gray-300 rounded-full p-2 shadow-sm hover:bg-gray-50 transition duration-200 flex-shrink-0"
+                                type="button"
+                                aria-label="Scroll left"
+                            >
+                                <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                </svg>
+                            </button>
+                            
+                            <!-- Scrollable tabs container -->
+                            <div id="modalTabBarWrapper" class="overflow-x-auto whitespace-nowrap scrollbar-hide cursor-grab select-none bg-gray-100 p-1 rounded-lg relative flex-1 min-w-0" style="user-select: none;">
+                                <?php foreach ($calendar_tabs as $i => $tab): ?>
+                                    <?php 
+                                    // Skip duplicate City-wide tab if it's not the first one
+                                    if ($i > 0 && $tab['label'] === 'City-wide') continue;
+                                    ?>
+                                    <button 
+                                        data-barangay-id="<?= isset($barangays[$i]['barangay_id']) ? (int)$barangays[$i]['barangay_id'] : 0 ?>"
+                                        class="modal-calendar-tab <?= $i === 0 ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:text-gray-900' ?> px-4 py-2 rounded-md font-medium transition duration-200 inline-block"
+                                        onclick="showModalCalendar('modalCal<?= $i ?>', this)"
+                                        style="min-width: 120px; margin-right: 4px;"
+                                    >
+                                        <?= esc($tab['label']) ?>
+                                    </button>
+                                <?php endforeach; ?>
+                            </div>
+                            
+                            <!-- Right Arrow Button -->
+                            <button 
+                                id="modalScrollRight" 
+                                class="bg-white border border-gray-300 rounded-full p-2 shadow-sm hover:bg-gray-50 transition duration-200 flex-shrink-0"
+                                type="button"
+                                aria-label="Scroll right"
+                            >
+                                <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                </div>
+                
+                <!-- Modal Content -->
+                <div class="p-6" style="height: calc(90vh - 160px);">
+                    <?php foreach ($calendar_tabs as $i => $tab): ?>
+                        <div id="modalCal<?= $i ?>" class="modal-calendar-embed<?= $i === 0 ? ' active' : '' ?>" style="height: 100%;">
+                            <iframe 
+                                id="calendarModalIframe<?= $i ?>"
+                                src="<?= $i === 0 ? 'https://calendar.google.com/calendar/embed?src=' . urlencode($tab['calendar_id']) . '&ctz=Asia%2FManila&showTitle=0&showPrint=0&showCalendars=0&mode=MONTH&bgcolor=%23FFFFFF' : 'about:blank' ?>"
+                                data-src="https://calendar.google.com/calendar/embed?src=<?= urlencode($tab['calendar_id']) ?>&ctz=Asia%2FManila&showTitle=0&showPrint=0&showCalendars=0&mode=MONTH&bgcolor=%23FFFFFF"
+                                style="border: 0; width: 100%; height: 100%;" 
+                                frameborder="0" 
+                                scrolling="no"
+                                class="rounded-lg shadow-lg"
+                            ></iframe>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
     </div>
 
     <style>
         .calendar-embed { display: none; }
         .calendar-embed.active { display: block; }
+        .modal-calendar-embed { display: none; }
+        .modal-calendar-embed.active { display: block; }
+        
+        /* Custom scrollbar for event list */
+        .custom-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: #CBD5E0 #F7FAFC;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #F7FAFC;
+            border-radius: 10px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #CBD5E0;
+            border-radius: 10px;
+            transition: background 0.2s;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #A0AEC0;
+        }
         
         /* Hide scrollbar but keep functionality */
         .scrollbar-hide {
@@ -666,6 +930,52 @@
             -moz-user-select: none;
             -ms-user-select: none;
             user-select: none;
+        }
+        
+        /* Smooth scroll behavior */
+        .custom-scrollbar {
+            scroll-behavior: smooth;
+        }
+        
+        /* Event card hover effect enhancement */
+        .event-row .group {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .event-row .group:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        /* Calendar sticky positioning */
+        @media (min-width: 1024px) {
+            .sticky {
+                position: -webkit-sticky;
+                position: sticky;
+            }
+        }
+        
+        /* Line clamp utilities */
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        /* Status tab active state */
+        .status-tab.bg-blue-600 {
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3), 0 2px 4px -1px rgba(37, 99, 235, 0.2);
+        }
+        
+        /* Improved focus states */
+        select:focus, input[type="checkbox"]:focus {
+            outline: none;
+        }
+        
+        /* Smooth transitions for interactive elements */
+        button, select, input[type="checkbox"] {
+            transition: all 0.2s ease-in-out;
         }
     </style>
 
@@ -1457,11 +1767,11 @@
                 tab.addEventListener('click', function() {
                     globalActiveStatus = this.dataset.status;
                     statusTabs.forEach(t => {
-                        t.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
-                        t.classList.add('bg-white', 'text-gray-600', 'border-gray-300', 'hover:border-blue-600', 'hover:text-blue-600');
+                        t.classList.remove('bg-blue-600', 'text-white', 'shadow-sm', 'hover:shadow-md');
+                        t.classList.add('bg-white', 'text-gray-700', 'border-gray-300', 'hover:border-blue-500', 'hover:text-blue-600', 'hover:bg-blue-50');
                     });
-                    this.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
-                    this.classList.remove('bg-white', 'text-gray-600', 'border-gray-300', 'hover:border-blue-600', 'hover:text-blue-600');
+                    this.classList.add('bg-blue-600', 'text-white', 'shadow-sm', 'hover:shadow-md');
+                    this.classList.remove('bg-white', 'text-gray-700', 'hover:border-blue-500', 'hover:text-blue-600', 'hover:bg-blue-50');
                     filterEvents();
                     
                     // Update bulk selection UI when tab changes
@@ -2020,6 +2330,71 @@ function initializeEventFormUpload() {
             }, 300);
         }
 
+        // Calendar modal functions
+        function openCalendarModal() {
+            const modal = document.getElementById('calendarModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                // Prevent body scroll when modal is open
+                document.body.style.overflow = 'hidden';
+                
+                // Add animation
+                setTimeout(() => {
+                    const modalContent = modal.querySelector('.bg-white');
+                    if (modalContent) {
+                        modalContent.classList.remove('scale-95');
+                        modalContent.classList.add('scale-100');
+                    }
+                }, 10);
+            }
+        }
+
+        function closeCalendarModal() {
+            const modal = document.getElementById('calendarModal');
+            if (modal) {
+                const modalContent = modal.querySelector('.bg-white');
+                if (modalContent) {
+                    modalContent.classList.remove('scale-100');
+                    modalContent.classList.add('scale-95');
+                }
+                
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    // Restore body scroll
+                    document.body.style.overflow = '';
+                }, 200);
+            }
+        }
+
+        function showModalCalendar(calId, btn) {
+            // Hide all modal calendar embeds
+            document.querySelectorAll('.modal-calendar-embed').forEach(cal => {
+                cal.classList.remove('active');
+            });
+            
+            // Remove active state from all modal tabs
+            document.querySelectorAll('.modal-calendar-tab').forEach(tab => {
+                tab.classList.remove('bg-blue-600', 'text-white');
+                tab.classList.add('bg-white', 'text-gray-600');
+            });
+            
+            // Show selected modal calendar
+            const selectedCalendar = document.getElementById(calId);
+            if (selectedCalendar) {
+                selectedCalendar.classList.add('active');
+                
+                // Load iframe if not already loaded
+                const iframe = selectedCalendar.querySelector('iframe');
+                if (iframe && (iframe.src === 'about:blank' || iframe.src === window.location.href)) {
+                    iframe.src = iframe.dataset.src;
+                }
+            }
+            
+            // Activate clicked button
+            btn.classList.remove('bg-white', 'text-gray-600');
+            btn.classList.add('bg-blue-600', 'text-white');
+        }
+
         function handleSingleDelete(eventId) {
             closeDeleteConfirmationModal();
             
@@ -2145,11 +2520,85 @@ function initializeEventFormUpload() {
                 document.body.appendChild(deleteModal);
             }
             
+            // Move calendar modal to body
+            const calendarModal = document.getElementById('calendarModal');
+            if (calendarModal && calendarModal.parentElement !== document.body) {
+                document.body.appendChild(calendarModal);
+            }
+            
             // Move all individual event modals to body
             const individualModals = document.querySelectorAll('[id^="eventModal_"]');
             individualModals.forEach(modal => {
                 if (modal.parentElement !== document.body) {
                     document.body.appendChild(modal);
+                }
+            });
+            
+            // Calendar modal event listeners
+            if (calendarModal) {
+                // Close modal when clicking outside
+                calendarModal.addEventListener('click', function(e) {
+                    if (e.target === calendarModal) {
+                        closeCalendarModal();
+                    }
+                });
+                
+                // Setup modal tab scroll buttons
+                const modalScrollLeft = document.getElementById('modalScrollLeft');
+                const modalScrollRight = document.getElementById('modalScrollRight');
+                const modalTabBarWrapper = document.getElementById('modalTabBarWrapper');
+                
+                if (modalScrollLeft && modalTabBarWrapper) {
+                    modalScrollLeft.addEventListener('click', function() {
+                        modalTabBarWrapper.scrollBy({ left: -150, behavior: 'smooth' });
+                    });
+                }
+                
+                if (modalScrollRight && modalTabBarWrapper) {
+                    modalScrollRight.addEventListener('click', function() {
+                        modalTabBarWrapper.scrollBy({ left: 150, behavior: 'smooth' });
+                    });
+                }
+                
+                // Drag-to-scroll for modal tab bar
+                if (modalTabBarWrapper) {
+                    let isDown = false;
+                    let startX, scrollLeft;
+                    
+                    modalTabBarWrapper.addEventListener('mousedown', (e) => {
+                        isDown = true;
+                        modalTabBarWrapper.classList.add('cursor-grabbing');
+                        startX = e.pageX - modalTabBarWrapper.offsetLeft;
+                        scrollLeft = modalTabBarWrapper.scrollLeft;
+                    });
+                    
+                    modalTabBarWrapper.addEventListener('mouseleave', () => {
+                        isDown = false;
+                        modalTabBarWrapper.classList.remove('cursor-grabbing');
+                    });
+                    
+                    modalTabBarWrapper.addEventListener('mouseup', () => {
+                        isDown = false;
+                        modalTabBarWrapper.classList.remove('cursor-grabbing');
+                    });
+                    
+                    modalTabBarWrapper.addEventListener('mousemove', (e) => {
+                        if (!isDown) return;
+                        e.preventDefault();
+                        const x = e.pageX - modalTabBarWrapper.offsetLeft;
+                        const walk = (x - startX) * 2;
+                        modalTabBarWrapper.scrollLeft = scrollLeft - walk;
+                    });
+                }
+            }
+            
+            // Close modal on ESC key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    const modal = document.getElementById('calendarModal');
+                    if (modal && !modal.classList.contains('hidden')) {
+                        closeCalendarModal();
+                    }
                 }
             });
         });

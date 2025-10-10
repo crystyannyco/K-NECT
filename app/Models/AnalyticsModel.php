@@ -116,7 +116,7 @@ class AnalyticsModel extends Model
     public function getYouthClassificationDistribution($barangayId = null)
     {
         $joinClause = "LEFT JOIN address a ON u.id = a.user_id";
-        $whereClause = "WHERE u.is_active = 1 AND u.status = 2 AND uei.sk_voter IS NOT NULL";
+        $whereClause = "WHERE u.is_active = 1 AND u.status = 2 AND uei.youth_classification IS NOT NULL";
         
         if ($barangayId !== null && $barangayId > 0) {
             $whereClause .= " AND a.barangay = " . (int)$barangayId;
@@ -125,17 +125,21 @@ class AnalyticsModel extends Model
         $query = $this->db->query("
             SELECT 
                 CASE 
-                    WHEN uei.sk_voter = 1 AND uei.national_voter = 1 THEN 'Both SK & National Voter'
-                    WHEN uei.sk_voter = 1 AND uei.national_voter = 0 THEN 'SK Voter Only'
-                    WHEN uei.sk_voter = 0 AND uei.national_voter = 1 THEN 'National Voter Only'
-                    ELSE 'Non-Voter'
-                END AS voter_classification,
+                    WHEN uei.youth_classification = 1 THEN 'In School Youth'
+                    WHEN uei.youth_classification = 2 THEN 'Out-of-School Youth'
+                    WHEN uei.youth_classification = 3 THEN 'Working Youth'
+                    WHEN uei.youth_classification = 4 THEN 'Youth with Specific Needs'
+                    WHEN uei.youth_classification = 5 THEN 'Person with Disability'
+                    WHEN uei.youth_classification = 6 THEN 'Children in Conflict with the Law'
+                    WHEN uei.youth_classification = 7 THEN 'Indigenous People'
+                    ELSE 'Not Specified'
+                END AS youth_classification,
                 COUNT(*) AS total
             FROM user u
             JOIN user_ext_info uei ON u.id = uei.user_id
             {$joinClause}
             {$whereClause}
-            GROUP BY voter_classification
+            GROUP BY youth_classification
             ORDER BY total DESC
         ");
         
@@ -214,8 +218,11 @@ class AnalyticsModel extends Model
                     WHEN uei.civil_status = 1 THEN 'Single'
                     WHEN uei.civil_status = 2 THEN 'Married'
                     WHEN uei.civil_status = 3 THEN 'Widowed'
-                    WHEN uei.civil_status = 4 THEN 'Separated'
-                    WHEN uei.civil_status = 5 THEN 'Divorced'
+                    WHEN uei.civil_status = 4 THEN 'Divorced'
+                    WHEN uei.civil_status = 5 THEN 'Separated'
+                    WHEN uei.civil_status = 6 THEN 'Annulled'
+                    WHEN uei.civil_status = 7 THEN 'Live-In'
+                    WHEN uei.civil_status = 8 THEN 'Unknown'
                     ELSE 'Not Specified'
                 END AS civil_status,
                 COUNT(*) AS total
@@ -247,9 +254,8 @@ class AnalyticsModel extends Model
                 CASE 
                     WHEN uei.work_status = 1 THEN 'Employed'
                     WHEN uei.work_status = 2 THEN 'Unemployed'
-                    WHEN uei.work_status = 3 THEN 'Student'
-                    WHEN uei.work_status = 4 THEN 'Self-Employed'
-                    WHEN uei.work_status = 5 THEN 'Out of School Youth'
+                    WHEN uei.work_status = 3 THEN 'Currently looking for a Job'
+                    WHEN uei.work_status = 4 THEN 'Not Interested in finding Job'
                     ELSE 'Not Specified'
                 END AS work_status,
                 COUNT(*) AS total
@@ -279,12 +285,17 @@ class AnalyticsModel extends Model
         $query = $this->db->query("
             SELECT 
                 CASE 
-                    WHEN uei.educational_background = 1 THEN 'Elementary'
-                    WHEN uei.educational_background = 2 THEN 'High School'
-                    WHEN uei.educational_background = 3 THEN 'Senior High School'
-                    WHEN uei.educational_background = 4 THEN 'College'
-                    WHEN uei.educational_background = 5 THEN 'Vocational'
-                    WHEN uei.educational_background = 6 THEN 'Post Graduate'
+                    WHEN uei.educational_background = 1 THEN 'Elementary Level'
+                    WHEN uei.educational_background = 2 THEN 'Elementary Graduate'
+                    WHEN uei.educational_background = 3 THEN 'High School Level'
+                    WHEN uei.educational_background = 4 THEN 'High School Graduate'
+                    WHEN uei.educational_background = 5 THEN 'Vocational Level'
+                    WHEN uei.educational_background = 6 THEN 'College Level'
+                    WHEN uei.educational_background = 7 THEN 'College Graduate'
+                    WHEN uei.educational_background = 8 THEN 'Master Level'
+                    WHEN uei.educational_background = 9 THEN 'Master Graduate'
+                    WHEN uei.educational_background = 10 THEN 'Doctorate Level'
+                    WHEN uei.educational_background = 11 THEN 'Doctorate Graduate'
                     ELSE 'Not Specified'
                 END AS educational_background,
                 COUNT(*) AS total
@@ -295,13 +306,251 @@ class AnalyticsModel extends Model
             GROUP BY educational_background
             ORDER BY 
                 CASE educational_background
-                    WHEN 'Elementary' THEN 1
-                    WHEN 'High School' THEN 2
-                    WHEN 'Senior High School' THEN 3
-                    WHEN 'Vocational' THEN 4
-                    WHEN 'College' THEN 5
-                    WHEN 'Post Graduate' THEN 6
-                    ELSE 7
+                    WHEN 'Elementary Level' THEN 1
+                    WHEN 'Elementary Graduate' THEN 2
+                    WHEN 'High School Level' THEN 3
+                    WHEN 'High School Graduate' THEN 4
+                    WHEN 'Vocational Level' THEN 5
+                    WHEN 'College Level' THEN 6
+                    WHEN 'College Graduate' THEN 7
+                    WHEN 'Master Level' THEN 8
+                    WHEN 'Master Graduate' THEN 9
+                    WHEN 'Doctorate Level' THEN 10
+                    WHEN 'Doctorate Graduate' THEN 11
+                    ELSE 12
+                END
+        ");
+        
+        return $query->getResultArray();
+    }
+
+    /**
+     * Get SK voter distribution
+     */
+    public function getSKVoterDistribution($barangayId = null)
+    {
+        $joinClause = "LEFT JOIN address a ON u.id = a.user_id";
+        $whereClause = "WHERE u.is_active = 1 AND u.status = 2 AND uei.sk_voter IS NOT NULL";
+        
+        if ($barangayId !== null && $barangayId > 0) {
+            $whereClause .= " AND a.barangay = " . (int)$barangayId;
+        }
+        
+        $query = $this->db->query("
+            SELECT 
+                CASE 
+                    WHEN uei.sk_voter = 1 THEN 'Yes'
+                    WHEN uei.sk_voter = 0 THEN 'No'
+                    ELSE 'Not Specified'
+                END AS sk_voter,
+                COUNT(*) AS total
+            FROM user u
+            JOIN user_ext_info uei ON u.id = uei.user_id
+            {$joinClause}
+            {$whereClause}
+            GROUP BY sk_voter
+            ORDER BY total DESC
+        ");
+        
+        return $query->getResultArray();
+    }
+
+    /**
+     * Get SK election participation distribution
+     */
+    public function getSKElectionDistribution($barangayId = null)
+    {
+        $joinClause = "LEFT JOIN address a ON u.id = a.user_id";
+        $whereClause = "WHERE u.is_active = 1 AND u.status = 2 AND uei.sk_election IS NOT NULL";
+        
+        if ($barangayId !== null && $barangayId > 0) {
+            $whereClause .= " AND a.barangay = " . (int)$barangayId;
+        }
+        
+        $query = $this->db->query("
+            SELECT 
+                CASE 
+                    WHEN uei.sk_election = 1 THEN 'Yes'
+                    WHEN uei.sk_election = 0 THEN 'No'
+                    ELSE 'Not Specified'
+                END AS sk_election,
+                COUNT(*) AS total
+            FROM user u
+            JOIN user_ext_info uei ON u.id = uei.user_id
+            {$joinClause}
+            {$whereClause}
+            GROUP BY sk_election
+            ORDER BY total DESC
+        ");
+        
+        return $query->getResultArray();
+    }
+
+    /**
+     * Get national voter distribution
+     */
+    public function getNationalVoterDistribution($barangayId = null)
+    {
+        $joinClause = "LEFT JOIN address a ON u.id = a.user_id";
+        $whereClause = "WHERE u.is_active = 1 AND u.status = 2 AND uei.national_voter IS NOT NULL";
+        
+        if ($barangayId !== null && $barangayId > 0) {
+            $whereClause .= " AND a.barangay = " . (int)$barangayId;
+        }
+        
+        $query = $this->db->query("
+            SELECT 
+                CASE 
+                    WHEN uei.national_voter = 1 THEN 'Yes'
+                    WHEN uei.national_voter = 0 THEN 'No'
+                    ELSE 'Not Specified'
+                END AS national_voter,
+                COUNT(*) AS total
+            FROM user u
+            JOIN user_ext_info uei ON u.id = uei.user_id
+            {$joinClause}
+            {$whereClause}
+            GROUP BY national_voter
+            ORDER BY total DESC
+        ");
+        
+        return $query->getResultArray();
+    }
+
+    /**
+     * Get KK assembly attendance distribution
+     */
+    public function getKKAssemblyDistribution($barangayId = null)
+    {
+        $joinClause = "LEFT JOIN address a ON u.id = a.user_id";
+        $whereClause = "WHERE u.is_active = 1 AND u.status = 2 AND uei.kk_assembly IS NOT NULL";
+        
+        if ($barangayId !== null && $barangayId > 0) {
+            $whereClause .= " AND a.barangay = " . (int)$barangayId;
+        }
+        
+        $query = $this->db->query("
+            SELECT 
+                CASE 
+                    WHEN uei.kk_assembly = 1 THEN 'Yes'
+                    WHEN uei.kk_assembly = 0 THEN 'No'
+                    ELSE 'Not Specified'
+                END AS kk_assembly,
+                COUNT(*) AS total
+            FROM user u
+            JOIN user_ext_info uei ON u.id = uei.user_id
+            {$joinClause}
+            {$whereClause}
+            GROUP BY kk_assembly
+            ORDER BY total DESC
+        ");
+        
+        return $query->getResultArray();
+    }
+
+    /**
+     * Get KK assembly attendance frequency (how many times)
+     */
+    public function getKKAssemblyFrequencyDistribution($barangayId = null)
+    {
+        $joinClause = "LEFT JOIN address a ON u.id = a.user_id";
+        $whereClause = "WHERE u.is_active = 1 AND u.status = 2 AND uei.kk_assembly = 1 AND uei.how_many_times IS NOT NULL";
+        
+        if ($barangayId !== null && $barangayId > 0) {
+            $whereClause .= " AND a.barangay = " . (int)$barangayId;
+        }
+        
+        $query = $this->db->query("
+            SELECT 
+                CASE 
+                    WHEN uei.how_many_times = 1 THEN '1-2 times'
+                    WHEN uei.how_many_times = 2 THEN '3-4 times'
+                    WHEN uei.how_many_times = 3 THEN '5 or more times'
+                    ELSE 'Not Specified'
+                END AS frequency,
+                COUNT(*) AS total
+            FROM user u
+            JOIN user_ext_info uei ON u.id = uei.user_id
+            {$joinClause}
+            {$whereClause}
+            GROUP BY frequency
+            ORDER BY 
+                CASE frequency
+                    WHEN '1-2 times' THEN 1
+                    WHEN '3-4 times' THEN 2
+                    WHEN '5 or more times' THEN 3
+                    ELSE 4
+                END
+        ");
+        
+        return $query->getResultArray();
+    }
+
+    /**
+     * Get voter classification distribution (combined SK & National)
+     */
+    public function getVoterClassificationDistribution($barangayId = null)
+    {
+        $joinClause = "LEFT JOIN address a ON u.id = a.user_id";
+        $whereClause = "WHERE u.is_active = 1 AND u.status = 2 AND uei.sk_voter IS NOT NULL";
+        
+        if ($barangayId !== null && $barangayId > 0) {
+            $whereClause .= " AND a.barangay = " . (int)$barangayId;
+        }
+        
+        $query = $this->db->query("
+            SELECT 
+                CASE 
+                    WHEN uei.sk_voter = 1 AND uei.national_voter = 1 THEN 'Both SK & National Voter'
+                    WHEN uei.sk_voter = 1 AND uei.national_voter = 0 THEN 'SK Voter Only'
+                    WHEN uei.sk_voter = 0 AND uei.national_voter = 1 THEN 'National Voter Only'
+                    ELSE 'Non-Voter'
+                END AS voter_classification,
+                COUNT(*) AS total
+            FROM user u
+            JOIN user_ext_info uei ON u.id = uei.user_id
+            {$joinClause}
+            {$whereClause}
+            GROUP BY voter_classification
+            ORDER BY total DESC
+        ");
+        
+        return $query->getResultArray();
+    }
+
+    /**
+     * Get age group distribution
+     * Based on the actual age groups in the profiling form
+     */
+    public function getYouthAgeGroupDistribution($barangayId = null)
+    {
+        $joinClause = "LEFT JOIN address a ON u.id = a.user_id";
+        $whereClause = "WHERE u.is_active = 1 AND u.status = 2 AND uei.age_group IS NOT NULL";
+        
+        if ($barangayId !== null && $barangayId > 0) {
+            $whereClause .= " AND a.barangay = " . (int)$barangayId;
+        }
+        
+        $query = $this->db->query("
+            SELECT 
+                CASE 
+                    WHEN uei.age_group = 1 THEN 'Child Youth (15-17 yrs old)'
+                    WHEN uei.age_group = 2 THEN 'Core Youth (18-24 yrs old)'
+                    WHEN uei.age_group = 3 THEN 'Young Adult (25-30 yrs old)'
+                    ELSE 'Not Specified'
+                END AS age_group,
+                COUNT(*) AS total
+            FROM user u
+            JOIN user_ext_info uei ON u.id = uei.user_id
+            {$joinClause}
+            {$whereClause}
+            GROUP BY age_group
+            ORDER BY 
+                CASE age_group
+                    WHEN 'Child Youth (15-17 yrs old)' THEN 1
+                    WHEN 'Core Youth (18-24 yrs old)' THEN 2
+                    WHEN 'Young Adult (25-30 yrs old)' THEN 3
+                    ELSE 4
                 END
         ");
         
@@ -720,32 +969,7 @@ class AnalyticsModel extends Model
         return $query->getResultArray();
     }
 
-    /**
-     * Get document approval time
-     */
-    public function getDocumentApprovalTime($barangayId = null)
-    {
-        $whereClause = "WHERE d.approval_status = 'approved' AND d.approval_at IS NOT NULL AND d.uploaded_at IS NOT NULL";
-        $joinClause = "";
-        
-        if ($barangayId !== null && $barangayId > 0) {
-            $joinClause = "JOIN user u ON (d.uploaded_by = u.sk_username OR d.uploaded_by = u.ped_username) JOIN address a ON u.id = a.user_id";
-            $whereClause .= " AND a.barangay = " . (int)$barangayId . " AND u.is_active = 1 AND u.status = 2";
-        }
-        
-        $query = $this->db->query("
-            SELECT 
-                DATEDIFF(d.approval_at, d.uploaded_at) as approval_days,
-                COUNT(*) as document_count
-            FROM documents d
-            {$joinClause}
-            {$whereClause}
-            GROUP BY approval_days
-            ORDER BY approval_days ASC
-        ");
-        
-        return $query->getResultArray();
-    }
+
 
     /**
      * Get top downloaded documents
@@ -1069,12 +1293,8 @@ class AnalyticsModel extends Model
         
         $query = $this->db->query("
             SELECT 
-                COUNT(CASE WHEN d.approval_status = 'approved' THEN 1 END) as total_approved_documents,
-                COUNT(CASE WHEN d.approval_status = 'pending' THEN 1 END) as total_pending_documents,
-                COUNT(CASE WHEN d.approval_status = 'rejected' THEN 1 END) as total_rejected_documents,
-                COUNT(DISTINCT al.document_id) as total_downloaded_documents,
-                COUNT(al.id) as total_downloads,
-                ROUND(AVG(DATEDIFF(d.approval_at, d.uploaded_at)), 2) as avg_approval_time_days
+                COUNT(DISTINCT d.id) as total_uploads,
+                COUNT(al.id) as total_downloads
             FROM documents d
             {$joinClause}
             LEFT JOIN audit_logs al ON d.id = al.document_id AND al.action = 'download'
@@ -1091,12 +1311,8 @@ class AnalyticsModel extends Model
     {
         $query = $this->db->query("
             SELECT 
-                COUNT(CASE WHEN d.approval_status = 'approved' THEN 1 END) as total_approved_documents,
-                COUNT(CASE WHEN d.approval_status = 'pending' THEN 1 END) as total_pending_documents,
-                COUNT(CASE WHEN d.approval_status = 'rejected' THEN 1 END) as total_rejected_documents,
-                COUNT(DISTINCT al.document_id) as total_downloaded_documents,
-                COUNT(al.id) as total_downloads,
-                ROUND(AVG(DATEDIFF(d.approval_at, d.uploaded_at)), 2) as avg_approval_time_days
+                COUNT(DISTINCT d.id) as total_uploads,
+                COUNT(al.id) as total_downloads
             FROM documents d
             JOIN user u ON (d.uploaded_by = u.sk_username OR d.uploaded_by = u.ped_username)
             JOIN address a ON u.id = a.user_id
@@ -1334,5 +1550,189 @@ class AnalyticsModel extends Model
             foreach ($rows as &$r) { $r['score_percent'] = 0; }
         }
         return $rows;
+    }
+
+    /**
+     * Get participation rate trend by month
+     * @param int|null $barangayId Barangay filter
+     * @param int $months Number of months to look back
+     * @return array
+     */
+    public function getParticipationRateTrendByMonth($barangayId = null, $months = 12): array
+    {
+        $whereClause = "WHERE e.status = 'Published' AND e.target_participants IS NOT NULL AND e.target_participants > 0";
+        
+        if ($barangayId !== null && $barangayId > 0) {
+            $whereClause .= " AND e.barangay_id = " . (int)$barangayId;
+        }
+        
+        $query = $this->db->query("
+            SELECT 
+                DATE_FORMAT(e.start_datetime, '%Y-%m') as month,
+                DATE_FORMAT(e.start_datetime, '%b %Y') as month_name,
+                e.event_id,
+                e.target_participants,
+                COUNT(DISTINCT a.user_id) as actual_participants,
+                ROUND((COUNT(DISTINCT a.user_id) / NULLIF(e.target_participants, 0)) * 100, 1) as participation_rate
+            FROM event e
+            LEFT JOIN attendance a ON e.event_id = a.event_id
+            {$whereClause}
+            AND e.start_datetime >= DATE_SUB(NOW(), INTERVAL {$months} MONTH)
+            GROUP BY e.event_id, month, month_name, e.target_participants
+            ORDER BY month ASC
+        ");
+        
+        $results = $query->getResultArray();
+        
+        // Group by month and calculate average across all events in that month
+        $monthlyData = [];
+        foreach ($results as $row) {
+            $month = $row['month'];
+            if (!isset($monthlyData[$month])) {
+                $monthlyData[$month] = [
+                    'month' => $month,
+                    'month_name' => $row['month_name'],
+                    'rates' => []
+                ];
+            }
+            $monthlyData[$month]['rates'][] = (float)$row['participation_rate'];
+        }
+        
+        // Calculate average rate per month
+        $finalResults = [];
+        foreach ($monthlyData as $data) {
+            $finalResults[] = [
+                'month' => $data['month'],
+                'month_name' => $data['month_name'],
+                'avg_participation_rate' => count($data['rates']) > 0 
+                    ? round(array_sum($data['rates']) / count($data['rates']), 1)
+                    : 0
+            ];
+        }
+        
+        return $finalResults;
+    }
+
+    /**
+     * Get categories by average participation rate
+     * @param int|null $barangayId Barangay filter
+     * @return array
+     */
+    public function getCategoriesByParticipationRate($barangayId = null): array
+    {
+        $whereClause = "WHERE e.status = 'Published' AND e.target_participants IS NOT NULL AND e.target_participants > 0";
+        
+        if ($barangayId !== null && $barangayId > 0) {
+            $whereClause .= " AND e.barangay_id = " . (int)$barangayId;
+        }
+        
+        $query = $this->db->query("
+            SELECT 
+                e.event_id,
+                e.category,
+                e.target_participants,
+                COUNT(DISTINCT a.user_id) as actual_participants,
+                ROUND((COUNT(DISTINCT a.user_id) / NULLIF(e.target_participants, 0)) * 100, 1) as participation_rate
+            FROM event e
+            LEFT JOIN attendance a ON e.event_id = a.event_id
+            {$whereClause}
+            GROUP BY e.event_id, e.category, e.target_participants
+            ORDER BY e.category
+        ");
+        
+        $results = $query->getResultArray();
+        
+        // Group by category and calculate average
+        $categoryData = [];
+        foreach ($results as $row) {
+            $category = $row['category'];
+            if (!isset($categoryData[$category])) {
+                $categoryData[$category] = [
+                    'category' => $category,
+                    'rates' => []
+                ];
+            }
+            $categoryData[$category]['rates'][] = (float)$row['participation_rate'];
+        }
+        
+        // Calculate final average per category
+        $finalResults = [];
+        foreach ($categoryData as $data) {
+            $finalResults[] = [
+                'category' => $data['category'],
+                'avg_participation_rate' => count($data['rates']) > 0 
+                    ? round(array_sum($data['rates']) / count($data['rates']), 1)
+                    : 0
+            ];
+        }
+        
+        // Sort by participation rate descending
+        usort($finalResults, function($a, $b) {
+            return $b['avg_participation_rate'] <=> $a['avg_participation_rate'];
+        });
+        
+        return $finalResults;
+    }
+
+    /**
+     * Get top barangays by average participation rate
+     * @return array
+     */
+    public function getTopBarangaysByParticipationRate(): array
+    {
+        // First, get participation rate for each event
+        $query = $this->db->query("
+            SELECT 
+                e.event_id,
+                b.barangay_id,
+                b.name as barangay,
+                e.target_participants,
+                COUNT(DISTINCT a.user_id) as actual_attendees,
+                (COUNT(DISTINCT a.user_id) / NULLIF(e.target_participants, 0)) * 100 as participation_rate
+            FROM event e
+            JOIN barangay b ON e.barangay_id = b.barangay_id
+            LEFT JOIN attendance a ON e.event_id = a.event_id
+            WHERE e.status = 'Published' 
+            AND e.target_participants IS NOT NULL 
+            AND e.target_participants > 0
+            AND e.barangay_id > 0
+            GROUP BY e.event_id, b.barangay_id, b.name, e.target_participants
+        ");
+        
+        $results = $query->getResultArray();
+        
+        // Group by barangay and calculate average
+        $barangayData = [];
+        foreach ($results as $row) {
+            $barangay = $row['barangay'];
+            if (!isset($barangayData[$barangay])) {
+                $barangayData[$barangay] = [
+                    'barangay' => $barangay,
+                    'rates' => [],
+                    'event_count' => 0
+                ];
+            }
+            $barangayData[$barangay]['rates'][] = (float)$row['participation_rate'];
+            $barangayData[$barangay]['event_count']++;
+        }
+        
+        // Calculate final average per barangay
+        $finalResults = [];
+        foreach ($barangayData as $data) {
+            $finalResults[] = [
+                'barangay' => $data['barangay'],
+                'event_count' => $data['event_count'],
+                'avg_participation_rate' => count($data['rates']) > 0 
+                    ? round(array_sum($data['rates']) / count($data['rates']), 1)
+                    : 0
+            ];
+        }
+        
+        // Sort by participation rate descending
+        usort($finalResults, function($a, $b) {
+            return $b['avg_participation_rate'] <=> $a['avg_participation_rate'];
+        });
+        
+        return $finalResults;
     }
 }

@@ -186,20 +186,35 @@
                     <div id="workStatusChart" style="height: 300px;"></div>
                 </div>
             </div>
-        </div>
 
-        <!-- Educational Background Chart - Full Width -->
-        <div class="bg-white rounded-lg shadow-sm mb-8">
-            <div class="p-6 border-b border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-900 flex items-center">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-                    </svg>
-                    Educational Background
-                </h3>
+            <!-- Voter Classification Chart -->
+            <div class="bg-white rounded-lg shadow-sm">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Voter Classification
+                    </h3>
+                </div>
+                <div class="p-6">
+                    <div id="voterClassificationChart" style="height: 300px;"></div>
+                </div>
             </div>
-            <div class="p-6">
-                <div id="educationalBackgroundChart" style="height: 400px;"></div>
+
+            <!-- Educational Background Chart -->
+            <div class="bg-white rounded-lg shadow-sm">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                        </svg>
+                        Educational Background
+                    </h3>
+                </div>
+                <div class="p-6">
+                    <div id="educationalBackgroundChart" style="height: 300px;"></div>
+                </div>
             </div>
         </div>
 
@@ -234,7 +249,7 @@
     const baseApiUrl = viewType === 'citywide' ? '/analytics/pederasyon' : '/analytics/sk';
 
     // Chart instances
-    let genderChart, ageChart, youthClassificationChart, civilStatusChart, workStatusChart, educationalBackgroundChart, genderByBarangayChart;
+    let genderChart, ageChart, youthClassificationChart, civilStatusChart, workStatusChart, voterClassificationChart, educationalBackgroundChart, genderByBarangayChart;
 
     // Initialize charts when document is ready
     $(document).ready(function() {
@@ -246,6 +261,7 @@
         loadYouthClassificationChart();
         loadCivilStatusChart();
         loadWorkStatusChart();
+        loadVoterClassificationChart();
         loadEducationalBackgroundChart();
         
         <?php if ($view_type === 'citywide'): ?>
@@ -284,6 +300,7 @@
         loadYouthClassificationChart();
         loadCivilStatusChart();
         loadWorkStatusChart();
+        loadVoterClassificationChart();
         loadEducationalBackgroundChart();
         
         // Also refresh gender by barangay chart if in citywide view
@@ -773,6 +790,86 @@
             })
             .fail(function() {
                 $('#workStatusChart').html('<div class="text-center text-gray-500">Error loading work status data</div>');
+            });
+    }
+
+    // Load Voter Classification Chart
+    function loadVoterClassificationChart() {
+        const params = new URLSearchParams({
+            view_type: viewType
+        });
+        
+        if (viewType === 'citywide') {
+            const barangayId = $('#barangayFilter').val();
+            if (barangayId && barangayId !== 'all') {
+                params.append('barangay_id', barangayId);
+            }
+        }
+
+        $.get(`${baseApiUrl}/voter-classification?${params.toString()}`)
+            .done(function(data) {
+                // Define custom colors for voter classification
+                const colorMap = {
+                    'Non-Voter': '#dc3545',           // Red
+                    'SK Voter Only': '#ffc107',        // Amber/Yellow
+                    'National Voter Only': '#17a2b8',  // Cyan
+                    'Both SK & National Voter': '#28a745' // Green
+                };
+
+                // Map colors to data
+                const mappedData = data.map(item => ({
+                    name: item.name,
+                    y: item.y,
+                    color: colorMap[item.name] || '#6c757d' // Default gray
+                }));
+
+                voterClassificationChart = Highcharts.chart('voterClassificationChart', {
+                    chart: {
+                        type: 'pie'
+                    },
+                    title: {
+                        text: null
+                    },
+                    tooltip: {
+                        pointFormat: '{series.name}: <b>{point.y}</b> ({point.percentage:.1f}%)'
+                    },
+                    accessibility: {
+                        point: {
+                            valueSuffix: '%'
+                        }
+                    },
+                    plotOptions: {
+                        pie: {
+                            allowPointSelect: true,
+                            cursor: 'pointer',
+                            dataLabels: {
+                                enabled: true,
+                                format: '<b>{point.name}</b>: {point.y} ({point.percentage:.1f}%)',
+                                style: {
+                                    fontSize: '11px'
+                                }
+                            },
+                            showInLegend: true
+                        }
+                    },
+                    legend: {
+                        enabled: true,
+                        layout: 'horizontal',
+                        align: 'center',
+                        verticalAlign: 'bottom'
+                    },
+                    series: [{
+                        name: 'Count',
+                        colorByPoint: true,
+                        data: mappedData
+                    }],
+                    exporting: {
+                        enabled: true
+                    }
+                });
+            })
+            .fail(function() {
+                $('#voterClassificationChart').html('<div class="text-center text-gray-500">Error loading voter classification data</div>');
             });
     }
 

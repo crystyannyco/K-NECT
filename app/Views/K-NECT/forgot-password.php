@@ -225,6 +225,9 @@
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10" id="contactIcon">
                                 <!-- Icon will be set by JS -->
                             </div>
+                            <div class="absolute inset-y-0 left-10 pl-3 flex items-center pointer-events-none z-10 hidden" id="phonePrefix">
+                                <span class="text-gray-700 font-medium mr-2">+63</span>
+                            </div>
                             <input 
                                 type="text" 
                                 id="contactInfo" 
@@ -398,17 +401,41 @@
             const contactHint = document.getElementById('contactHint');
             const contactIcon = document.getElementById('contactIcon');
             const contactInput = document.getElementById('contactInfo');
+            const phonePrefix = document.getElementById('phonePrefix');
             
             if (method === 'sms') {
                 contactLabel.textContent = 'Phone Number';
-                contactHint.textContent = 'Enter your registered phone number (e.g., 09171234567)';
+                contactHint.textContent = 'Enter your registered phone number (e.g., 91234567890)';
                 contactIcon.innerHTML = `
                     <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                     </svg>
                 `;
                 contactInput.type = 'tel';
-                contactInput.placeholder = 'Enter your phone number';
+                contactInput.placeholder = '91234567890';
+                contactInput.maxLength = 10;
+                
+                // Show +63 prefix and adjust padding
+                phonePrefix.classList.remove('hidden');
+                contactInput.classList.remove('pl-10');
+                contactInput.classList.add('pl-24');
+                
+                // Add phone number formatting and validation
+                contactInput.addEventListener('input', function(e) {
+                    // Remove any non-digit characters
+                    let value = e.target.value.replace(/\D/g, '');
+                    
+                    // If there's input and it doesn't start with 9, clear it or remove invalid starting digits
+                    if (value.length > 0 && !value.startsWith('9')) {
+                        // Remove all leading digits that are not 9
+                        value = value.replace(/^[^9]+/, '');
+                    }
+                    
+                    // Only keep digits and limit to 10
+                    value = value.substring(0, 10);
+                    
+                    e.target.value = value;
+                });
             } else {
                 contactLabel.textContent = 'Email Address';
                 contactHint.textContent = 'Enter your registered email address';
@@ -419,6 +446,12 @@
                 `;
                 contactInput.type = 'email';
                 contactInput.placeholder = 'Enter your email address';
+                
+                // Hide +63 prefix and reset padding
+                phonePrefix.classList.add('hidden');
+                contactInput.classList.remove('pl-24');
+                contactInput.classList.add('pl-10');
+                contactInput.removeAttribute('maxLength');
             }
             
             // Update display elements
@@ -484,8 +517,22 @@
                 }
             } else if (selectedMethod === 'sms') {
                 const cleanPhone = contactValue.replace(/\D/g, '');
-                if (cleanPhone.length < 10 || cleanPhone.length > 13) {
-                    setContactError('Please enter a valid phone number (10-13 digits).');
+                
+                // Must be exactly 10 digits
+                if (cleanPhone.length !== 10) {
+                    setContactError('Please enter exactly 10 digits for your phone number.');
+                    return;
+                }
+                
+                // Must start with 9 (reject 0)
+                if (!cleanPhone.startsWith('9')) {
+                    setContactError('Phone number must start with 9 (e.g., 91234567890).');
+                    return;
+                }
+                
+                // Only numbers allowed
+                if (!/^[0-9]+$/.test(cleanPhone)) {
+                    setContactError('Phone number must contain only numbers.');
                     return;
                 }
             }

@@ -306,8 +306,17 @@
 
     // Progress bar for upload
     document.getElementById('uploadForm').addEventListener('submit', function(e) {
+        e.preventDefault(); // Prevent default form submission
+        
         const form = this;
         const submitBtn = form.querySelector('button[type="submit"]');
+        
+        // Validate form before submission
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        
         submitBtn.disabled = true;
         submitBtn.textContent = 'Uploading...';
         const xhr = new XMLHttpRequest();
@@ -336,7 +345,6 @@
         xhr.onerror = function() { submitBtn.disabled=false; submitBtn.textContent='Upload'; Swal.fire({ title: 'Error', text: 'Upload failed. Please try again.', icon: 'error', confirmButtonColor: '#d33' }); };
         const formData = new FormData(form);
         xhr.send(formData);
-        e.preventDefault();
     });
 
     // Tagify for tags input

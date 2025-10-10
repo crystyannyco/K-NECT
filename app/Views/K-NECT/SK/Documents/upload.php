@@ -343,8 +343,17 @@
 
     // Progress bar for upload
     document.getElementById('uploadForm').addEventListener('submit', function(e) {
+        e.preventDefault(); // Prevent default form submission
+        
         const form = this;
         const submitBtn = form.querySelector('button[type="submit"]');
+        
+        // Validate form before submission
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        
         submitBtn.disabled = true;
         submitBtn.textContent = 'Uploading...';
         const xhr = new XMLHttpRequest();
@@ -357,7 +366,6 @@
             let resp; try { resp = JSON.parse(xhr.responseText); } catch (err) { resp = null; }
             if (resp && resp.success) {
                 Swal.fire({ title: 'Success', text: 'Document uploaded successfully!', icon: 'success', confirmButtonColor: '#2563eb' }).then(() => { window.location.href = '<?= base_url('admin/documents') ?>'; });
-                Swal.fire({ title: 'Success', text: 'Document uploaded successfully!', icon: 'success', confirmButtonColor: '#2563eb' }).then(() => { window.location.href = '<?= base_url('sk/documents') ?>'; });
                 form.reset(); fileName.textContent=''; document.getElementById('progressBar').style.width='0%'; document.getElementById('progressContainer').classList.add('hidden');
             } else {
                 // Clear previous inline errors
@@ -374,7 +382,6 @@
         xhr.onerror = function() { submitBtn.disabled=false; submitBtn.textContent='Upload'; Swal.fire({ title: 'Error', text: 'Upload failed. Please try again.', icon: 'error', confirmButtonColor: '#d33' }); };
         const formData = new FormData(form);
         xhr.send(formData);
-        e.preventDefault();
     });
 
     // Tagify for tags input

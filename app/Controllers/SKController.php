@@ -11,7 +11,6 @@ use App\Models\EventModel;
 use App\Models\AttendanceModel;
 use App\Models\EventAttendanceModel;
 use App\Models\BulletinModel;
-use App\Models\BulletinModel;
 use App\Libraries\UserHelper;
 use App\Libraries\BarangayHelper;
 use App\Libraries\ZoneHelper;

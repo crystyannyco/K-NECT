@@ -9,32 +9,59 @@
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
                         <div class="flex-1">
                             <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">My Attendance</h1>
-                            <p class="text-gray-600 mt-1 text-sm sm:text-base">Track your participation in events and activities</p>
+                            <p class="text-gray-600 mt-1 text-sm sm:text-base">Events you have attended with recorded time-in/time-out</p>
                         </div>
+                        <?php 
+                            // Filter only attended events (not just registered)
+                            $attended_events = array_filter($attendance_records, function($record) {
+                                return isset($record['overall_status']) && $record['overall_status'] === 'Attended';
+                            });
+                            $attended_count = count($attended_events);
+                        ?>
                         <div class="flex items-center gap-2 sm:gap-3">
-                            <div class="flex items-center text-sm text-gray-600 bg-gray-50 rounded-lg px-3 py-2">
-                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="flex items-center text-sm text-gray-600 bg-green-50 rounded-lg px-3 py-2 border border-green-200">
+                                <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                 </svg>
-                                <span class="font-medium"><span id="attendance-count"><?= count($attendance_records) ?></span> Events</span>
+                                <span class="font-medium text-green-700"><span id="attendance-count"><?= $attended_count ?></span> Events Attended</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filters Section - Moved below header for better mobile UX -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 mt-4">
+                        <div class="flex flex-col gap-3">
+                            <!-- Search Input - Full width on mobile -->
+                            <div class="relative w-full">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                    </svg>
+                                </div>
+                                <input id="attendance-search" type="text" placeholder="Search events..." 
+                                       class="w-full pl-10 pr-3 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                       autocomplete="off" />
                             </div>
 
-                            <!-- Filters: Search and Date -->
-                            <div class="flex items-center gap-2">
-                                <div class="relative">
-                                    <input id="attendance-search" type="text" placeholder="Search events..." 
-                                           class="w-40 sm:w-48 md:w-64 lg:w-72 px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                           autocomplete="off" />
-                                </div>
-                                <div class="flex items-center gap-2">
+                            <!-- Date Range Filters - Stack on mobile, side-by-side on larger screens -->
+                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+                                <div class="flex-1 flex items-center gap-2">
+                                    <label class="text-sm text-gray-600 whitespace-nowrap">From:</label>
                                     <input id="attendance-date-start" type="date" 
-                                           class="px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" />
-                                    <span class="text-gray-500 text-sm">to</span>
+                                           class="flex-1 px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" />
+                                </div>
+                                <div class="flex-1 flex items-center gap-2">
+                                    <label class="text-sm text-gray-600 whitespace-nowrap">To:</label>
                                     <input id="attendance-date-end" type="date" 
-                                           class="px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" />
+                                           class="flex-1 px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" />
                                 </div>
                                 <button id="attendance-clear" type="button" 
-                                        class="px-3 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm">Clear</button>
+                                        class="w-full sm:w-auto px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-medium transition-colors flex items-center justify-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                    Clear Filters
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -42,16 +69,17 @@
 
                 <!-- Attendance Records -->
                 <div class="mb-6">
-                    <?php if (empty($attendance_records)): ?>
+                    <?php if (empty($attended_events)): ?>
                         <!-- Empty State -->
                         <div class="flex flex-col items-center justify-center text-center py-16 px-4">
                             <div class="max-w-md mx-auto">
                                 <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                                 </svg>
-                                <h3 class="text-lg font-medium text-gray-900 mb-2">No Attendance Records</h3>
-                                <p class="text-base text-gray-600 mb-6">You haven't attended any events yet. Start participating!</p>
-                                <a href="<?= base_url('kk/events') ?>" 
+                                <h3 class="text-lg font-medium text-gray-900 mb-2">No Attended Events Yet</h3>
+                                <p class="text-base text-gray-600 mb-2">You haven't attended any events yet.</p>
+                                <p class="text-sm text-gray-500 mb-6">Register for events and time-in to build your attendance record.</p>
+                                <a href="<?= base_url('/events') ?>" 
                                    class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-base font-medium rounded-lg hover:bg-blue-700 transition-colors">
                                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 002 2z"/>
@@ -62,8 +90,8 @@
                         </div>
                     <?php else: ?>
                         <!-- Attendance Records - Responsive Grid Layout -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 auto-rows-fr">
-                            <?php foreach ($attendance_records as $record): ?>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 auto-rows-fr">
+                            <?php foreach ($attended_events as $record): ?>
                                 <!-- Attendance Card -->
                                 <div 
                                     class="attendance-card bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1 flex flex-col h-full"
@@ -83,40 +111,30 @@
                                         'description' => $record['event_description'] ?? ''
                                     ]) ?>'
                                 >
-                                    
-                                        <div class="relative h-40 bg-gradient-to-br from-blue-50 to-blue-100 flex-shrink-0">
+                                    <!-- Event Banner -->
+                                        <div class="relative h-32 sm:h-40 bg-gradient-to-br from-blue-50 to-blue-100 flex-shrink-0">
                                             <img src="<?= !empty($record['event_banner']) ? base_url('uploads/event/' . $record['event_banner']) : base_url('assets/images/default-event-banner.svg') ?>" 
                                                  alt="<?= esc($record['event_title']) ?>" 
                                                  class="w-full h-full object-cover"
                                                  loading="lazy"
                                                  onerror="this.onerror=null; this.src='<?= base_url('assets/images/default-event-banner.svg') ?>';">
                                         
-                                            <!-- Status Badge -->
+                                            <!-- Status Badge - Always Attended since we're filtering -->
                                             <div class="absolute top-3 right-3">
-                                            <?php if ($record['overall_status'] === 'Attended'): ?>
                                                 <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-green-500 text-white text-xs font-semibold shadow-lg">
                                                     <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
                                                     </svg>
-                                                    Present
+                                                    Attended
                                                 </span>
-                                            <?php else: ?>
-                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-gray-500 text-white text-xs font-semibold shadow-lg">
-                                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
-                                                        <path fill-rule="evenodd" d="M4 5a2 2 0 012-2h8a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
-                                                    </svg>
-                                                    Registered
-                                                </span>
-                                            <?php endif; ?>
                                         </div>
                                     </div>
 
                                     <!-- Card Content -->
-                                    <div class="p-4 flex-grow flex flex-col">
+                                    <div class="p-3 sm:p-4 flex-grow flex flex-col">
                                         <!-- Event Title and Basic Info -->
                                         <div class="mb-2 flex-grow">
-                                            <h3 class="text-lg font-bold text-gray-900 mb-2 line-clamp-2 leading-tight overflow-hidden">
+                                            <h3 class="text-base sm:text-lg font-bold text-gray-900 mb-2 line-clamp-2 leading-tight overflow-hidden">
                                                 <?= esc($record['event_title']) ?>
                                             </h3>
                                             
@@ -147,10 +165,10 @@
                                         </div>
 
                                         <!-- Attendance Information -->
-                                        <?php if ($record['overall_status'] === 'Attended'): ?>
-                                            <!-- Attendance Time Summary -->
+                                        <!-- Attendance Time Summary - Always show since we're only displaying attended events -->
+                                        <?php if (!empty($record['time_in_am']) || !empty($record['time_out_am']) || !empty($record['time_in_pm']) || !empty($record['time_out_pm'])): ?>
                                             <div class="mb-3">
-                                                <div class="grid grid-cols-2 gap-2">
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                     <?php if (!empty($record['time_in_am']) || !empty($record['time_out_am'])): ?>
                                                     <div class="bg-blue-50 rounded-md p-2 border border-blue-100">
                                                         <div class="text-xs font-medium text-blue-700 mb-1">Morning Session</div>
@@ -196,30 +214,19 @@
                                             </div>
                                         <?php endif; ?>
 
-                                        <!-- Attendance Status Summary -->
+                                        <!-- View Details Button -->
                                         <div class="mt-auto">
-                                            <?php if ($record['overall_status'] === 'Attended'): ?>
-                                                <button 
-                                                    onclick="openAttendanceModal(this.closest('.attendance-card'))"
-                                                    class="w-full bg-green-600 hover:bg-green-700 text-white text-xs font-medium py-2 px-3 rounded-md transition-colors duration-200 flex items-center justify-center"
-                                                >
-                                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                                    </svg>
-                                                    View Detailed Attendance
-                                                </button>
-                                            <?php else: ?>
-                                                <button 
-                                                    onclick="openAttendanceModal(this.closest('.attendance-card'))"
-                                                    class="w-full bg-gray-600 hover:bg-gray-700 text-white text-xs font-medium py-2 px-3 rounded-md transition-colors duration-200 flex items-center justify-center"
-                                                >
-                                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                                    </svg>
-                                                    View Event Details
-                                                </button>
-                                            <?php endif; ?>
+                                            <button 
+                                                onclick="openAttendanceModal(this.closest('.attendance-card'))"
+                                                class="w-full bg-green-600 hover:bg-green-700 active:bg-green-800 text-white text-xs sm:text-sm font-medium py-2.5 px-3 rounded-lg transition-colors duration-200 flex items-center justify-center gap-1.5 touch-manipulation"
+                                            >
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                </svg>
+                                                <span class="hidden sm:inline">View Attendance Details</span>
+                                                <span class="sm:hidden">View Details</span>
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -244,11 +251,11 @@
 </div> <!-- End main content area -->
 
 <!-- Attendance Detail Modal -->
-<div id="attendanceModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+<div id="attendanceModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-2 sm:p-4">
+    <div class="bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
         <!-- Modal Header -->
         <div class="relative">
-            <div id="modalBanner" class="h-48 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+            <div id="modalBanner" class="h-32 sm:h-48 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
                 <img id="modalBannerImg" class="w-full h-full object-cover hidden" alt="">
                 <div id="modalBannerDefault" class="text-center">
                     <svg class="w-20 h-20 text-white opacity-80 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -259,15 +266,15 @@
             </div>
             
             <!-- Status Badge -->
-            <div class="absolute top-4 right-4">
-                <span id="modalStatusBadge" class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold shadow-lg">
+            <div class="absolute top-2 right-2 sm:top-4 sm:right-4">
+                <span id="modalStatusBadge" class="inline-flex items-center px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-semibold shadow-lg">
                     <svg id="modalStatusIcon" class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20"></svg>
                     <span id="modalStatusText"></span>
                 </span>
             </div>
             
             <!-- Close Button -->
-            <button onclick="closeAttendanceModal()" class="absolute top-4 left-4 bg-black bg-opacity-20 hover:bg-opacity-30 text-white rounded-full p-2 transition-all">
+            <button onclick="closeAttendanceModal()" class="absolute top-2 left-2 sm:top-4 sm:left-4 bg-black bg-opacity-20 hover:bg-opacity-30 active:bg-opacity-40 text-white rounded-full p-1.5 sm:p-2 transition-all touch-manipulation">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
@@ -275,14 +282,14 @@
         </div>
         
         <!-- Modal Body -->
-        <div class="p-6 max-h-[60vh] overflow-y-auto">
+        <div class="p-4 sm:p-6 max-h-[60vh] overflow-y-auto">
             <!-- Event Info -->
-            <div class="mb-6">
-                <h2 id="modalTitle" class="text-2xl font-bold text-gray-900 mb-4"></h2>
+            <div class="mb-4 sm:mb-6">
+                <h2 id="modalTitle" class="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4"></h2>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
                     <div class="flex items-center text-gray-600">
-                        <svg class="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 mr-2 sm:mr-3 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2z"/>
                         </svg>
                         <div>
@@ -292,17 +299,17 @@
                     </div>
                     
                     <div class="flex items-center text-gray-600">
-                        <svg class="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 mr-2 sm:mr-3 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
-                        <div>
+                        <div class="min-w-0">
                             <div class="text-sm text-gray-500">Time</div>
-                            <div id="modalTime" class="font-medium"></div>
+                            <div id="modalTime" class="font-medium truncate"></div>
                         </div>
                     </div>
                     
-                    <div id="modalLocationContainer" class="flex items-center text-gray-600 md:col-span-2">
-                        <svg class="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div id="modalLocationContainer" class="flex items-center text-gray-600 sm:col-span-2">
+                        <svg class="w-5 h-5 mr-2 sm:mr-3 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                         </svg>
@@ -400,9 +407,15 @@
 /* Card styles */
 .attendance-card {
     transition: all 0.3s ease-in-out;
-    min-height: 360px; /* Further reduced card height */
+    min-height: 320px; /* Reduced for mobile */
     display: flex;
     flex-direction: column;
+}
+
+@media (min-width: 640px) {
+    .attendance-card {
+        min-height: 360px;
+    }
 }
 
 .attendance-card:hover {
@@ -457,6 +470,44 @@
     .lg\:ml-64 {
         width: 100% !important;
         margin-left: 0 !important;
+    }
+}
+
+/* Touch-friendly interactions */
+.touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Better mobile text sizing */
+@media (max-width: 640px) {
+    .attendance-card h3 {
+        font-size: 0.95rem;
+        line-height: 1.3;
+    }
+    
+    .attendance-card .text-sm {
+        font-size: 0.8125rem;
+    }
+    
+    .attendance-card .text-xs {
+        font-size: 0.75rem;
+    }
+}
+
+/* Improve modal responsiveness */
+@media (max-width: 640px) {
+    #attendanceModal .bg-white {
+        border-radius: 0.75rem;
+    }
+    
+    #attendanceModal h2 {
+        font-size: 1.25rem;
+        line-height: 1.4;
+    }
+    
+    #attendanceModal .text-lg {
+        font-size: 1rem;
     }
 }
 

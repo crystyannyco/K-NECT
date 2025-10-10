@@ -785,26 +785,62 @@ class AuthController extends BaseController
 
             $maskedContact = mask_email($contactInfo);
         } else { // SMS
-            // Normalize phone number for comparison
+            // Validate phone number format
             $cleanInput = preg_replace('/[^0-9]/', '', $contactInfo);
+            
+            // Must be exactly 10 digits
+            if (strlen($cleanInput) !== 10) {
+                if ($isAjax) {
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'message' => 'Phone number must be exactly 10 digits.'
+                    ]);
+                }
+                return redirect()->back()->with('error', 'Phone number must be exactly 10 digits.');
+            }
+            
+            // Must start with 9 (not 0)
+            if (!preg_match('/^9/', $cleanInput)) {
+                if ($isAjax) {
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'message' => 'Phone number must start with 9 (e.g., 9171234567).'
+                    ]);
+                }
+                return redirect()->back()->with('error', 'Phone number must start with 9.');
+            }
+            
+            // Normalize stored phone number for comparison
             $cleanStored = preg_replace('/[^0-9]/', '', $user['phone_number']);
+            
+            // Remove leading +63 or 63 from stored number if present
+            if (preg_match('/^63/', $cleanStored)) {
+                $cleanStored = substr($cleanStored, 2);
+            }
+            
+            // Remove leading 0 from input or stored if present
+            $cleanInput = ltrim($cleanInput, '0');
+            $cleanStored = ltrim($cleanStored, '0');
 
             if ($cleanInput !== $cleanStored) {
                 if ($isAjax) {
                     return $this->response->setJSON([
                         'success' => false,
-                        'message' => 'The phone number does not match our records.'
+                        'message' => 'The phone number does not match the registered number.'
                     ]);
                 }
-                return redirect()->back()->with('error', 'The phone number does not match our records.');
+                return redirect()->back()->with('error', 'The phone number does not match the records.');
             }
 
-            $maskedContact = mask_phone_number($contactInfo);
+            $maskedContact = mask_phone_number('+63' . $cleanInput);
         }
 
         // Store verified contact info and password reset data in session
+        // For SMS, store with +63 prefix for sending
+        $contactToStore = $method === 'sms' ? '+63' . $cleanInput : $contactInfo;
+        
         session()->set([
-            'password_reset_contact' => $contactInfo,
+            'password_reset_contact' => $contactToStore,
             'password_reset_user_id' => $user['id'],
             'password_reset_method' => $method,
             'password_reset_username' => $username,

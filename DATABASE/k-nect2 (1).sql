@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.2
+-- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
--- Host: 127.0.0.1:3306
--- Generation Time: Oct 12, 2025 at 02:39 AM
--- Server version: 11.8.3-MariaDB-log
--- PHP Version: 7.2.34
+-- Host: 127.0.0.1
+-- Generation Time: Oct 12, 2025 at 08:49 AM
+-- Server version: 10.4.32-MariaDB
+-- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `u760074635_eiheec`
+-- Database: `k-nect2`
 --
 
 -- --------------------------------------------------------
@@ -37,7 +37,7 @@ CREATE TABLE `address` (
   `zip_code` int(10) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `updated_at` timestamp NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 --
 -- Dumping data for table `address`
@@ -64,7 +64,7 @@ CREATE TABLE `attendance` (
   `time-out_pm` datetime DEFAULT NULL,
   `status_am` varchar(10) DEFAULT NULL,
   `status_pm` varchar(10) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -78,7 +78,7 @@ CREATE TABLE `audit_logs` (
   `action` varchar(50) NOT NULL,
   `performed_by` varchar(100) NOT NULL,
   `performed_at` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -90,7 +90,7 @@ CREATE TABLE `barangay` (
   `barangay_id` int(11) UNSIGNED NOT NULL,
   `name` varchar(100) NOT NULL,
   `google_calendar_id` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 --
 -- Dumping data for table `barangay`
@@ -150,7 +150,7 @@ CREATE TABLE `bulletin_categories` (
   `is_active` tinyint(1) DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -175,7 +175,7 @@ CREATE TABLE `bulletin_posts` (
   `published_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -186,7 +186,7 @@ CREATE TABLE `bulletin_posts` (
 CREATE TABLE `bulletin_post_tags` (
   `post_id` int(11) NOT NULL,
   `tag_id` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -199,7 +199,7 @@ CREATE TABLE `bulletin_tags` (
   `name` varchar(50) NOT NULL,
   `slug` varchar(50) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -212,7 +212,7 @@ CREATE TABLE `categories` (
   `name` varchar(100) NOT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -238,7 +238,7 @@ CREATE TABLE `documents` (
   `description` text DEFAULT NULL,
   `tags` varchar(255) DEFAULT NULL,
   `downloadable` tinyint(1) DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -249,7 +249,7 @@ CREATE TABLE `documents` (
 CREATE TABLE `document_category` (
   `document_id` int(10) UNSIGNED NOT NULL,
   `category_id` int(10) UNSIGNED NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -266,7 +266,7 @@ CREATE TABLE `document_shares` (
   `expires_at` datetime DEFAULT NULL,
   `shared_at` datetime NOT NULL,
   `is_active` tinyint(1) NOT NULL DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -277,7 +277,7 @@ CREATE TABLE `document_shares` (
 CREATE TABLE `document_tag` (
   `document_id` int(10) UNSIGNED NOT NULL,
   `tag_id` int(10) UNSIGNED NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -295,7 +295,7 @@ CREATE TABLE `document_versions` (
   `uploaded_at` datetime NOT NULL,
   `filesize` int(11) NOT NULL,
   `mimetype` varchar(100) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -326,7 +326,7 @@ CREATE TABLE `event` (
   `sms_recipient_scope` enum('all_barangays','specific_barangays') DEFAULT NULL COMMENT 'Scope for SMS recipients',
   `sms_recipient_barangays` text DEFAULT NULL COMMENT 'JSON array of specific barangay IDs for SMS',
   `sms_recipient_roles` text DEFAULT NULL COMMENT 'JSON array of recipient roles (all_officials, chairman, secretary, treasurer)'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -342,7 +342,7 @@ CREATE TABLE `event_attendance` (
   `start_attendance_pm` time DEFAULT NULL,
   `end_attendance_pm` time DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -358,7 +358,15 @@ CREATE TABLE `migrations` (
   `namespace` varchar(255) NOT NULL,
   `time` int(11) NOT NULL,
   `batch` int(11) UNSIGNED NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+--
+-- Dumping data for table `migrations`
+--
+
+INSERT INTO `migrations` (`id`, `version`, `class`, `group`, `namespace`, `time`, `batch`) VALUES
+(0, '2025-09-17-000000', 'App\\Database\\Migrations\\FixBulletinSchema', 'default', 'App', 1760251599, 1),
+(0, '2025-10-12-000000', 'App\\Database\\Migrations\\AddDeactivationReasonToUser', 'default', 'App', 1760251734, 2);
 
 -- --------------------------------------------------------
 
@@ -377,7 +385,7 @@ CREATE TABLE `sms_logs` (
   `sent_at` datetime DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -398,7 +406,7 @@ CREATE TABLE `system_logo` (
   `uploaded_by` varchar(11) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -411,7 +419,7 @@ CREATE TABLE `tags` (
   `name` varchar(100) NOT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -443,18 +451,19 @@ CREATE TABLE `user` (
   `status` tinyint(1) NOT NULL,
   `user_type` tinyint(1) NOT NULL,
   `is_active` tinyint(1) NOT NULL,
+  `deactivation_reason` text DEFAULT NULL,
   `last_login` datetime DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `updated_at` timestamp NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 --
 -- Dumping data for table `user`
 --
 
-INSERT INTO `user` (`id`, `rfid_code`, `user_id`, `last_name`, `first_name`, `middle_name`, `suffix`, `sex`, `gender`, `birthdate`, `email`, `sk_username`, `sk_password`, `ped_username`, `ped_password`, `phone_number`, `username`, `password`, `position`, `ped_position`, `status`, `user_type`, `is_active`, `last_login`, `created_at`, `updated_at`) VALUES
-(1, NULL, '25-0000-01', 'Lontayao', 'Dessa', 'Mare Parma', '', 2, '2', '2001-07-15', 'lontayaodessamare@gmail.com', 'SK_DessaLontayao', '14cb73a4', 'PED_DessaLontayao', '05daa9d7', '+639766609928', 'SKPED_Dessa', '$2y$10$24jj5JtRbNtHwFvhUDa.8ORMMuJvWHC4OR3lCcRcjcdSAifWo97Te', 1, 1, 2, 3, 1, '2025-10-11 14:04:03', '2025-10-11 15:56:10', '2025-10-11 23:40:35'),
-(2, NULL, '25-0000-00', 'Luzano', 'Christian Nico', 'Brizuela', '', 1, '', '2004-01-22', 'christiannicoluzano15@gmail.com', 'SK_ChristianNicoLuzano', '$2y$12$ycCzxrHnrKGRbqUhyG/aBuP16BqyTZ5RGgm6downqr1ibwPjyvBpu', 'PED_ChristianNicoLuzano', '$2y$10$fIfYrWI8zNTIVvOX.uJHVeAEpjKtMsnnZ3eBoKNGRXnTkdoUrMrfy', '+639451971854', 'ChristianNico', '$2y$12$UKC0JakOWV436jpNTNOwn.IHK8cp4Flm6PTxWgVeDClIvqSFYs5wK', NULL, NULL, 2, 3, 1, '2025-10-12 10:36:55', '2025-10-12 02:36:55', '2025-10-12 10:36:55');
+INSERT INTO `user` (`id`, `rfid_code`, `user_id`, `last_name`, `first_name`, `middle_name`, `suffix`, `sex`, `gender`, `birthdate`, `email`, `sk_username`, `sk_password`, `ped_username`, `ped_password`, `phone_number`, `username`, `password`, `position`, `ped_position`, `status`, `user_type`, `is_active`, `deactivation_reason`, `last_login`, `created_at`, `updated_at`) VALUES
+(1, NULL, '25-0000-01', 'Lontayao', 'Dessa', 'Mare Parma', '', 2, '2', '2001-07-15', 'lontayaodessamare@gmail.com', 'SK_DessaLontayao', '14cb73a4', 'PED_DessaLontayao', '05daa9d7', '+639766609928', 'SKPED_Dessa', '$2y$10$24jj5JtRbNtHwFvhUDa.8ORMMuJvWHC4OR3lCcRcjcdSAifWo97Te', 1, 1, 2, 3, 1, NULL, '2025-10-11 14:04:03', '2025-10-11 15:56:10', '2025-10-11 23:40:35'),
+(2, NULL, '25-0000-00', 'Luzano', 'Christian Nico', 'Brizuela', '', 1, '', '2004-01-22', 'christiannicoluzano15@gmail.com', 'SK_ChristianNicoLuzano', '$2y$12$ycCzxrHnrKGRbqUhyG/aBuP16BqyTZ5RGgm6downqr1ibwPjyvBpu', 'PED_ChristianNicoLuzano', '$2y$10$fIfYrWI8zNTIVvOX.uJHVeAEpjKtMsnnZ3eBoKNGRXnTkdoUrMrfy', '+639451971854', 'ChristianNico', '$2y$12$UKC0JakOWV436jpNTNOwn.IHK8cp4Flm6PTxWgVeDClIvqSFYs5wK', NULL, NULL, 2, 3, 1, NULL, '2025-10-12 10:36:55', '2025-10-12 02:36:55', '2025-10-12 10:36:55');
 
 -- --------------------------------------------------------
 
@@ -483,7 +492,7 @@ CREATE TABLE `user_ext_info` (
   `agreement` int(1) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 --
 -- Dumping data for table `user_ext_info`
@@ -510,7 +519,7 @@ CREATE TABLE `user_otp` (
   `otp_last_request` datetime DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 --
 -- Indexes for dumped tables

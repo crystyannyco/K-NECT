@@ -48,9 +48,14 @@ class AuthController extends BaseController
                 } elseif ($user['is_active'] == 3) {
                     $inactiveMessage = 'Your account has been deactivated due to inactivity for more than 1 year.';
                 } elseif ($user['is_active'] == 4) {
-                    $inactiveMessage = 'Your account has been deactivated due to special circumstances.';
+                    // Check for custom deactivation reason
+                    if (!empty($user['deactivation_reason'])) {
+                        $inactiveMessage = 'Your account has been deactivated. Reason: ' . $user['deactivation_reason'];
+                    } else {
+                        $inactiveMessage = 'Your account has been manually deactivated. Please contact administrator.';
+                    }
                 } elseif ($user['is_active'] == 5) {
-                    $inactiveMessage = 'Your account has been manually deactivated. Please contact administrator.';
+                    $inactiveMessage = 'Your account has been reactivated but pending verification. Please contact administrator.';
                 } else {
                     $inactiveMessage = 'Your account has been deactivated. Please contact administrator.';
                 }
@@ -154,6 +159,13 @@ class AuthController extends BaseController
                         $inactiveMessage = 'Your account has been deactivated because you are 31 years old or above.';
                     } elseif ($user['is_active'] == 3) {
                         $inactiveMessage = 'Your account has been deactivated due to inactivity for more than 1 year.';
+                    } elseif ($user['is_active'] == 4) {
+                        // Check for custom deactivation reason
+                        if (!empty($user['deactivation_reason'])) {
+                            $inactiveMessage = 'Your account has been deactivated. Reason: ' . $user['deactivation_reason'];
+                        } else {
+                            $inactiveMessage = 'Your account has been manually deactivated. Please contact administrator.';
+                        }
                     } else {
                         $inactiveMessage = 'Your account has been deactivated. Please contact administrator.';
                     }
@@ -311,6 +323,13 @@ class AuthController extends BaseController
                         $inactiveMessage = 'Your account has been deactivated because you are 31 years old or above.';
                     } elseif ($user['is_active'] == 3) {
                         $inactiveMessage = 'Your account has been deactivated due to inactivity for more than 1 year.';
+                    } elseif ($user['is_active'] == 4) {
+                        // Check for custom deactivation reason
+                        if (!empty($user['deactivation_reason'])) {
+                            $inactiveMessage = 'Your account has been deactivated. Reason: ' . $user['deactivation_reason'];
+                        } else {
+                            $inactiveMessage = 'Your account has been manually deactivated. Please contact administrator.';
+                        }
                     } else {
                         $inactiveMessage = 'Your account has been deactivated. Please contact administrator.';
                     }

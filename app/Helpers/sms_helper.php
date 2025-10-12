@@ -32,8 +32,10 @@ if (!function_exists('send_sms')) {
             return false;
         }
         
-        $apiKey = '8f9a7412-f462-4db1-bdc7-d1dd29bbd081';
-        $deviceId = '68ce78b8d8ae427dcd5f2ebb'; // Device ID from TextBee dashboard
+        //8f9a7412-f462-4db1-bdc7-d1dd29bbd081
+        $apiKey = '8f9a7412-f462-4db1-bdc7-d1dd29bbd0';
+        $deviceId = '68ce78b8d8ae427dc'; // Device ID from TextBee 
+        // 68ce78b8d8ae427dcd5f2ebb
         $url = "https://api.textbee.dev/api/v1/gateway/devices/{$deviceId}/send-sms";
         
         $recipients = is_array($to) ? $to : [$to];

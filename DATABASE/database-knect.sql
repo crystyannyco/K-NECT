@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.1
+-- version 5.2.2
 -- https://www.phpmyadmin.net/
 --
--- Host: 127.0.0.1
--- Generation Time: Sep 16, 2025 at 07:11 AM
--- Server version: 10.4.32-MariaDB
--- PHP Version: 8.2.12
+-- Host: 127.0.0.1:3306
+-- Generation Time: Oct 12, 2025 at 02:39 AM
+-- Server version: 11.8.3-MariaDB-log
+-- PHP Version: 7.2.34
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `k-nect`
+-- Database: `u760074635_eiheec`
 --
 
 -- --------------------------------------------------------
@@ -37,16 +37,15 @@ CREATE TABLE `address` (
   `zip_code` int(10) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `updated_at` timestamp NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 --
 -- Dumping data for table `address`
 --
 
 INSERT INTO `address` (`user_id`, `barangay`, `municipality`, `province`, `region`, `zone_purok`, `zip_code`, `created_at`, `updated_at`) VALUES
-(1, 1, 1, 1, 1, 1, NULL, '2025-09-10 16:47:18', '2025-09-10 16:47:18'),
-(2, 1, 1, 1, 1, 1, NULL, '2025-09-10 16:50:13', '2025-09-10 16:50:13'),
-(3, 1, 1, 1, 1, 1, NULL, '2025-09-16 03:48:13', '2025-09-16 03:48:13');
+(1, 16, 1, 1, 1, 5, NULL, '2025-10-11 13:56:52', '2025-10-11 13:56:52'),
+(2, 16, 1, 1, 1, 1, NULL, '2025-10-11 15:54:29', '2025-10-10 16:25:27');
 
 -- --------------------------------------------------------
 
@@ -65,7 +64,7 @@ CREATE TABLE `attendance` (
   `time-out_pm` datetime DEFAULT NULL,
   `status_am` varchar(10) DEFAULT NULL,
   `status_pm` varchar(10) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 -- --------------------------------------------------------
 
@@ -79,7 +78,7 @@ CREATE TABLE `audit_logs` (
   `action` varchar(50) NOT NULL,
   `performed_by` varchar(100) NOT NULL,
   `performed_at` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 -- --------------------------------------------------------
 
@@ -91,7 +90,7 @@ CREATE TABLE `barangay` (
   `barangay_id` int(11) UNSIGNED NOT NULL,
   `name` varchar(100) NOT NULL,
   `google_calendar_id` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 --
 -- Dumping data for table `barangay`
@@ -99,42 +98,42 @@ CREATE TABLE `barangay` (
 
 INSERT INTO `barangay` (`barangay_id`, `name`, `google_calendar_id`) VALUES
 (0, 'City-wide', 'knect.system@gmail.com'),
-(1, 'Antipolo', '0d4ec11e731f32ac50758c661184a8da85ee84f76462a05ae868521edd35f4ca@group.calendar.google.com'),
-(2, 'Cristo Rey', '9958531a6befc783254ed3824dfa7f7e989e6552a8fc18982d02d8e1602da9f3@group.calendar.google.com'),
-(3, 'Del Rosario (Banao)', 'c7e13000dc0ccb2d6709cbe5912c2752f79f647a98ed58a21e0bc362340b30c4@group.calendar.google.com'),
-(4, 'Francia', ''),
-(5, 'La Anunciacion', ''),
-(6, 'La Medalla', ''),
-(7, 'La Purisima', ''),
-(8, 'La Trinidad', ''),
-(9, 'Niño Jesus', ''),
-(10, 'Perpetual Help', ''),
-(11, 'Sagrada', ''),
-(12, 'Salvacion', ''),
-(13, 'San Agustin', ''),
-(14, 'San Andres', ''),
-(15, 'San Antonio', ''),
-(16, 'San Francisco', ''),
-(17, 'San Isidro', ''),
-(18, 'San Jose', ''),
-(19, 'San Juan', ''),
-(20, 'San Miguel', ''),
-(21, 'San Nicolas', ''),
-(22, 'San Pedro', ''),
-(23, 'San Rafael', ''),
-(24, 'San Ramon', ''),
-(25, 'San Roque', ''),
-(26, 'Santiago', ''),
-(27, 'San Vicente Norte', ''),
-(28, 'San Vicente Sur', ''),
-(29, 'Sta. Cruz Norte', ''),
-(30, 'Sta. Cruz Sur', ''),
-(31, 'Sta. Elena', ''),
-(32, 'Sta. Isabel', ''),
-(33, 'Sta. Maria', ''),
-(34, 'Sta. Teresita', ''),
-(35, 'Sto. Domingo', ''),
-(36, 'Sto. Niño', '');
+(1, 'Antipolo', 'd0ac19eeb63741361dfcad4fa5607b6b91d3fe9dcbe9b4844dafd97376d7f4c8@group.calendar.google.com'),
+(2, 'Cristo Rey', '107a1318bd2e78831a4286cbd280763d635e331ff135b178a7d7301136237f28@group.calendar.google.com'),
+(3, 'Del Rosario (Banao)', '990a42af5c09d1e4f1442d1fa2e8b0bcb2d9198967314b20b820ad081e91c0bb@group.calendar.google.com'),
+(4, 'Francia', 'ed74bbce7e85a5544a1861b81b3050f86f8883cdfd7e365fb50d53f19540e01f@group.calendar.google.com'),
+(5, 'La Anunciacion', 'f47cfb14a03263384bd8084e6cf7f892d49a1d55ae9c4d8f765677d02fa1f4f2@group.calendar.google.com'),
+(6, 'La Medalla', '093b2726294d92d991c3e048986e1ec2cb5a63062d4c8ac25b55087484c5e364@group.calendar.google.com'),
+(7, 'La Purisima', '401631b10ac608956fd9271fbd86af5f3a46132c6ed7c82f8b247cffd89d6793@group.calendar.google.com'),
+(8, 'La Trinidad', '2e35174dc30c5b909d46ee6466ffc99003b14a5f0474b7930bd590851ae159b7@group.calendar.google.com'),
+(9, 'Niño Jesus', '42dd056b2417b98b6e40208574d5de38b22582c9f76ea69cef06fb479ff943c1@group.calendar.google.com'),
+(10, 'Perpetual Help', 'dce86939def857e6e4337b23170e7ae0af96844cd74eb8e1ff1cb180a51bc567@group.calendar.google.com'),
+(11, 'Sagrada', 'd7bcc057c133fec70bc068583c08bb25e870fafd5687d388c1ecbb3313223a1d@group.calendar.google.com'),
+(12, 'Salvacion', '6bb517596e760333f23e6a1ede144e41d2d57925e985660f65490b5f65380a2c@group.calendar.google.com'),
+(13, 'San Agustin', '91f57b966c4ab69f32b4490c2ba0fcf4bc4c4c3cd2735b95943999606428e821@group.calendar.google.com'),
+(14, 'San Andres', 'ba2a8ba0cd0ed62694bf6737e50a30daff159221431e08ef6d244f2534def868@group.calendar.google.com'),
+(15, 'San Antonio', 'd6bdb0d8f3e8bb04e70984d6f9dedb251298e229430fbad3f625a7a5e97fcf7d@group.calendar.google.com'),
+(16, 'San Francisco', '69bc36558ec147914f9417ac6f1de912e16fd4b7ca6a07cf0fb28acb63e3f43e@group.calendar.google.com'),
+(17, 'San Isidro', '73a14d96ac30d3acdda0203157b3bad611583084d477003a0aa2dc8386e3d191@group.calendar.google.com'),
+(18, 'San Jose', 'c5c6adec2fc660c4d62061c4055a2137ca95558c8593eb2ce94fb7eff19fc8d5@group.calendar.google.com'),
+(19, 'San Juan', '2c3e0e989cd7b891eb16beac22a1b519a48a48a21bf4f49895b337ed40862eca@group.calendar.google.com'),
+(20, 'San Miguel', '091c75ac2fe37e44d6315ef1c18498f0fe6fd509aaa4e6b75af5b16401a112de@group.calendar.google.com'),
+(21, 'San Nicolas', '81dd3ffb265fce0805c05847674065b9fe4e3ba57b2e110e16a32a5ceef02e64@group.calendar.google.com'),
+(22, 'San Pedro', '2351e6955bdcc61c0c1313485439b9d6c85e6ee8680ed3f51fdc1862a797df62@group.calendar.google.com'),
+(23, 'San Rafael', '2c583f6d0ec7f012e99a478d5089ac40cc68c59f5daca0ea0926424a1b58d230@group.calendar.google.com'),
+(24, 'San Ramon', 'e656b56a3f0019d321155764f35c966545265e4426216ae7d014b4639e167b94@group.calendar.google.com'),
+(25, 'San Roque', '3a1d59e9e453fb7f32277b8ca4808026912786f368dafb26f744df35b5d9f82e@group.calendar.google.com'),
+(26, 'Santiago', '6587c1cd2a00f23b47d189cc4e8dd0cc281b921f3d842d3c2b2fed63ba49ecfd@group.calendar.google.com'),
+(27, 'San Vicente Norte', 'daf6c5672c32f78cf74f319dea63df85a4829b4914abfb4a835eda79fc7c8978@group.calendar.google.com'),
+(28, 'San Vicente Sur', '1544f581458f379d0bf4e2d127750b4832990b2c7b016502fcaafa783c58d973@group.calendar.google.com'),
+(29, 'Sta. Cruz Norte', 'f6fe0ed2f6977b8cddf922972823bf818307545d78f4f36589ceb258dd96aef3@group.calendar.google.com'),
+(30, 'Sta. Cruz Sur', 'de7300f0cc93501520792ab18d5e0d3e878732679c0365254b70bcbaba8e7e84@group.calendar.google.com'),
+(31, 'Sta. Elena', 'c2230fe3c6bd956251f58cc7696752271b285fbdec1e71812974497eff336292@group.calendar.google.com'),
+(32, 'Sta. Isabel', 'ed1296b6e7c764ad2f30e9a77a340ddff627068100920ae2ebc835d27fcf1ed0@group.calendar.google.com'),
+(33, 'Sta. Maria', '530a743b8989c2c25190c8ca673d3a027e5613104912d40c0b45ecff35e2762b@group.calendar.google.com'),
+(34, 'Sta. Teresita', 'a06b89684964907ae53463c7f911fef76c62e346a3663828d16d69e99f7588a7@group.calendar.google.com'),
+(35, 'Sto. Domingo', 'be22b5b75d54b84aae21b7f1254312edf7b828334aa814fc5a97201c65fa8a8e@group.calendar.google.com'),
+(36, 'Sto. Niño', '8704f843d849f449bfd31d7fd15dea23b538231e878e9508cefbcc7c5b237802@group.calendar.google.com');
 
 -- --------------------------------------------------------
 
@@ -151,7 +150,7 @@ CREATE TABLE `bulletin_categories` (
   `is_active` tinyint(1) DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 -- --------------------------------------------------------
 
@@ -176,15 +175,7 @@ CREATE TABLE `bulletin_posts` (
   `published_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `bulletin_posts`
---
-
-INSERT INTO `bulletin_posts` (`id`, `title`, `content`, `excerpt`, `featured_image`, `category_id`, `author_id`, `barangay_id`, `status`, `visibility`, `is_featured`, `is_urgent`, `view_count`, `published_at`, `created_at`, `updated_at`) VALUES
-(0, 'No Classes to All Level', 'Memorandum 1234', NULL, NULL, NULL, 1, 1, 'published', 'barangay', 0, 0, 0, '2025-09-11 04:42:59', '2025-09-11 04:42:59', '2025-09-11 04:42:59'),
-(0, 'No Classes', 'No Classes in all levels', NULL, '1757566251_db28a636c443e0c40ca4.jpg', NULL, 1, 1, 'published', 'barangay', 1, 0, 0, '2025-09-11 04:50:51', '2025-09-11 04:50:51', '2025-09-11 04:50:51');
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 -- --------------------------------------------------------
 
@@ -195,7 +186,7 @@ INSERT INTO `bulletin_posts` (`id`, `title`, `content`, `excerpt`, `featured_ima
 CREATE TABLE `bulletin_post_tags` (
   `post_id` int(11) NOT NULL,
   `tag_id` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 -- --------------------------------------------------------
 
@@ -208,7 +199,7 @@ CREATE TABLE `bulletin_tags` (
   `name` varchar(50) NOT NULL,
   `slug` varchar(50) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 -- --------------------------------------------------------
 
@@ -221,7 +212,7 @@ CREATE TABLE `categories` (
   `name` varchar(100) NOT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 -- --------------------------------------------------------
 
@@ -247,7 +238,7 @@ CREATE TABLE `documents` (
   `description` text DEFAULT NULL,
   `tags` varchar(255) DEFAULT NULL,
   `downloadable` tinyint(1) DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 -- --------------------------------------------------------
 
@@ -258,7 +249,7 @@ CREATE TABLE `documents` (
 CREATE TABLE `document_category` (
   `document_id` int(10) UNSIGNED NOT NULL,
   `category_id` int(10) UNSIGNED NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 -- --------------------------------------------------------
 
@@ -275,7 +266,7 @@ CREATE TABLE `document_shares` (
   `expires_at` datetime DEFAULT NULL,
   `shared_at` datetime NOT NULL,
   `is_active` tinyint(1) NOT NULL DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 -- --------------------------------------------------------
 
@@ -286,7 +277,7 @@ CREATE TABLE `document_shares` (
 CREATE TABLE `document_tag` (
   `document_id` int(10) UNSIGNED NOT NULL,
   `tag_id` int(10) UNSIGNED NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 -- --------------------------------------------------------
 
@@ -304,7 +295,7 @@ CREATE TABLE `document_versions` (
   `uploaded_at` datetime NOT NULL,
   `filesize` int(11) NOT NULL,
   `mimetype` varchar(100) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 -- --------------------------------------------------------
 
@@ -323,6 +314,7 @@ CREATE TABLE `event` (
   `start_datetime` datetime NOT NULL,
   `end_datetime` datetime NOT NULL,
   `location` varchar(255) DEFAULT NULL,
+  `target_participants` int(11) NOT NULL COMMENT 'Target number of participants for the event (REQUIRED for analytics)',
   `event_banner` varchar(255) DEFAULT NULL,
   `category` enum('health','education','economic empowerment','social inclusion and equity','peace building and security','governance','active citizenship','environment','global mobility','others') DEFAULT NULL,
   `created_by` int(11) NOT NULL,
@@ -333,18 +325,8 @@ CREATE TABLE `event` (
   `sms_notification_enabled` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Toggle for SMS notification',
   `sms_recipient_scope` enum('all_barangays','specific_barangays') DEFAULT NULL COMMENT 'Scope for SMS recipients',
   `sms_recipient_barangays` text DEFAULT NULL COMMENT 'JSON array of specific barangay IDs for SMS',
-  `sms_recipient_roles` text DEFAULT NULL COMMENT 'JSON array of recipient roles (all_officials, chairperson, secretary, treasurer)'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `event`
---
-
-INSERT INTO `event` (`event_id`, `barangay_id`, `google_event_id`, `title`, `description`, `status`, `publish_date`, `start_datetime`, `end_datetime`, `location`, `event_banner`, `category`, `created_by`, `created_at`, `updated_at`, `scheduling_enabled`, `scheduled_publish_datetime`, `sms_notification_enabled`, `sms_recipient_scope`, `sms_recipient_barangays`, `sms_recipient_roles`) VALUES
-(1, 1, 'eh0m4iv4rlvqir2fiigp6hsfg4', 'KK Assembly', 'KK Assembly', 'Published', '2025-09-11 12:32:09', '2025-09-13 13:00:00', '2025-09-13 17:00:00', 'Barangay Hall', '1757565129_11b1ba19d1add8b9ecbe.jpg', 'health', 25, '2025-09-11 04:32:09', '2025-09-11 04:32:10', 0, NULL, 0, NULL, NULL, NULL),
-(2, 1, NULL, 'aaa', 'aa', 'Draft', NULL, '0000-00-00 00:00:00', '0000-00-00 00:00:00', 'aaa', NULL, 'health', 25, '2025-09-11 04:32:28', '2025-09-11 04:32:28', 0, NULL, 0, NULL, NULL, NULL),
-(3, 1, 'si7jnuc4me7e22etbaf85q378o', 'SK Meeting', 'SK Meeting', 'Published', '2025-09-11 12:38:21', '2025-09-12 13:00:00', '2025-09-12 15:00:00', 'SK Office', '1757565501_2b651259f0cf3e7195db.jpg', 'governance', 25, '2025-09-11 04:38:21', '2025-09-11 04:38:22', 0, NULL, 0, NULL, NULL, NULL),
-(4, 0, '70aroj4ucrc6g7pgugj6ljoft8', 'All SK in Iriga City Meeting', 'Meeting', 'Published', '2025-09-11 12:53:03', '2025-09-20 13:00:00', '2025-09-20 15:00:00', 'Iriga City Hall', '1757566383_1fff517ec535cf546757.jpg', 'governance', 25, '2025-09-11 04:53:03', '2025-09-11 04:53:04', 0, NULL, 0, NULL, NULL, NULL);
+  `sms_recipient_roles` text DEFAULT NULL COMMENT 'JSON array of recipient roles (all_officials, chairman, secretary, treasurer)'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 -- --------------------------------------------------------
 
@@ -360,19 +342,42 @@ CREATE TABLE `event_attendance` (
   `start_attendance_pm` time DEFAULT NULL,
   `end_attendance_pm` time DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `position`
+-- Table structure for table `migrations`
 --
 
-CREATE TABLE `position` (
-  `position_id` int(11) NOT NULL,
-  `name` varchar(50) NOT NULL,
-  `position_type` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE `migrations` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `version` varchar(255) NOT NULL,
+  `class` varchar(255) NOT NULL,
+  `group` varchar(255) NOT NULL,
+  `namespace` varchar(255) NOT NULL,
+  `time` int(11) NOT NULL,
+  `batch` int(11) UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `sms_logs`
+--
+
+CREATE TABLE `sms_logs` (
+  `id` int(11) UNSIGNED NOT NULL,
+  `phone_number` varchar(20) NOT NULL,
+  `message` text NOT NULL,
+  `status` enum('sent','failed','delivered') NOT NULL DEFAULT 'sent',
+  `response` text DEFAULT NULL,
+  `event_id` int(11) UNSIGNED DEFAULT NULL,
+  `sent_by` int(11) UNSIGNED DEFAULT NULL,
+  `sent_at` datetime DEFAULT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 -- --------------------------------------------------------
 
@@ -393,15 +398,7 @@ CREATE TABLE `system_logo` (
   `uploaded_by` varchar(11) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `system_logo`
---
-
-INSERT INTO `system_logo` (`id`, `logo_type`, `logo_name`, `file_path`, `file_size`, `mime_type`, `dimensions`, `is_active`, `barangay_id`, `uploaded_by`, `created_at`, `updated_at`) VALUES
-(1, 'iriga_city', 'Iriga City Logo.png', 'uploads/logos/iriga_city_logo_1757566524.png', 65452, 'image/png', '250x250', 1, NULL, '1', '2025-09-11 04:55:24', '2025-09-11 04:55:24'),
-(2, 'pederasyon', 'SK pederasyon Logo-Photoroom.png', 'uploads/logos/pederasyon_logo_1757677686.png', 733509, 'image/png', '1230x1230', 1, NULL, '1', '2025-09-11 04:55:25', '2025-09-12 11:48:06');
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 -- --------------------------------------------------------
 
@@ -414,7 +411,7 @@ CREATE TABLE `tags` (
   `name` varchar(100) NOT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 -- --------------------------------------------------------
 
@@ -431,6 +428,7 @@ CREATE TABLE `user` (
   `middle_name` varchar(50) DEFAULT NULL,
   `suffix` varchar(5) DEFAULT NULL,
   `sex` tinyint(1) NOT NULL,
+  `gender` varchar(50) DEFAULT NULL,
   `birthdate` date NOT NULL,
   `email` varchar(50) NOT NULL,
   `sk_username` varchar(50) DEFAULT NULL,
@@ -448,16 +446,15 @@ CREATE TABLE `user` (
   `last_login` datetime DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `updated_at` timestamp NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 --
 -- Dumping data for table `user`
 --
 
-INSERT INTO `user` (`id`, `rfid_code`, `user_id`, `last_name`, `first_name`, `middle_name`, `suffix`, `sex`, `birthdate`, `email`, `sk_username`, `sk_password`, `ped_username`, `ped_password`, `phone_number`, `username`, `password`, `position`, `ped_position`, `status`, `user_type`, `is_active`, `last_login`, `created_at`, `updated_at`) VALUES
-(1, NULL, '25-123456', 'Luzano', 'Christian Nico', 'Brizuela', '', 1, '2004-01-22', 'christiannicoluzano15@gmail.com', 'SK_ChristianNicoLuzano', '$2y$12$EgKmHG8kL2vmExKD8y5EXeRTXEy20vr.i/Px0O0iTRVKVMOgEnhfG', 'PED_ChristianNicoLuzano', '$2y$12$SCEEMQ0cEc4gKJDg/ILg9OFfMJrYSh.h8jbMx26d6CaQZhb3oQ7bm', '+639451971854', 'christiannico', '$2y$12$.FoWQgxfrr2x7lpcGj9lguHp5iOyZnzaUp/3S2hDkMjiWKv/Vi.eq', 1, 1, 2, 3, 1, '2025-09-16 11:40:54', '2025-09-16 03:40:54', '2025-09-16 03:40:54'),
-(2, NULL, '25-099721', 'Lontayao', 'Jon Mare Edric', 'Parma', '', 1, '2003-05-29', 'jolontayao@gmail.com', 'SK_JonMareEdricLontayao', '1ff74753', NULL, NULL, '+639123456789', 'jonmare', '$2y$12$fGou1awNthfTDVlnbUOxH.2Qo4yG5wQp/rIsYUutyTTd/1FAnqdSO', NULL, NULL, 2, 1, 1, NULL, '2025-09-11 04:53:59', '2025-09-11 04:53:59'),
-(3, NULL, '25-804938', 'Bayos ', 'Dominic', 'Barandon', '', 1, '2003-07-17', 'dobayos@my.cspc.edu.ph', 'SK_DominicBayos', '942151e0', NULL, NULL, '+639123456789', 'dominicbayos', '$2y$12$xfCqdSRSDBs3o2n.1Z0TgeYwzmb/ucNW4v0AmDGVWMY1pnBTegFyW', 1, NULL, 2, 2, 1, NULL, '2025-09-16 05:06:19', '2025-09-16 05:06:19');
+INSERT INTO `user` (`id`, `rfid_code`, `user_id`, `last_name`, `first_name`, `middle_name`, `suffix`, `sex`, `gender`, `birthdate`, `email`, `sk_username`, `sk_password`, `ped_username`, `ped_password`, `phone_number`, `username`, `password`, `position`, `ped_position`, `status`, `user_type`, `is_active`, `last_login`, `created_at`, `updated_at`) VALUES
+(1, NULL, '25-0000-01', 'Lontayao', 'Dessa', 'Mare Parma', '', 2, '2', '2001-07-15', 'lontayaodessamare@gmail.com', 'SK_DessaLontayao', '14cb73a4', 'PED_DessaLontayao', '05daa9d7', '+639766609928', 'SKPED_Dessa', '$2y$10$24jj5JtRbNtHwFvhUDa.8ORMMuJvWHC4OR3lCcRcjcdSAifWo97Te', 1, 1, 2, 3, 1, '2025-10-11 14:04:03', '2025-10-11 15:56:10', '2025-10-11 23:40:35'),
+(2, NULL, '25-0000-00', 'Luzano', 'Christian Nico', 'Brizuela', '', 1, '', '2004-01-22', 'christiannicoluzano15@gmail.com', 'SK_ChristianNicoLuzano', '$2y$12$ycCzxrHnrKGRbqUhyG/aBuP16BqyTZ5RGgm6downqr1ibwPjyvBpu', 'PED_ChristianNicoLuzano', '$2y$10$fIfYrWI8zNTIVvOX.uJHVeAEpjKtMsnnZ3eBoKNGRXnTkdoUrMrfy', '+639451971854', 'ChristianNico', '$2y$12$UKC0JakOWV436jpNTNOwn.IHK8cp4Flm6PTxWgVeDClIvqSFYs5wK', NULL, NULL, 2, 3, 1, '2025-10-12 10:36:55', '2025-10-12 02:36:55', '2025-10-12 10:36:55');
 
 -- --------------------------------------------------------
 
@@ -483,18 +480,37 @@ CREATE TABLE `user_ext_info` (
   `upload_id-back` varchar(255) DEFAULT NULL,
   `profile_picture` varchar(255) DEFAULT NULL,
   `reason` varchar(255) NOT NULL,
+  `agreement` int(1) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 --
 -- Dumping data for table `user_ext_info`
 --
 
-INSERT INTO `user_ext_info` (`user_id`, `civil_status`, `youth_classification`, `age_group`, `work_status`, `educational_background`, `sk_voter`, `sk_election`, `national_voter`, `kk_assembly`, `how_many_times`, `no_why`, `birth_certificate`, `upload_id`, `upload_id-back`, `profile_picture`, `reason`, `created_at`, `updated_at`) VALUES
-(1, 1, 1, 2, 2, 6, 1, 1, 1, 1, 3, NULL, 'birthcert_68c1ab9599a37.jpg', 'idpic_68c1ab9599df9.png', 'idback_68c1ab959a1bf.png', 'profilepic_68c1ab959a571.jpg', '', '2025-09-10 16:47:18', '2025-09-10 16:47:18'),
-(2, 1, 1, 2, 2, 6, 1, 1, 1, 1, 1, NULL, 'birthcert_68c1ac44dbb03.jpg', 'idpic_68c1ac44dbeb3.png', '', 'profilepic_68c1ac44dc30c.jpg', '', '2025-09-10 16:50:13', '2025-09-10 16:50:13'),
-(3, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, NULL, 'birthcert_68c8ddfcc03ae.jpg', 'idpic_68c8ddfcc094c.png', '', 'profilepic_68c8ddfcc0e90.jpg', '', '2025-09-16 03:48:13', '2025-09-16 03:48:13');
+INSERT INTO `user_ext_info` (`user_id`, `civil_status`, `youth_classification`, `age_group`, `work_status`, `educational_background`, `sk_voter`, `sk_election`, `national_voter`, `kk_assembly`, `how_many_times`, `no_why`, `birth_certificate`, `upload_id`, `upload_id-back`, `profile_picture`, `reason`, `agreement`, `created_at`, `updated_at`) VALUES
+(1, 1, 3, 2, 1, 7, 1, 1, 1, 1, 2, NULL, 'birthcert_68e9f1a4ac197.png', 'idpic_68e9f1a4ac203.png', 'idback_68e9f1a4ac256.png', 'profilepic_68e9f1a4ac2a9.jpg', '', NULL, '2025-10-11 13:56:52', '2025-10-11 13:56:52'),
+(2, 1, 1, 2, 2, 6, 1, 1, 1, 1, 1, NULL, 'birthcert_68e933773252e.jpg', 'idpic_68e9337732902.png', 'idback_68e9337732ca4.png', 'profilepic_68e9337733011.png', '', NULL, '2025-10-10 16:25:27', '2025-10-10 16:25:27');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `user_otp`
+--
+
+CREATE TABLE `user_otp` (
+  `id` int(11) UNSIGNED NOT NULL,
+  `user_id` int(50) NOT NULL,
+  `otp_code` varchar(255) DEFAULT NULL,
+  `otp_expires_at` datetime DEFAULT NULL,
+  `otp_type` enum('sms','email') DEFAULT NULL,
+  `otp_verified` tinyint(1) NOT NULL DEFAULT 0,
+  `otp_attempts` int(11) NOT NULL DEFAULT 0,
+  `otp_last_request` datetime DEFAULT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 --
 -- Indexes for dumped tables
@@ -504,6 +520,7 @@ INSERT INTO `user_ext_info` (`user_id`, `civil_status`, `youth_classification`, 
 -- Indexes for table `address`
 --
 ALTER TABLE `address`
+  ADD PRIMARY KEY (`user_id`),
   ADD KEY `user_id` (`user_id`);
 
 --
@@ -516,14 +533,25 @@ ALTER TABLE `attendance`
 -- Indexes for table `audit_logs`
 --
 ALTER TABLE `audit_logs`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `fk_audit_logs_document_id` (`document_id`);
+  ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `barangay`
+-- Indexes for table `bulletin_categories`
 --
-ALTER TABLE `barangay`
-  ADD PRIMARY KEY (`barangay_id`);
+ALTER TABLE `bulletin_categories`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `bulletin_posts`
+--
+ALTER TABLE `bulletin_posts`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `bulletin_tags`
+--
+ALTER TABLE `bulletin_tags`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `categories`
@@ -541,15 +569,13 @@ ALTER TABLE `documents`
 -- Indexes for table `document_category`
 --
 ALTER TABLE `document_category`
-  ADD PRIMARY KEY (`document_id`,`category_id`),
-  ADD KEY `fk_document_category_category_id` (`category_id`);
+  ADD PRIMARY KEY (`document_id`);
 
 --
--- Indexes for table `document_shares`
+-- Indexes for table `document_tag`
 --
-ALTER TABLE `document_shares`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `fk_document_shares_document_id` (`document_id`);
+ALTER TABLE `document_tag`
+  ADD PRIMARY KEY (`document_id`);
 
 --
 -- Indexes for table `document_versions`
@@ -570,37 +596,40 @@ ALTER TABLE `event_attendance`
   ADD PRIMARY KEY (`event_attendance_id`);
 
 --
--- Indexes for table `position`
+-- Indexes for table `sms_logs`
 --
-ALTER TABLE `position`
-  ADD PRIMARY KEY (`position_id`);
+ALTER TABLE `sms_logs`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `system_logo`
 --
 ALTER TABLE `system_logo`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `uploaded_by` (`uploaded_by`);
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `tags`
 --
 ALTER TABLE `tags`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `name` (`name`);
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `user`
 --
 ALTER TABLE `user`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `rfid_code` (`rfid_code`),
-  ADD UNIQUE KEY `user_id` (`user_id`);
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `user_ext_info`
 --
 ALTER TABLE `user_ext_info`
+  ADD PRIMARY KEY (`user_id`);
+
+--
+-- Indexes for table `user_otp`
+--
+ALTER TABLE `user_otp`
+  ADD PRIMARY KEY (`id`),
   ADD KEY `user_id` (`user_id`);
 
 --
@@ -620,10 +649,22 @@ ALTER TABLE `audit_logs`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `barangay`
+-- AUTO_INCREMENT for table `bulletin_categories`
 --
-ALTER TABLE `barangay`
-  MODIFY `barangay_id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=102;
+ALTER TABLE `bulletin_categories`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `bulletin_posts`
+--
+ALTER TABLE `bulletin_posts`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `bulletin_tags`
+--
+ALTER TABLE `bulletin_tags`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `categories`
@@ -638,10 +679,16 @@ ALTER TABLE `documents`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `document_shares`
+-- AUTO_INCREMENT for table `document_category`
 --
-ALTER TABLE `document_shares`
-  MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
+ALTER TABLE `document_category`
+  MODIFY `document_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `document_tag`
+--
+ALTER TABLE `document_tag`
+  MODIFY `document_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `document_versions`
@@ -653,7 +700,7 @@ ALTER TABLE `document_versions`
 -- AUTO_INCREMENT for table `event`
 --
 ALTER TABLE `event`
-  MODIFY `event_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `event_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `event_attendance`
@@ -662,16 +709,16 @@ ALTER TABLE `event_attendance`
   MODIFY `event_attendance_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `position`
+-- AUTO_INCREMENT for table `sms_logs`
 --
-ALTER TABLE `position`
-  MODIFY `position_id` int(11) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `sms_logs`
+  MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `system_logo`
 --
 ALTER TABLE `system_logo`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tags`
@@ -683,44 +730,23 @@ ALTER TABLE `tags`
 -- AUTO_INCREMENT for table `user`
 --
 ALTER TABLE `user`
-  MODIFY `id` int(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- AUTO_INCREMENT for table `user_otp`
+--
+ALTER TABLE `user_otp`
+  MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- Constraints for dumped tables
 --
 
 --
--- Constraints for table `address`
+-- Constraints for table `user_otp`
 --
-ALTER TABLE `address`
-  ADD CONSTRAINT `address_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`),
-  ADD CONSTRAINT `fk_address_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Constraints for table `audit_logs`
---
-ALTER TABLE `audit_logs`
-  ADD CONSTRAINT `fk_audit_logs_document_id` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Constraints for table `document_category`
---
-ALTER TABLE `document_category`
-  ADD CONSTRAINT `fk_document_category_category_id` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_document_category_document_id` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Constraints for table `document_shares`
---
-ALTER TABLE `document_shares`
-  ADD CONSTRAINT `document_shares_document_id_foreign` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_document_shares_document_id` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Constraints for table `user_ext_info`
---
-ALTER TABLE `user_ext_info`
-  ADD CONSTRAINT `user_id` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`);
+ALTER TABLE `user_otp`
+  ADD CONSTRAINT `user_otp_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

@@ -223,6 +223,7 @@
 
                 <!-- Login Form -->
                 <form id="loginForm" action="<?= base_url('loginProcess') ?>" method="post" class="space-y-4" novalidate>
+                <?= csrf_field() ?>
                 <!-- Email/Username Field -->
                 <div class="space-y-2">
                     <label for="login" class="block text-gray-700 text-sm font-medium">Email or Username</label>

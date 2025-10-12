@@ -78,6 +78,7 @@
         <?php endif; ?>
 
         <form id="changePasswordForm" action="<?= base_url('change-password-process') ?>" method="post" class="space-y-4" novalidate>
+            <?= csrf_field() ?>
             <div>
                 <label for="new_password" class="block text-gray-700 font-medium">New Password</label>
                 <div class="relative input-container">

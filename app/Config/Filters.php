@@ -14,6 +14,7 @@ use CodeIgniter\Filters\PerformanceMetrics;
 use CodeIgniter\Filters\SecureHeaders;
 use App\Filters\AuthFilter;
 use App\Filters\GuestFilter;
+use App\Filters\SecurityHeadersFilter;
 
 class Filters extends BaseFilters
 {
@@ -38,6 +39,7 @@ class Filters extends BaseFilters
         'performance'   => PerformanceMetrics::class,
         'auth'          => AuthFilter::class,
         'guest'         => GuestFilter::class,
+        'security'      => SecurityHeadersFilter::class,
     ];
 
     /**
@@ -77,12 +79,18 @@ class Filters extends BaseFilters
     public array $globals = [
         'before' => [
             // 'honeypot',
-            // 'csrf',
+            'csrf' => [
+                'except' => [
+                    'cron/*',  // Exclude cron endpoints
+                    'api/*',   // Exclude API endpoints if needed
+                ]
+            ],
             // 'invalidchars',
         ],
         'after' => [
             // 'honeypot',
-            // 'secureheaders',
+            'secureheaders',
+            'security',  // Custom security headers filter
         ],
     ];
 

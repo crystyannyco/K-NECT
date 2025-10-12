@@ -4,6 +4,7 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta name="csrf-token" content="<?= csrf_hash() ?>">
+	<meta name="csrf-token-name" content="<?= config('Security')->tokenName ?>">
 	<title>K-Nect - Youth Governance System</title>
 	
 	<!-- Open Graph Meta Tags for Link Sharing -->
@@ -46,6 +47,9 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+	
+	<!-- CSRF AJAX Protection -->
+	<script src="<?= base_url('assets/js/csrf-ajax-handler.js') ?>"></script>
 	
 	<!-- K-NECT Image Fallback System -->
 	<link href="<?= base_url('assets/css/image-fallback.css') ?>" rel="stylesheet" type="text/css" />
@@ -232,6 +236,7 @@
 									Profile
 								</a>
 								<form id="logoutForm" action="<?= base_url('logout') ?>" method="post" class="w-full">
+									<?= csrf_field() ?>
 									<button id="logoutBtn" type="submit" class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md flex items-center">
 										<svg class="w-4 h-4 mr-3 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>

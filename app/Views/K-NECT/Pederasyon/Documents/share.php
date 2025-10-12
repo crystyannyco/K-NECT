@@ -74,6 +74,7 @@
                 Share with New User
             </h3>
             <form action="<?= base_url('admin/documents/share/' . $doc['id']) ?>" method="post" class="space-y-8">
+                <?= csrf_field() ?>
                 <div>
                     <label for="shared_with" class="block text-sm font-semibold text-blue-700 mb-2">Username or Email</label>
                     <input type="text" id="shared_with" name="shared_with" required 

@@ -42,6 +42,7 @@ $isSuperAdmin = $userRole === 'super_admin';
 </div>
 
 <form id="eventForm" method="post" enctype="multipart/form-data" action="<?= isset($event) ? '/events/update/' . $event['event_id'] : '/events/store' ?>" class="space-y-6">
+    <?= csrf_field() ?>
     <?php if (!isset($event) && $isCityWide): ?>
         <input type="hidden" name="barangay_id" value="0">
     <?php endif; ?>

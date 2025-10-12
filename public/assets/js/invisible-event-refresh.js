@@ -29,7 +29,6 @@ class InvisibleEventAutoRefresh {
     }
     
     init() {
-        console.log('[Auto-refresh] Starting invisible event monitoring...');
         this.startPolling();
         
         // Pause when user leaves the page to save resources

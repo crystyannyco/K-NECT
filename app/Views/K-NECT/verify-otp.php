@@ -141,6 +141,7 @@
 
                 <!-- OTP Form -->
                 <form id="otpForm" action="<?= base_url('verify-otp') ?>" method="post" class="space-y-6">
+                    <?= csrf_field() ?>
                     <!-- OTP Input Boxes -->
                     <div class="space-y-2">
                         <label class="block text-gray-700 text-sm font-medium text-center">6-Digit OTP Code</label>

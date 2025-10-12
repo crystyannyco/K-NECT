@@ -112,6 +112,7 @@
 
                 <!-- Step 1: Username Form -->
                 <form id="usernameForm" action="<?= base_url('verify-username') ?>" method="post" class="space-y-4">
+                    <?= csrf_field() ?>
                     <!-- Username Field -->
                     <div class="space-y-2">
                         <label for="username" class="block text-gray-700 text-sm font-medium">Username</label>

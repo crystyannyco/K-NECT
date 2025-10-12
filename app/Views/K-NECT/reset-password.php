@@ -116,6 +116,7 @@
 
                 <!-- Form -->
                 <form id="resetPasswordForm" action="<?= base_url('process-reset-password') ?>" method="post" class="space-y-4">
+                    <?= csrf_field() ?>
                     <input type="hidden" name="token" value="<?= esc($token ?? '') ?>">
 
                     <!-- New Password Field -->

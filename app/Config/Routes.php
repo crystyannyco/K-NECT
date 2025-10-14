@@ -6,13 +6,6 @@ use CodeIgniter\Router\RouteCollection;
  * @var RouteCollection $routes
  */
 
-// Lightweight health check endpoint for platform probes (e.g., Railway)
-$routes->get('healthz', static function () {
-    header('Content-Type: text/plain');
-    echo 'ok';
-    return;
-});
-
 // ==================== PUBLIC ROUTES ==================== //
 
 // ------------- Cron Job Routes (Public but secured with token) ------------- //

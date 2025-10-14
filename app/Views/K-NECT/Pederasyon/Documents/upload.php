@@ -5,18 +5,39 @@
     <div class="relative">
         <div class="absolute inset-0 bg-gradient-to-br from-blue-100/60 to-white/80 rounded-2xl blur-xl opacity-80"></div>
         <div class="relative p-6 rounded-2xl shadow-lg border border-blue-200 bg-white/70 backdrop-blur-lg">
+            
+            <!-- Breadcrumbs -->
+            <nav class="flex items-center space-x-2 text-sm text-gray-600 mb-6">
+                <a href="<?= base_url('pederasyon/dashboard') ?>" class="hover:text-blue-600 transition-colors flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    Dashboard
+                </a>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+                <a href="<?= base_url('admin/documents') ?>" class="hover:text-blue-600 transition-colors">
+                    Documents
+                </a>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+                <span class="text-blue-600 font-medium">Upload</span>
+            </nav>
+
             <!-- Header Section -->
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-                <div>
-                    <h1 class="text-2xl font-bold text-blue-900 tracking-tight flex items-center gap-2 drop-shadow-lg">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4a1 1 0 011-1h8a1 1 0 011 1v12m-4 4h-4a1 1 0 01-1-1v-4h6v4a1 1 0 01-1 1z"/>
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                <div class="flex-1">
+                    <h1 class="text-3xl font-bold text-blue-900 tracking-tight flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                         </svg>
                         Upload Document
                     </h1>
-                    <div class="text-sm text-blue-700 mt-1 font-medium opacity-80">Add new documents to the system</div>
+                    <p class="text-sm text-gray-600 mt-2">Add new documents to the system</p>
                 </div>
-                <a href="<?= base_url('admin/documents') ?>" class="bg-white text-gray-700 px-4 py-2 rounded-lg text-sm font-medium shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2 border border-gray-200">
+                <a href="<?= base_url('admin/documents') ?>" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-gray-700 rounded-lg text-sm font-medium shadow-sm hover:bg-gray-50 hover:shadow transition-all border border-gray-200">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                     </svg>
@@ -39,15 +60,12 @@
                 
                 <!-- File Upload Section -->
                 <div class="bg-white rounded-lg border border-blue-100 shadow-sm p-6">
-                    <h3 class="text-lg font-semibold text-blue-900 mb-4 flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4a1 1 0 011-1h8a1 1 0 011 1v12m-4 4h-4a1 1 0 01-1-1v-4h6v4a1 1 0 01-1 1z"/>
-                        </svg>
+                    <h3 class="text-lg font-semibold text-blue-900 mb-4">
                         Document File
                     </h3>
                     <div id="dropzone" class="flex flex-col items-center justify-center border-2 border-dashed border-blue-300 rounded-lg p-8 bg-blue-50/50 cursor-pointer transition-all duration-300 hover:bg-blue-100/50 hover:border-blue-400 focus-within:ring-2 focus-within:ring-blue-300">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-blue-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4a1 1 0 011-1h8a1 1 0 011 1v12m-4 4h-4a1 1 0 01-1-1v-4h6v4a1 1 0 01-1 1z"/>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-blue-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                         </svg>
                         <span class="text-blue-700 font-medium text-base text-center">Drag & drop your document here or click to select</span>
                         <span class="text-blue-500 text-sm mt-1">Supports PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX</span>
@@ -261,8 +279,8 @@
         </div>
     </div>
 </div>
-<!-- SweetAlert2 for modal dialogs -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Toast Notification System -->
+<script src="<?= base_url('assets/js/toast-notifications.js') ?>"></script>
 <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css">
 <script>
@@ -328,7 +346,8 @@
             submitBtn.textContent = 'Upload';
             let resp; try { resp = JSON.parse(xhr.responseText); } catch (err) { resp = null; }
             if (resp && resp.success) {
-                Swal.fire({ title: 'Success', text: 'Document uploaded successfully!', icon: 'success', confirmButtonColor: '#2563eb' }).then(() => { window.location.href = '<?= base_url('admin/documents') ?>'; });
+                showSuccessToast('Document uploaded successfully!');
+                setTimeout(() => { window.location.href = '<?= base_url('admin/documents') ?>'; }, 1000);
                 form.reset(); fileName.textContent=''; document.getElementById('progressBar').style.width='0%'; document.getElementById('progressContainer').classList.add('hidden');
             } else {
                 // Clear previous inline errors
@@ -339,10 +358,10 @@
                     if (filenameErrorEl) { filenameErrorEl.textContent = resp.errors.filename; filenameErrorEl.classList.remove('hidden'); }
                 }
                 let msg = 'Upload failed. Please check the highlighted field(s).'; if (resp && resp.error) msg = resp.error;
-                Swal.fire({ title: 'Error', text: msg, icon: 'error', confirmButtonColor: '#d33' });
+                showErrorToast(msg);
             }
         };
-        xhr.onerror = function() { submitBtn.disabled=false; submitBtn.textContent='Upload'; Swal.fire({ title: 'Error', text: 'Upload failed. Please try again.', icon: 'error', confirmButtonColor: '#d33' }); };
+        xhr.onerror = function() { submitBtn.disabled=false; submitBtn.textContent='Upload'; showErrorToast('Upload failed. Please try again.'); };
         const formData = new FormData(form);
         xhr.send(formData);
     });

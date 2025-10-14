@@ -72,8 +72,11 @@
     <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0/dist/panzoom/panzoom.umd.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0/dist/panzoom/panzoom.controls.umd.js"></script>
 
-    <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Toast Notification System -->
+    <script src="<?= base_url('assets/js/toast-notifications.js') ?>"></script>
+    
+    <!-- Confirmation Modal System -->
+    <script src="<?= base_url('assets/js/confirm-modal.js') ?>"></script>
     
     <!-- Tagify -->
     <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
@@ -537,7 +540,7 @@
     ];
     ?>
     
-    // Handle session messages: prefer toast if available, fallback to SweetAlert2
+    // Handle session messages using toast notification
     document.addEventListener('DOMContentLoaded', function() {
         if (window.__suppressFlashToast) { return; }
         <?php if (session('success')): ?>
@@ -545,8 +548,6 @@
                 var msg = '<?= addslashes(session('success')) ?>';
                 if (typeof window.showNotification === 'function') {
                     window.showNotification(msg, 'success');
-                } else if (typeof Swal !== 'undefined' && Swal.fire) {
-                    Swal.fire({ title: 'Success!', text: msg, icon: 'success', confirmButtonColor: '#2563eb' });
                 }
             })();
         <?php endif; ?>
@@ -556,8 +557,6 @@
                 var msg = '<?= addslashes(session('error')) ?>';
                 if (typeof window.showNotification === 'function') {
                     window.showNotification(msg, 'error');
-                } else if (typeof Swal !== 'undefined' && Swal.fire) {
-                    Swal.fire({ title: 'Error!', text: msg, icon: 'error', confirmButtonColor: '#d33' });
                 }
             })();
         <?php endif; ?>

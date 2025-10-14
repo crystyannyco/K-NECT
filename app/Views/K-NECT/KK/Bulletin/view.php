@@ -314,14 +314,17 @@ document.getElementById('confirmDelete').addEventListener('click', function() {
         })
         .then(data => {
             if (data.success) {
-                window.location.href = '<?= base_url('/kk/dashboard') ?>';
+                showSuccessToast('Post deleted successfully!');
+                setTimeout(() => {
+                    window.location.href = '<?= base_url('/kk/dashboard') ?>';
+                }, 1000);
             } else {
-                alert('Error deleting post: ' + (data.message || 'Unknown error'));
+                showErrorToast(data.message || 'Error deleting post');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert(error.message || 'An error occurred while deleting the post');
+            showErrorToast(error.message || 'An error occurred while deleting the post');
         });
     }
     

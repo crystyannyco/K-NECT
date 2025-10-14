@@ -5,18 +5,39 @@
     <div class="relative">
         <div class="absolute inset-0 bg-gradient-to-br from-blue-100/60 to-white/80 rounded-2xl blur-xl opacity-80"></div>
         <div class="relative p-6 rounded-2xl shadow-lg border border-blue-200 bg-white/70 backdrop-blur-lg">
+            
+            <!-- Breadcrumbs -->
+            <nav class="flex items-center space-x-2 text-sm text-gray-600 mb-6">
+                <a href="<?= base_url('sk/dashboard') ?>" class="hover:text-blue-600 transition-colors flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    Dashboard
+                </a>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+                <a href="<?= base_url('admin/documents') ?>" class="hover:text-blue-600 transition-colors">
+                    Documents
+                </a>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+                <span class="text-blue-600 font-medium">Upload</span>
+            </nav>
+
             <!-- Header Section -->
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-                <div>
-                    <h1 class="text-2xl font-bold text-blue-900 tracking-tight flex items-center gap-2 drop-shadow-lg">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4a1 1 0 011-1h8a1 1 0 011 1v12m-4 4h-4a1 1 0 01-1-1v-4h6v4a1 1 0 01-1 1z"/>
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                <div class="flex-1">
+                    <h1 class="text-3xl font-bold text-blue-900 tracking-tight flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                         </svg>
-        Upload Document
-    </h1>
-                    <div class="text-sm text-blue-700 mt-1 font-medium opacity-80">Add new documents to the system</div>
+                        Upload Document
+                    </h1>
+                    <p class="text-sm text-gray-600 mt-2">Add new documents to the system</p>
                 </div>
-                <a href="<?= base_url('admin/documents') ?>" class="bg-white text-gray-700 px-4 py-2 rounded-lg text-sm font-medium shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2 border border-gray-200">
+                <a href="<?= base_url('admin/documents') ?>" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-gray-700 rounded-lg text-sm font-medium shadow-sm hover:bg-gray-50 hover:shadow transition-all border border-gray-200">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                     </svg>
@@ -38,15 +59,12 @@
         <?= csrf_field() ?>
                 <!-- File Upload Section -->
                 <div class="bg-white rounded-lg border border-blue-100 shadow-sm p-6">
-                    <h3 class="text-lg font-semibold text-blue-900 mb-4 flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4a1 1 0 011-1h8a1 1 0 011 1v12m-4 4h-4a1 1 0 01-1-1v-4h6v4a1 1 0 01-1 1z"/>
-                        </svg>
+                    <h3 class="text-lg font-semibold text-blue-900 mb-4">
                         Document File
                     </h3>
                     <div id="dropzone" class="flex flex-col items-center justify-center border-2 border-dashed border-blue-300 rounded-lg p-8 bg-blue-50/50 cursor-pointer transition-all duration-300 hover:bg-blue-100/50 hover:border-blue-400 focus-within:ring-2 focus-within:ring-blue-300">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-blue-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4a1 1 0 011-1h8a1 1 0 011 1v12m-4 4h-4a1 1 0 01-1-1v-4h6v4a1 1 0 01-1 1z"/>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-blue-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                         </svg>
                         <span class="text-blue-700 font-medium text-base text-center">Drag & drop your document here or click to select</span>
                         <span class="text-blue-500 text-sm mt-1">Supports PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX</span>
@@ -174,70 +192,57 @@
                                                 </svg>
                                                 <span class="text-sm font-semibold text-gray-900">Pederasyon (Federation)</span>
                                             </div>
-                                            <p class="text-xs text-gray-600 mt-1">Visible to Pederasyon members, SK admins, and KK users</p>
+                                            <p class="text-xs text-gray-600 mt-1">Visible to Pederasyon officers only (you can still see your own uploads)</p>
                                         </div>
                                     </label>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Barangay Scope Settings -->
-                        <div class="bg-white rounded-lg border border-blue-100 shadow-sm p-6">
-                            <h3 class="text-lg font-semibold text-blue-900 mb-4 flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <!-- Barangay Scope Settings (SK users automatically upload to their own barangay) -->
+                        <div class="bg-white rounded-lg border border-green-100 shadow-sm p-6">
+                            <h3 class="text-lg font-semibold text-green-900 mb-4 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                                 </svg>
-                                Barangay Scope <span class="text-red-500">*</span>
+                                Barangay Assignment
                             </h3>
-                            <div class="space-y-3">
-                                <!-- City-wide -->
-                                <div>
-                                    <label class="flex items-start p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer border border-gray-200 hover:border-blue-300">
-                                        <input type="radio" name="visibility_scope" value="all" class="form-radio text-blue-600 focus:ring-2 focus:ring-blue-400 mt-0.5" required>
-                                        <div class="ml-3">
-                                            <div class="flex items-center gap-2">
-                                                <svg class="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
-                                                <span class="text-sm font-semibold text-gray-900">City-wide</span>
-                                            </div>
-                                            <p class="text-xs text-gray-600 mt-1">Document visible to all barangays in the city</p>
-                                        </div>
-                                    </label>
-                                </div>
-                                <!-- Specific Barangay (Default for SK role) -->
-                                <div>
-                                    <label class="flex items-start p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors cursor-pointer border-2 border-green-200">
-                                        <input type="radio" name="visibility_scope" value="specific_barangay" class="form-radio text-green-600 focus:ring-2 focus:ring-green-400 mt-0.5" checked required>
-                                        <div class="ml-3 w-full">
-                                            <div class="flex items-center gap-2">
-                                                <svg class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                                </svg>
-                                                <span class="text-sm font-semibold text-gray-900">Specific Barangay (Recommended for SK)</span>
-                                            </div>
-                                            <p class="text-xs text-gray-600 mt-1">Restrict document to your barangay only</p>
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
                             
-                            <!-- Barangay Selector (shown when specific_barangay is selected) -->
-                            <div id="barangaySelector" class="mt-4">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    Select Barangay <span class="text-red-500">*</span>
-                                </label>
-                                <select name="barangay_id" id="barangayDropdown" class="w-full border border-green-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-300 focus:border-green-500 outline-none text-sm bg-white" required>
-                                    <option value="">-- Select Barangay --</option>
-                                    <?php if (!empty($barangays)): ?>
-                                        <?php foreach ($barangays as $barangay): ?>
-                                            <option value="<?= $barangay['barangay_id'] ?>"><?= esc($barangay['name']) ?></option>
-                                        <?php endforeach; ?>
-                                    <?php endif; ?>
-                                </select>
-                                <p class="text-xs text-gray-500 mt-2">This document will only be visible to users from the selected barangay</p>
+                            <!-- Hidden inputs for automatic barangay assignment -->
+                            <input type="hidden" name="visibility_scope" value="specific_barangay">
+                            <input type="hidden" name="barangay_id" value="<?= esc($userBarangayId ?? '') ?>">
+                            
+                            <!-- Info message -->
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-lg">
+                                <div class="flex">
+                                    <div class="flex-shrink-0">
+                                        <svg class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-sm font-medium text-green-800">
+                                            Barangay Restriction
+                                        </p>
+                                        <p class="text-xs text-green-700 mt-1">
+                                            As an SK officer, you can only upload documents to your assigned barangay. This document will be automatically assigned to your barangay.
+                                            <?php 
+                                            // Get barangay name
+                                            $barangayName = 'your barangay';
+                                            if (!empty($barangays) && !empty($userBarangayId)) {
+                                                foreach ($barangays as $b) {
+                                                    if ($b['barangay_id'] == $userBarangayId) {
+                                                        $barangayName = $b['name'];
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                            ?>
+                                            <strong class="font-semibold">Current barangay: <?= esc($barangayName) ?></strong>
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -304,8 +309,8 @@
         </div>
         </div>
 </div>
-<!-- SweetAlert2 for modal dialogs -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Toast Notification System -->
+<script src="<?= base_url('assets/js/toast-notifications.js') ?>"></script>
 <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css">
 <script>
@@ -319,27 +324,7 @@
     fileInput.addEventListener('change', () => { if (fileInput.files.length > 0) fileName.textContent = fileInput.files[0].name; });
 
     // Visibility Scope Toggle
-    const scopeAll = document.querySelector('input[name="visibility_scope"][value="all"]');
-    const scopeSpecific = document.querySelector('input[name="visibility_scope"][value="specific_barangay"]');
-    const barangaySelector = document.getElementById('barangaySelector');
-    const barangayDropdown = document.getElementById('barangayDropdown');
-
-    function updateBarangaySelector() {
-        if (scopeAll && scopeAll.checked) {
-            barangaySelector.style.display = 'none';
-            barangayDropdown.removeAttribute('required');
-            barangayDropdown.value = '';
-        } else if (scopeSpecific && scopeSpecific.checked) {
-            barangaySelector.style.display = 'block';
-            barangayDropdown.setAttribute('required', 'required');
-        }
-    }
-
-    if (scopeAll) scopeAll.addEventListener('change', updateBarangaySelector);
-    if (scopeSpecific) scopeSpecific.addEventListener('change', updateBarangaySelector);
-    
-    // Initialize on page load
-    updateBarangaySelector();
+    // SK users automatically upload to their barangay - no scope selection needed
 
     // Progress bar for upload
     document.getElementById('uploadForm').addEventListener('submit', function(e) {
@@ -365,7 +350,8 @@
             submitBtn.textContent = 'Upload';
             let resp; try { resp = JSON.parse(xhr.responseText); } catch (err) { resp = null; }
             if (resp && resp.success) {
-                Swal.fire({ title: 'Success', text: 'Document uploaded successfully!', icon: 'success', confirmButtonColor: '#2563eb' }).then(() => { window.location.href = '<?= base_url('admin/documents') ?>'; });
+                showSuccessToast('Document uploaded successfully!');
+                setTimeout(() => { window.location.href = '<?= base_url('admin/documents') ?>'; }, 1000);
                 form.reset(); fileName.textContent=''; document.getElementById('progressBar').style.width='0%'; document.getElementById('progressContainer').classList.add('hidden');
             } else {
                 // Clear previous inline errors
@@ -376,10 +362,10 @@
                     if (filenameErrorEl) { filenameErrorEl.textContent = resp.errors.filename; filenameErrorEl.classList.remove('hidden'); }
                 }
                 let msg = 'Upload failed. Please check the highlighted field(s).'; if (resp && resp.error) msg = resp.error;
-                Swal.fire({ title: 'Error', text: msg, icon: 'error', confirmButtonColor: '#d33' });
+                showErrorToast(msg);
             }
         };
-        xhr.onerror = function() { submitBtn.disabled=false; submitBtn.textContent='Upload'; Swal.fire({ title: 'Error', text: 'Upload failed. Please try again.', icon: 'error', confirmButtonColor: '#d33' }); };
+        xhr.onerror = function() { submitBtn.disabled=false; submitBtn.textContent='Upload'; showErrorToast('Upload failed. Please try again.'); };
         const formData = new FormData(form);
         xhr.send(formData);
     });

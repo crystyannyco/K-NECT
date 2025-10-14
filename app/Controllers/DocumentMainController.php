@@ -86,14 +86,32 @@ class DocumentMainController extends BaseController
 
         $model = new DocumentModel();
 
-        // Share permissions
-        $hasViewShare = $model->hasPermission((int) $doc['id'], $user, 'view');
-        $hasDownloadShare = $model->hasPermission((int) $doc['id'], $user, 'download');
+        // Get user's barangay ID for barangay-specific checks
+        $userBarangayId = $model->getUserBarangayId($user);
+        $docBarangayId = $doc['barangay_id'] ?? null;
 
-        // Owner: full access (preview/download)
+        // Owner can access their own documents (regardless of visibility)
         if ($uploader === $user) {
             return true;
         }
+
+        // Pederasyon / Super admin: Can only access 'pederasyon' visibility documents (+ their own uploads handled above)
+        if ($role === 'super_admin' || $userType === 'pederasyon') {
+            // Can only see documents with pederasyon visibility
+            if ($docVisibility !== 'pederasyon') {
+                return false;
+            }
+            if ($action === 'preview') {
+                return true;
+            }
+            if ($action === 'download') {
+                return $isDownloadable;
+            }
+        }
+
+        // Share permissions
+        $hasViewShare = $model->hasPermission((int) $doc['id'], $user, 'view');
+        $hasDownloadShare = $model->hasPermission((int) $doc['id'], $user, 'download');
 
         // Explicit share overrides normal visibility checks
         if ($hasViewShare || $hasDownloadShare) {
@@ -105,32 +123,13 @@ class DocumentMainController extends BaseController
             }
         }
 
-        // Get user's barangay ID for barangay-specific checks
-        $userBarangayId = $model->getUserBarangayId($user);
-        $docBarangayId = $doc['barangay_id'] ?? null;
-
-        // Super admin / Pederasyon: Can access all documents
-        if ($role === 'super_admin' || $userType === 'pederasyon') {
-            if ($action === 'preview') {
-                return true;
-            }
-            if ($action === 'download') {
-                return $isDownloadable;
-            }
-        }
-
         // SK Admin access logic
         if ($role === 'admin' || $userType === 'sk') {
-            // Can access 'pederasyon' visibility documents
+            // CANNOT access 'pederasyon' visibility documents (unless they're the uploader - handled above)
             if ($docVisibility === 'pederasyon') {
-                if ($action === 'preview') {
-                    return true;
-                }
-                if ($action === 'download') {
-                    return $isDownloadable;
-                }
+                return false;
             }
-
+            
             // Can access 'sk' visibility documents
             if ($docVisibility === 'sk') {
                 // Check if document is city-wide or in user's barangay
@@ -149,16 +148,11 @@ class DocumentMainController extends BaseController
 
         // KK User / Viewer access logic
         if ($role === 'user' || $role === 'viewer' || $userType === 'kk') {
-            // Can access 'pederasyon' visibility documents
+            // CANNOT access 'pederasyon' visibility documents (unless they're the uploader - handled above)
             if ($docVisibility === 'pederasyon') {
-                if ($action === 'preview') {
-                    return true;
-                }
-                if ($action === 'download') {
-                    return $isDownloadable;
-                }
+                return false;
             }
-
+            
             // Can access 'kk' visibility documents
             if ($docVisibility === 'kk') {
                 // Check if document is city-wide or in user's barangay
@@ -254,21 +248,21 @@ class DocumentMainController extends BaseController
             $docVisibility = $doc['visibility'] ?? 'pederasyon';
             $docBarangayId = $doc['barangay_id'] ?? null;
 
-            // Super admin / Pederasyon can see everything
-            if ($role === 'super_admin' || $userType === 'pederasyon') {
-                return true;
-            }
-
-            // Owner can always see their own documents
+            // Owner can always see their own documents (regardless of visibility)
             if ($uploadedBy === $user) {
                 return true;
             }
 
+            // Pederasyon / Super admin can only see 'pederasyon' visibility documents (+ their own uploads handled above)
+            if ($role === 'super_admin' || $userType === 'pederasyon') {
+                return $docVisibility === 'pederasyon';
+            }
+
             // SK Admin logic
             if ($role === 'admin' || $userType === 'sk') {
-                // Can see 'pederasyon' visibility documents
+                // CANNOT see 'pederasyon' visibility documents (unless they're the uploader - handled above)
                 if ($docVisibility === 'pederasyon') {
-                    return true;
+                    return false;
                 }
                 // Can see 'sk' visibility documents in their barangay or city-wide
                 if ($docVisibility === 'sk') {
@@ -279,9 +273,9 @@ class DocumentMainController extends BaseController
 
             // KK User / Viewer logic
             if ($role === 'user' || $role === 'viewer' || $userType === 'kk') {
-                // Can see 'pederasyon' visibility documents
+                // CANNOT see 'pederasyon' visibility documents (unless they're the uploader - handled above)
                 if ($docVisibility === 'pederasyon') {
-                    return true;
+                    return false;
                 }
                 // Can see 'kk' visibility documents in their barangay or city-wide
                 if ($docVisibility === 'kk') {
@@ -429,12 +423,20 @@ class DocumentMainController extends BaseController
                 $visibilityScope = $this->request->getPost('visibility_scope') ?? 'all';
                 $barangayId = null;
                 
-                // If specific_barangay is selected, get the barangay_id
-                if ($visibilityScope === 'specific_barangay') {
-                    $barangayId = $this->request->getPost('barangay_id');
-                    // For SK/KK users, default to their own barangay if not specified
-                    if (!$barangayId && $userBarangayId) {
-                        $barangayId = $userBarangayId;
+                // ENFORCE: SK users can ONLY upload to their own barangay (no city-wide, no other barangays)
+                if ($userRole === 'admin' || $userType == 2) {
+                    // Force SK users to use specific_barangay scope with their own barangay
+                    $visibilityScope = 'specific_barangay';
+                    $barangayId = $userBarangayId; // Always use SK user's assigned barangay
+                    file_put_contents($logFile, "SK user upload - forced barangay_id: $barangayId\n", FILE_APPEND);
+                } else {
+                    // For Pederasyon and KK users, allow their selections
+                    if ($visibilityScope === 'specific_barangay') {
+                        $barangayId = $this->request->getPost('barangay_id');
+                        // For KK users, default to their own barangay if not specified
+                        if (!$barangayId && $userBarangayId) {
+                            $barangayId = $userBarangayId;
+                        }
                     }
                 }
                 
@@ -848,10 +850,23 @@ class DocumentMainController extends BaseController
             $visibilityScope = $this->request->getPost('visibility_scope') ?? $doc['visibility_scope'] ?? 'all';
             $barangayId = null;
             
-            if ($visibilityScope === 'specific_barangay') {
-                $barangayId = $this->request->getPost('barangay_id');
-                if (!$barangayId) {
-                    $barangayId = $doc['barangay_id']; // Keep existing barangay if not changed
+            // ENFORCE: SK users can ONLY use their own barangay (no city-wide, no other barangays)
+            $userRole = session('role');
+            $userType = session('user_type');
+            $userBarangayId = $model->getUserBarangayId(session('username'));
+            
+            if ($userRole === 'admin' || $userType == 2) {
+                // Force SK users to use specific_barangay scope with their own barangay
+                $visibilityScope = 'specific_barangay';
+                $barangayId = $userBarangayId; // Always use SK user's assigned barangay
+                file_put_contents(WRITEPATH . 'logs/document_edit_debug.log', "SK user edit - forced barangay_id: $barangayId\n", FILE_APPEND);
+            } else {
+                // For Pederasyon users, allow their selections
+                if ($visibilityScope === 'specific_barangay') {
+                    $barangayId = $this->request->getPost('barangay_id');
+                    if (!$barangayId) {
+                        $barangayId = $doc['barangay_id']; // Keep existing barangay if not changed
+                    }
                 }
             }
             

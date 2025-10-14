@@ -54,6 +54,12 @@
 	<!-- K-NECT Image Fallback System -->
 	<link href="<?= base_url('assets/css/image-fallback.css') ?>" rel="stylesheet" type="text/css" />
 	
+	<!-- Toast Notification System -->
+	<script src="<?= base_url('assets/js/toast-notifications.js') ?>"></script>
+	
+	<!-- Confirmation Modal System -->
+	<script src="<?= base_url('assets/js/confirm-modal.js') ?>"></script>
+	
 	<!-- Invisible Event Auto-refresh -->
 	<script src="/assets/js/invisible-event-refresh.js"></script>
 </head>

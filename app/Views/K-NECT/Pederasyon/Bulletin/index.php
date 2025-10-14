@@ -411,58 +411,36 @@
                         });
 
                         async function confirmDelete(postId) {
-                            const result = await Swal.fire({
-                                title: 'Delete post?',
-                                text: 'This action cannot be undone.',
+                            showConfirmModal({
+                                title: 'Delete Post?',
+                                message: 'Are you sure you want to delete this post? This action cannot be undone.',
+                                confirmText: 'Yes, Delete',
+                                cancelText: 'Cancel',
+                                confirmColor: 'red',
                                 icon: 'warning',
-                                showCancelButton: true,
-                                confirmButtonText: 'Delete',
-                                cancelButtonText: 'Cancel',
-                                confirmButtonColor: '#dc2626'
-                            });
-                            if (!result.isConfirmed) return;
-
-                            try {
-                                const res = await fetch(`<?= base_url('/bulletin/delete/') ?>${postId}`, {
-                                    method: 'DELETE',
-                                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
-                                });
-                                const data = await res.json();
-                                if (data.success) {
-                                    Swal.fire({ icon: 'success', title: 'Deleted', timer: 1200, showConfirmButton: false });
-                                    setTimeout(() => location.reload(), 650);
-                                } else {
-                                    Swal.fire({ icon: 'error', title: 'Failed', text: data.message || 'Failed to delete post.' });
+                                onConfirm: async () => {
+                                    try {
+                                        const res = await fetch(`<?= base_url('/bulletin/delete/') ?>${postId}`, {
+                                            method: 'DELETE',
+                                            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+                                        });
+                                        const data = await res.json();
+                                        if (data.success) {
+                                            showSuccessToast('Post deleted successfully!');
+                                            setTimeout(() => location.reload(), 1000);
+                                        } else {
+                                            showErrorToast(data.message || 'Failed to delete post.');
+                                        }
+                                    } catch (e) {
+                                        showErrorToast('An error occurred while deleting the post.');
+                                    }
                                 }
-                            } catch (e) {
-                                Swal.fire({ icon: 'error', title: 'Error', text: 'An error occurred while deleting the post.' });
-                            }
+                            });
                         }
 
-                        // Simple preview using SweetAlert2; images inline, other files in iframe if embeddable
+                        // Simple preview - open documents in new tab
                         function previewDocument(url, isImage) {
-                            if (isImage) {
-                                Swal.fire({
-                                    html: `<img src="${url}" alt="Document" style="width:100%;height:auto;border-radius:0.5rem" />`,
-                                    width: '60rem',
-                                    showConfirmButton: false,
-                                    showCloseButton: true,
-                                    background: '#0B1220',
-                                    color: '#fff'
-                                });
-                                return;
-                            }
-                            // Try iframe preview; some types (like PDF) will work; otherwise open in new tab
-                            const iframe = `<iframe src="${url}" style="width:100%;height:70vh;border:0;border-radius:0.5rem;background:#fff"></iframe>`;
-                            Swal.fire({
-                                html: iframe,
-                                width: '70rem',
-                                showConfirmButton: false,
-                                showCloseButton: true
-                            }).then(() => {
-                                // Fallback open if blocked or blank
-                                // No-op; user can click Open link on card
-                            });
+                            window.open(url, '_blank');
                         }
                                                 // Document carousel init
                                                 document.addEventListener('DOMContentLoaded', () => {

@@ -29,6 +29,21 @@
 <div class="max-w-7xl mx-auto p-0">
     <div class="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200">
         <div class="px-6 py-4 space-y-4 sm:space-y-6">
+        
+        <!-- Breadcrumbs -->
+        <nav class="flex items-center space-x-2 text-sm text-gray-600">
+            <a href="<?= base_url('sk/dashboard') ?>" class="hover:text-blue-600 transition-colors flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                Dashboard
+            </a>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+            <span class="text-blue-600 font-medium">Documents</span>
+        </nav>
+
         <!-- Header Section -->
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-2">
                 <div>
@@ -47,66 +62,65 @@
             </div>
 
         <!-- Search and Filter Section -->
-        <div class="bg-white/80 rounded-xl shadow-md p-4 lg:p-6 border border-blue-200 backdrop-blur-md transition-all duration-300 hover:shadow-lg focus-within:ring-2 focus-within:ring-blue-200">
-            <form method="GET" action="<?= base_url('admin/documents') ?>" class="space-y-4">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <!-- Search Input -->
-                    <div class="sm:col-span-2 lg:col-span-1">
-                        <div class="relative">
-                            <input type="text" name="search" id="search" value="<?= esc($_GET['search'] ?? '') ?>"
-                                   class="w-full pl-10 pr-4 py-2.5 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-300 focus:outline-none shadow-sm transition-all duration-300 placeholder-gray-400 text-sm bg-white/70"
-                                   placeholder="🔍 Search documents...">
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
-                            </span>
-                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-blue-400 cursor-pointer group" tabindex="0" title="Search by filename or description">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 group-hover:text-blue-600 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
-                                </svg>
+        <div class="bg-gradient-to-br from-blue-50/50 to-white rounded-xl shadow-sm p-6 border border-blue-100 backdrop-blur-sm">
+            <form method="GET" action="<?= base_url('admin/documents') ?>" class="space-y-5">
+                <!-- Search Input - Full Width -->
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <input type="text" name="search" id="search" value="<?= esc($_GET['search'] ?? '') ?>"
+                           class="w-full pl-10 pr-10 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:outline-none shadow-sm transition-all duration-200 placeholder-gray-400 text-sm bg-white hover:border-blue-300"
+                           placeholder="Search documents...">
+                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                        <div class="text-blue-400 cursor-help group relative" tabindex="0">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 hover:text-blue-600 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
+                            </svg>
+                            <span class="invisible group-hover:visible absolute right-0 top-8 bg-gray-800 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap z-10 shadow-lg">
+                                Search by filename or description
                             </span>
                         </div>
                     </div>
-
-                    <!-- Category Filter -->
-                    <div class="lg:col-span-1">
-                        <select name="category" id="category" class="w-full border border-blue-200 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-300 focus:outline-none shadow-sm text-sm bg-white/70">
-                            <option value="">All Categories</option>
-                            <?php foreach (($categories ?? []) as $cat): ?>
-                                <option value="<?= $cat['id'] ?>" <?= (isset($selectedCategory) && $selectedCategory == $cat['id']) ? 'selected' : '' ?>>
-                                    <?= esc($cat['name']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <!-- Visibility Filter -->
-                    <div class="lg:col-span-1">
-                        <select name="visibility" id="visibility" class="w-full border border-blue-200 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-300 focus:outline-none shadow-sm text-sm bg-white/70">
-                            <option value="">All Visibility</option>
-                            <option value="pederasyon" <?= (isset($_GET['visibility']) && $_GET['visibility'] === 'pederasyon') ? 'selected' : '' ?>>Pederasyon</option>
-                            <option value="sk" <?= (isset($_GET['visibility']) && $_GET['visibility'] === 'sk') ? 'selected' : '' ?>>SK</option>
-                            <option value="kk" <?= (isset($_GET['visibility']) && $_GET['visibility'] === 'kk') ? 'selected' : '' ?>>KK</option>
-                        </select>
-                    </div>
                 </div>
 
-                <!-- Action Buttons -->
-                <div class="flex flex-col sm:flex-row gap-3 justify-center sm:justify-start">
-                    <button type="submit" class="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-400 text-white px-6 py-2.5 rounded-lg font-bold shadow-md hover:from-blue-700 hover:to-blue-500 transition-all flex items-center justify-center gap-2 text-sm border-2 border-blue-200 hover:border-blue-400 focus:ring-2 focus:ring-blue-200 outline-none">
+                <!-- Filters and Search Button Row -->
+                <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+                    <!-- Category Filter -->
+                    <select name="category" id="category" class="flex-1 border border-blue-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:outline-none shadow-sm text-sm bg-white hover:border-blue-300 transition-all cursor-pointer">
+                        <option value="">All Categories</option>
+                        <?php foreach (($categories ?? []) as $cat): ?>
+                            <option value="<?= $cat['id'] ?>" <?= (isset($selectedCategory) && $selectedCategory == $cat['id']) ? 'selected' : '' ?>>
+                                <?= esc($cat['name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+
+                    <!-- Visibility Filter -->
+                    <select name="visibility" id="visibility" class="flex-1 border border-blue-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:outline-none shadow-sm text-sm bg-white hover:border-blue-300 transition-all cursor-pointer">
+                        <option value="">All Visibility</option>
+                        <option value="pederasyon" <?= (isset($_GET['visibility']) && $_GET['visibility'] === 'pederasyon') ? 'selected' : '' ?>>Pederasyon</option>
+                        <option value="sk" <?= (isset($_GET['visibility']) && $_GET['visibility'] === 'sk') ? 'selected' : '' ?>>SK</option>
+                        <option value="kk" <?= (isset($_GET['visibility']) && $_GET['visibility'] === 'kk') ? 'selected' : '' ?>>KK</option>
+                    </select>
+
+                    <!-- Search Button -->
+                    <button type="submit" class="inline-flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg font-medium shadow-sm hover:bg-blue-700 hover:shadow transition-all focus:ring-2 focus:ring-blue-400 focus:outline-none whitespace-nowrap text-sm">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
-                        <span class="whitespace-nowrap">Search Documents</span>
+                        Search Documents
                     </button>
 
+                    <!-- Clear Filters Button -->
                     <?php if (!empty($_GET['search']) || !empty($_GET['category']) || !empty($_GET['status'])): ?>
-                    <a href="<?= base_url('admin/documents') ?>" class="w-full sm:w-auto bg-gray-100 text-gray-700 px-6 py-2.5 rounded-lg font-semibold shadow-sm hover:bg-gray-200 transition flex items-center justify-center gap-2 border-2 border-gray-200 hover:border-gray-400" title="Show all documents">
+                    <a href="<?= base_url('admin/documents') ?>" class="inline-flex items-center justify-center gap-2 bg-gray-100 text-gray-700 px-5 py-2 rounded-lg font-medium shadow-sm hover:bg-gray-200 transition-all focus:ring-2 focus:ring-gray-300 focus:outline-none whitespace-nowrap text-sm" title="Clear all filters">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
-                        <span class="whitespace-nowrap">Show All</span>
+                        Clear Filters
                     </a>
                     <?php endif; ?>
                 </div>
@@ -335,17 +349,17 @@
                                     ?>">
                                     <?= strtoupper($doc['visibility'] ?? 'N/A') ?>
                                 </span>
-                                <!-- Barangay Scope Badge -->
-                                <?php if (($doc['visibility_scope'] ?? 'all') === 'specific_barangay' && !empty($doc['barangay_id'])): ?>
-                                    <span class="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-700 shadow-sm">
+                                <!-- Barangay Badge -->
+                                <?php if (!empty($doc['barangay_id'])): ?>
+                                    <span class="px-2 py-1 rounded text-xs font-medium bg-green-50 text-green-700 shadow-sm">
                                         <?php 
                                             $docModel = new \App\Models\DocumentModel();
                                             $barangayName = $docModel->getBarangayName($doc['barangay_id']);
-                                            echo esc($barangayName ?? 'Unknown');
+                                            echo esc($barangayName ?? 'Unknown Barangay');
                                         ?>
                                     </span>
                                 <?php else: ?>
-                                    <span class="px-2 py-1 rounded text-xs font-medium bg-blue-50 text-blue-600 shadow-sm">City-wide</span>
+                                    <span class="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-500 shadow-sm italic">No barangay</span>
                                 <?php endif; ?>
                       </div>
                     </div>
@@ -379,15 +393,13 @@
                         </div>
                         <?php endif; ?>
 
+                    <?php if (!empty($doc['tags'])): ?>
                     <div class="flex flex-wrap gap-1 mt-1">
-                            <?php if (!empty($doc['tags'])): ?>
-                                    <?php foreach (explode(',', $doc['tags']) as $tag): ?>
-                                        <span class="inline-block bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-semibold shadow-sm">#<?= esc(trim($tag)) ?></span>
-                                    <?php endforeach; ?>
-                            <?php else: ?>
-                                <span class="text-gray-400 italic">No tags</span>
-                            <?php endif; ?>
+                        <?php foreach (explode(',', $doc['tags']) as $tag): ?>
+                            <span class="inline-block bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-semibold shadow-sm">#<?= esc(trim($tag)) ?></span>
+                        <?php endforeach; ?>
                     </div>
+                    <?php endif; ?>
                   </div>
 
                   <!-- Actions -->
@@ -480,37 +492,16 @@
 function deleteDocument(documentId) {
     console.log('deleteDocument called with ID:', documentId);
     
-    // Check if SweetAlert is loaded
-    if (typeof Swal === 'undefined') {
-        console.error('SweetAlert is not loaded!');
-        alert('Error: SweetAlert library is not loaded. Please refresh the page.');
-        return;
-    }
-    
-    Swal.fire({
-        title: 'Are you sure?',
-        text: "This action cannot be undone!",
+    showConfirmModal({
+        title: 'Delete Document?',
+        message: 'Are you sure you want to delete this document? This action cannot be undone!',
+        confirmText: 'Yes, Delete',
+        cancelText: 'Cancel',
+        confirmColor: 'red',
         icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Yes, delete it!'
-    }).then((result) => {
-        console.log('SweetAlert result:', result);
-        if (result.isConfirmed) {
+        onConfirm: () => {
             console.log('User confirmed deletion');
-            
-            // Show loading indicator
-            Swal.fire({
-                title: 'Deleting...',
-                text: 'Please wait while we delete the document.',
-                icon: 'info',
-                allowOutsideClick: false,
-                showConfirmButton: false,
-                willOpen: () => {
-                    Swal.showLoading();
-                }
-            });
+            showInfoToast('Deleting document...', 2000);
 
             // Use AJAX to delete the document
             const formData = new FormData();
@@ -526,36 +517,18 @@ function deleteDocument(documentId) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    Swal.fire({
-                        title: 'Deleted!',
-                        text: data.message || 'The document has been successfully deleted.',
-                        icon: 'success',
-                        confirmButtonColor: '#3085d6',
-                        confirmButtonText: 'OK'
-                    }).then(() => {
-                        // Reload the page to update the document list
+                    showSuccessToast(data.message || 'Document deleted successfully!');
+                    setTimeout(() => {
                         window.location.reload();
-                    });
+                    }, 1000);
                 } else {
-                    Swal.fire({
-                        title: 'Error!',
-                        text: data.error || 'Failed to delete the document. Please try again.',
-                        icon: 'error',
-                        confirmButtonColor: '#d33'
-                    });
+                    showErrorToast(data.error || 'Failed to delete the document. Please try again.');
                 }
             })
             .catch(error => {
                 console.error('Delete error:', error);
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'An error occurred while deleting the document.',
-                    icon: 'error',
-                    confirmButtonColor: '#d33'
-                });
+                showErrorToast('An error occurred while deleting the document.');
             });
-        } else {
-            console.log('User cancelled deletion');
         }
     });
 }
@@ -680,40 +653,22 @@ document.addEventListener('DOMContentLoaded', function() {
             );
             
             if (superAdminDocs.length > 0) {
-                Swal.fire({
-                    title: 'Cannot Delete',
-                    text: 'You cannot delete documents uploaded by Super Admin.',
-                    icon: 'error',
-                    confirmButtonText: 'OK'
-                });
+                showErrorToast('You cannot delete documents uploaded by Super Admin.');
                 return;
             }
             <?php endif; ?>
 
             const filenames = Array.from(selectedDocs).map(cb => cb.dataset.filename).join(', ');
             
-            Swal.fire({
-                title: 'Delete Selected Documents?',
-                text: `Are you sure you want to delete ${selectedDocs.length} document(s)? This action cannot be undone.`,
+            showConfirmModal({
+                title: 'Delete Multiple Documents?',
+                message: `Are you sure you want to delete ${selectedDocs.length} document(s)? This action cannot be undone.`,
+                confirmText: 'Yes, Delete All',
+                cancelText: 'Cancel',
+                confirmColor: 'red',
                 icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#dc2626',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Yes, delete them!',
-                cancelButtonText: 'Cancel'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Show loading indicator
-                    Swal.fire({
-                        title: 'Deleting Documents...',
-                        text: `Please wait while we delete ${selectedDocs.length} document(s).`,
-                        icon: 'info',
-                        allowOutsideClick: false,
-                        showConfirmButton: false,
-                        willOpen: () => {
-                            Swal.showLoading();
-                        }
-                    });
+                onConfirm: () => {
+                    showInfoToast(`Deleting ${selectedDocs.length} document(s)...`, 2000);
 
                     // Create FormData for AJAX request
                     const formData = new FormData();
@@ -735,33 +690,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            Swal.fire({
-                                title: 'Success!',
-                                text: data.message || `${selectedDocs.length} document(s) have been successfully deleted.`,
-                                icon: 'success',
-                                confirmButtonColor: '#3085d6',
-                                confirmButtonText: 'OK'
-                            }).then(() => {
-                                // Reload the page to update the document list
+                            showSuccessToast(data.message || `${selectedDocs.length} document(s) deleted successfully!`);
+                            setTimeout(() => {
                                 window.location.reload();
-                            });
+                            }, 1000);
                         } else {
-                            Swal.fire({
-                                title: 'Error!',
-                                text: data.error || 'Failed to delete the selected documents.',
-                                icon: 'error',
-                                confirmButtonColor: '#d33'
-                            });
+                            showErrorToast(data.error || 'Failed to delete the selected documents.');
                         }
                     })
                     .catch(error => {
                         console.error('Bulk delete error:', error);
-                        Swal.fire({
-                            title: 'Error!',
-                            text: 'An error occurred while deleting the documents.',
-                            icon: 'error',
-                            confirmButtonColor: '#d33'
-                        });
+                        showErrorToast('An error occurred while deleting the documents.');
                     });
                 }
             });
@@ -887,8 +826,8 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 </div>
 
-<!-- SweetAlert2 for modal dialogs -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Toast Notification System -->
+<script src="<?= base_url('assets/js/toast-notifications.js') ?>"></script>
 
 <script>
 // Document modal functions (adapted from KK side for SK admin)
@@ -1240,17 +1179,14 @@ function openPreview() {
 
 // Admin functions
 function confirmDocumentDelete(documentId, filename) {
-    Swal.fire({
+    showConfirmModal({
         title: 'Delete Document?',
-        text: `Are you sure you want to delete "${filename}"? This action cannot be undone.`,
+        message: `Are you sure you want to delete "${filename}"? This action cannot be undone.`,
+        confirmText: 'Yes, Delete',
+        cancelText: 'Cancel',
+        confirmColor: 'red',
         icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#dc2626',
-        cancelButtonColor: '#6b7280',
-        confirmButtonText: 'Yes, delete it!',
-        cancelButtonText: 'Cancel'
-    }).then((result) => {
-        if (result.isConfirmed) {
+        onConfirm: () => {
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = `<?= base_url('admin/documents/delete/') ?>${documentId}`;
@@ -1272,30 +1208,16 @@ function confirmDocumentDelete(documentId, filename) {
 function updateDocumentStatus(documentId, status) {
     const action = status === 'approved' ? 'approve' : 'reject';
     
-    Swal.fire({
-        title: `${action.charAt(0).toUpperCase() + action.slice(1)} Document?`,
-        text: `Are you sure you want to ${action} this document?`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: status === 'approved' ? '#059669' : '#dc2626',
-        cancelButtonColor: '#6b7280',
-        confirmButtonText: `Yes, ${action} it!`,
-        cancelButtonText: 'Cancel'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Here you would make an API call to update the status
-            // For now, we'll just show a success message and reload
-            Swal.fire({
-                title: 'Success!',
-                text: `Document has been ${status}.`,
-                icon: 'success',
-                timer: 1500,
-                showConfirmButton: false
-            }).then(() => {
-                location.reload();
-            });
-        }
-    });
+    if (!confirm(`Are you sure you want to ${action} this document?`)) {
+        return;
+    }
+
+    // Here you would make an API call to update the status
+    // For now, we'll just show a success message and reload
+    showSuccessToast(`Document has been ${status}!`);
+    setTimeout(() => {
+        location.reload();
+    }, 1000);
 }
 <?php endif; ?>
 

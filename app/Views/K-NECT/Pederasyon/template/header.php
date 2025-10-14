@@ -50,8 +50,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
-    <!-- SweetAlert2 for modal dialogs -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Toast Notification System -->
+    <script src="<?= base_url('assets/js/toast-notifications.js') ?>"></script>
+    
+    <!-- Confirmation Modal System -->
+    <script src="<?= base_url('assets/js/confirm-modal.js') ?>"></script>
 
     <!-- Alpine.js for dropdown functionality -->
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>

@@ -1,8 +1,8 @@
 <!-- Main content wrapper (aligned beside fixed sidebar) -->
-<div class="flex-1 flex flex-col min-h-0 ml-0 lg:ml-64 pt-16">
+<div class="flex-1 flex flex-col min-h-0 ml-0 lg:ml-64 pt-16 overflow-x-hidden">
     <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
-        <div class="max-w-7xl mx-auto p-6">
-            <div class="space-y-8">
+        <div class="max-w-7xl mx-auto p-6 w-full">
+            <div class="space-y-8 overflow-x-hidden">
     <!-- Welcome Section (Unified Style) -->
     <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 border-l-4 border-blue-600 relative overflow-hidden">
         <div class="flex items-start justify-between gap-6">
@@ -178,7 +178,12 @@
                             </div>
                             <div class="p-4">
                                 <h3 class="text-sm font-semibold text-gray-900 truncate" title="<?= esc($doc['filename'] ?? 'Untitled Document') ?>"><?= esc($doc['filename'] ?? 'Untitled Document') ?></h3>
-                                <div class="mt-2 flex items-center justify-between text-xs text-gray-500"><span><?= !empty($doc['created_at'])?date('M d, Y',strtotime($doc['created_at'])):'' ?></span><span class="px-2 py-0.5 rounded-full text-[10px] font-medium <?= ($doc['visibility'] ?? 'sk')==='pederasyon'?'bg-purple-100 text-purple-700':(($doc['visibility'] ?? 'sk')==='sk'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700') ?>"><?= ucfirst($doc['visibility'] ?? 'SK') ?></span></div>
+                                <div class="mt-2 flex items-center justify-between flex-wrap gap-2 text-xs text-gray-500">
+                                    <span class="flex-shrink-0"><?= !empty($doc['created_at'])?date('M d, Y',strtotime($doc['created_at'])):'' ?></span>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-medium flex-shrink-0 <?= ($doc['visibility'] ?? 'sk')==='pederasyon'?'bg-purple-100 text-purple-700':(($doc['visibility'] ?? 'sk')==='sk'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700') ?>">
+                                        <?= ucfirst($doc['visibility'] ?? 'SK') ?>
+                                    </span>
+                                </div>
                             </div>
                         </article>
                     <?php endforeach; ?>

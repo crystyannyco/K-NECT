@@ -362,8 +362,8 @@
 })();
 
 function previewDocument(url,isImage){
-  if(isImage){ Swal.fire({ html:`<img src="${url}" style="width:100%;height:auto;border-radius:0.5rem"/>`, width:'60rem', showConfirmButton:false, showCloseButton:true, background:'#0B1220', color:'#fff' }); return; }
-  Swal.fire({ html:`<iframe src="${url}" style="width:100%;height:70vh;border:0;border-radius:0.5rem;background:#fff"></iframe>`, width:'70rem', showConfirmButton:false, showCloseButton:true });
+  // Open document in new tab
+  window.open(url, '_blank');
 }
 
 // Document carousel init

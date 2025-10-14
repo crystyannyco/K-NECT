@@ -413,12 +413,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Simple preview for documents
 function previewDocument(url, isImage) {
-    if (isImage) {
-        Swal.fire({ html: `<img src="${url}" alt="Document" style="width:100%;height:auto;border-radius:0.5rem" />`, width: '60rem', showConfirmButton: false, showCloseButton: true, background: '#0B1220', color: '#fff' });
-        return;
-    }
-    const iframe = `<iframe src="${url}" style="width:100%;height:70vh;border:0;border-radius:0.5rem;background:#fff"></iframe>`;
-    Swal.fire({ html: iframe, width: '70rem', showConfirmButton: false, showCloseButton: true });
+    // Open document in new tab instead of modal
+    window.open(url, '_blank');
 }
 
 // Document carousel init (shared logic)

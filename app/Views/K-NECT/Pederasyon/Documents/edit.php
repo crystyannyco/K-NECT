@@ -7,18 +7,46 @@
     <div class="absolute inset-0 bg-gradient-to-br from-blue-100/60 to-blue-200/80 rounded-3xl blur-xl opacity-80"></div>
         <div class="relative bg-white/95 backdrop-blur-lg rounded-3xl shadow-2xl border border-blue-200/50 overflow-hidden">
             
-            <!-- Header Section -->
-            <div class="bg-gradient-to-r from-blue-600 to-blue-500 px-8 py-6">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            <!-- Breadcrumbs -->
+            <div class="px-8 pt-6">
+                <nav class="flex items-center space-x-2 text-sm text-gray-600">
+                    <a href="<?= base_url('pederasyon/dashboard') ?>" class="hover:text-blue-600 transition-colors flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                         </svg>
+                        Dashboard
+                    </a>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                    <a href="<?= base_url('admin/documents') ?>" class="hover:text-blue-600 transition-colors">
+                        Documents
+                    </a>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                    <span class="text-blue-600 font-medium">Edit</span>
+                </nav>
+            </div>
+
+            <!-- Header Section -->
+            <div class="px-8 py-6 border-b border-gray-200">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div class="flex-1">
+                        <h1 class="text-3xl font-bold text-blue-900 tracking-tight flex items-center gap-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            Edit Document
+                        </h1>
+                        <p class="text-sm text-gray-600 mt-2">Update document information and manage its properties</p>
                     </div>
-                    <div>
-                        <h1 class="text-2xl font-bold text-white drop-shadow-sm">Edit Document</h1>
-                        <p class="text-blue-100 text-sm mt-1">Update document information and manage its properties</p>
-                    </div>
+                    <a href="<?= base_url('admin/documents') ?>" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-gray-700 rounded-lg text-sm font-medium shadow-sm hover:bg-gray-50 hover:shadow transition-all border border-gray-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
+                        Back to Documents
+                    </a>
                 </div>
             </div>
 

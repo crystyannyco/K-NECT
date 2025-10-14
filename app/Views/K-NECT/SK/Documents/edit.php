@@ -7,8 +7,30 @@
         <div class="absolute inset-0 bg-gradient-to-br from-green-100/60 to-emerald-100/80 rounded-3xl blur-xl opacity-80"></div>
         <div class="relative bg-white/95 backdrop-blur-lg rounded-3xl shadow-2xl border border-green-200/50 overflow-hidden">
             
+            <!-- Breadcrumbs -->
+            <div class="px-8 pt-6">
+                <nav class="flex items-center space-x-2 text-sm text-gray-600">
+                    <a href="<?= base_url('sk/dashboard') ?>" class="hover:text-blue-600 transition-colors flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                        Dashboard
+                    </a>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                    <a href="<?= base_url('admin/documents') ?>" class="hover:text-blue-600 transition-colors">
+                        Documents
+                    </a>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                    <span class="text-green-600 font-medium">Edit</span>
+                </nav>
+            </div>
+
             <!-- Header Section -->
-            <div class="bg-gradient-to-r from-green-600 to-emerald-600 px-8 py-6">
+            <div class="bg-gradient-to-r from-green-600 to-emerald-600 px-8 py-6 mt-4">
                 <div class="flex items-center gap-4">
                     <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -298,67 +320,56 @@
                                                 </svg>
                                                 <span class="text-sm font-semibold text-gray-900">Pederasyon (Federation)</span>
                                             </div>
-                                            <p class="text-xs text-gray-600 mt-1">Visible to Pederasyon members, SK admins, and KK users</p>
+                                            <p class="text-xs text-gray-600 mt-1">Visible to Pederasyon officers only (you can still see your own uploads)</p>
                                         </div>
                                     </label>
                                 </div>
                             </div>
 
-                            <!-- Barangay Scope Settings -->
+                            <!-- Barangay Scope Settings (SK users locked to their barangay) -->
                             <div class="space-y-3">
                                 <label class="block text-sm font-semibold text-gray-700 flex items-center gap-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                                     </svg>
-                                    Barangay Scope <span class="text-red-500">*</span>
+                                    Barangay Assignment
                                 </label>
-                                <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
-                                    <!-- City-wide -->
-                                    <label class="flex items-start p-3 bg-white rounded-lg border-2 <?= (($doc['visibility_scope'] ?? 'all') === 'all') ? 'border-blue-400 bg-blue-50' : 'border-gray-200' ?> hover:border-blue-300 transition-all cursor-pointer">
-                                        <input type="radio" name="visibility_scope" value="all" class="mt-0.5 w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500" <?= (($doc['visibility_scope'] ?? 'all') === 'all') ? 'checked' : '' ?> required>
-                                        <div class="ml-3">
-                                            <div class="flex items-center gap-2">
-                                                <svg class="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
-                                                <span class="text-sm font-semibold text-gray-900">City-wide</span>
-                                            </div>
-                                            <p class="text-xs text-gray-600 mt-1">Document visible to all barangays in the city</p>
-                                        </div>
-                                    </label>
-                                    <!-- Specific Barangay -->
-                                    <label class="flex items-start p-3 bg-white rounded-lg border-2 <?= (($doc['visibility_scope'] ?? '') === 'specific_barangay') ? 'border-green-400 bg-green-50' : 'border-gray-200' ?> hover:border-green-300 transition-all cursor-pointer">
-                                        <input type="radio" name="visibility_scope" value="specific_barangay" class="mt-0.5 w-4 h-4 text-green-600 border-gray-300 focus:ring-green-500" <?= (($doc['visibility_scope'] ?? '') === 'specific_barangay') ? 'checked' : '' ?> required>
-                                        <div class="ml-3 w-full">
-                                            <div class="flex items-center gap-2">
-                                                <svg class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                                </svg>
-                                                <span class="text-sm font-semibold text-gray-900">Specific Barangay</span>
-                                            </div>
-                                            <p class="text-xs text-gray-600 mt-1">Restrict document to selected barangay only</p>
-                                        </div>
-                                    </label>
-                                </div>
                                 
-                                <!-- Barangay Selector (shown when specific_barangay is selected) -->
-                                <div id="barangaySelector" class="<?= (($doc['visibility_scope'] ?? 'all') === 'specific_barangay') ? '' : 'hidden' ?>">
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                                        Select Barangay <span class="text-red-500">*</span>
-                                    </label>
-                                    <select name="barangay_id" id="barangayDropdown" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all duration-200 text-gray-900 shadow-sm hover:shadow-md" <?= (($doc['visibility_scope'] ?? 'all') === 'specific_barangay') ? 'required' : '' ?>>
-                                        <option value="">-- Select Barangay --</option>
-                                        <?php if (!empty($barangays)): ?>
-                                            <?php foreach ($barangays as $barangay): ?>
-                                                <option value="<?= $barangay['barangay_id'] ?>" <?= (isset($doc['barangay_id']) && $doc['barangay_id'] == $barangay['barangay_id']) ? 'selected' : '' ?>>
-                                                    <?= esc($barangay['name']) ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        <?php endif; ?>
-                                    </select>
-                                    <p class="text-xs text-gray-500 mt-2">This document will only be visible to users from the selected barangay</p>
+                                <!-- Hidden inputs - SK users automatically use their barangay -->
+                                <input type="hidden" name="visibility_scope" value="specific_barangay">
+                                <input type="hidden" name="barangay_id" value="<?= esc($userBarangayId ?? $doc['barangay_id'] ?? '') ?>">
+                                
+                                <!-- Info message -->
+                                <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-lg">
+                                    <div class="flex">
+                                        <div class="flex-shrink-0">
+                                            <svg class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </div>
+                                        <div class="ml-3">
+                                            <p class="text-sm font-medium text-green-800">
+                                                Barangay Restriction
+                                            </p>
+                                            <p class="text-xs text-green-700 mt-1">
+                                                As an SK officer, documents are automatically assigned to your barangay and cannot be changed.
+                                                <?php 
+                                                // Get barangay name
+                                                $barangayName = 'your barangay';
+                                                if (!empty($barangays) && !empty($userBarangayId)) {
+                                                    foreach ($barangays as $b) {
+                                                        if ($b['barangay_id'] == $userBarangayId) {
+                                                            $barangayName = $b['name'];
+                                                            break;
+                                                        }
+                                                    }
+                                                }
+                                                ?>
+                                                <strong class="font-semibold">Assigned barangay: <?= esc($barangayName) ?></strong>
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -480,28 +491,7 @@ document.addEventListener('DOMContentLoaded', function() {
         checkbox.addEventListener('change', updateCategoryCounter);
     });
 
-    // Visibility Scope Toggle
-    const scopeAll = document.querySelector('input[name="visibility_scope"][value="all"]');
-    const scopeSpecific = document.querySelector('input[name="visibility_scope"][value="specific_barangay"]');
-    const barangaySelector = document.getElementById('barangaySelector');
-    const barangayDropdown = document.getElementById('barangayDropdown');
-
-    function updateBarangaySelector() {
-        if (scopeAll && scopeAll.checked) {
-            barangaySelector.classList.add('hidden');
-            barangayDropdown.removeAttribute('required');
-            barangayDropdown.value = '';
-        } else if (scopeSpecific && scopeSpecific.checked) {
-            barangaySelector.classList.remove('hidden');
-            barangayDropdown.setAttribute('required', 'required');
-        }
-    }
-
-    if (scopeAll) scopeAll.addEventListener('change', updateBarangaySelector);
-    if (scopeSpecific) scopeSpecific.addEventListener('change', updateBarangaySelector);
-    
-    // Initialize on page load
-    updateBarangaySelector();
+    // SK users automatically use their barangay - no scope selection needed
 });
 
 // CSS Animation

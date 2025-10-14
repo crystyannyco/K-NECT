@@ -155,6 +155,13 @@ class ProfilingController extends BaseController
 
     public function profilingStep1()
     {
+        // Debug CSRF token
+        $receivedToken = $this->request->getPost('csrf_test_name');
+        $sessionToken = session('csrf_test_name');
+        log_message('debug', 'CSRF Debug - Received Token: ' . ($receivedToken ?? 'NULL'));
+        log_message('debug', 'CSRF Debug - Session Token: ' . ($sessionToken ?? 'NULL'));
+        log_message('debug', 'CSRF Debug - Tokens Match: ' . (($receivedToken === $sessionToken) ? 'YES' : 'NO'));
+        
         $step = session('profiling_step') ?? 1;
         $acceptedInitialTerms = $this->request->getPost('accept_terms');
         if ($acceptedInitialTerms) {

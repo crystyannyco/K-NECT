@@ -19,7 +19,8 @@
     <meta name="twitter:description" content="Unified youth engagement platform for announcements, events, resources, and data-driven community impact.">
     <meta name="twitter:image" content="<?= base_url('assets/images/K-Nect-Logo.png') ?>">
     
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Tailwind CSS - Production Build -->
+    <link rel="stylesheet" href="<?= base_url('assets/css/tailwind.css') ?>" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <!-- Optional fallback for serif display look if Domaine Display Narrow is unavailable -->
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">

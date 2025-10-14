@@ -147,6 +147,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const headerStatus = document.getElementById('header-status');
     const headerClearBtn = document.getElementById('header-clear-btn');
     const headerChips = document.querySelectorAll('[data-kk-chip]');
+    
+    // Legacy variables for compatibility (referenced later in the script)
+    const searchInput = headerSearch; // Alias for backward compatibility
+    const categoryFilter = headerCategory; // Alias for backward compatibility
+    
     // Base URLs for rendering links/images (must be defined before first render)
     const baseViewUrl = '<?= base_url('/bulletin/view/') ?>';
     const baseEditUrl = '<?= base_url('/bulletin/edit/') ?>';

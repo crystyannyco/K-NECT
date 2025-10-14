@@ -4,6 +4,8 @@
  * Shows toast notification like manual publishing
  */
 
+// Prevent duplicate class declaration if script is loaded multiple times
+if (typeof InvisibleEventAutoRefresh === 'undefined') {
 class InvisibleEventAutoRefresh {
     constructor(options = {}) {
         this.pollInterval = options.pollInterval || 30000; // Check every 30 seconds
@@ -204,6 +206,9 @@ class InvisibleEventAutoRefresh {
     }
 }
 
+// Close class definition check
+} // End of InvisibleEventAutoRefresh class definition
+
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     // Only initialize on event pages
@@ -211,11 +216,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentPath = window.location.pathname;
     
     if (eventPages.some(page => currentPath.includes(page))) {
-        window.invisibleEventAutoRefresh = new InvisibleEventAutoRefresh({
-            pollInterval: 30000 // Check every 30 seconds
-        });
+        if (typeof InvisibleEventAutoRefresh !== 'undefined') {
+            window.invisibleEventAutoRefresh = new InvisibleEventAutoRefresh({
+                pollInterval: 30000 // Check every 30 seconds
+            });
+        }
     }
 });
-
-// Expose for debugging purposes
-window.InvisibleEventAutoRefresh = InvisibleEventAutoRefresh;

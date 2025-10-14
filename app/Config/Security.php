@@ -78,8 +78,13 @@ class Security extends BaseConfig
      * CSRF Redirect
      * --------------------------------------------------------------------------
      *
-     * Redirect to previous page with error on failure.
-     *
+     * When a request fails CSRF validation:
+     * - true: Redirects to previous page with error message (better UX)
+     * - false: Throws SecurityException (shows actual error for debugging)
+     * 
+     * TEMPORARILY DISABLED to see the actual CSRF error for debugging.
+     * Re-enable after fixing the root cause.
+     * 
      * @see https://codeigniter4.github.io/userguide/libraries/security.html#redirection-on-failure
      */
     public bool $redirect = true;

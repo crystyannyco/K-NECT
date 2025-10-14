@@ -30,9 +30,13 @@ class Cors extends BaseConfig
          *
          * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin
          *
+         * SECURITY: Only allow same-origin by default.
+         * Add specific trusted domains if cross-origin requests are needed.
+         * NEVER use '*' (wildcard) in production.
+         * 
          * E.g.:
-         *   - ['http://localhost:8080']
-         *   - ['https://www.example.com']
+         *   - ['https://yourdomain.com']
+         *   - ['https://api.yourdomain.com']
          */
         'allowedOrigins' => [],
 
@@ -44,8 +48,10 @@ class Cors extends BaseConfig
          * NOTE: A pattern specified here is part of a regular expression. It will
          *       be actually `#\A<pattern>\z#`.
          *
+         * SECURITY: Be very specific with patterns. Avoid overly permissive regex.
+         * 
          * E.g.:
-         *   - ['https://\w+\.example\.com']
+         *   - ['https://\w+\.yourdomain\.com'] (only subdomains of yourdomain.com)
          */
         'allowedOriginsPatterns' => [],
 
@@ -56,6 +62,9 @@ class Cors extends BaseConfig
          * the server allows cross-origin HTTP requests to include credentials.
          *
          * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Credentials
+         * 
+         * SECURITY: Keep this false unless absolutely necessary.
+         * If true, allowedOrigins MUST be specific (cannot be '*').
          */
         'supportsCredentials' => false,
 
@@ -67,8 +76,11 @@ class Cors extends BaseConfig
          * indicate which HTTP headers can be used during the actual request.
          *
          * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Headers
+         * 
+         * SECURITY: Only list headers that are actually needed.
+         * Common safe headers: Content-Type, Accept, Authorization
          */
-        'allowedHeaders' => [],
+        'allowedHeaders' => ['Content-Type', 'X-Requested-With', 'Accept'],
 
         /**
          * Set headers to expose.
@@ -78,6 +90,8 @@ class Cors extends BaseConfig
          * in the browser, in response to a cross-origin request.
          *
          * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Expose-Headers
+         * 
+         * SECURITY: Only expose headers that the client needs to read.
          */
         'exposedHeaders' => [],
 
@@ -88,12 +102,15 @@ class Cors extends BaseConfig
          * methods allowed when accessing a resource in response to a preflight
          * request.
          *
+         * SECURITY: Only allow methods that are actually used.
+         * 
          * E.g.:
-         *   - ['GET', 'POST', 'PUT', 'DELETE']
+         *   - ['GET', 'POST'] (most restrictive)
+         *   - ['GET', 'POST', 'PUT', 'DELETE'] (RESTful API)
          *
          * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Methods
          */
-        'allowedMethods' => [],
+        'allowedMethods' => ['GET', 'POST'],
 
         /**
          * Set how many seconds the results of a preflight request can be cached.

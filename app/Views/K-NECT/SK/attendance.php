@@ -638,7 +638,7 @@ function openAttendanceModal(eventId) {
         modal.classList.remove('hidden');
         console.log('Modal shown successfully');
     } else {
-        console.error('Modal element not found');
+        // console.error('Modal element not found');
         showNotification('Modal not found', 'error');
         return;
     }
@@ -654,7 +654,7 @@ function closeAttendanceModal() {
         modal.classList.add('hidden');
         console.log('Modal hidden successfully');
     } else {
-        console.error('Modal element not found when trying to close');
+        // console.error('Modal element not found when trying to close');
     }
     currentEventId = null;
 }

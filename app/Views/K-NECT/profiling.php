@@ -20,19 +20,9 @@
     <meta name="twitter:image" content="<?= base_url('assets/images/K-Nect-Logo.png') ?>">
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind CSS - Production Build -->
+    <link rel="stylesheet" href="<?= base_url('assets/css/tailwind.css') ?>" />
     <script>
-        tailwind.config = {
-            // Suppress CDN warning
-        }
-    </script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        'sans': ['Inter', 'sans-serif'],
-                    },
                     animation: {
                         'fade-in': 'fadeIn 0.5s ease-in-out',
                         'slide-in': 'slideIn 0.6s ease-out',
@@ -6069,6 +6059,48 @@ document.addEventListener('DOMContentLoaded',function(){
             // Gender dropdown functionality removed - no longer needed
         }
 
+        // CSRF Token refresh mechanism
+        function refreshCSRFToken() {
+            fetch('<?= base_url('profiling') ?>', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.text())
+            .then(html => {
+                // Extract CSRF token from response
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newToken = doc.querySelector('input[name="csrf_test_name"]');
+                
+                if (newToken && newToken.value) {
+                    // Update all CSRF token inputs on the page
+                    const csrfInputs = document.querySelectorAll('input[name="csrf_test_name"]');
+                    csrfInputs.forEach(input => {
+                        input.value = newToken.value;
+                    });
+                    console.log('CSRF token refreshed successfully');
+                } else {
+                    console.warn('Failed to extract new CSRF token from response');
+                }
+            })
+            .catch(error => {
+                console.error('Error refreshing CSRF token:', error);
+            });
+        }
+
+        // Refresh CSRF token every 30 minutes (1800000ms) to prevent expiration
+        setInterval(refreshCSRFToken, 1800000);
+
+        // Refresh CSRF token when user returns to page after being away
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                console.log('Page became visible, refreshing CSRF token...');
+                refreshCSRFToken();
+            }
+        });
+
         // Initialize Terms and Conditions functionality
         function initializeTermsAndConditions() {
             const termsCheckbox = document.getElementById('terms-checkbox');
@@ -6414,6 +6446,14 @@ document.addEventListener('DOMContentLoaded',function(){
             const qualificationForm = document.getElementById('qualificationForm');
             if (qualificationForm) {
                 qualificationForm.addEventListener('submit', function(e) {
+                    console.log('Form submission validation:', {
+                        hasScrolledTerms,
+                        hasScrolledPrivacy,
+                        hasAcceptedTerms,
+                        hasAcceptedPrivacy,
+                        checkboxChecked: termsCheckbox.checked
+                    });
+                    
                     // Check if Terms and Conditions and Privacy Policy have been read completely
                     if (!hasScrolledTerms || !hasScrolledPrivacy) {
                         e.preventDefault();
@@ -6434,6 +6474,25 @@ document.addEventListener('DOMContentLoaded',function(){
                         showToast('You must agree to the Terms and Conditions and Privacy Policy to continue.', 'warning');
                         return false;
                     }
+                    
+                    // Verify CSRF token exists
+                    const csrfInput = qualificationForm.querySelector('input[name="csrf_test_name"]');
+                    if (!csrfInput || !csrfInput.value) {
+                        e.preventDefault();
+                        console.error('CSRF token missing from form');
+                        showToast('Security token missing. Please refresh the page and try again.', 'error');
+                        return false;
+                    }
+                    
+                    // Log full token details for debugging
+                    console.log('Form submission details:', {
+                        tokenName: csrfInput.name,
+                        tokenLength: csrfInput.value.length,
+                        tokenPreview: csrfInput.value.substring(0, 20) + '...',
+                        tokenFull: csrfInput.value, // Full token for debugging
+                        formAction: qualificationForm.action,
+                        formMethod: qualificationForm.method
+                    });
                     
                     // All validations passed - allow form submission
                     return true;
@@ -6721,7 +6780,12 @@ document.addEventListener('DOMContentLoaded',function(){
         }
 
         // Initialize Terms and Conditions when DOM is ready
-        initializeTermsAndConditions();
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeTermsAndConditions);
+        } else {
+            // DOM already loaded
+            initializeTermsAndConditions();
+        }
     </script>
 </body>
 </html>

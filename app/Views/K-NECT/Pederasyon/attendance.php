@@ -416,14 +416,14 @@ let currentEventId = null;
 const eventsData = <?= json_encode($events) ?>;
 
 // Log events data to check if it's loaded correctly
-console.log('Events data loaded:', eventsData);
-console.log('Total events:', eventsData ? eventsData.length : 0);
+// console.log('Events data loaded:', eventsData);
+// console.log('Total events:', eventsData ? eventsData.length : 0);
 
 document.addEventListener('DOMContentLoaded', function() {
     
     // Test if buttons exist
     const buttons = document.querySelectorAll('button[onclick]');
-    console.log('Found buttons with onclick:', buttons.length);
+    // console.log('Found buttons with onclick:', buttons.length);
     
     // Add event listeners for debugging
     buttons.forEach((button, index) => {

@@ -7,7 +7,8 @@
     <title>Admin Google Calendar Integration</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind CSS - Production Build -->
+    <link rel="stylesheet" href="<?= base_url('assets/css/tailwind.css') ?>" />
 </head>
 <body class="bg-gray-50 min-h-screen">
     <div class="max-w-6xl mx-auto p-6 bg-white shadow-lg rounded-lg mt-8">

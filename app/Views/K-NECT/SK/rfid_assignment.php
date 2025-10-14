@@ -654,13 +654,6 @@
             }
         }
 
-        console.log('Profile picture debug:', {
-            user: user ? user.full_name : null,
-            rawValue: rawValue,
-            normalizedValue: normalizedValue,
-            profilePictureUrl: profilePictureUrl
-        });
-
         if (profilePictureUrl) {
             var img = new Image();
             img.onload = function() {
@@ -669,21 +662,24 @@
                 photoPlaceholder.classList.add('hidden');
             };
             img.onerror = function(error) {
-                console.error('Failed to load profile picture', profilePictureUrl, error);
-                userPhoto.classList.add('hidden');
-                photoPlaceholder.classList.remove('hidden');
+                console.warn('Profile picture not found:', profilePictureUrl, '- Using default avatar');
+                // Try to use default avatar instead of hiding
+                var defaultAvatar = '<?= base_url('assets/images/default-avatar.svg') ?>';
+                userPhoto.src = defaultAvatar;
+                userPhoto.classList.remove('hidden');
+                photoPlaceholder.classList.add('hidden');
             };
             img.src = profilePictureUrl;
         } else {
-            userPhoto.classList.add('hidden');
-            photoPlaceholder.classList.remove('hidden');
+            // No profile picture URL, show default avatar
+            userPhoto.src = '<?= base_url('assets/images/default-avatar.svg') ?>';
+            userPhoto.classList.remove('hidden');
+            photoPlaceholder.classList.add('hidden');
         }
     }
 
     // Show RFID modal and fill user info
     function assignRFID(userId) {
-        console.log('assignRFID called with userId:', userId);
-        console.log('Total users in userListForRFID:', window.userListForRFID ? window.userListForRFID.length : 0);
         
         // Find user data from user_list (PHP variable rendered as JS)
         var user = null;
@@ -695,8 +691,6 @@
             console.error('User not found with id:', userId);
             return;
         }
-        
-        console.log('User data found:', user);
         
         // Fill user info in modal
         document.getElementById('rfidUserFullName').textContent = user.full_name || '';

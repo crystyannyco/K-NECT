@@ -477,7 +477,7 @@
             <div class="py-4">
                 <p class="text-sm text-gray-600 mb-4">Select a reason for deactivating <span id="deactivateUserName" class="font-semibold"></span>:</p>
                 
-                <div class="space-y-3">
+                <div class="space-y-3 mb-4">
                     <label class="flex items-center">
                         <input type="radio" name="deactivateReason" value="aged_out" class="mr-3 text-blue-600 focus:ring-blue-500">
                         <span class="text-sm">Aged out (31+ years old)</span>
@@ -486,10 +486,20 @@
                         <input type="radio" name="deactivateReason" value="inactive_long" class="mr-3 text-blue-600 focus:ring-blue-500">
                         <span class="text-sm">Inactive for 1+ year</span>
                     </label>
-                    <label class="flex items-center">
-                        <input type="radio" name="deactivateReason" value="manual_deactivation" class="mr-3 text-blue-600 focus:ring-blue-500">
-                        <span class="text-sm">Manual deactivation</span>
+                </div>
+
+                <!-- Manual Deactivation Reason Field -->
+                <div class="mt-4">
+                    <label for="manualDeactivationReason" class="block text-sm font-medium text-gray-700 mb-2">
+                        Or specify custom reason for manual deactivation:
                     </label>
+                    <textarea 
+                        id="manualDeactivationReason" 
+                        name="manualDeactivationReason" 
+                        rows="3" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                        placeholder="Enter reason for manual deactivation..."></textarea>
+                    <p class="mt-1 text-xs text-gray-500">Leave blank if using one of the options above</p>
                 </div>
             </div>
             
@@ -1047,19 +1057,39 @@ function closeDeactivateModal() {
     currentDeactivateUserId = null;
     currentDeactivateUserName = '';
     document.querySelectorAll('input[name="deactivateReason"]').forEach(radio => radio.checked = false);
+    document.getElementById('manualDeactivationReason').value = '';
 }
 
 function confirmDeactivation() {
     const selectedReason = document.querySelector('input[name="deactivateReason"]:checked');
+    const manualReason = document.getElementById('manualDeactivationReason').value.trim();
     
-    if (!selectedReason) {
-    showNotification('Please select a reason for deactivation', 'error');
+    // Check if either a radio button is selected OR manual reason is provided
+    if (!selectedReason && !manualReason) {
+        showNotification('Please select a reason or enter a custom reason for deactivation', 'error');
+        return;
+    }
+    
+    // If both are provided, show error
+    if (selectedReason && manualReason) {
+        showNotification('Please choose either a predefined reason or enter a custom reason, not both', 'error');
         return;
     }
     
     if (!currentDeactivateUserId) {
-    showNotification('No user selected for deactivation', 'error');
+        showNotification('No user selected for deactivation', 'error');
         return;
+    }
+    
+    // Determine the reason value and custom reason
+    let reasonValue = '';
+    let customReason = '';
+    
+    if (manualReason) {
+        reasonValue = 'manual_deactivation';
+        customReason = manualReason;
+    } else {
+        reasonValue = selectedReason.value;
     }
     
     // Send deactivation request
@@ -1069,7 +1099,7 @@ function confirmDeactivation() {
             'Content-Type': 'application/x-www-form-urlencoded',
             'X-Requested-With': 'XMLHttpRequest'
         },
-        body: `user_id=${currentDeactivateUserId}&reason=${selectedReason.value}`
+        body: `user_id=${currentDeactivateUserId}&reason=${reasonValue}&custom_reason=${encodeURIComponent(customReason)}`
     })
     .then(response => response.json())
     .then(data => {
@@ -1083,7 +1113,7 @@ function confirmDeactivation() {
     })
     .catch(error => {
         console.error('Error:', error);
-    showNotification('Error deactivating user', 'error');
+        showNotification('Error deactivating user', 'error');
     });
 }
 

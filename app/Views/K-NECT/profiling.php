@@ -3,7 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>K-NECT Youth Profiling</title>
+    <title>K-Nect - Youth Governance System</title>
+    
+    <!-- Open Graph Meta Tags for Link Sharing -->
+    <meta property="og:title" content="K-Nect - Youth Governance System">
+    <meta property="og:description" content="Unified youth engagement platform for announcements, events, resources, and data-driven community impact.">
+    <meta property="og:image" content="<?= base_url('assets/images/K-Nect-Logo.png') ?>">
+    <meta property="og:url" content="<?= current_url() ?>">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="K-Nect">
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="K-Nect - Youth Governance System">
+    <meta name="twitter:description" content="Unified youth engagement platform for announcements, events, resources, and data-driven community impact.">
+    <meta name="twitter:image" content="<?= base_url('assets/images/K-Nect-Logo.png') ?>">
+    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -880,6 +895,7 @@ document.addEventListener('DOMContentLoaded',function(){
                                 Join thousands of Iriga City youth who have already registered. Your voice matters in shaping our community's future.
                             </p>
                             <form action="<?= base_url('profiling/step1') ?>" method="post" class="max-w-sm mx-auto px-2 sm:px-0" id="qualificationForm" novalidate>
+                                <?= csrf_field() ?>
                                 <!-- Terms and Conditions Checkbox -->
                                 <div class="mb-3 sm:mb-4 text-left">
                                     <label class="flex items-start space-x-2 sm:space-x-3 cursor-pointer p-2 sm:p-3 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
@@ -936,6 +952,7 @@ document.addEventListener('DOMContentLoaded',function(){
                 </div>
                 
                 <form action="<?= base_url('profiling/step1') ?>" method="post" class="space-y-4 sm:space-y-6 md:space-y-8" id="step1Form">
+                    <?= csrf_field() ?>
                     <!-- Name Section -->
                     <div class="form-section rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 mx-2 sm:mx-0">
                         <h3 class="text-base sm:text-lg md:text-xl font-semibold text-slate-800 mb-3 sm:mb-4 md:mb-6 flex items-center">
@@ -1339,6 +1356,7 @@ document.addEventListener('DOMContentLoaded',function(){
                 </div>
                 
                 <form action="<?= base_url('profiling/step2') ?>" method="post" class="space-y-4 sm:space-y-6 md:space-y-8" id="step2Form" enctype="multipart/form-data">
+                    <?= csrf_field() ?>
                     <!-- Basic Information Section -->
                     <div class="form-section rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 mx-2 sm:mx-0">
                         <h3 class="text-base sm:text-lg md:text-xl font-semibold text-slate-800 mb-3 sm:mb-4 md:mb-6 flex items-center">
@@ -1819,6 +1837,7 @@ document.addEventListener('DOMContentLoaded',function(){
                 </div>
                 
                 <form action="<?= base_url('profiling/step3') ?>" method="post" class="space-y-4 sm:space-y-6 md:space-y-8" id="step3Form" enctype="multipart/form-data">
+                    <?= csrf_field() ?>
                     <!-- Account Credentials Section -->
                     <div class="form-section rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 mx-2 sm:mx-0">
                         <h3 class="text-base sm:text-lg md:text-xl font-semibold text-slate-800 mb-3 sm:mb-4 md:mb-6 flex items-center">
@@ -2726,6 +2745,7 @@ document.addEventListener('DOMContentLoaded',function(){
                 <!-- Form Actions -->
                 <div class="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center pt-0 sm:pt-2 gap-3 sm:gap-0">
                     <form action="<?= base_url('profiling/backToStep4') ?>" method="post" class="w-full sm:w-auto" style="display:inline;">
+                        <?= csrf_field() ?>
                         <button type="submit" formaction="<?= base_url('profiling/backToStep4') ?>" formmethod="post" formnovalidate
                             class="btn-secondary bg-slate-300 text-slate-700 font-semibold py-3 px-6 rounded-xl hover:bg-slate-400 transition-all duration-200 flex items-center space-x-2 w-full sm:w-auto justify-center">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2736,6 +2756,7 @@ document.addEventListener('DOMContentLoaded',function(){
                     </form>
                     
                     <form action="<?= base_url('profiling/submit') ?>" method="post" class="w-full sm:w-auto" style="display:inline;">
+                        <?= csrf_field() ?>
                         <button type="submit" 
                             class="btn-primary text-white font-semibold py-3 px-8 rounded-xl transition-all duration-200 flex items-center space-x-2 hover:shadow-lg transform hover:scale-105 w-full sm:w-auto justify-center">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

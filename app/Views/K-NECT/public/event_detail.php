@@ -49,12 +49,21 @@ $barangayName = $event['barangay_name'] ?? null;
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title><?= esc($page_title) ?></title>
+    <title>K-Nect - Youth Governance System</title>
     <meta name="description" content="<?= esc($pageDescription) ?>" />
     <link rel="canonical" href="<?= esc($canonicalUrl) ?>" />
-    <meta property="og:title" content="<?= esc($event['title']) ?>" />
+    <meta property="og:title" content="K-Nect - Youth Governance System" />
     <meta property="og:description" content="<?= esc(mb_strimwidth(strip_tags($event['description'] ?? ''),0,140,'…')) ?>" />
-    <?php if($bannerUrl): ?><meta property="og:image" content="<?= esc($bannerUrl) ?>" /><?php endif; ?>
+    <meta property="og:image" content="<?= base_url('assets/images/K-Nect-Logo.png') ?>" />
+    <meta property="og:url" content="<?= esc($canonicalUrl) ?>" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="K-Nect" />
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="K-Nect - Youth Governance System" />
+    <meta name="twitter:description" content="<?= esc(mb_strimwidth(strip_tags($event['description'] ?? ''),0,140,'…')) ?>" />
+    <meta name="twitter:image" content="<?= base_url('assets/images/K-Nect-Logo.png') ?>" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Domine:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">

@@ -373,3 +373,86 @@ if (!function_exists('send_account_rejected_notification')) {
         return $result;
     }
 }
+
+if (!function_exists('send_account_deactivated_notification')) {
+    /**
+     * Send account deactivation notification via Email and SMS
+     * 
+     * @param array $user User data array
+     * @param string $reason Deactivation reason
+     * @return array ['email' => bool, 'sms' => bool] Success status for each channel
+     */
+    function send_account_deactivated_notification($user, $reason) {
+        $result = ['email' => false, 'sms' => false];
+        
+        // Prepare user information
+        $userName = trim($user['first_name'] . ' ' . $user['last_name']);
+        $email = $user['email'] ?? '';
+        $phoneNumber = $user['phone_number'] ?? '';
+        $userId = $user['user_id'] ?? '';
+        
+        // Map is_active value to readable reason if not provided
+        if (empty($reason) && isset($user['is_active'])) {
+            switch ($user['is_active']) {
+                case 2:
+                    $reason = 'Your account has been deactivated because you are 31 years old or above.';
+                    break;
+                case 3:
+                    $reason = 'Your account has been deactivated due to inactivity for more than 1 year.';
+                    break;
+                case 4:
+                    $reason = $user['deactivation_reason'] ?? 'Your account has been manually deactivated.';
+                    break;
+                default:
+                    $reason = 'Your account has been deactivated.';
+            }
+        }
+        
+        // Send Email Notification
+        try {
+            $emailService = \Config\Services::email();
+            $emailService->setTo($email);
+            $emailService->setSubject('Account Deactivation Notice - K-NECT');
+            
+            $message = view('emails/account_deactivated', [
+                'userName' => $userName,
+                'userId' => $userId,
+                'reason' => $reason
+            ]);
+            
+            $emailService->setMessage($message);
+            
+            if ($emailService->send()) {
+                $result['email'] = true;
+                log_message('info', "Account deactivation email sent successfully to {$email}");
+            } else {
+                log_message('error', "Failed to send account deactivation email to {$email}: " . $emailService->printDebugger(['headers']));
+            }
+        } catch (\Exception $e) {
+            log_message('error', "Account deactivation email exception for {$email}: " . $e->getMessage());
+        }
+        
+        // Send SMS Notification
+        if (!empty($phoneNumber)) {
+            try {
+                $smsMessage = "Dear {$userName},\n";
+                $smsMessage .= "Your K-NECT account has been deactivated.\n";
+                $smsMessage .= "Reason: " . substr($reason, 0, 100) . (strlen($reason) > 100 ? '...' : '') . "\n\n";
+                $smsMessage .= "Contact your SK administrator for more information.";
+
+                $smsResult = send_sms($phoneNumber, $smsMessage);
+
+                if ($smsResult && !isset($smsResult['error'])) {
+                    $result['sms'] = true;
+                    log_message('info', "Account deactivation SMS sent successfully to {$phoneNumber}");
+                } else {
+                    log_message('error', "Failed to send account deactivation SMS to {$phoneNumber}");
+                }
+            } catch (\Exception $e) {
+                log_message('error', "Account deactivation SMS exception for {$phoneNumber}: " . $e->getMessage());
+            }
+        }
+        
+        return $result;
+    }
+}

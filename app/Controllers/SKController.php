@@ -1188,7 +1188,7 @@ class SKController extends BaseController
             ->select('
                 user.id, user.user_id, user.first_name, user.last_name, user.middle_name,
                 user.suffix, user.email, user.phone_number, user.birthdate, user.sex,
-                user.is_active, user.last_login, user.created_at, user.updated_at, user.status, user.user_type, user.position,
+                user.is_active, user.deactivation_reason, user.last_login, user.created_at, user.updated_at, user.status, user.user_type, user.position,
                 address.barangay, address.zone_purok, address.municipality, address.province, address.region
             ')
             ->join('address', 'address.user_id = user.id', 'left')
@@ -1206,11 +1206,14 @@ class SKController extends BaseController
             $u['full_name'] = $fullName;
             $u['barangay_name'] = BarangayHelper::getBarangayName($u['barangay']);
             $u['zone_display'] = isset($u['zone_purok']) && !empty($u['zone_purok']) ? esc($u['zone_purok']) : '-';
-            // Map reason based on is_active
-            if ((int)$u['is_active'] === 2) {
-                $u['deactivation_reason'] = 'Overage (31+)';
+            // Map reason based on is_active or use custom reason from database
+            if (!empty($u['deactivation_reason'])) {
+                // Use custom reason from database
+                $u['deactivation_reason'] = $u['deactivation_reason'];
+            } elseif ((int)$u['is_active'] === 2) {
+                $u['deactivation_reason'] = 'Aged out (31+ years old)';
             } elseif ((int)$u['is_active'] === 3) {
-                $u['deactivation_reason'] = 'Inactive 1+ Year';
+                $u['deactivation_reason'] = 'Inactive for 1+ year';
             } else {
                 $u['deactivation_reason'] = 'Manual Deactivation';
             }

@@ -40,6 +40,7 @@
                         <!-- Profile Tab -->
                         <div id="profile-tab" class="tab-content" role="tabpanel" aria-labelledby="tab-profile">
                             <form action="<?= base_url('kk/settings/profile') ?>" method="post" enctype="multipart/form-data">
+                                <?= csrf_field() ?>
                                 <!-- Profile Picture Section -->
                                 <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6 mb-8 pb-8 border-b border-gray-200">
                                     <div class="flex-shrink-0">
@@ -186,6 +187,7 @@
                             <div class="mb-8 pb-8 border-b border-gray-200">
                                 <h3 class="text-lg font-semibold mb-4">Change Password</h3>
                                 <form action="<?= base_url('kk/settings/password') ?>" method="post">
+                                    <?= csrf_field() ?>
                                     <div class="space-y-4 max-w-md">
                                         <div>
                                             <label for="current_password" class="block text-sm font-medium text-gray-700 mb-1">Current Password</label>

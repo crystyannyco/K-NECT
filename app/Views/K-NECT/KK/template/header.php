@@ -4,7 +4,23 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta name="csrf-token" content="<?= csrf_hash() ?>">
-	<title>Knect - Youth Governance Dashboard</title>
+	<meta name="csrf-token-name" content="<?= config('Security')->tokenName ?>">
+	<title>K-Nect - Youth Governance System</title>
+	
+	<!-- Open Graph Meta Tags for Link Sharing -->
+	<meta property="og:title" content="K-Nect - Youth Governance System">
+	<meta property="og:description" content="Unified youth engagement platform for announcements, events, resources, and data-driven community impact.">
+	<meta property="og:image" content="<?= base_url('assets/images/K-Nect-Logo.png') ?>">
+	<meta property="og:url" content="<?= current_url() ?>">
+	<meta property="og:type" content="website">
+	<meta property="og:site_name" content="K-Nect">
+	
+	<!-- Twitter Card Meta Tags -->
+	<meta name="twitter:card" content="summary_large_image">
+	<meta name="twitter:title" content="K-Nect - Youth Governance System">
+	<meta name="twitter:description" content="Unified youth engagement platform for announcements, events, resources, and data-driven community impact.">
+	<meta name="twitter:image" content="<?= base_url('assets/images/K-Nect-Logo.png') ?>">
+	
 	<script src="https://cdn.tailwindcss.com"></script>
 	<script>
 		tailwind.config = {
@@ -31,6 +47,9 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+	
+	<!-- CSRF AJAX Protection -->
+	<script src="<?= base_url('assets/js/csrf-ajax-handler.js') ?>"></script>
 	
 	<!-- K-NECT Image Fallback System -->
 	<link href="<?= base_url('assets/css/image-fallback.css') ?>" rel="stylesheet" type="text/css" />
@@ -223,6 +242,7 @@
 									Profile
 								</a>
 								<form id="logoutForm" action="<?= base_url('logout') ?>" method="post" class="w-full">
+									<?= csrf_field() ?>
 									<button id="logoutBtn" type="submit" class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md flex items-center">
 										<svg class="w-4 h-4 mr-3 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>

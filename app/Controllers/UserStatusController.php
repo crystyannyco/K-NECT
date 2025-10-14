@@ -279,7 +279,7 @@ class UserStatusController extends BaseController
                 ->select('
                     user.id, user.user_id, user.first_name, user.last_name, user.middle_name, 
                     user.suffix, user.email, user.phone_number, user.birthdate, user.sex, 
-                    user.is_active, user.last_login, user.created_at, user.updated_at, user.position,
+                    user.is_active, user.deactivation_reason, user.last_login, user.created_at, user.updated_at, user.position,
                     address.barangay, address.zone_purok, address.municipality, address.province, address.region
                 ')
                 ->join('address', 'address.user_id = user.id', 'left')
@@ -329,8 +329,10 @@ class UserStatusController extends BaseController
                 // Get barangay name
                 $user['barangay_name'] = BarangayHelper::getBarangayName($user['barangay']);
 
-                // Set deactivation reason - for now all are manual deactivation
-                $user['deactivation_reason'] = 'Manual Deactivation';
+                // Set deactivation reason - use custom reason if available
+                if (empty($user['deactivation_reason'])) {
+                    $user['deactivation_reason'] = 'Manual Deactivation';
+                }
             }
 
             // Get available zones for filtering (distinct zones from current data)
@@ -509,9 +511,12 @@ class UserStatusController extends BaseController
      */
     public function deactivateUser()
     {
+        helper(['otp', 'sms']);
+        
         try {
             $userId = $this->request->getPost('user_id');
             $reason = $this->request->getPost('reason');
+            $customReason = $this->request->getPost('custom_reason');
 
             if (!$userId || !$reason) {
                 return $this->response->setStatusCode(400)->setJSON([
@@ -528,25 +533,56 @@ class UserStatusController extends BaseController
                 ]);
             }
 
-            // Map reason to is_active value
+            // Map reason to is_active value and get readable reason text
+            $readableReason = '';
             switch ($reason) {
                 case 'aged_out':
                     $isActiveValue = 2; // Overage (31+)
+                    $readableReason = 'Aged out (31+ years old)';
                     break;
                 case 'inactive_long':
                     $isActiveValue = 3; // Inactive 1+ year
+                    $readableReason = 'Inactive for 1+ year';
                     break;
                 case 'manual_deactivation':
                 default:
                     $isActiveValue = 4; // Manual deactivation
+                    $readableReason = !empty($customReason) ? $customReason : 'Manual deactivation';
                     break;
             }
 
+            // Prepare update data
+            $updateData = [
+                'is_active' => $isActiveValue,
+                'deactivation_reason' => $readableReason
+            ];
+
             // Update user status
-            $result = $this->userModel->update($userId, ['is_active' => $isActiveValue]);
+            $result = $this->userModel->update($userId, $updateData);
 
             if ($result) {
-                log_message('info', "User deactivated: {$user['first_name']} {$user['last_name']} (ID: {$user['user_id']}) - Reason: {$reason}, is_active: {$isActiveValue}");
+                log_message('info', "User deactivated: {$user['first_name']} {$user['last_name']} (ID: {$user['user_id']}) - Reason: {$readableReason}, is_active: {$isActiveValue}");
+                
+                // Send deactivation notifications (Email & SMS)
+                try {
+                    $updatedUser = $this->userModel->find($userId);
+                    $notificationResult = send_account_deactivated_notification($updatedUser, $readableReason);
+                    
+                    if ($notificationResult['email']) {
+                        log_message('info', "Deactivation email sent for user ID {$userId}");
+                    }
+                    if ($notificationResult['sms']) {
+                        log_message('info', "Deactivation SMS sent for user ID {$userId}");
+                    }
+                    
+                    // Note: We don't fail the deactivation if notifications fail
+                    if (!$notificationResult['email'] && !$notificationResult['sms']) {
+                        log_message('warning', "Failed to send any notification for deactivated user ID {$userId}");
+                    }
+                } catch (\Throwable $notifException) {
+                    log_message('error', "Notification exception for deactivated user ID {$userId}: " . $notifException->getMessage());
+                    // Continue even if notification fails
+                }
                 
                 return $this->response->setJSON([
                     'success' => true,

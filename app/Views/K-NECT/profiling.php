@@ -896,7 +896,7 @@ document.addEventListener('DOMContentLoaded',function(){
                         <svg class="w-3 h-3 sm:w-4 sm:h-4 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
-                        <span class="text-center">Need help? Contact SK Pederasyon in Iriga City: <a href="https://www.facebook.com/skpedirigacity" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Facebook</a></span>
+                        <span class="text-center">Need help? Contact SK Pederasyon in Iriga City: <a href="https://www.facebook.com/skpedirigacity" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline">Facebook</a></span>
                     </div>
                 </div>
             </div>
@@ -3045,7 +3045,7 @@ document.addEventListener('DOMContentLoaded',function(){
                             Contact Information
                         </h4>
                         <p class="text-blue-700 leading-relaxed mb-4">
-                            For questions about these Terms, please contact SK Pederasyon in Iriga City: <a href="https://www.facebook.com/skpedirigacity" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Facebook</a>
+                            For questions about these Terms, please contact SK Pederasyon in Iriga City: <a href="https://www.facebook.com/skpedirigacity" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline">Facebook</a>
                         </p>
                         <div class="flex items-center justify-center">
                             <div class="bg-white rounded-lg p-4 shadow-sm border border-blue-200">
@@ -3055,7 +3055,7 @@ document.addEventListener('DOMContentLoaded',function(){
                                     </svg>
                                     <div>
                                         <p class="font-semibold text-blue-800">Need Help?</p>
-                                        <p class="text-sm text-blue-600">Contact SK Pederasyon in Iriga City: <a href="https://www.facebook.com/skpedirigacity" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Facebook</a></p>
+                                        <p class="text-sm text-blue-600">Contact SK Pederasyon in Iriga City: <a href="https://www.facebook.com/skpedirigacity" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline">Facebook</a></p>
                                     </div>
                                 </div>
                             </div>
@@ -3419,7 +3419,7 @@ document.addEventListener('DOMContentLoaded',function(){
                                     <div class="space-y-1 text-green-700">
                                         <p class="font-medium">Iriga City Youth Development Office</p>
                                         <p>City Hall, Iriga City, Camarines Sur</p>
-                                        <p class="italic">Or SK Pederasyon in Iriga City: <a href="https://www.facebook.com/skpedirigacity" target="_blank" class="text-green-600 hover:text-green-800 underline">Facebook</a></p>
+                                        <p class="italic">Or SK Pederasyon in Iriga City: <a href="https://www.facebook.com/skpedirigacity" target="_blank" rel="noopener noreferrer" class="text-green-600 hover:text-green-800 underline">Facebook</a></p>
                                     </div>
                                 </div>
                             </div>
@@ -3495,7 +3495,7 @@ document.addEventListener('DOMContentLoaded',function(){
                             <iframe id="pdf-viewer" class="w-full h-64 sm:h-96 border rounded-lg" frameborder="0"></iframe>
                             <p class="text-xs sm:text-sm text-gray-600 mt-2 text-center px-2 sm:px-0">
                                 If the PDF doesn't display properly, 
-                                <a id="pdf-fallback-link" href="#" target="_blank" class="text-blue-600 hover:text-blue-800 underline">click here to open in a new tab</a>
+                                <a id="pdf-fallback-link" href="#" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline">click here to open in a new tab</a>
                             </p>
                         </div>
                         

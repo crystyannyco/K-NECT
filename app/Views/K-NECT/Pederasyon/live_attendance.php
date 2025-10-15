@@ -388,7 +388,7 @@
                     'Content-Type': 'application/x-www-form-urlencoded',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: `event_id=${eventId}`,
+                body: `event_id=${eventId}&<?= csrf_token() ?>=<?= csrf_hash() ?>`,
                 signal
             });
 

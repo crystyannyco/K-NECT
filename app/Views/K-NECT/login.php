@@ -238,7 +238,8 @@
                         type="text" 
                         id="login" 
                         name="login" 
-                        placeholder="Enter your email or username" 
+                        placeholder="Enter your email or username"
+                        autocomplete="username"
                 class="input-focus w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     </div>
             <div id="loginError" class="mt-1 text-red-600 text-xs hidden"></div>
@@ -259,6 +260,7 @@
                         id="password" 
                         name="password" 
                         placeholder="Enter your password"
+                        autocomplete="current-password"
                         class="input-focus w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 pr-3 flex items-center z-10">
                         <svg id="eyeIconOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">

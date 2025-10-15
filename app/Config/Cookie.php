@@ -53,8 +53,10 @@ class Cookie extends BaseConfig
      * --------------------------------------------------------------------------
      *
      * Cookie will only be set if a secure HTTPS connection exists.
+     * For production, this should be true when using HTTPS.
+     * For development (HTTP), this can be false.
      */
-    public bool $secure = false;
+    public bool $secure = (ENVIRONMENT === 'production');
 
     /**
      * --------------------------------------------------------------------------
@@ -81,13 +83,12 @@ class Cookie extends BaseConfig
      * - `Cookie::SAMESITE_LAX`
      * - `Cookie::SAMESITE_STRICT`
      *
-     * Defaults to `Lax` for compatibility with modern browsers. Setting `''`
-     * (empty string) means default SameSite attribute set by browsers (`Lax`)
-     * will be set on cookies. If set to `None`, `$secure` must also be set.
+     * 'Strict' provides better CSRF protection by preventing cookies from being
+     * sent in cross-site requests. Use 'Lax' if you need some cross-site functionality.
      *
      * @var ''|'Lax'|'None'|'Strict'
      */
-    public string $samesite = 'Lax';
+    public string $samesite = 'Strict';
 
     /**
      * --------------------------------------------------------------------------

@@ -36,6 +36,9 @@ class SecurityHeadersFilter implements FilterInterface
 
         // Referrer policy - stricter policy
         $response->setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+        
+        // Cross-domain policies - prevent Adobe Flash and PDF from making cross-domain requests
+        $response->setHeader('X-Permitted-Cross-Domain-Policies', 'none');
 
         // Permissions policy - disable unnecessary features (only valid/recognized features)
         // Note: Some features are browser-specific or deprecated, only including widely supported ones
@@ -58,9 +61,14 @@ class SecurityHeadersFilter implements FilterInterface
             "object-src 'none'",
             "base-uri 'self'",
             "form-action 'self'",
-            "frame-ancestors 'none'",
-            "upgrade-insecure-requests"
+            "frame-ancestors 'none'"
         ];
+        
+        // Only add upgrade-insecure-requests in production with HTTPS
+        if ($request->isSecure() && ENVIRONMENT === 'production') {
+            $cspParts[] = "upgrade-insecure-requests";
+        }
+        
         $response->setHeader('Content-Security-Policy', implode('; ', $cspParts));
 
         // Enhanced cache control for all sensitive pages

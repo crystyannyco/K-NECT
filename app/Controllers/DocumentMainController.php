@@ -109,20 +109,6 @@ class DocumentMainController extends BaseController
             }
         }
 
-        // Share permissions
-        $hasViewShare = $model->hasPermission((int) $doc['id'], $user, 'view');
-        $hasDownloadShare = $model->hasPermission((int) $doc['id'], $user, 'download');
-
-        // Explicit share overrides normal visibility checks
-        if ($hasViewShare || $hasDownloadShare) {
-            if ($action === 'preview') {
-                return true;
-            }
-            if ($action === 'download') {
-                return $hasDownloadShare || $isDownloadable;
-            }
-        }
-
         // SK Admin access logic
         if ($role === 'admin' || $userType === 'sk') {
             // CANNOT access 'pederasyon' visibility documents (unless they're the uploader - handled above)
@@ -1259,109 +1245,6 @@ class DocumentMainController extends BaseController
         $zip->close();
         file_put_contents($logFile, "Zip closed. Returning download.\n", FILE_APPEND);
         return $this->response->download($tmpZip, null)->setFileName($zipName)->setContentType('application/zip');
-    }
-
-    public function share($id)
-    {
-        helper(['form', 'url']);
-        $model = new DocumentModel();
-        $shareModel = $model;
-        $doc = $model->find($id);
-        
-        if (!$doc) {
-            throw new \CodeIgniter\Exceptions\PageNotFoundException('Document not found');
-        }
-        
-        $errorMsg = null;
-        $successMsg = null;
-        
-        if ($this->request->getMethod() === 'post') {
-            $sharedWith = $this->request->getPost('shared_with');
-            $permissions = $this->request->getPost('permissions');
-            $expiresAt = $this->request->getPost('expires_at');
-            
-            // Check if already shared with this user
-            $existingShare = $shareModel->db->table('document_shares')
-                                      ->where('document_id', $id)
-                                      ->where('shared_with', $sharedWith)
-                                      ->where('is_active', true)
-                                      ->get()->getRowArray();
-            
-            if ($existingShare) {
-                $errorMsg = 'Document is already shared with this user.';
-            } else {
-                $ok = $shareModel->createShare(
-                    (int) $id,
-                    session('username') ?? 'admin',
-                    $sharedWith,
-                    $permissions,
-                    !empty($expiresAt) ? $expiresAt : null
-                );
-                if ($ok) {
-                    $model->logAction((int) $id, 'share', session('username') ?? 'admin');
-                    $successMsg = 'Document shared successfully.';
-                } else {
-                    $errorMsg = 'Failed to share document.';
-                }
-            }
-        }
-        
-        // Get current shares
-        $currentShares = $shareModel->getActiveShares($id);
-        
-        // Return role-specific share view
-        $userRole = session('role');
-        $viewData = [
-            'doc' => $doc,
-            'currentShares' => $currentShares,
-            'errorMsg' => $errorMsg,
-            'successMsg' => $successMsg
-        ];
-        
-        if ($userRole === 'super_admin') {
-            return $this->renderWithTemplate('K-NECT/Pederasyon/Documents/share', $viewData);
-        } elseif ($userRole === 'admin') {
-            return $this->renderWithTemplate('K-NECT/SK/Documents/share', $viewData);
-        } else {
-            // KK users cannot share documents
-            return redirect()->to(base_url('admin/documents'))->with('error', 'Access denied. Only SK and Super Admin can share documents.');
-        }
-    }
-
-    public function revokeShare($documentId, $shareId)
-    {
-        $shareModel = new DocumentModel();
-        $db = $shareModel->db;
-        $share = $db->table('document_shares')->where('id', (int) $shareId)->get()->getRowArray();
-        if ($share && (int) $share['document_id'] === (int) $documentId) {
-            $shareModel->revokeShare((int) $shareId);
-            $shareModel->logAction((int) $documentId, 'revoke_share', session('username') ?? 'admin');
-            return redirect()->to(base_url("admin/documents/share/$documentId"))->with('success', 'Share revoked successfully.');
-        }
-        
-        return redirect()->to(base_url("admin/documents/share/$documentId"))->with('error', 'Share not found.');
-    }
-
-    public function sharedDocuments()
-    {
-        $model = new DocumentModel();
-        $user = session('username') ?? 'admin';
-        $sharedDocs = $model->getSharedDocuments($user);
-        
-        // Return role-specific shared documents view
-        $userRole = session('role');
-        $viewData = [
-            'sharedDocs' => $sharedDocs
-        ];
-        
-        if ($userRole === 'super_admin') {
-            return $this->renderWithTemplate('K-NECT/Pederasyon/Documents/shared_documents', $viewData);
-        } elseif ($userRole === 'admin') {
-            return $this->renderWithTemplate('K-NECT/SK/Documents/shared_documents', $viewData);
-        } else {
-            // KK users can view shared documents but with limited access
-            return $this->renderWithTemplate('K-NECT/KK/Documents/shared_documents', $viewData);
-        }
     }
 
 }

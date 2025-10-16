@@ -251,17 +251,6 @@ class SKController extends BaseController
             [$username]
         )->getRowArray()['count'];
         
-        // Shared documents (documents shared with this user)
-            // Shared documents (documents shared with this user)
-            // Schema uses 'shared_with' (username string), not a foreign key user id.
-                        $sharedDocuments = $db->query(
-                                "SELECT COUNT(DISTINCT document_id) AS count FROM document_shares 
-                                    WHERE is_active = 1 
-                                        AND (expires_at IS NULL OR expires_at > NOW()) 
-                                        AND LOWER(TRIM(shared_with)) = LOWER(TRIM(?))",
-                                [$username]
-                        )->getRowArray()['count'];
-        
         // Bulletin overview data
         $bulletinModel = new BulletinModel();
         $featuredPosts = $bulletinModel->getFeaturedPosts(5, 'sk', $skBarangay);
@@ -293,7 +282,6 @@ class SKController extends BaseController
             'totalDocuments' => $totalDocuments,
             'pederasyonDocuments' => $pederasyonDocuments,
             'skDocuments' => $skDocuments,
-            'sharedDocuments' => $sharedDocuments,
             // New overview payload
             'featuredPosts' => $featuredPosts,
             'urgentPosts' => $urgentPosts,

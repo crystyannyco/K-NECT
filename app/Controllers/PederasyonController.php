@@ -63,14 +63,6 @@ class PederasyonController extends BaseController
             [$username]
         )->getRowArray()['count'] ?? 0;
 
-        $sharedDocuments = $db->query(
-            "SELECT COUNT(DISTINCT document_id) AS count FROM document_shares 
-                WHERE is_active = 1 
-                  AND (expires_at IS NULL OR expires_at > NOW()) 
-                  AND LOWER(TRIM(shared_with)) = LOWER(TRIM(?))",
-            [$username]
-        )->getRowArray()['count'] ?? 0;
-
         // Bulletin data (city-wide visibility scope for federation role)
         $bulletinModel = new \App\Models\BulletinModel();
         $featuredPosts = $bulletinModel->getFeaturedPosts(5, 'pederasyon');
@@ -100,7 +92,9 @@ class PederasyonController extends BaseController
             'totalDocuments' => $totalDocuments,
             'pederasyonDocuments' => $pederasyonDocuments,
             'skDocuments' => $skDocuments,
-            'sharedDocuments' => $sharedDocuments,
+            'totalDocuments' => $totalDocuments,
+            'pederasyonDocuments' => $pederasyonDocuments,
+            'skDocuments' => $skDocuments,
             // Bulletin/events/documents overview
             'featuredPosts' => $featuredPosts,
             'urgentPosts' => $urgentPosts,

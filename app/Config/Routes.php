@@ -240,7 +240,6 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->get('/documents/api/detail/(:num)', 'DocumentMainController::apiDetail/$1');
     $routes->get('/documents/download/(:num)', 'DocumentMainController::download/$1');
     $routes->get('/documents/preview/(:num)', 'DocumentMainController::preview/$1');
-    $routes->get('/documents/shared', 'DocumentMainController::sharedDocuments');
 
     // ============== Module: Document Test ============== //
     $routes->get('test-document-upload', 'DocumentTestController::testUpload');
@@ -374,10 +373,6 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->get('/admin/documents/version-history/(:num)', 'DocumentMainController::versionHistory/$1');
     $routes->post('/admin/documents/bulk-delete', 'DocumentMainController::bulkDelete');
     $routes->post('/admin/documents/bulk-download', 'DocumentMainController::bulkDownload');
-    $routes->get('/admin/documents/share/(:num)', 'DocumentMainController::share/$1');
-    $routes->post('/admin/documents/share/(:num)', 'DocumentMainController::share/$1');
-    $routes->get('/admin/documents/revoke-share/(:num)/(:num)', 'DocumentMainController::revokeShare/$1/$2');
-    $routes->get('/admin/documents/shared', 'DocumentMainController::sharedDocuments');
     // Serve uploaded files through controller
     $routes->get('uploads/(.*)', 'FileController::serve/$1');
 
@@ -417,10 +412,6 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->get('/admin/documents/version-history/(:num)', 'DocumentMainController::versionHistory/$1');
     $routes->post('/admin/documents/bulk-delete', 'DocumentMainController::bulkDelete');
     $routes->post('/admin/documents/bulk-download', 'DocumentMainController::bulkDownload');
-    $routes->get('/admin/documents/share/(:num)', 'DocumentMainController::share/$1');
-    $routes->post('/admin/documents/share/(:num)', 'DocumentMainController::share/$1');
-    $routes->get('/admin/documents/revoke-share/(:num)/(:num)', 'DocumentMainController::revokeShare/$1/$2');
-    $routes->get('/admin/documents/shared', 'DocumentMainController::sharedDocuments');
     $routes->get('uploads/(:any)', 'Shared\FileController::serve/$1');
 
     // ============================================================================

@@ -6002,20 +6002,27 @@ document.addEventListener('DOMContentLoaded',function(){
                 initializeCountdowns();
                 initializePasswordValidation();
                 initializeGenderDropdown();
-                // If we are at the very first step (qualification) ensure checkbox is reset (fresh start logic)
+                // Initialize terms checkbox state based on server or session data
                 try {
                     const stepIndicator = <?= (int)($step ?? 1) ?>;
                     const termsCheckbox = document.getElementById('terms-checkbox');
                     const serverAccepted = Boolean(window.__profilingServerAccepted);
-                    if (stepIndicator === 1) {
+                    
+                    if (stepIndicator === 1 && termsCheckbox) {
                         if (serverAccepted) {
+                            // Server indicates terms already accepted (from session)
                             sessionStorage.setItem('hasAcceptedTerms', 'true');
                             sessionStorage.setItem('hasAcceptedPrivacy', 'true');
-                            if (termsCheckbox) termsCheckbox.checked = true;
+                            termsCheckbox.checked = true;
+                        } else if (sessionStorage.getItem('hasAcceptedTerms') === 'true' && 
+                                   sessionStorage.getItem('hasAcceptedPrivacy') === 'true') {
+                            // User accepted terms in this session but not yet submitted
+                            termsCheckbox.checked = true;
                         } else {
+                            // Fresh start - no acceptance yet
                             sessionStorage.removeItem('hasAcceptedTerms');
                             sessionStorage.removeItem('hasAcceptedPrivacy');
-                            if (termsCheckbox) termsCheckbox.checked = false;
+                            termsCheckbox.checked = false;
                         }
                     }
                 } catch(e) { /* ignore */ }
@@ -6108,9 +6115,8 @@ document.addEventListener('DOMContentLoaded',function(){
                     sessionStorage.setItem('hasAcceptedTerms', 'true');
                     sessionStorage.setItem('hasAcceptedPrivacy', 'true');
                 } catch(e) { /* ignore */ }
-            }
-
-            if (sessionStorage.getItem('hasAcceptedTerms') === 'true' && sessionStorage.getItem('hasAcceptedPrivacy') === 'true') {
+            } else if (sessionStorage.getItem('hasAcceptedTerms') === 'true' && sessionStorage.getItem('hasAcceptedPrivacy') === 'true') {
+                // User has accepted in this session but hasn't submitted the form yet
                 hasAcceptedTerms = true;
                 hasAcceptedPrivacy = true;
                 hasScrolledTerms = true;
@@ -6225,16 +6231,17 @@ document.addEventListener('DOMContentLoaded',function(){
                 // Button is always clickable - validation messages will guide the user
             }
 
-            // Checkbox click handler with validation
-            termsCheckbox.addEventListener('click', function(e) {
-                if (!hasAcceptedTerms || !hasAcceptedPrivacy) {
+            // Checkbox change handler with validation
+            termsCheckbox.addEventListener('change', function(e) {
+                if (termsCheckbox.checked && (!hasAcceptedTerms || !hasAcceptedPrivacy)) {
+                    // User is trying to check the box but hasn't accepted the terms yet
                     e.preventDefault();
+                    termsCheckbox.checked = false;
                     showToast('Please read and accept the Terms and Conditions and Privacy Policy to proceed.', 'error');
                     return false;
-                } else {
-                    // User can now check/uncheck freely
-                    updateContinueButton();
                 }
+                // Update button state when checkbox changes
+                updateContinueButton();
             });
 
             // Show Terms modal
@@ -6399,6 +6406,12 @@ document.addEventListener('DOMContentLoaded',function(){
                     
                     // Show success notification - both documents now accepted
                     showToast('Privacy Policy accepted successfully. You may now proceed with registration.', 'success');
+                    
+                    // Automatically check the checkbox since both terms are now accepted
+                    if (hasAcceptedTerms && hasAcceptedPrivacy) {
+                        termsCheckbox.checked = true;
+                        updateContinueButton();
+                    }
                 });
             }
 

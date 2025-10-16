@@ -163,15 +163,20 @@ class ProfilingController extends BaseController
         log_message('debug', 'CSRF Debug - Tokens Match: ' . (($receivedToken === $sessionToken) ? 'YES' : 'NO'));
         
         $step = session('profiling_step') ?? 1;
+        
+        // Handle terms acceptance on step 1 (qualification page)
         $acceptedInitialTerms = $this->request->getPost('accept_terms');
-        if ($acceptedInitialTerms) {
+        if ($step == 1 && $acceptedInitialTerms) {
             $accountData = session('account_data') ?? [];
             $accountData['agreement'] = 1;
             session()->set('account_data', $accountData);
             session()->set('profiling_terms_ack', true);
-        }
-        if ($step == 1) {
             session()->set('profiling_step', 2);
+            return redirect()->to(base_url('profiling'));
+        }
+        
+        // If on step 1 but no terms accepted, stay on step 1
+        if ($step == 1) {
             return redirect()->to(base_url('profiling'));
         }
 

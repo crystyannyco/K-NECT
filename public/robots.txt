@@ -56,4 +56,4 @@ Allow: /uploads/event/
 Crawl-delay: 10
 
 # Sitemap location
-Sitemap: https://lawngreen-hamster-125012.hostingersite.com/sitemap.xml
+Sitemap: https://blueviolet-ape-993188.hostingersite.com/sitemap.xml

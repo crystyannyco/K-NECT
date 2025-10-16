@@ -27,18 +27,12 @@
             // Suppress CDN warning
         }
     </script>
-    <script>
-        tailwind.config = {
-            // Suppress CDN warning
-        }
-    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/2.2.2/css/dataTables.dataTables.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/fixedcolumns/5.0.4/css/fixedColumns.dataTables.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.0/css/buttons.dataTables.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.0/css/buttons.dataTables.css">
     
     <!-- jQuery -->
@@ -48,12 +42,6 @@
     <script src="https://cdn.datatables.net/2.2.2/js/dataTables.js"></script>
     <script src="https://cdn.datatables.net/fixedcolumns/5.0.4/js/dataTables.fixedColumns.js"></script>
     <script src="https://cdn.datatables.net/fixedcolumns/5.0.4/js/fixedColumns.dataTables.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.0/js/dataTables.buttons.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.0/js/buttons.html5.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.0/js/buttons.print.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <script src="https://cdn.datatables.net/buttons/3.2.0/js/dataTables.buttons.js"></script>
     <script src="https://cdn.datatables.net/buttons/3.2.0/js/buttons.html5.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/3.2.0/js/buttons.print.min.js"></script>

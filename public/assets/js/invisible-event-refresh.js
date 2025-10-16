@@ -4,6 +4,9 @@
  * Shows toast notification like manual publishing
  */
 
+// Check if class is already defined to prevent redeclaration errors
+if (typeof InvisibleEventAutoRefresh === 'undefined') {
+
 class InvisibleEventAutoRefresh {
     constructor(options = {}) {
         this.pollInterval = options.pollInterval || 30000; // Check every 30 seconds
@@ -219,3 +222,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Expose for debugging purposes
 window.InvisibleEventAutoRefresh = InvisibleEventAutoRefresh;
+
+} // End of typeof check

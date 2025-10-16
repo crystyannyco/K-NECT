@@ -1,12 +1,7 @@
 
-<?= $this->include('K-NECT/SK/template/header') ?>
-<?= $this->include('K-NECT/SK/template/sidebar') ?>
-<?= $this->include('K-NECT/includes/bulletin-assets') ?>
-
 <div class="flex-1 flex flex-col min-h-0 ml-0 lg:ml-64 pt-16">
     <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
-        <div class="max-w-7xl mx-auto p-0">
-            <!-- Header panel removed per request -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <!-- Flash Messages -->
             <?php if (session()->getFlashdata('success')): ?>
                 <div class="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
@@ -26,9 +21,7 @@
                 </div>
             <?php endif; ?>
 
-            <!-- Actions toolbar removed (Create moved to header) -->
-
-            <div class="grid grid-cols-1 gap-6 px-6">
+            <div class="space-y-6">
                 <!-- Main Content -->
                 <div class="w-full space-y-6">
                     
@@ -128,7 +121,7 @@
                     <div id="allPostsSection" class="mt-6">
                         <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2"><i class="fa-solid fa-list text-gray-500"></i><span>All Posts</span></h2>
                         <!-- Toolbar removed: use header panel above -->
-                        <div id="posts-container" class="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div>
+                        <div id="posts-container" class="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"></div>
                     </div>
                 </div>
                 <!-- Sidebar removed; content is full-width -->
@@ -184,75 +177,72 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderPosts(posts) {
         if (!Array.isArray(posts) || posts.length === 0) {
             postsContainer.innerHTML = `
-                <div class="text-center py-12">
+                <div class="col-span-full text-center py-12 sm:py-16">
                     <div class="text-gray-400 mb-4">
-                        <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-16 h-16 sm:w-20 sm:h-20 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
                         </svg>
                     </div>
-                    <h3 class="text-lg font-medium text-gray-900 mb-2">No posts found</h3>
-                    <p class="text-gray-500">No posts match your current filters. Try adjusting your search criteria.</p>
+                    <h3 class="text-base sm:text-lg font-medium text-gray-900 mb-2">No posts found</h3>
+                    <p class="text-sm sm:text-base text-gray-500 px-4">No posts match your current filters. Try adjusting your search criteria.</p>
                 </div>
             `;
             return;
         }
 
         postsContainer.innerHTML = posts.map(post => {
-            const publishedDate = post.published_at ? new Date(post.published_at).toLocaleDateString() : 'N/A';
+            const publishedDate = post.published_at ? new Date(post.published_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A';
             const authorName = `${post.first_name || ''} ${post.last_name || ''}`.trim() || 'Unknown Author';
+            const authorInitial = (post.first_name || 'U').charAt(0).toUpperCase();
             const postTitle = post.title || 'Untitled Post';
-            const postContent = post.content ? post.content.replace(/<[^>]*>/g, '').substring(0, 150) + '...' : '';
+            const postExcerpt = post.excerpt || (post.content ? post.content.replace(/<[^>]*>/g, '').substring(0, 220) + '...' : '');
             const postId = post.id || '';
             const viewCount = post.view_count || 0;
             const categoryColor = post.category_color || '#6B7280';
             const categoryName = post.category_name || '';
+            const featuredImg = post.featured_image ? `<?= base_url('/uploads/bulletin/') ?>${post.featured_image}` : '';
 
             return `
-                <div class="p-6 hover:bg-gray-50 transition-colors">
-                    <div class="flex items-start justify-between">
-                        <div class="flex-1">
-                            <div class="flex items-center space-x-2 mb-3">
-                                ${post.is_urgent ? '<span class="px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full font-medium">🚨 Urgent</span>' : ''}
-                                ${post.is_featured ? '<span class="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full font-medium">⭐ Featured</span>' : ''}
-                                ${categoryName ? `<span class="px-2 py-1 text-xs rounded-full font-medium" style="background-color: ${categoryColor}20; color: ${categoryColor};">${categoryName}</span>` : ''}
-                                <span class="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded-full font-medium">${post.visibility || 'Public'}</span>
+                <article class="group relative flex flex-col bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition" data-id="${postId}">
+                    <div class="relative media w-full overflow-hidden rounded-t-xl">
+                        ${featuredImg ? `
+                            <img src="${featuredImg}" alt="${postTitle}" class="w-full h-full object-cover duration-500 group-hover:scale-105">
+                        ` : `
+                            <div class="absolute inset-0 bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center text-blue-300">
+                                <i class="fa-regular fa-image text-3xl"></i>
                             </div>
-                            <h3 class="text-lg font-semibold text-gray-900 mb-2 hover:text-blue-600 transition-colors">
-                                <a href="<?= base_url('/bulletin/view/') ?>${postId}" class="hover:underline">${postTitle}</a>
-                            </h3>
-                            <p class="text-gray-600 mb-4 leading-relaxed">${postContent}</p>
-                            <div class="flex items-center justify-between text-sm text-gray-500">
-                                <div class="flex items-center space-x-4">
-                                    <span class="flex items-center">
-                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                        </svg>
-                                        ${authorName}
-                                    </span>
-                                    <span>•</span>
-                                    <span class="flex items-center">
-                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                        </svg>
-                                        ${publishedDate}
-                                    </span>
-                                </div>
-                                <div class="flex items-center space-x-3">
-                                    <span class="flex items-center text-gray-500">
-                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                        </svg>
-                                        ${parseInt(viewCount).toLocaleString()}
-                                    </span>
-                                    <a href="<?= base_url('/bulletin/view/') ?>${postId}" class="text-blue-600 hover:text-blue-800 font-medium">Read more →</a>
-                                    ${(post.author_id == <?= $user_id ?? 0 ?>) && (String(post.barangay_id) == String(<?= (int)($barangay_id ?? 0) ?>)) ? `<a href="<?= base_url('/bulletin/edit/') ?>${postId}" class="text-gray-500 hover:text-blue-600 transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></a>` : ''}
-                                </div>
-                            </div>
+                        `}
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent opacity-60 group-hover:opacity-70 transition"></div>
+                        <div class="absolute top-2 left-2 flex flex-wrap gap-1">
+                            ${categoryName ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold" style="background-color: ${categoryColor}20;color: ${categoryColor};">${categoryName}</span>` : ''}
+                            ${post.is_featured ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-yellow-100 text-yellow-700">Featured</span>' : ''}
+                            ${post.is_urgent ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700">Urgent</span>' : ''}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-700">${post.visibility ? post.visibility.charAt(0).toUpperCase() + post.visibility.slice(1) : 'Public'}</span>
+                            ${post.status !== 'published' ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-200 text-gray-700">${post.status ? post.status.charAt(0).toUpperCase() + post.status.slice(1) : 'Draft'}</span>` : ''}
                         </div>
-                        ${post.featured_image ? `<div class="ml-6 flex-shrink-0"><img src="<?= base_url('/uploads/bulletin/') ?>${post.featured_image}" alt="${postTitle}" class="w-24 h-24 object-cover rounded-lg shadow-sm"></div>` : ''}
                     </div>
-                </div>
+                    <div class="p-4 flex flex-col gap-2 flex-1">
+                        <h3 class="text-base font-semibold text-gray-900 leading-snug line-clamp-2 group-hover:text-blue-600 transition">
+                            <a href="<?= base_url('/bulletin/view/') ?>${postId}" class="relative z-10 hover:underline">
+                                ${postTitle}
+                            </a>
+                        </h3>
+                        <p class="text-sm text-gray-600 leading-relaxed line-clamp-3">${postExcerpt}</p>
+                    </div>
+                    <div class="px-4 pb-4 flex items-center justify-between text-xs text-gray-500">
+                        <div class="flex items-center gap-2">
+                            <div class="h-6 w-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center text-[10px] font-medium shadow-sm">
+                                ${authorInitial}
+                            </div>
+                            <span>${authorName}</span>
+                            <span class="text-gray-400">•</span>
+                            <span>${publishedDate}</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="flex items-center gap-1"><i class="fa-regular fa-eye"></i>${parseInt(viewCount).toLocaleString()}</span>
+                        </div>
+                    </div>
+                </article>
             `;
         }).join('');
     }
@@ -395,18 +385,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    let searchDebounce;
-    if (searchInput) {
-        searchInput.addEventListener('input', () => {
-            clearTimeout(searchDebounce); const term = searchInput.value.trim();
-            showSkeleton();
-            searchDebounce = setTimeout(() => { fetchAndRender({ q: term }); }, 350);
-        });
-    }
-    if (categoryFilter) {
-        categoryFilter.addEventListener('change', () => { const categoryId = categoryFilter.value; showSkeleton(); fetchAndRender({ categoryId }); });
-    }
-
     // Initial render (hidden section uses this container once shown)
     renderPosts(<?= json_encode($posts ?? []) ?>);
 });
@@ -456,6 +434,8 @@ document.addEventListener('DOMContentLoaded', () => {
 .doc-carousel-viewport::-webkit-scrollbar-track{background:transparent}
 .doc-carousel-viewport::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
 .doc-carousel-viewport:hover::-webkit-scrollbar-thumb{background:#94a3b8}
+.media{height:12rem;position:relative}
+@media(min-width:640px){.media{height:14rem}}
 </style>
 <script>
 // IntersectionObserver animations (ported from KK view)
@@ -503,5 +483,3 @@ function showToast(message, type='success'){
     setTimeout(()=>{ el.remove(); }, 2400);
 }
 </script>
-
-<?= $this->include('K-NECT/SK/template/footer') ?>

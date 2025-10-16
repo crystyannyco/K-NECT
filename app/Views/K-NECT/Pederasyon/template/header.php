@@ -75,6 +75,33 @@
     <!-- Alpine.js for dropdown functionality -->
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     
+    <!-- Dropdown Toggle Script -->
+    <script>
+    function toggleDropdown(event, dropdownId) {
+        event.stopPropagation();
+        
+        // Close all other dropdowns
+        document.querySelectorAll('[id^="dropdown-"]').forEach(dropdown => {
+            if (dropdown.id !== dropdownId) {
+                dropdown.classList.add('hidden');
+            }
+        });
+        
+        // Toggle current dropdown
+        const dropdown = document.getElementById(dropdownId);
+        dropdown.classList.toggle('hidden');
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('[id^="dropdown-"]') && !event.target.closest('button[onclick^="toggleDropdown"]')) {
+            document.querySelectorAll('[id^="dropdown-"]').forEach(dropdown => {
+                dropdown.classList.add('hidden');
+            });
+        }
+    });
+    </script>
+    
     <!-- CSRF AJAX Protection -->
     <script src="<?= base_url('assets/js/csrf-ajax-handler.js') ?>"></script>
     

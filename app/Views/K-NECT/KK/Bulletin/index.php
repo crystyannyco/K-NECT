@@ -1,13 +1,12 @@
 <!-- KK Bulletin: sleeker, cleaner UI with compact hero, filters, and responsive cards -->
-<?= $this->include('K-NECT/includes/bulletin-assets') ?>
 <div class="flex-1 lg:ml-64 pt-16 min-h-screen bg-gray-50">
     <!-- Removed blue hero banner per request -->
 
     <!-- Content -->
-    <div class="max-w-7xl mx-auto p-0">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <!-- Urgent -->
         <?php if (!empty($urgent_posts)): ?>
-    <div class="mt-6 px-6">
+    <div class="mb-6">
             <div class="bg-red-50 border border-red-200 rounded-lg p-6">
             <h2 class="text-lg font-semibold text-red-900 mb-4">Urgent Announcements</h2>
             <div class="space-y-3">
@@ -24,7 +23,7 @@
 
         <!-- Featured mosaic -->
         <?php if (!empty($featured_posts)): ?>
-    <div class="px-6">
+    <div class="mb-6">
             <div class="flex items-center mb-4">
                 <!-- Featured Posts heading intentionally minimal (button removed) -->
             </div>
@@ -85,7 +84,7 @@
 
         <!-- Events preview -->
         <?php if (!empty($recent_events)): ?>
-    <div class="px-6">
+    <div class="mb-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center"><i class="fa-regular fa-calendar-days text-blue-600 mr-2"></i>Upcoming Events</h2>
             <div class="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 <?php foreach ($recent_events as $event): ?>
@@ -118,7 +117,7 @@
 
     <!-- Documents preview (converted to horizontal carousel) -->
     <?php if (!empty($recent_documents)): ?>
-    <div class="mb-8 px-6">
+    <div class="mb-8">
             <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center"><i class="fa-regular fa-folder-open text-blue-600 mr-2"></i>Uploaded Documents</h2>
             <div class="doc-carousel relative">
                 <button type="button" aria-label="Previous documents" class="doc-carousel-btn prev disabled:opacity-40 disabled:cursor-not-allowed absolute left-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white shadow flex items-center justify-center text-gray-600 hover:text-blue-600 hover:shadow-md transition"><i class="fa-solid fa-chevron-left"></i></button>
@@ -153,7 +152,7 @@
         <?php endif; ?>
 
     <!-- All posts: visible by default; enhanced UI -->
-    <div id="all-posts" class="mt-4 px-6">
+    <div id="all-posts" class="mt-4">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
                 <div class="flex items-center gap-2 text-gray-700 font-semibold text-lg"><i class="fa-solid fa-list text-blue-600"></i><span>All Posts</span></div>
                 <div class="flex items-center gap-3 w-full lg:w-auto">
@@ -169,7 +168,7 @@
                     </select>
                 </div>
             </div>
-            <div id="posts-container" class="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div id="posts-container" class="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 <?php if (!empty($posts)): ?>
                     <?php foreach ($posts as $post): ?>
                         <article class="group relative flex flex-col bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition" data-id="<?= $post['id'] ?>">
@@ -261,19 +260,46 @@
     }
     function renderPosts(posts){
         if (!Array.isArray(posts) || posts.length === 0){
-            postsContainer.innerHTML = `<div class=\"col-span-full\"><div class=\"bg-white border border-dashed border-gray-300 rounded-xl p-10 text-center\"><div class=\"mx-auto w-16 h-16 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mb-4\"><i class=\"fa-regular fa-newspaper text-xl\"></i></div><h3 class=\"text-lg font-semibold text-gray-900\">No posts found</h3><p class=\"text-gray-500 mt-1\">Try different keywords or filters.</p></div></div>`;return;}
+            postsContainer.innerHTML = `<div class="col-span-full text-center py-12 sm:py-16"><div class="text-gray-400 mb-4"><svg class="w-16 h-16 sm:w-20 sm:h-20 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path></svg></div><h3 class="text-base sm:text-lg font-medium text-gray-900 mb-2">No posts found</h3><p class="text-sm sm:text-base text-gray-500 px-4">No posts match your current filters. Try adjusting your search criteria.</p></div>`;return;}
         postsContainer.innerHTML = posts.map(post=>{
             const title = post.title || 'Untitled';
             const hasImg = !!post.featured_image;
-            const categoryChip = post.category_name ? `<span class=\"inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold\" style=\"background-color:${post.category_color}20;color:${post.category_color}\">${post.category_name}</span>` : '';
-            const featChip = boolish(post.is_featured) ? `<span class=\"inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-700\">Featured</span>` : '';
-            const urgentChip = boolish(post.is_urgent) ? `<span class=\"inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700\">Urgent</span>` : '';
-            const visChip = `<span class=\"inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-700\">${(post.visibility||'public')[0].toUpperCase()+(post.visibility||'public').slice(1)}</span>`;
-            const excerpt = (post.excerpt || (post.content||'').replace(/<[^>]*>/g,'')).substring(0,220);
+            const categoryChip = post.category_name ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium" style="background-color:${post.category_color}20;color:${post.category_color}">${post.category_name}</span>` : '';
+            const featChip = boolish(post.is_featured) ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-yellow-100 text-yellow-800">⭐ Featured</span>` : '';
+            const urgentChip = boolish(post.is_urgent) ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-red-100 text-red-800">🚨 Urgent</span>` : '';
+            const visChip = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-gray-100 text-gray-700">${(post.visibility||'public')[0].toUpperCase()+(post.visibility||'public').slice(1)}</span>`;
+            const excerpt = (post.excerpt || (post.content||'').replace(/<[^>]*>/g,'')).substring(0,120);
             const dateStr = post.published_at || post.created_at ? new Date(post.published_at || post.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
             const views = parseInt(post.view_count||0).toLocaleString();
-            const initial = ((post.first_name||'U')[0]||'U').toUpperCase();
-            return `<article class=\"group relative flex flex-col bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition\" data-id=\"${post.id}\">\n        <div class=\"relative media w-full overflow-hidden rounded-t-xl\">\n          ${hasImg?`<img src=\"${baseImgUrl}${post.featured_image}\" alt=\"${title}\" class=\"w-full h-full object-cover duration-500 group-hover:scale-105\">`:`<div class=\"absolute inset-0 bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center text-blue-300\"><i class=\"fa-regular fa-image text-3xl\"></i></div>`}\n          <div class=\"absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent opacity-60 group-hover:opacity-70 transition\"></div>\n          <div class=\"absolute top-2 left-2 flex flex-wrap gap-1\">${categoryChip}${featChip}${urgentChip}${visChip}</div>\n        </div>\n        <div class=\"p-4 flex flex-col gap-2 flex-1\">\n          <h3 class=\"text-base font-semibold text-gray-900 leading-snug line-clamp-2 group-hover:text-blue-600 transition\"><a href=\"${baseViewUrl}${post.id}\" class=\"relative z-10\">${title}</a></h3>\n          <p class=\"text-sm text-gray-600 leading-relaxed line-clamp-3\">${excerpt}${excerpt.length>=220?'...':''}</p>\n        </div>\n        <div class=\"px-4 pb-4 flex items-center justify-between text-xs text-gray-500\">\n          <div class=\"flex items-center gap-2\">\n            <div class=\"h-6 w-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center text-[10px] font-medium shadow-sm\">${initial}</div>\n            <span>${(post.first_name||'')+' '+(post.last_name||'')}</span><span class=\"text-gray-400\">•</span><span>${dateStr}</span>\n          </div>\n          <div class=\"flex items-center gap-1\"><i class=\"fa-regular fa-eye w-3 h-3\"></i><span>${views}</span></div>\n        </div>\n        <a href=\"${baseViewUrl}${post.id}\" class=\"absolute inset-0\" aria-label=\"Read post: ${title}\"></a>\n      </article>`;
+            const authorName = `${post.first_name || ''} ${post.last_name || ''}`.trim() || 'Unknown';
+            return `<article class="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden group">
+                ${hasImg ? `<div class="relative h-40 sm:h-48 overflow-hidden bg-gray-100"><img src="${baseImgUrl}${post.featured_image}" alt="${title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"><div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div></div>` : ''}
+                <div class="p-4 sm:p-5">
+                    <div class="flex flex-wrap items-center gap-2 mb-3">${urgentChip}${featChip}${categoryChip}${visChip}</div>
+                    <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                        <a href="${baseViewUrl}${post.id}" class="hover:underline">${title}</a>
+                    </h3>
+                    <p class="text-xs sm:text-sm text-gray-600 mb-4 leading-relaxed line-clamp-3">${excerpt}${excerpt.length>=120?'...':''}</p>
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-gray-500 pt-3 border-t border-gray-100">
+                        <div class="flex items-center flex-wrap gap-2 sm:gap-3">
+                            <span class="flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                <span class="truncate max-w-[120px]">${authorName}</span>
+                            </span>
+                            <span class="hidden sm:inline">•</span>
+                            <span class="flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                ${dateStr}
+                            </span>
+                            <span class="flex items-center gap-1 text-gray-400">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                ${views}
+                            </span>
+                        </div>
+                        <a href="${baseViewUrl}${post.id}" class="text-blue-600 hover:text-blue-800 font-medium text-xs sm:text-sm transition-colors">Read more →</a>
+                    </div>
+                </div>
+            </article>`;
         }).join('');
     }
 

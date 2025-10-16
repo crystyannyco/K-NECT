@@ -111,7 +111,6 @@ class PederasyonController extends BaseController
 
         return 
             $this->loadView('K-NECT/Pederasyon/template/header', $data) .
-            $this->loadView('K-NECT/Pederasyon/template/header', $data) .
             $this->loadView('K-NECT/Pederasyon/template/sidebar') .
             $this->loadView('K-NECT/Pederasyon/dashboard', $data);
     }

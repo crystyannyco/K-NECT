@@ -179,33 +179,35 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Re-run setup when new content is added dynamically
-const observer = new MutationObserver(function(mutations) {
-    mutations.forEach(function(mutation) {
-        mutation.addedNodes.forEach(function(node) {
-            if (node.nodeType === 1) { // Element node
-                if (node.tagName === 'IMG') {
-                    const fallbackType = node.getAttribute('data-fallback') || 
-                                       node.getAttribute('data-type') || 'document';
-                    const filename = node.getAttribute('data-filename');
-                    setupImageFallback(node, fallbackType, filename);
-                } else {
-                    // Check for images within the added node
-                    node.querySelectorAll('img[data-fallback], img[data-type]').forEach(img => {
-                        const fallbackType = img.getAttribute('data-fallback') || 
-                                           img.getAttribute('data-type') || 'document';
-                        const filename = img.getAttribute('data-filename');
-                        setupImageFallback(img, fallbackType, filename);
-                    });
+if (typeof window.knectImageFallbackObserver === 'undefined') {
+    window.knectImageFallbackObserver = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            mutation.addedNodes.forEach(function(node) {
+                if (node.nodeType === 1) { // Element node
+                    if (node.tagName === 'IMG') {
+                        const fallbackType = node.getAttribute('data-fallback') || 
+                                           node.getAttribute('data-type') || 'document';
+                        const filename = node.getAttribute('data-filename');
+                        setupImageFallback(node, fallbackType, filename);
+                    } else {
+                        // Check for images within the added node
+                        node.querySelectorAll('img[data-fallback], img[data-type]').forEach(img => {
+                            const fallbackType = img.getAttribute('data-fallback') || 
+                                               img.getAttribute('data-type') || 'document';
+                            const filename = img.getAttribute('data-filename');
+                            setupImageFallback(img, fallbackType, filename);
+                        });
+                    }
                 }
-            }
+            });
         });
     });
-});
 
-observer.observe(document.body, { childList: true, subtree: true });
+    window.knectImageFallbackObserver.observe(document.body, { childList: true, subtree: true });
+}
 
 // Export functions for global use
-window.KNECTImages = {
+window.KNECTImages = window.KNECTImages || {
     setupImageFallback,
     getFallbackUrl,
     createSafeImage,

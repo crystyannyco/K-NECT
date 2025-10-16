@@ -403,9 +403,8 @@
                   </div>
 
                   <!-- Actions -->
-                  <div class="relative ml-4 mt-4 md:mt-0" x-data="{ open: false }">
-                    <button @click="open = !open" 
-                            @click.away="open = false"
+                  <div class="relative ml-4 mt-4 md:mt-0">
+                    <button onclick="toggleDropdown(event, 'dropdown-<?= $doc['id'] ?>')" 
                             class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
                             title="Actions">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -413,14 +412,8 @@
                         </svg>
                     </button>
                     
-                    <div x-show="open" 
-                         x-transition:enter="transition ease-out duration-100"
-                         x-transition:enter-start="transform opacity-0 scale-95"
-                         x-transition:enter-end="transform opacity-100 scale-100"
-                         x-transition:leave="transition ease-in duration-75"
-                         x-transition:leave-start="transform opacity-100 scale-100"
-                         x-transition:leave-end="transform opacity-0 scale-95"
-                         class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                    <div id="dropdown-<?= $doc['id'] ?>" 
+                         class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
                         
                         <a href="<?= base_url('admin/documents/download/' . $doc['id']) ?>" 
                            class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors">
@@ -1250,5 +1243,31 @@ document.addEventListener('keydown', function(e) {
 });
 </script>
 
-<!-- Alpine.js for dropdown functionality -->
-<script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script> 
+
+<!-- Dropdown Toggle Script -->
+<script>
+function toggleDropdown(event, dropdownId) {
+    event.stopPropagation();
+    
+    // Close all other dropdowns
+    document.querySelectorAll('[id^="dropdown-"]').forEach(dropdown => {
+        if (dropdown.id !== dropdownId) {
+            dropdown.classList.add('hidden');
+        }
+    });
+    
+    // Toggle current dropdown
+    const dropdown = document.getElementById(dropdownId);
+    dropdown.classList.toggle('hidden');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('[id^="dropdown-"]') && !event.target.closest('button[onclick^="toggleDropdown"]')) {
+        document.querySelectorAll('[id^="dropdown-"]').forEach(dropdown => {
+            dropdown.classList.add('hidden');
+        });
+    }
+});
+</script>
+

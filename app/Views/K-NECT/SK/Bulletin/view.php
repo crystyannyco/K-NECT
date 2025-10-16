@@ -1,69 +1,5 @@
 <!-- Main Content Area -->
-<div class="flex-1 lg:ml-64 min-h-screen bg-gray-50">
-    <!-- Header Section -->
-    <div class="bg-white shadow-sm border-b border-gray-200">
-        <div class="px-4 sm:px-6 lg:px-8 py-6">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                <div class="flex-1 min-w-0">
-                    <nav class="flex" aria-label="Breadcrumb">
-                        <ol class="flex items-center space-x-4">
-                            <li>
-                                <div>
-                                    <a href="<?= base_url('/bulletin') ?>" class="text-gray-400 hover:text-gray-500">
-                                        <svg class="flex-shrink-0 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fill-rule="evenodd" d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9H15a1 1 0 110 2H7.414l2.293 2.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
-                                        </svg>
-                                        <span class="sr-only">Back</span>
-                                    </a>
-                                </div>
-                            </li>
-                            <li>
-                                <div class="flex items-center">
-                                    <svg class="flex-shrink-0 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 111.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
-                                    </svg>
-                                    <a href="<?= base_url('/bulletin') ?>" class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700">
-                                        Bulletin Board
-                                    </a>
-                                </div>
-                            </li>
-                            <li>
-                                <div class="flex items-center">
-                                    <svg class="flex-shrink-0 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 111.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
-                                    </svg>
-                                    <span class="ml-4 text-sm font-medium text-gray-500">Post</span>
-                                </div>
-                            </li>
-                        </ol>
-                    </nav>
-                </div>
-                
-                <?php if (
-                    ($user_type === 'pederasyon') ||
-                    ($user_type === 'sk' && $post['author_id'] == ($user_id ?? session('user_id')) && (string)($post['barangay_id'] ?? '') === (string)($barangay_id ?? ''))
-                ): ?>
-                <div class="mt-4 sm:mt-0 sm:ml-4 flex space-x-3">
-                    <a href="<?= base_url('/bulletin/edit/' . $post['id']) ?>" 
-                       class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                        </svg>
-                        Edit Post
-                    </a>
-                    <button onclick="deletePost(<?= $post['id'] ?>)" 
-                            class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                        </svg>
-                        Delete
-                    </button>
-                </div>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-
+<div class="flex-1 lg:ml-64 min-h-screen bg-gray-50 pt-16">
     <!-- Main Content -->
     <div class="px-4 sm:px-6 lg:px-8 py-6">
         <div class="max-w-7xl mx-auto">
@@ -230,6 +166,28 @@
                     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                         <h3 class="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
                         <div class="space-y-3">
+                            <?php if (
+                                ($user_type === 'pederasyon') ||
+                                ($user_type === 'sk' && $post['author_id'] == ($user_id ?? session('user_id')) && (string)($post['barangay_id'] ?? '') === (string)($barangay_id ?? ''))
+                            ): ?>
+                            <!-- Edit Post Button -->
+                            <a href="<?= base_url('/bulletin/edit/' . $post['id']) ?>" 
+                               class="w-full inline-flex justify-center items-center px-4 py-2 border border-blue-300 rounded-md shadow-sm text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                </svg>
+                                Edit This Post
+                            </a>
+                            <!-- Delete Post Button -->
+                            <button onclick="deletePost(<?= $post['id'] ?>)" 
+                                    class="w-full inline-flex justify-center items-center px-4 py-2 border border-red-300 rounded-md shadow-sm text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                                Delete This Post
+                            </button>
+                            <div class="border-t border-gray-200 my-3"></div>
+                            <?php endif; ?>
                             <a href="<?= base_url('/bulletin/create') ?>" 
                                class="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

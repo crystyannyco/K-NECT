@@ -54,21 +54,21 @@ class ContentSecurityPolicy extends BaseConfig
      *
      * @var list<string>|string
      */
-    public $scriptSrc = 'self';
+    public $scriptSrc = ['self', 'unsafe-inline', 'unsafe-eval', 'https://cdn.tailwindcss.com', 'https://unpkg.com', 'https://code.jquery.com', 'https://cdn.datatables.net', 'https://cdnjs.cloudflare.com', 'https://cdn.jsdelivr.net'];
 
     /**
      * Lists allowed stylesheets' URLs.
      *
      * @var list<string>|string
      */
-    public $styleSrc = 'self';
+    public $styleSrc = ['self', 'unsafe-inline', 'https://fonts.googleapis.com', 'https://cdnjs.cloudflare.com', 'https://cdn.datatables.net', 'https://cdn.jsdelivr.net'];
 
     /**
-     * Defines the origins from which images can be loaded.
+     * Specifies the origins from which images can be loaded.
      *
      * @var list<string>|string
      */
-    public $imageSrc = 'self';
+    public $imageSrc = ['self', 'data:', 'https:', 'http:'];
 
     /**
      * Restricts the URLs that can appear in a page's `<base>` element.
@@ -99,7 +99,7 @@ class ContentSecurityPolicy extends BaseConfig
      *
      * @var list<string>|string
      */
-    public $fontSrc;
+    public $fontSrc = ['self', 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com', 'data:'];
 
     /**
      * Lists valid endpoints for submission from `<form>` tags.

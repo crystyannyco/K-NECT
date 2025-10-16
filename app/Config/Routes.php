@@ -58,6 +58,8 @@ $routes->post('profiling/submit', 'ProfilingController::profilingSubmit');
 $routes->get('profiling/reupload/(:num)', 'ProfilingController::reuploadById/$1');
 // Reset profiling session data (used by client timeout)
 $routes->match(['GET','POST'], 'profiling/reset', 'ProfilingController::resetProfiling');
+// Abort profiling (called when user leaves before completion)
+$routes->post('profiling/abort', 'ProfilingController::abortProfiling');
 // Profiling navigation
 $routes->post('profiling/backToStep1', 'ProfilingController::backToStep1');
 $routes->post('profiling/backToStep2', 'ProfilingController::backToStep2');

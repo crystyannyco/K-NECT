@@ -83,7 +83,7 @@
                     
                     <!-- Card Actions -->
                     <div class="flex space-x-2">
-                        <button onclick="console.log('Button clicked!'); openLogoManagerModal();" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium py-2 px-3 rounded-lg transition-colors duration-200">
+                        <button onclick="openLogoManagerModal();" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium py-2 px-3 rounded-lg transition-colors duration-200">
                             Manage Logos
                         </button>
                         <button onclick="openLogoPreviewModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium py-2 px-3 rounded-lg transition-colors duration-200">
@@ -389,13 +389,13 @@ function getLogoPlaceholder() {
 }
 
 function openLogoManagerModal() {
-    console.log('Opening logo manager modal...'); // Debug log
+    // console.log('Opening logo manager modal...'); // Debug log
     const modal = document.getElementById('logoManagerModal');
-    console.log('Modal element:', modal); // Debug log
+    // console.log('Modal element:', modal); // Debug log
     if (modal) {
         modal.classList.remove('hidden');
         modal.style.display = 'block'; // Fallback method
-        console.log('Modal classes after opening:', modal.className); // Debug log
+        // console.log('Modal classes after opening:', modal.className); // Debug log
         // Initialize default placeholders so UI looks right instantly
         const ci = document.getElementById('current-iriga-logo');
         if (ci && !ci.querySelector('img')) ci.innerHTML = getLogoPlaceholder();
@@ -409,7 +409,7 @@ function openLogoManagerModal() {
 }
 
 function closeLogoManagerModal() {
-    console.log('Closing logo manager modal...'); // Debug log
+    // console.log('Closing logo manager modal...'); // Debug log
     const modal = document.getElementById('logoManagerModal');
     if (modal) {
         modal.classList.add('hidden');
@@ -678,7 +678,7 @@ function updateCurrentLogoDisplays(logos) {
 
 // Update the page when it loads to show current logo status
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, initializing Pederasyon logo management...');
+    // console.log('DOM loaded, initializing Pederasyon logo management...');
     
     // Initialize placeholders immediately so default looks right before fetch completes
     const currentIriga = document.getElementById('current-iriga-logo');
@@ -696,9 +696,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Test if modal exists
     const modal = document.getElementById('logoManagerModal');
-    console.log('Logo manager modal found:', modal !== null);
+    // console.log('Logo manager modal found:', modal !== null);
     if (modal) {
-        console.log('Modal classes:', modal.className);
+        // console.log('Modal classes:', modal.className);
         
         // Add click outside to close functionality
         modal.addEventListener('click', function(e) {

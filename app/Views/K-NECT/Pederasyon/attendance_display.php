@@ -19,7 +19,8 @@
     <meta name="twitter:description" content="Unified youth engagement platform for announcements, events, resources, and data-driven community impact.">
     <meta name="twitter:image" content="<?= base_url('assets/images/K-Nect-Logo.png') ?>">
     
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind CSS - Production Build -->
+    <link rel="stylesheet" href="<?= base_url('assets/css/tailwind.css') ?>" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* Tabular numbers for stable timer width */
@@ -1001,7 +1002,7 @@
                 AppState.isInitialized = true;
                 hideLoadingScreen();
                 
-                console.log('Attendance system initialization completed');
+                // console.log('Attendance system initialization completed');
                 // Start periodic client-side session checks (ensures session transitions happen even without server push)
                 if (sessionStatusInterval) clearInterval(sessionStatusInterval);
                 sessionStatusInterval = setInterval(() => {
@@ -1203,13 +1204,13 @@
                 }
             });
             
-            console.log('RFID capture system initialized');
+            // console.log('RFID capture system initialized');
         }
 
         // ==================== PROFILE DISPLAY MANAGEMENT ====================
         
         function initializeProfileDisplay() {
-            console.log('Profile display system initialized');
+            // console.log('Profile display system initialized');
         }
 
         function displayUserProfile(user, duration = CONFIG.PROFILE_DISPLAY_DURATION) {
@@ -1306,7 +1307,7 @@
                 }
             }, CONFIG.REAL_TIME_UPDATE_INTERVAL);
 
-            console.log('Real-time updates started with interval', CONFIG.REAL_TIME_UPDATE_INTERVAL);
+            // console.log('Real-time updates started with interval', CONFIG.REAL_TIME_UPDATE_INTERVAL);
         }
 
         // Check attendance status and update display
@@ -1335,7 +1336,7 @@
                     // Check if settings have been updated
                     const newSettingsUpdate = data.settings_last_updated;
                     if (lastSettingsUpdate && lastSettingsUpdate !== newSettingsUpdate) {
-                        console.log('Attendance settings updated, refreshing...');
+                        // console.log('Attendance settings updated, refreshing...');
                         showToast('Attendance settings updated! Refreshing display...', 'info');
                         
                         // Update local settings
@@ -1525,7 +1526,7 @@
                         triggerAutoTimeout(session);
                     }, timeUntilEnd);
                     
-                    console.log(`Auto-timeout scheduled for ${session} session in ${Math.round(timeUntilEnd/1000)} seconds`);
+                    // console.log(`Auto-timeout scheduled for ${session} session in ${Math.round(timeUntilEnd/1000)} seconds`);
                 }
             }
         }
@@ -1639,7 +1640,7 @@
             const logsList = document.getElementById('attendanceLogsList');
             
             if (existingAttendanceRecords && existingAttendanceRecords.length > 0) {
-                console.log('Loading existing attendance records:', existingAttendanceRecords.length);
+                // console.log('Loading existing attendance records:', existingAttendanceRecords.length);
                 
                 // Remove loading state and any placeholder rows
                 const placeholderRows = logsList.querySelectorAll('tr.loading-records, tr.no-records-row, tr.text-center, tr.no-records');
@@ -3215,7 +3216,7 @@
 
         // Automatic timeout for session - calls the server to timeout all active users
         function autoTimeoutSession(session) {
-            console.log(`Auto-timeout initiated for ${session} session`);
+            // console.log(`Auto-timeout initiated for ${session} session`);
             
             fetch('<?= base_url('pederasyon/autoTimeoutSession') ?>', {
                 method: 'POST',
@@ -3386,7 +3387,7 @@
                     'Content-Type': 'application/x-www-form-urlencoded',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: `event_id=${eventId}`
+                body: `event_id=${eventId}&<?= csrf_token() ?>=<?= csrf_hash() ?>`
             })
             .then(response => response.json())
             .then(data => {
@@ -3495,7 +3496,7 @@
                     }
                     
                     if (sessionChanged) {
-                        console.log(`Session time updated for ${changedSessionType} session`);
+                        // console.log(`Session time updated for ${changedSessionType} session`);
                         
                         // Show notification about session changes
                         if (changedSessionType === 'morning' && attendanceSettings.start_attendance_am && attendanceSettings.end_attendance_am) {
@@ -3526,7 +3527,7 @@
                         }, 100);
                     }
                 } else {
-                    console.log('No attendance settings found or error occurred');
+                    // console.log('No attendance settings found or error occurred');
                 }
             })
             .catch(error => {
@@ -3569,7 +3570,7 @@
                     try {
                         const updateSignal = JSON.parse(e.newValue);
                         if (updateSignal && updateSignal.event_id == eventId) {
-                            console.log('Received session update signal from management interface');
+                            // console.log('Received session update signal from management interface');
                             // Immediate refresh when we get the signal
                             setTimeout(() => {
                                 refreshAttendanceSettings();
@@ -3586,7 +3587,7 @@
                 if (e.origin !== window.location.origin) return;
                 
                 if (e.data && e.data.type === 'session_updated' && e.data.event_id == eventId) {
-                    console.log('Received direct session update message');
+                    // console.log('Received direct session update message');
                     setTimeout(() => {
                         refreshAttendanceSettings();
                     }, 500);

@@ -457,13 +457,13 @@ function showNotification(message, type = 'info') {
 }
 
 function openLogoManagerModal() {
-    console.log('Opening logo manager modal...'); // Debug log
+    // console.log('Opening logo manager modal...'); // Debug log
     const modal = document.getElementById('logoManagerModal');
-    console.log('Modal element:', modal); // Debug log
+    // console.log('Modal element:', modal); // Debug log
     if (modal) {
         modal.classList.remove('hidden');
         modal.style.display = 'block'; // Fallback method
-        console.log('Modal classes after opening:', modal.className); // Debug log
+        // console.log('Modal classes after opening:', modal.className); // Debug log
         loadExistingLogos(); // Load existing logos when modal opens
     } else {
         console.error('Logo manager modal not found!');
@@ -472,7 +472,7 @@ function openLogoManagerModal() {
 }
 
 function closeLogoManagerModal() {
-    console.log('Closing logo manager modal...'); // Debug log
+    // console.log('Closing logo manager modal...'); // Debug log
     const modal = document.getElementById('logoManagerModal');
     if (modal) {
         modal.classList.add('hidden');
@@ -761,7 +761,7 @@ function updateLogoStatus(elementId, logoData) {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, initializing SK logo management...');
+    // console.log('DOM loaded, initializing SK logo management...');
     // Ensure placeholders show immediately before async fetch
     const ci = document.getElementById('current-iriga-logo');
     if (ci && !ci.querySelector('img')) {
@@ -788,9 +788,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Test if modal exists
     const modal = document.getElementById('logoManagerModal');
-    console.log('Logo manager modal found:', modal !== null);
+    // console.log('Logo manager modal found:', modal !== null);
     if (modal) {
-        console.log('Modal classes:', modal.className);
+        // console.log('Modal classes:', modal.className);
         
         // Add click outside to close functionality
         modal.addEventListener('click', function(e) {

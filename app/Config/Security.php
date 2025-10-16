@@ -23,8 +23,12 @@ class Security extends BaseConfig
      * --------------------------------------------------------------------------
      *
      * Randomize the CSRF Token for added security.
+     * 
+     * DISABLED due to CodeIgniter 4.6.3 bug in token derandomization.
+     * This causes CSRF validation failures in multi-step forms.
+     * Keep FALSE until upgrading to CI 4.6.4+ where bug is fixed.
      */
-    public bool $tokenRandomize = true;
+    public bool $tokenRandomize = false;
 
     /**
      * --------------------------------------------------------------------------
@@ -70,17 +74,28 @@ class Security extends BaseConfig
      * --------------------------------------------------------------------------
      *
      * Regenerate CSRF Token on every submission.
+     * 
+     * DISABLED for multi-step forms (profiling) to prevent token mismatch.
+     * When TRUE, the token changes after each POST, causing issues when
+     * users navigate back/forward through form steps.
      */
-    public bool $regenerate = true;
+    public bool $regenerate = false;
 
     /**
      * --------------------------------------------------------------------------
      * CSRF Redirect
      * --------------------------------------------------------------------------
      *
-     * Redirect to previous page with error on failure.
-     *
+     * When a request fails CSRF validation:
+     * - true: Redirects to previous page with error message (better UX)
+     * - false: Throws SecurityException (shows actual error for debugging)
+     * 
+     * SET TO FALSE for debugging CSRF issues.
+     * The ERR_CONNECTION_CLOSED error happens when redirect=true because
+     * CodeIgniter redirects before sending a proper response.
+     * Change back to TRUE after confirming CSRF works properly.
+     * 
      * @see https://codeigniter4.github.io/userguide/libraries/security.html#redirection-on-failure
      */
-    public bool $redirect = true;
+    public bool $redirect = false;
 }

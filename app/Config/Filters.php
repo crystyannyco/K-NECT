@@ -57,7 +57,7 @@ class Filters extends BaseFilters
      */
     public array $required = [
         'before' => [
-            'forcehttps', // Force Global Secure Requests
+            // 'forcehttps', // Force Global Secure Requests - Disabled for local development
             'pagecache',  // Web Page Caching
         ],
         'after' => [
@@ -81,8 +81,9 @@ class Filters extends BaseFilters
             // 'honeypot',
             'csrf' => [
                 'except' => [
-                    'cron/*',  // Exclude cron endpoints
-                    'api/*',   // Exclude API endpoints if needed
+                    'cron/*',            // Exclude cron endpoints
+                    'api/*',             // Exclude API endpoints if needed
+                    'profiling/abort',   // Exclude profiling cleanup beacon (sent on page unload)
                 ]
             ],
             // 'invalidchars',

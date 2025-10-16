@@ -155,16 +155,28 @@ class ProfilingController extends BaseController
 
     public function profilingStep1()
     {
+        // Debug CSRF token
+        $receivedToken = $this->request->getPost('csrf_test_name');
+        $sessionToken = session('csrf_test_name');
+        log_message('debug', 'CSRF Debug - Received Token: ' . ($receivedToken ?? 'NULL'));
+        log_message('debug', 'CSRF Debug - Session Token: ' . ($sessionToken ?? 'NULL'));
+        log_message('debug', 'CSRF Debug - Tokens Match: ' . (($receivedToken === $sessionToken) ? 'YES' : 'NO'));
+        
         $step = session('profiling_step') ?? 1;
+        
+        // Handle terms acceptance on step 1 (qualification page)
         $acceptedInitialTerms = $this->request->getPost('accept_terms');
-        if ($acceptedInitialTerms) {
+        if ($step == 1 && $acceptedInitialTerms) {
             $accountData = session('account_data') ?? [];
             $accountData['agreement'] = 1;
             session()->set('account_data', $accountData);
             session()->set('profiling_terms_ack', true);
-        }
-        if ($step == 1) {
             session()->set('profiling_step', 2);
+            return redirect()->to(base_url('profiling'));
+        }
+        
+        // If on step 1 but no terms accepted, stay on step 1
+        if ($step == 1) {
             return redirect()->to(base_url('profiling'));
         }
 

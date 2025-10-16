@@ -29,11 +29,11 @@ class Database extends Config
         'hostname'     => 'localhost',
         'username'     => 'root',
         'password'     => '',
-        'database'     => 'k-nect2',
+        'database'     => '',
         'DBDriver'     => 'MySQLi',
         'DBPrefix'     => '',
         'pConnect'     => false,
-        'DBDebug'      => true,
+        'DBDebug'      => false, // Disabled for security - prevents SQL error exposure
         'charset'      => 'utf8mb4',
         'DBCollat'     => 'utf8mb4_general_ci',
         'swapPre'      => '',
@@ -192,6 +192,31 @@ class Database extends Config
     public function __construct()
     {
         parent::__construct();
+
+        // Override with environment variables if they exist
+        if (env('database.default.hostname')) {
+            $this->default['hostname'] = env('database.default.hostname');
+        }
+        if (env('database.default.username')) {
+            $this->default['username'] = env('database.default.username');
+        }
+        if (env('database.default.password') !== null) {
+            $this->default['password'] = env('database.default.password');
+        }
+        if (env('database.default.database')) {
+            $this->default['database'] = env('database.default.database');
+        }
+        if (env('database.default.DBDriver')) {
+            $this->default['DBDriver'] = env('database.default.DBDriver');
+        }
+        if (env('database.default.port')) {
+            $this->default['port'] = (int) env('database.default.port');
+        }
+        
+        // Enable DBDebug only in development environment for better error visibility
+        if (ENVIRONMENT === 'development') {
+            $this->default['DBDebug'] = true;
+        }
 
         // Ensure that we always set the database group to 'tests' if
         // we are currently running an automated test suite, so that

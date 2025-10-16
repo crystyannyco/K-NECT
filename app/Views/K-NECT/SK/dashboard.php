@@ -174,7 +174,7 @@
                             <div class="relative h-36 w-full overflow-hidden bg-gray-100 flex items-center justify-center">
                                 <?php if($isImage): ?><img src="<?= $docUrl ?>" alt="<?= esc($doc['filename'] ?? 'Document') ?>" class="w-full h-full object-cover"><div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div><?php else: ?><i class="fa-regular <?= $icon ?> text-5xl"></i><?php endif; ?>
                                 <div class="absolute top-3 left-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white text-gray-800"><?= strtoupper($ext ?: 'FILE') ?></span></div>
-                                <div class="absolute bottom-3 right-3"><a href="<?= esc($docUrl) ?>" target="_blank" class="inline-flex items-center px-3 py-1.5 rounded-md bg-white/90 text-gray-800 text-xs font-medium hover:bg-white"><i class="fa-regular fa-eye mr-1"></i> Open</a></div>
+                                <div class="absolute bottom-3 right-3"><a href="<?= esc($docUrl) ?>" target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-3 py-1.5 rounded-md bg-white/90 text-gray-800 text-xs font-medium hover:bg-white"><i class="fa-regular fa-eye mr-1"></i> Open</a></div>
                             </div>
                             <div class="p-4">
                                 <h3 class="text-sm font-semibold text-gray-900 truncate" title="<?= esc($doc['filename'] ?? 'Untitled Document') ?>"><?= esc($doc['filename'] ?? 'Untitled Document') ?></h3>

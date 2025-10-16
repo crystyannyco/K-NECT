@@ -19,56 +19,9 @@
     <meta name="twitter:description" content="Unified youth engagement platform for announcements, events, resources, and data-driven community impact.">
     <meta name="twitter:image" content="<?= base_url('assets/images/K-Nect-Logo.png') ?>">
     
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            // Suppress CDN warning
-        }
-    </script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        'sans': ['Inter', 'sans-serif'],
-                    },
-                    animation: {
-                        'fade-in': 'fadeIn 0.5s ease-in-out',
-                        'slide-in': 'slideIn 0.6s ease-out',
-                        'bounce-in': 'bounceIn 0.8s ease-out',
-                        'pulse-soft': 'pulseSoft 2s infinite',
-                        'shake': 'shake 0.5s ease-in-out',
-                    },
-                    keyframes: {
-                        fadeIn: {
-                            '0%': { opacity: '0' },
-                            '100%': { opacity: '1' }
-                        },
-                        slideIn: {
-                            '0%': { transform: 'translateY(20px)', opacity: '0' },
-                            '100%': { transform: 'translateY(0)', opacity: '1' }
-                        },
-                        bounceIn: {
-                            '0%': { transform: 'scale(0.3)', opacity: '0' },
-                            '50%': { transform: 'scale(1.05)' },
-                            '70%': { transform: 'scale(0.9)' },
-                            '100%': { transform: 'scale(1)', opacity: '1' }
-                        },
-                        pulseSoft: {
-                            '0%, 100%': { opacity: '1' },
-                            '50%': { opacity: '0.7' }
-                        },
-                        shake: {
-                            '0%, 100%': { transform: 'translateX(0)' },
-                            '10%, 30%, 50%, 70%, 90%': { transform: 'translateX(-2px)' },
-                            '20%, 40%, 60%, 80%': { transform: 'translateX(2px)' }
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS - Production Build -->
+    <link rel="stylesheet" href="<?= base_url('assets/css/tailwind.css') ?>" />
     <script>
         // Abort profiling cleanup: send beacon if user leaves before completing.
         (function(){
@@ -103,6 +56,11 @@
         window.__profilingServerAccepted = <?= !empty($account_data['agreement']) ? 'true' : 'false' ?>;
     </script>
     <style>
+        /* Apply Inter font to the entire page */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
         .step-transition {
             transition: all 0.3s ease-in-out;
         }
@@ -938,7 +896,7 @@ document.addEventListener('DOMContentLoaded',function(){
                         <svg class="w-3 h-3 sm:w-4 sm:h-4 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
-                        <span class="text-center">Need help? Contact SK Pederasyon in Iriga City: <a href="https://www.facebook.com/skpedirigacity" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Facebook</a></span>
+                        <span class="text-center">Need help? Contact SK Pederasyon in Iriga City: <a href="https://www.facebook.com/skpedirigacity" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline">Facebook</a></span>
                     </div>
                 </div>
             </div>
@@ -3087,7 +3045,7 @@ document.addEventListener('DOMContentLoaded',function(){
                             Contact Information
                         </h4>
                         <p class="text-blue-700 leading-relaxed mb-4">
-                            For questions about these Terms, please contact SK Pederasyon in Iriga City: <a href="https://www.facebook.com/skpedirigacity" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Facebook</a>
+                            For questions about these Terms, please contact SK Pederasyon in Iriga City: <a href="https://www.facebook.com/skpedirigacity" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline">Facebook</a>
                         </p>
                         <div class="flex items-center justify-center">
                             <div class="bg-white rounded-lg p-4 shadow-sm border border-blue-200">
@@ -3097,7 +3055,7 @@ document.addEventListener('DOMContentLoaded',function(){
                                     </svg>
                                     <div>
                                         <p class="font-semibold text-blue-800">Need Help?</p>
-                                        <p class="text-sm text-blue-600">Contact SK Pederasyon in Iriga City: <a href="https://www.facebook.com/skpedirigacity" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Facebook</a></p>
+                                        <p class="text-sm text-blue-600">Contact SK Pederasyon in Iriga City: <a href="https://www.facebook.com/skpedirigacity" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline">Facebook</a></p>
                                     </div>
                                 </div>
                             </div>
@@ -3461,7 +3419,7 @@ document.addEventListener('DOMContentLoaded',function(){
                                     <div class="space-y-1 text-green-700">
                                         <p class="font-medium">Iriga City Youth Development Office</p>
                                         <p>City Hall, Iriga City, Camarines Sur</p>
-                                        <p class="italic">Or SK Pederasyon in Iriga City: <a href="https://www.facebook.com/skpedirigacity" target="_blank" class="text-green-600 hover:text-green-800 underline">Facebook</a></p>
+                                        <p class="italic">Or SK Pederasyon in Iriga City: <a href="https://www.facebook.com/skpedirigacity" target="_blank" rel="noopener noreferrer" class="text-green-600 hover:text-green-800 underline">Facebook</a></p>
                                     </div>
                                 </div>
                             </div>
@@ -3537,7 +3495,7 @@ document.addEventListener('DOMContentLoaded',function(){
                             <iframe id="pdf-viewer" class="w-full h-64 sm:h-96 border rounded-lg" frameborder="0"></iframe>
                             <p class="text-xs sm:text-sm text-gray-600 mt-2 text-center px-2 sm:px-0">
                                 If the PDF doesn't display properly, 
-                                <a id="pdf-fallback-link" href="#" target="_blank" class="text-blue-600 hover:text-blue-800 underline">click here to open in a new tab</a>
+                                <a id="pdf-fallback-link" href="#" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline">click here to open in a new tab</a>
                             </p>
                         </div>
                         
@@ -6044,20 +6002,27 @@ document.addEventListener('DOMContentLoaded',function(){
                 initializeCountdowns();
                 initializePasswordValidation();
                 initializeGenderDropdown();
-                // If we are at the very first step (qualification) ensure checkbox is reset (fresh start logic)
+                // Initialize terms checkbox state based on server or session data
                 try {
                     const stepIndicator = <?= (int)($step ?? 1) ?>;
                     const termsCheckbox = document.getElementById('terms-checkbox');
                     const serverAccepted = Boolean(window.__profilingServerAccepted);
-                    if (stepIndicator === 1) {
+                    
+                    if (stepIndicator === 1 && termsCheckbox) {
                         if (serverAccepted) {
+                            // Server indicates terms already accepted (from session)
                             sessionStorage.setItem('hasAcceptedTerms', 'true');
                             sessionStorage.setItem('hasAcceptedPrivacy', 'true');
-                            if (termsCheckbox) termsCheckbox.checked = true;
+                            termsCheckbox.checked = true;
+                        } else if (sessionStorage.getItem('hasAcceptedTerms') === 'true' && 
+                                   sessionStorage.getItem('hasAcceptedPrivacy') === 'true') {
+                            // User accepted terms in this session but not yet submitted
+                            termsCheckbox.checked = true;
                         } else {
+                            // Fresh start - no acceptance yet
                             sessionStorage.removeItem('hasAcceptedTerms');
                             sessionStorage.removeItem('hasAcceptedPrivacy');
-                            if (termsCheckbox) termsCheckbox.checked = false;
+                            termsCheckbox.checked = false;
                         }
                     }
                 } catch(e) { /* ignore */ }
@@ -6068,6 +6033,48 @@ document.addEventListener('DOMContentLoaded',function(){
         function initializeGenderDropdown() {
             // Gender dropdown functionality removed - no longer needed
         }
+
+        // CSRF Token refresh mechanism
+        function refreshCSRFToken() {
+            fetch('<?= base_url('profiling') ?>', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.text())
+            .then(html => {
+                // Extract CSRF token from response
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newToken = doc.querySelector('input[name="csrf_test_name"]');
+                
+                if (newToken && newToken.value) {
+                    // Update all CSRF token inputs on the page
+                    const csrfInputs = document.querySelectorAll('input[name="csrf_test_name"]');
+                    csrfInputs.forEach(input => {
+                        input.value = newToken.value;
+                    });
+                    console.log('CSRF token refreshed successfully');
+                } else {
+                    console.warn('Failed to extract new CSRF token from response');
+                }
+            })
+            .catch(error => {
+                console.error('Error refreshing CSRF token:', error);
+            });
+        }
+
+        // Refresh CSRF token every 30 minutes (1800000ms) to prevent expiration
+        setInterval(refreshCSRFToken, 1800000);
+
+        // Refresh CSRF token when user returns to page after being away
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                console.log('Page became visible, refreshing CSRF token...');
+                refreshCSRFToken();
+            }
+        });
 
         // Initialize Terms and Conditions functionality
         function initializeTermsAndConditions() {
@@ -6108,9 +6115,8 @@ document.addEventListener('DOMContentLoaded',function(){
                     sessionStorage.setItem('hasAcceptedTerms', 'true');
                     sessionStorage.setItem('hasAcceptedPrivacy', 'true');
                 } catch(e) { /* ignore */ }
-            }
-
-            if (sessionStorage.getItem('hasAcceptedTerms') === 'true' && sessionStorage.getItem('hasAcceptedPrivacy') === 'true') {
+            } else if (sessionStorage.getItem('hasAcceptedTerms') === 'true' && sessionStorage.getItem('hasAcceptedPrivacy') === 'true') {
+                // User has accepted in this session but hasn't submitted the form yet
                 hasAcceptedTerms = true;
                 hasAcceptedPrivacy = true;
                 hasScrolledTerms = true;
@@ -6225,16 +6231,17 @@ document.addEventListener('DOMContentLoaded',function(){
                 // Button is always clickable - validation messages will guide the user
             }
 
-            // Checkbox click handler with validation
-            termsCheckbox.addEventListener('click', function(e) {
-                if (!hasAcceptedTerms || !hasAcceptedPrivacy) {
+            // Checkbox change handler with validation
+            termsCheckbox.addEventListener('change', function(e) {
+                if (termsCheckbox.checked && (!hasAcceptedTerms || !hasAcceptedPrivacy)) {
+                    // User is trying to check the box but hasn't accepted the terms yet
                     e.preventDefault();
+                    termsCheckbox.checked = false;
                     showToast('Please read and accept the Terms and Conditions and Privacy Policy to proceed.', 'error');
                     return false;
-                } else {
-                    // User can now check/uncheck freely
-                    updateContinueButton();
                 }
+                // Update button state when checkbox changes
+                updateContinueButton();
             });
 
             // Show Terms modal
@@ -6399,6 +6406,12 @@ document.addEventListener('DOMContentLoaded',function(){
                     
                     // Show success notification - both documents now accepted
                     showToast('Privacy Policy accepted successfully. You may now proceed with registration.', 'success');
+                    
+                    // Automatically check the checkbox since both terms are now accepted
+                    if (hasAcceptedTerms && hasAcceptedPrivacy) {
+                        termsCheckbox.checked = true;
+                        updateContinueButton();
+                    }
                 });
             }
 
@@ -6414,6 +6427,14 @@ document.addEventListener('DOMContentLoaded',function(){
             const qualificationForm = document.getElementById('qualificationForm');
             if (qualificationForm) {
                 qualificationForm.addEventListener('submit', function(e) {
+                    console.log('Form submission validation:', {
+                        hasScrolledTerms,
+                        hasScrolledPrivacy,
+                        hasAcceptedTerms,
+                        hasAcceptedPrivacy,
+                        checkboxChecked: termsCheckbox.checked
+                    });
+                    
                     // Check if Terms and Conditions and Privacy Policy have been read completely
                     if (!hasScrolledTerms || !hasScrolledPrivacy) {
                         e.preventDefault();
@@ -6434,6 +6455,25 @@ document.addEventListener('DOMContentLoaded',function(){
                         showToast('You must agree to the Terms and Conditions and Privacy Policy to continue.', 'warning');
                         return false;
                     }
+                    
+                    // Verify CSRF token exists
+                    const csrfInput = qualificationForm.querySelector('input[name="csrf_test_name"]');
+                    if (!csrfInput || !csrfInput.value) {
+                        e.preventDefault();
+                        console.error('CSRF token missing from form');
+                        showToast('Security token missing. Please refresh the page and try again.', 'error');
+                        return false;
+                    }
+                    
+                    // Log full token details for debugging
+                    console.log('Form submission details:', {
+                        tokenName: csrfInput.name,
+                        tokenLength: csrfInput.value.length,
+                        tokenPreview: csrfInput.value.substring(0, 20) + '...',
+                        tokenFull: csrfInput.value, // Full token for debugging
+                        formAction: qualificationForm.action,
+                        formMethod: qualificationForm.method
+                    });
                     
                     // All validations passed - allow form submission
                     return true;
@@ -6721,7 +6761,12 @@ document.addEventListener('DOMContentLoaded',function(){
         }
 
         // Initialize Terms and Conditions when DOM is ready
-        initializeTermsAndConditions();
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeTermsAndConditions);
+        } else {
+            // DOM already loaded
+            initializeTermsAndConditions();
+        }
     </script>
 </body>
 </html>

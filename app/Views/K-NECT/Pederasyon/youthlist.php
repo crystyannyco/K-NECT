@@ -1362,9 +1362,9 @@
                         document.getElementById('pedModalDocPreview').innerHTML = docHtml;
 
                         // Show modal
-                        console.log('Showing modal'); // Debug log
-                        $('#pedPreviewModal').removeClass('hidden');
-                        console.log('Modal classes after show:', $('#pedPreviewModal').attr('class')); // Debug log
+                        // console.log('Showing modal'); // Debug log
+                        // $('#pedPreviewModal').removeClass('hidden');
+                        // console.log('Modal classes after show:', $('#pedPreviewModal').attr('class')); // Debug log
 
                         // Initialize panzoom for images after DOM updated
                         setTimeout(() => {

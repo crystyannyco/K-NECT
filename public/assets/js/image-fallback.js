@@ -3,6 +3,10 @@
  * Handles automatic fallback to default images when images fail to load
  */
 
+// Prevent duplicate initialization if script is loaded multiple times
+if (typeof window.KNECT_IMAGES_INITIALIZED === 'undefined') {
+window.KNECT_IMAGES_INITIALIZED = true;
+
 // Default image URLs - these will be set by PHP
 window.KNECT_DEFAULTS = window.KNECT_DEFAULTS || {
     avatar: '',
@@ -215,3 +219,5 @@ window.KNECTImages = window.KNECTImages || {
     createDocumentPreview,
     autoSetupImageFallbacks
 };
+
+} // End of KNECT_IMAGES_INITIALIZED check

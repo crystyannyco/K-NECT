@@ -638,7 +638,7 @@ function openAttendanceModal(eventId) {
         modal.classList.remove('hidden');
         console.log('Modal shown successfully');
     } else {
-        console.error('Modal element not found');
+        // console.error('Modal element not found');
         showNotification('Modal not found', 'error');
         return;
     }
@@ -654,7 +654,7 @@ function closeAttendanceModal() {
         modal.classList.add('hidden');
         console.log('Modal hidden successfully');
     } else {
-        console.error('Modal element not found when trying to close');
+        // console.error('Modal element not found when trying to close');
     }
     currentEventId = null;
 }
@@ -665,7 +665,7 @@ function loadAttendanceSettings(eventId) {
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: `event_id=${eventId}`
+        body: `event_id=${eventId}&<?= csrf_token() ?>=<?= csrf_hash() ?>`
     })
     .then(response => response.json())
     .then(data => {
@@ -837,6 +837,7 @@ function saveAttendanceSettings() {
     
     const formData = new FormData();
     formData.append('event_id', currentEventId);
+    formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
     
     // Check if morning session is enabled
     const morningEnabled = document.getElementById('enableMorningSession').checked;
@@ -1091,6 +1092,7 @@ function startAttendanceEnhanced() {
     // First, save the attendance settings
     const formData = new FormData();
     formData.append('event_id', currentEventId);
+    formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
     
     // Add morning session data if enabled
     if (morningEnabled) {
@@ -1261,18 +1263,6 @@ function clearAttendanceModalFields() {
     validateAttendanceForm();
 }
 
-console.log('Attendance management loaded. Available functions:', {
-    broadcastSessionUpdate,
-    broadcastToAttendanceTabs,
-    testSessionUpdate,
-    currentEventId,
-    saveAttendanceSettings,
-    startAttendanceEnhanced,
-    openAttendanceModal,
-    closeAttendanceModal,
-    clearAttendanceModalFields
-});
-
 // Initialize real-time communication listeners
 document.addEventListener('DOMContentLoaded', function() {
     // Listen for BroadcastChannel messages (for modern browsers)
@@ -1296,8 +1286,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-    
-    console.log('Real-time communication listeners initialized');
+
 });
 
 // Add global error handler to catch any JavaScript errors

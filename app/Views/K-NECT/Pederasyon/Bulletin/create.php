@@ -1,5 +1,5 @@
 <!-- Main Content Area -->
-<div class="flex-1 lg:ml-64 min-h-screen bg-gray-50">
+<div class="flex-1 lg:ml-64 pt-16 min-h-screen bg-gray-50">
     <!-- Header Section -->
     <div class="bg-white shadow-sm border-b border-gray-200">
         <div class="px-4 sm:px-6 lg:px-8 py-6">
@@ -243,32 +243,6 @@
     </div>
 </div>
 
-<!-- Success/Error Messages -->
-<div id="messageContainer" class="fixed top-4 right-4 z-50 hidden">
-    <div id="messageAlert" class="max-w-sm w-full bg-white shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden">
-        <div class="p-4">
-            <div class="flex items-start">
-                <div class="flex-shrink-0">
-                    <svg id="messageIcon" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                </div>
-                <div class="ml-3 w-0 flex-1 pt-0.5">
-                    <p id="messageText" class="text-sm font-medium text-gray-900"></p>
-                </div>
-                <div class="ml-4 flex-shrink-0 flex">
-                    <button onclick="hideMessage()" class="bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none">
-                        <span class="sr-only">Close</span>
-                        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('bulletinForm');
@@ -300,14 +274,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (file) {
             // Validate file size (2MB limit)
             if (file.size > 2 * 1024 * 1024) {
-                showMessage('File size must be less than 2MB', 'error');
+                console.error('File size must be less than 2MB');
                 this.value = '';
                 return;
             }
 
             // Validate file type
             if (!file.type.match(/^image\/(jpeg|jpg|png)$/)) {
-                showMessage('Please select a valid image file (JPEG, JPG, or PNG)', 'error');
+                console.error('Please select a valid image file (JPEG, JPG, or PNG)');
                 this.value = '';
                 return;
             }
@@ -366,23 +340,26 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(data => {
             if (data.success) {
-                showMessage('Post created successfully!', 'success');
-                setTimeout(() => {
-                    window.location.href = '<?= base_url('/bulletin') ?>?toast=created';
-                }, 1200);
+                // Redirect with toast flag so index can show a success toast
+                window.location.href = '<?= base_url('/bulletin') ?>?toast=created';
             } else {
-                showMessage(data.message || 'An error occurred while creating the post', 'error');
+                console.error('Error:', data.message || 'An error occurred while creating the post');
                 if (data.errors) {
                     displayValidationErrors(data.errors);
                 }
+                // Reset button state on error
+                publishBtn.disabled = false;
+                publishBtn.innerHTML = `
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                    </svg>
+                    <span>${statusSelect.value === 'published' ? 'Publish Post' : 'Save Post'}</span>
+                `;
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            showMessage(error.message || 'An error occurred while creating the post', 'error');
-        })
-        .finally(() => {
-            // Reset button state
+            // Reset button state on error
             publishBtn.disabled = false;
             publishBtn.innerHTML = `
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -439,36 +416,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-function showMessage(message, type) {
-    const container = document.getElementById('messageContainer');
-    const alert = document.getElementById('messageAlert');
-    const icon = document.getElementById('messageIcon');
-    const text = document.getElementById('messageText');
-    
-    text.textContent = message;
-    
-    // Reset classes
-    alert.className = 'max-w-sm w-full bg-white shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden';
-    
-    if (type === 'success') {
-        alert.classList.add('border-l-4', 'border-green-400');
-        icon.className = 'h-6 w-6 text-green-400';
-        icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>';
-    } else {
-        alert.classList.add('border-l-4', 'border-red-400');
-        icon.className = 'h-6 w-6 text-red-400';
-        icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>';
-    }
-    
-    container.classList.remove('hidden');
-    
-    // Auto hide after 5 seconds
-    setTimeout(hideMessage, 5000);
-}
-
-function hideMessage() {
-    document.getElementById('messageContainer').classList.add('hidden');
-}
 // Auto-adjust visibility when a specific barangay is selected
 document.addEventListener('DOMContentLoaded', () => {
     const barangaySelect = document.getElementById('barangay_id');

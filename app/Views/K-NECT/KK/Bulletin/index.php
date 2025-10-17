@@ -1,9 +1,26 @@
 <!-- KK Bulletin: sleeker, cleaner UI with compact hero, filters, and responsive cards -->
 <div class="flex-1 lg:ml-64 pt-16 min-h-screen bg-gray-50">
-    <!-- Removed blue hero banner per request -->
-
     <!-- Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- Flash Messages -->
+        <?php if (session()->getFlashdata('success')): ?>
+            <div class="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+                <span class="block sm:inline"><?= session()->getFlashdata('success') ?></span>
+            </div>
+        <?php endif; ?>
+        
+        <?php if (session()->getFlashdata('error')): ?>
+            <div class="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                <span class="block sm:inline"><?= session()->getFlashdata('error') ?></span>
+            </div>
+        <?php endif; ?>
+
+        <?php if (session()->getFlashdata('warning')): ?>
+            <div class="mb-6 bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative" role="alert">
+                <span class="block sm:inline"><?= session()->getFlashdata('warning') ?></span>
+            </div>
+        <?php endif; ?>
+
         <!-- Urgent -->
         <?php if (!empty($urgent_posts)): ?>
     <div class="mb-6">

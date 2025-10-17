@@ -92,7 +92,7 @@ class ContentSecurityPolicy extends BaseConfig
      *
      * @var list<string>|string
      */
-    public $connectSrc = 'self';
+    public $connectSrc = ['self', 'https://accounts.google.com', 'https://www.googleapis.com', 'https://apis.google.com', 'https://oauth2.googleapis.com', 'wss://localhost:*', 'ws://localhost:*', 'https://cdnjs.cloudflare.com', 'https://cdn.jsdelivr.net'];
 
     /**
      * Specifies the origins that can serve web fonts.
@@ -116,7 +116,7 @@ class ContentSecurityPolicy extends BaseConfig
      *
      * @var list<string>|string|null
      */
-    public $frameAncestors;
+    public $frameAncestors = 'self';
 
     /**
      * The frame-src directive restricts the URLs which may
@@ -124,7 +124,7 @@ class ContentSecurityPolicy extends BaseConfig
      *
      * @var list<string>|string|null
      */
-    public $frameSrc;
+    public $frameSrc = 'self';
 
     /**
      * Restricts the origins allowed to deliver video and audio.

@@ -295,11 +295,8 @@ function showSuccessToast(message) {
             
             <!-- Preview -->
             <div class="preview-area flex-shrink-0 w-20 h-24 sm:w-24 sm:h-28 flex items-center justify-center bg-gray-50 rounded-md border border-gray-200 overflow-hidden mr-0 sm:mr-3 mb-3 sm:mb-0 relative">
-                <?php if (!empty($doc['thumbnail_path']) && file_exists(FCPATH . $doc['thumbnail_path'])): ?>
-                    <img src="<?= base_url('uploads/thumbnails/' . basename($doc['thumbnail_path'])) ?>" alt="PDF Preview" class="object-contain w-full h-full" />
-                <?php elseif ($isImage): ?>
-                    <img src="<?= $previewUrl ?>" alt="Preview" class="object-contain w-full h-full" />
-                <?php elseif ($isPdf): ?>
+                <?php if ($isPdf): ?>
+                    <!-- Always show PDF preview, even if thumbnail exists -->
                     <div class="w-full h-full relative overflow-hidden">
                         <iframe src="<?= $previewUrl ?>#toolbar=0&navpanes=0&scrollbar=0&page=1&view=FitH" 
                                 class="absolute inset-0 w-full h-full border-0" 
@@ -309,6 +306,10 @@ function showSuccessToast(message) {
                         <div class="absolute right-0 top-0 w-4 h-full bg-white z-10"></div>
                         <div class="absolute bottom-0 left-0 w-full h-4 bg-white z-10"></div>
                     </div>
+                <?php elseif ($isImage): ?>
+                    <img src="<?= $previewUrl ?>" alt="Preview" class="object-contain w-full h-full" />
+                <?php elseif (!empty($doc['thumbnail_path']) && file_exists(FCPATH . $doc['thumbnail_path'])): ?>
+                    <img src="<?= base_url('uploads/thumbnails/' . basename($doc['thumbnail_path'])) ?>" alt="PDF Preview" class="object-contain w-full h-full" />
                 <?php else: ?>
                     <img src="<?= base_url('assets/images/file-not-found.svg') ?>" alt="No preview available" class="object-contain w-full h-full" />
                 <?php endif; ?>

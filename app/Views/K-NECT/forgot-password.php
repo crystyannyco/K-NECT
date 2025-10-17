@@ -574,6 +574,7 @@
             verifyData.append('account_type', window.verifiedAccountType);
             verifyData.append('method', selectedMethod);
             verifyData.append('contact_info', contactValue);
+            verifyData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
 
             fetch('<?= base_url('verify-contact-info') ?>', {
                 method: 'POST',
@@ -600,12 +601,19 @@
                     `;
                     
                     // Contact verified, now send OTP
+                    const otpData = new FormData();
+                    otpData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
+                    
                     return fetch('<?= base_url('send-otp') ?>', {
                         method: 'POST',
+                        body: otpData,
                         headers: { 'X-Requested-With': 'XMLHttpRequest' }
                     });
                 } else {
-                    throw new Error(data.message);
+                    // Create error object with remaining seconds if available
+                    const error = new Error(data.message);
+                    error.remainingSeconds = data.remainingSeconds;
+                    throw error;
                 }
             })
             .then(response => response.json())
@@ -620,7 +628,13 @@
                     // Hide masked contact and show input again on error
                     document.getElementById('maskedContactDisplay').classList.add('hidden');
                     document.getElementById('contactInputSection').classList.remove('hidden');
-                    setContactError(data.message || 'Failed to send OTP. Please try again.');
+                    
+                    // Check if rate limit error with countdown
+                    if (data.remainingSeconds && data.remainingSeconds > 0) {
+                        startOtpCooldown(data.remainingSeconds);
+                    } else {
+                        setContactError(data.message || 'Failed to send OTP. Please try again.');
+                    }
                 }
             })
             .catch(error => {
@@ -629,9 +643,53 @@
                 // Hide masked contact and show input again on error
                 document.getElementById('maskedContactDisplay').classList.add('hidden');
                 document.getElementById('contactInputSection').classList.remove('hidden');
-                setContactError(error.message || 'An error occurred. Please try again.');
+                
+                // Check if rate limit error with countdown
+                if (error.remainingSeconds && error.remainingSeconds > 0) {
+                    startOtpCooldown(error.remainingSeconds);
+                } else {
+                    setContactError(error.message || 'An error occurred. Please try again.');
+                }
             });
         });
+
+        // OTP rate limit countdown functionality
+        let otpCooldownTimer = null;
+        let otpCooldownSeconds = 0;
+
+        function startOtpCooldown(seconds) {
+            otpCooldownSeconds = seconds;
+            
+            // Clear any existing timer
+            if (otpCooldownTimer) {
+                clearTimeout(otpCooldownTimer);
+            }
+            
+            // Disable submit button during cooldown
+            const submitBtn = contactInfoForm.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            
+            updateOtpCooldown();
+        }
+
+        function updateOtpCooldown() {
+            if (otpCooldownSeconds > 0) {
+                setContactError(`Please wait ${otpCooldownSeconds} second${otpCooldownSeconds !== 1 ? 's' : ''} before requesting another OTP.`);
+                otpCooldownSeconds--;
+                otpCooldownTimer = setTimeout(updateOtpCooldown, 1000);
+            } else {
+                // Cooldown finished, enable submit button
+                const submitBtn = contactInfoForm.querySelector('button[type="submit"]');
+                submitBtn.disabled = false;
+                clearContactError();
+                
+                // Clear the timer
+                if (otpCooldownTimer) {
+                    clearTimeout(otpCooldownTimer);
+                    otpCooldownTimer = null;
+                }
+            }
+        }
 
         }); // End DOMContentLoaded
     </script>

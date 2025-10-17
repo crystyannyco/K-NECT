@@ -175,8 +175,8 @@ class ProfilingController extends BaseController
             return redirect()->to(base_url('profiling'));
         }
         
-        // If on step 1 but no terms accepted, stay on step 1
-        if ($step == 1) {
+        // If on step 1 and no form data submitted (just viewing), stay on step 1
+        if ($step == 1 && !$this->request->getPost('first_name')) {
             return redirect()->to(base_url('profiling'));
         }
 

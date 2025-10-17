@@ -218,6 +218,8 @@ class UserStatusController extends BaseController
      */
     public function reactivateUser()
     {
+        helper(['otp', 'sms']);
+        
         try {
             $userId = $this->request->getPost('user_id');
 
@@ -241,6 +243,27 @@ class UserStatusController extends BaseController
 
             if ($result) {
                 log_message('info', "User reactivated: {$user['first_name']} {$user['last_name']} (ID: {$user['user_id']})");
+                
+                // Send reactivation notifications (Email & SMS)
+                try {
+                    $updatedUser = $this->userModel->find($userId);
+                    $notificationResult = send_account_reactivated_notification($updatedUser);
+                    
+                    if ($notificationResult['email']) {
+                        log_message('info', "Reactivation email sent for user ID {$userId}");
+                    }
+                    if ($notificationResult['sms']) {
+                        log_message('info', "Reactivation SMS sent for user ID {$userId}");
+                    }
+                    
+                    // Note: We don't fail the reactivation if notifications fail
+                    if (!$notificationResult['email'] && !$notificationResult['sms']) {
+                        log_message('warning', "Failed to send any notification for reactivated user ID {$userId}");
+                    }
+                } catch (\Throwable $notifException) {
+                    log_message('error', "Notification exception for reactivated user ID {$userId}: " . $notifException->getMessage());
+                    // Continue even if notification fails
+                }
                 
                 return $this->response->setJSON([
                     'success' => true,

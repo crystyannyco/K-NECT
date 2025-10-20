@@ -1318,7 +1318,7 @@
             const preservedFocus = document.activeElement === userIdInput;
             
             try {
-                const response = await fetch(`<?= base_url('pederasyon/getAttendanceStatus/') ?>${eventId}`, {
+                const response = await fetch(`<?= base_url('sk/getAttendanceStatus/') ?>${eventId}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1549,7 +1549,7 @@
         // Trigger automatic timeout for users who didn't check out
         async function triggerAutoTimeout(session) {
             try {
-                const response = await fetch('<?= base_url('pederasyon/autoMarkTimeouts') ?>', {
+                const response = await fetch('<?= base_url('sk/autoMarkTimeouts') ?>', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1557,7 +1557,8 @@
                     },
                     body: JSON.stringify({
                         event_id: eventId,
-                        session: session
+                        session: session,
+                        '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
                     })
                 });
                 
@@ -2475,7 +2476,7 @@
                 loading: true
             }, CONFIG.PROFILE_DISPLAY_DURATION);
 
-            fetch('<?= base_url('pederasyon/processAttendance') ?>', {
+            fetch('<?= base_url('sk/processAttendance') ?>', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -2485,7 +2486,8 @@
                     event_id: eventId,
                     rfid_code: rfidCode || '',
                     user_id: userId || '',
-                    session: currentActiveSession
+                    session: currentActiveSession,
+                    '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
                 })
             })
                 .then(response => {
@@ -3218,7 +3220,7 @@
         function autoTimeoutSession(session) {
             console.log(`Auto-timeout initiated for ${session} session`);
             
-            fetch('<?= base_url('pederasyon/autoTimeoutSession') ?>', {
+            fetch('<?= base_url('sk/autoTimeoutSession') ?>', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -3226,7 +3228,8 @@
                 },
                 body: new URLSearchParams({
                     event_id: eventId,
-                    session: session
+                    session: session,
+                    '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
                 })
             })
             .then(response => response.json())
@@ -3381,13 +3384,13 @@
             }
 
             // Try to fetch detailed attendance data (counts + records)
-            fetch(`<?= base_url('pederasyon/getAttendanceData') ?>`, {
+            fetch(`<?= base_url('sk/getAttendanceData') ?>`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: `event_id=${eventId}`
+                body: `event_id=${eventId}&<?= csrf_token() ?>=<?= csrf_hash() ?>`
             })
             .then(response => response.json())
             .then(data => {
@@ -3460,14 +3463,15 @@
 
         // Enhanced refresh attendance settings with real-time updates
         function refreshAttendanceSettings() {
-            fetch('<?= base_url('pederasyon/getEventAttendanceSettings') ?>', {
+            fetch('<?= base_url('sk/getEventAttendanceSettings') ?>', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: new URLSearchParams({
-                    event_id: eventId
+                    event_id: eventId,
+                    '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
                 })
             })
             .then(response => response.json())

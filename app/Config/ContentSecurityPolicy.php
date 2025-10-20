@@ -68,7 +68,7 @@ class ContentSecurityPolicy extends BaseConfig
      *
      * @var list<string>|string
      */
-    public $imageSrc = ['self', 'data:', 'https:', 'http:'];
+    public $imageSrc = ['self', 'data:', 'blob:', 'https:', 'http:', 'https://i.pinimg.com', 'https://philsys.gov.ph', 'https://lh3.googleusercontent.com', 'https://www.google.com'];
 
     /**
      * Restricts the URLs that can appear in a page's `<base>` element.

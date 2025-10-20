@@ -68,8 +68,8 @@ class SecurityHeadersFilter implements FilterInterface
             $isProduction
                 ? "style-src 'self' 'nonce-{$nonce}' https://fonts.googleapis.com https://cdn.datatables.net https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://accounts.google.com"
                 : "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.datatables.net https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://accounts.google.com",
-            // Image sources - allow data URIs and specific domains
-            "img-src 'self' data: blob: https://lh3.googleusercontent.com https://www.google.com",
+            // Image sources - allow data URIs and specific domains (including sample image sources for profiling)
+            "img-src 'self' data: blob: https://lh3.googleusercontent.com https://www.google.com https://i.pinimg.com https://philsys.gov.ph",
             // Font sources
             "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com",
             // Connect sources - removed wildcards, specific APIs only

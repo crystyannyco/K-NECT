@@ -22,6 +22,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <!-- Tailwind CSS - Production Build -->
     <link rel="stylesheet" href="<?= base_url('assets/css/tailwind.css') ?>" />
+    
     <script>
         // Abort profiling cleanup: send beacon if user leaves before completing.
         (function(){
@@ -31,8 +32,9 @@
             if (stepSuccess) {
                 sessionStorage.setItem(PROFILING_SUCCESS_FLAG, '1');
             }
+            let isFormSubmitting = false;
             function sendAbort(){
-                if (sessionStorage.getItem(PROFILING_SUCCESS_FLAG) === '1') return; // already done
+                if (sessionStorage.getItem(PROFILING_SUCCESS_FLAG) === '1' || isFormSubmitting) return; // already done or form submitting
                 // Use sendBeacon for reliability on page unload
                 const url = '<?= base_url('profiling/abort') ?>';
                 try {
@@ -46,6 +48,10 @@
                 } catch(e) { /* ignore */ }
             }
             window.addEventListener('beforeunload', sendAbort);
+            // Prevent abort on form submissions
+            document.addEventListener('submit', () => {
+                isFormSubmitting = true;
+            });
             // In case of SPA-like navigation triggers within page forms we don't abort.
             document.addEventListener('profiling:completed', () => {
                 sessionStorage.setItem(PROFILING_SUCCESS_FLAG,'1');
@@ -909,7 +915,7 @@ document.addEventListener('DOMContentLoaded',function(){
                     <p class="text-xs sm:text-sm md:text-base text-slate-600 px-4">Tell us about yourself to get started</p>
                 </div>
                 
-                <form action="<?= base_url('profiling/step1') ?>" method="post" class="space-y-4 sm:space-y-6 md:space-y-8" id="step1Form">
+                <form action="<?= base_url('profiling/step1') ?>" method="post" class="space-y-4 sm:space-y-6 md:space-y-8" id="step1Form" enctype="multipart/form-data">
                     <?= csrf_field() ?>
                     <!-- Name Section -->
                     <div class="form-section rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 mx-2 sm:mx-0">
@@ -2134,7 +2140,7 @@ document.addEventListener('DOMContentLoaded',function(){
                                  alt="Sample Birth Certificate" 
                                  style="width: 100%; height: 100%; object-fit: contain; display: none;"
                                  onload="document.getElementById('birthCertLoading').style.display='none'; this.style.display='block';"
-                                 onerror="document.getElementById('birthCertLoading').querySelector('.text-sm').textContent='PSA Birth Certificate'; document.getElementById('birthCertLoading').querySelector('.text-xs').textContent='Official government-issued birth certificate';">
+                                 onerror="const el=document.getElementById('birthCertLoading'); if(el){const sm=el.querySelector('.text-sm');const xs=el.querySelector('.text-xs');if(sm)sm.textContent='PSA Birth Certificate';if(xs)xs.textContent='Official government-issued birth certificate';}">
                             </div>
                         </div>
                     </div>
@@ -2172,7 +2178,7 @@ document.addEventListener('DOMContentLoaded',function(){
                                      alt="Sample Valid ID Front" 
                                      class="w-full h-full object-contain hidden"
                                      onload="document.getElementById('idFrontLoading').style.display='none'; this.style.display='block';"
-                                     onerror="document.getElementById('idFrontLoading').querySelector('.text-xs').textContent='ID Front';">
+                                     onerror="const el=document.getElementById('idFrontLoading'); if(el){const xs=el.querySelector('.text-xs');if(xs)xs.textContent='ID Front';}">
                             </div>
                         </div>
                         
@@ -2195,7 +2201,7 @@ document.addEventListener('DOMContentLoaded',function(){
                                      alt="Sample Valid ID Back" 
                                      style="width: 100%; height: 100%; object-fit: contain; display: none;"
                                      onload="document.getElementById('idBackLoading').style.display='none'; this.style.display='block';"
-                                     onerror="document.getElementById('idBackLoading').querySelector('.text-xs').textContent='ID Back';">
+                                     onerror="const el=document.getElementById('idBackLoading'); if(el){const xs=el.querySelector('.text-xs');if(xs)xs.textContent='ID Back';}">
                             </div>
                         </div>
                     </div>
@@ -3523,10 +3529,32 @@ document.addEventListener('DOMContentLoaded',function(){
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Console logging removed
+            
             // Global flag: suppress client-side validation when navigating back
             window.isNavigatingBack = false;
             // Expose current server-allowed step (1..6) to JS
             window.serverProfilingStep = parseInt('<?= (int)($step ?? 1) ?>', 10) || 1;
+            
+            
+            // Log server-side errors if present
+            (function logServerErrors() {
+                const errorMessages = document.querySelectorAll('.error-message, .validation-message.error');
+                if (errorMessages.length > 0) {
+                    
+                    errorMessages.forEach((msg, index) => {
+                        if (msg.textContent.trim()) {
+                            
+                        }
+                    });
+                }
+                
+                const fileErrorFields = document.querySelectorAll('.file-upload-button.error');
+                if (fileErrorFields.length > 0) {
+                    
+                }
+            })();
+            
             // Add validation styles if not already present
             if (!document.querySelector('style[data-validation]')) {
                 const style = document.createElement('style');
@@ -3625,6 +3653,9 @@ document.addEventListener('DOMContentLoaded',function(){
                             clickedButton.getAttribute('formaction').includes('backTo')
                         );
                         
+                        const csrfField = form.querySelector('[name="csrf_test_name"]');
+                        
+                        
                         // Save current form data before submission
                         saveFormData();
                         
@@ -3646,6 +3677,11 @@ document.addEventListener('DOMContentLoaded',function(){
                 const allInputs = document.querySelectorAll('input, select, textarea');
                 allInputs.forEach(input => {
                     if (input.type === 'submit' || input.type === 'button') {
+                        return;
+                    }
+                    
+                    // Skip CSRF token fields - they should never be cached
+                    if (input.name === 'csrf_test_name' || input.name === 'csrf_cookie_name') {
                         return;
                     }
                     
@@ -3685,16 +3721,28 @@ document.addEventListener('DOMContentLoaded',function(){
                 }
             }
             
+            // Make saveFormData globally accessible
+            window.saveFormData = saveFormData;
+            
             function loadFormData() {
                 const savedData = sessionStorage.getItem('profiling_form_data');
                 const savedFileInfo = sessionStorage.getItem('profiling_file_info');
+                
+                
                 
                 if (savedData) {
                     try {
                         const formData = JSON.parse(savedData);
                         
+                        
                         // Restore form values
                         Object.keys(formData).forEach(name => {
+                            // Skip CSRF token fields - they should use server-generated values
+                            if (name === 'csrf_test_name' || name === 'csrf_cookie_name') {
+                                
+                                return;
+                            }
+                            
                             const value = formData[name];
                             const inputs = document.querySelectorAll(`[name="${name}"]`);
                             
@@ -3964,19 +4012,25 @@ document.addEventListener('DOMContentLoaded',function(){
                             submitter.hasAttribute('formnovalidate') || formaction.includes('backTo')
                         );
 
+                        
+
                         // Skip any validation entirely on back navigation
                         if (isBackButton) {
+                            
                             return;
                         }
 
                         // Otherwise run validation
                         if (!validateStepForm(form)) {
+                            
                             e.preventDefault();
                             const firstInvalidField = form.querySelector('.field-error') || form.querySelector('.validation-error');
                             if (firstInvalidField) {
                                 firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
                                 if (firstInvalidField.focus) firstInvalidField.focus();
                             }
+                        } else {
+                            
                         }
                     });
                 });
@@ -4347,8 +4401,8 @@ document.addEventListener('DOMContentLoaded',function(){
             }
 
             // Enhanced file upload functionality with persistence
-        function initializeFileUploads() {
-                const fileInputs = document.querySelectorAll('.file-upload-input');
+    function initializeFileUploads() {
+        const fileInputs = document.querySelectorAll('.file-upload-input');
                 
                 fileInputs.forEach(input => {
                     // Remember whether this field was originally marked as required in markup
@@ -4445,6 +4499,8 @@ document.addEventListener('DOMContentLoaded',function(){
 
                 function handleFileSelection(input, button, textElement) {
                     const file = input.files[0];
+                    
+                    
                     
                     if (!file) {
                         // If no file selected, check if there's cached file info
@@ -4562,6 +4618,7 @@ document.addEventListener('DOMContentLoaded',function(){
                 }
 
                 function showFileError(input, button, message) {
+                    
                     button.classList.add('error');
                     button.classList.remove('has-file');
                     
@@ -4591,31 +4648,34 @@ document.addEventListener('DOMContentLoaded',function(){
                         console.error('Error removing remove button during reset:', e);
                     }
                     
-                    if (input.name === 'profile_picture') {
-                        textElement.innerHTML = `
-                            Click to upload your 1x1 photo<br>
-                            <span class="text-xs text-gray-500">JPG, PNG, WEBP up to 5MB</span>
-                        `;
-                    } else if (input.name === 'upload_id') {
-                        textElement.innerHTML = `
-                            Click to upload Valid ID (Front) <span class="text-red-500">*</span><br>
-                            <span class="text-xs text-gray-500">JPG, PNG, PDF up to 5MB</span>
-                        `;
-                    } else if (input.name === 'birth_certificate') {
-                        textElement.innerHTML = `
-                            Click to upload Birth Certificate<br>
-                            <span class="text-xs text-gray-500">JPG, PNG, PDF up to 5MB</span>
-                        `;
-                    } else if (input.name === 'upload_id-back') {
-                        textElement.innerHTML = `
-                            Click to upload Valid ID (Back)<br>
-                            <span class="text-xs text-gray-500">JPG, PNG, PDF up to 5MB</span>
-                        `;
-                    } else {
-                        textElement.innerHTML = `
-                            Click to upload or drag and drop<br>
-                            <span class="text-xs text-gray-500">JPG, PNG, GIF, WEBP, PDF up to 5MB</span>
-                        `;
+                    // Only update text if textElement exists
+                    if (textElement) {
+                        if (input.name === 'profile_picture') {
+                            textElement.innerHTML = `
+                                Click to upload your 1x1 photo<br>
+                                <span class="text-xs text-gray-500">JPG, PNG, WEBP up to 5MB</span>
+                            `;
+                        } else if (input.name === 'upload_id') {
+                            textElement.innerHTML = `
+                                Click to upload Valid ID (Front) <span class="text-red-500">*</span><br>
+                                <span class="text-xs text-gray-500">JPG, PNG, PDF up to 5MB</span>
+                            `;
+                        } else if (input.name === 'birth_certificate') {
+                            textElement.innerHTML = `
+                                Click to upload Birth Certificate<br>
+                                <span class="text-xs text-gray-500">JPG, PNG, PDF up to 5MB</span>
+                            `;
+                        } else if (input.name === 'upload_id-back') {
+                            textElement.innerHTML = `
+                                Click to upload Valid ID (Back)<br>
+                                <span class="text-xs text-gray-500">JPG, PNG, PDF up to 5MB</span>
+                            `;
+                        } else {
+                            textElement.innerHTML = `
+                                Click to upload or drag and drop<br>
+                                <span class="text-xs text-gray-500">JPG, PNG, GIF, WEBP, PDF up to 5MB</span>
+                            `;
+                        }
                     }
                 }
 
@@ -5084,21 +5144,21 @@ document.addEventListener('DOMContentLoaded',function(){
             const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension);
             const isPdf = fileExtension === 'pdf';
 
-            console.log('File type detection:', { fileExtension, isImage, isPdf });
+            
 
             setTimeout(() => {
-                console.log('Starting content load...');
+                
                 
                 if (loadingElement) loadingElement.classList.add('hidden');
                 if (viewerElement) viewerElement.classList.remove('hidden');
 
                 if (isImage) {
-                    console.log('Loading image:', url);
+                    
                     // Preview image
                     if (imageElement) {
                         imageElement.src = url;
                         imageElement.onload = () => {
-                            console.log('Image loaded successfully');
+                            
                             imageElement.classList.remove('hidden');
                         };
                         imageElement.onerror = () => {
@@ -5107,7 +5167,7 @@ document.addEventListener('DOMContentLoaded',function(){
                         };
                     }
                 } else if (isPdf) {
-                    console.log('Loading PDF:', url);
+                    
                     // Preview PDF
                     if (pdfViewer && pdfFallbackLink && pdfElement) {
                         pdfViewer.src = url + '#toolbar=1&navpanes=1&scrollbar=1';
@@ -5115,7 +5175,7 @@ document.addEventListener('DOMContentLoaded',function(){
                         pdfElement.classList.remove('hidden');
                     }
                 } else {
-                    console.log('Unsupported file type, showing error');
+                    
                     // Unsupported file type
                     showDocumentError();
                 }
@@ -5129,7 +5189,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
         // Make closeDocumentPreview globally accessible
         window.closeDocumentPreview = function() {
-            console.log('Closing document preview');
+            
             const modal = document.getElementById('document-preview-modal');
             const imageElement = document.getElementById('document-image');
             const pdfViewer = document.getElementById('pdf-viewer');
@@ -5139,7 +5199,7 @@ document.addEventListener('DOMContentLoaded',function(){
             
             if (modal) {
                 modal.classList.add('hidden');
-                console.log('Modal hidden');
+                
             } else {
                 console.error('Modal not found when trying to close');
             }
@@ -5175,7 +5235,6 @@ document.addEventListener('DOMContentLoaded',function(){
         }
 
         function downloadDocument(url, filename) {
-            console.log('Downloading document:', { url, filename });
             // Create a temporary link element and trigger download
             const link = document.createElement('a');
             link.href = url;
@@ -6055,7 +6114,7 @@ document.addEventListener('DOMContentLoaded',function(){
                     csrfInputs.forEach(input => {
                         input.value = newToken.value;
                     });
-                    console.log('CSRF token refreshed successfully');
+                    
                 } else {
                     console.warn('Failed to extract new CSRF token from response');
                 }
@@ -6071,7 +6130,7 @@ document.addEventListener('DOMContentLoaded',function(){
         // Refresh CSRF token when user returns to page after being away
         document.addEventListener('visibilitychange', function() {
             if (!document.hidden) {
-                console.log('Page became visible, refreshing CSRF token...');
+                
                 refreshCSRFToken();
             }
         });
@@ -6186,6 +6245,9 @@ document.addEventListener('DOMContentLoaded',function(){
                     closeToast(toastId);
                 }, 5000);
             }
+
+            // Make showToast globally accessible
+            window.showToast = showToast;
 
             // Close toast function (globally accessible)
             window.closeToast = function(toastId) {
@@ -6427,13 +6489,6 @@ document.addEventListener('DOMContentLoaded',function(){
             const qualificationForm = document.getElementById('qualificationForm');
             if (qualificationForm) {
                 qualificationForm.addEventListener('submit', function(e) {
-                    console.log('Form submission validation:', {
-                        hasScrolledTerms,
-                        hasScrolledPrivacy,
-                        hasAcceptedTerms,
-                        hasAcceptedPrivacy,
-                        checkboxChecked: termsCheckbox.checked
-                    });
                     
                     // Check if Terms and Conditions and Privacy Policy have been read completely
                     if (!hasScrolledTerms || !hasScrolledPrivacy) {
@@ -6465,15 +6520,7 @@ document.addEventListener('DOMContentLoaded',function(){
                         return false;
                     }
                     
-                    // Log full token details for debugging
-                    console.log('Form submission details:', {
-                        tokenName: csrfInput.name,
-                        tokenLength: csrfInput.value.length,
-                        tokenPreview: csrfInput.value.substring(0, 20) + '...',
-                        tokenFull: csrfInput.value, // Full token for debugging
-                        formAction: qualificationForm.action,
-                        formMethod: qualificationForm.method
-                    });
+                    
                     
                     // All validations passed - allow form submission
                     return true;
@@ -6754,10 +6801,10 @@ document.addEventListener('DOMContentLoaded',function(){
             }
             
             // Update form data persistence
-            saveFormData();
+            window.saveFormData();
             
             // Show confirmation message
-            showToast('File removed successfully', 'success');
+            window.showToast('File removed successfully', 'success');
         }
 
         // Initialize Terms and Conditions when DOM is ready

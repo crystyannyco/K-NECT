@@ -422,6 +422,17 @@ class DocumentMainController extends BaseController
                         $barangayId = null;
                         file_put_contents($logFile, "SK user upload - no barangay assigned, using city-wide scope\n", FILE_APPEND);
                     }
+                    // Force SK users to use specific_barangay scope with their own barangay IF they have one
+                    if ($userBarangayId) {
+                        $visibilityScope = 'specific_barangay';
+                        $barangayId = $userBarangayId; // Use SK user's assigned barangay
+                        file_put_contents($logFile, "SK user upload - forced barangay_id: $barangayId\n", FILE_APPEND);
+                    } else {
+                        // SK user has no barangay assigned - allow city-wide upload
+                        $visibilityScope = 'all';
+                        $barangayId = null;
+                        file_put_contents($logFile, "SK user upload - no barangay assigned, using city-wide scope\n", FILE_APPEND);
+                    }
                 } else {
                     // For Pederasyon and KK users, allow their selections
                     if ($visibilityScope === 'specific_barangay') {

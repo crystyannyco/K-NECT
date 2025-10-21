@@ -281,6 +281,8 @@
                 $previewUrl = base_url('admin/documents/preview/' . $doc['id']);
                 $isImage = strpos($doc['mimetype'], 'image/') === 0;
                 $isPdf = $doc['mimetype'] === 'application/pdf';
+                // DEBUG: Output to verify PDF detection
+                // echo "<!-- DEBUG: File={$doc['filename']}, Mimetype={$doc['mimetype']}, isPdf=" . ($isPdf ? 'YES' : 'NO') . " -->";
                 ?>
                 <div class="flex flex-col md:flex-row items-center bg-white rounded-xl shadow-md p-4 border border-gray-100 hover:shadow-lg transition-all duration-300 relative">
                   <!-- Document Checkbox -->
@@ -296,19 +298,8 @@
                   
                   <!-- Preview -->
                     <div class="preview-area flex-shrink-0 w-32 h-40 flex items-center justify-center bg-white rounded-lg shadow-inner border border-gray-200 overflow-hidden mr-4 relative">
-                    <?php if (!empty($doc['thumbnail_path']) && file_exists(FCPATH . $doc['thumbnail_path'])): ?>
-                        <img src="<?= base_url('uploads/thumbnails/' . basename($doc['thumbnail_path'])) ?>" 
-                             alt="Document Preview" 
-                             class="object-contain w-full h-full" 
-                             data-type="document" 
-                             data-filename="<?= esc($doc['filename']) ?>" />
-                    <?php elseif ($isImage): ?>
-                        <img src="<?= $previewUrl ?>" 
-                             alt="Image Preview" 
-                             class="object-contain w-full h-full" 
-                             data-type="image" 
-                             data-filename="<?= esc($doc['filename']) ?>" />
-                    <?php elseif ($isPdf): ?>
+                    <?php if ($isPdf): ?>
+                        <!-- Always show PDF preview, even if thumbnail exists -->
                         <div class="w-full h-full relative overflow-hidden">
                             <iframe src="<?= $previewUrl ?>#toolbar=0&navpanes=0&scrollbar=0&page=1&view=FitH" 
                                     class="absolute inset-0 w-full h-full border-0" 
@@ -318,6 +309,18 @@
                             <div class="absolute right-0 top-0 w-4 h-full bg-white z-10"></div>
                             <div class="absolute bottom-0 left-0 w-full h-4 bg-white z-10"></div>
                         </div>
+                    <?php elseif ($isImage): ?>
+                        <img src="<?= $previewUrl ?>" 
+                             alt="Image Preview" 
+                             class="object-contain w-full h-full" 
+                             data-type="image" 
+                             data-filename="<?= esc($doc['filename']) ?>" />
+                    <?php elseif (!empty($doc['thumbnail_path']) && file_exists(FCPATH . $doc['thumbnail_path'])): ?>
+                        <img src="<?= base_url('uploads/thumbnails/' . basename($doc['thumbnail_path'])) ?>" 
+                             alt="Document Preview" 
+                             class="object-contain w-full h-full" 
+                             data-type="document" 
+                             data-filename="<?= esc($doc['filename']) ?>" />
                     <?php else: ?>
                         <?php 
                             $fileType = get_file_type_from_mimetype($doc['mimetype']);

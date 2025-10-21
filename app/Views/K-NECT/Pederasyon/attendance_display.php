@@ -2485,7 +2485,8 @@
                     event_id: eventId,
                     rfid_code: rfidCode || '',
                     user_id: userId || '',
-                    session: currentActiveSession
+                    session: currentActiveSession,
+                    '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
                 })
             })
                 .then(response => {
@@ -3226,7 +3227,8 @@
                 },
                 body: new URLSearchParams({
                     event_id: eventId,
-                    session: session
+                    session: session,
+                    '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
                 })
             })
             .then(response => response.json())

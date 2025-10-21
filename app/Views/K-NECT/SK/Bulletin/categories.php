@@ -1,5 +1,5 @@
 <!-- Main Content Area -->
-<div class="flex-1 lg:ml-64 min-h-screen bg-gray-50">
+<div class="flex-1 lg:ml-64 pt-16 min-h-screen bg-gray-50">
     <!-- Header Section -->
     <div class="bg-white shadow-sm border-b border-gray-200">
         <div class="px-4 sm:px-6 lg:px-8 py-6">

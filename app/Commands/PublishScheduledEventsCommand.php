@@ -60,6 +60,31 @@ class PublishScheduledEventsCommand extends BaseCommand
                 CLI::error("Failed to publish event: {$event['title']} - " . $e->getMessage());
             }
         }
+                
+        // Create/update trigger file to signal frontend that events were published
+        if (!empty($scheduledEvents)) {
+            $this->updatePublishTrigger();
+        }
+    }
+    
+    /**
+     * Update publish trigger file to signal frontend
+     */
+    private function updatePublishTrigger()
+    {
+        $triggerFile = WRITEPATH . 'cache/events_published_trigger.txt';
+        
+        // Create cache directory if it doesn't exist
+        $cacheDir = dirname($triggerFile);
+        if (!is_dir($cacheDir)) {
+            mkdir($cacheDir, 0755, true);
+        }
+        
+        // Write current timestamp to trigger file
+        file_put_contents($triggerFile, time());
+        
+        CLI::write('Updated publish trigger file for frontend notification', 'green');
+
     }
     
     private function publishEvent($event, $eventModel)

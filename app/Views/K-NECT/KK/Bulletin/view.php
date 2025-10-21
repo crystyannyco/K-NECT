@@ -1,5 +1,5 @@
 <!-- Main Content Area -->
-<div class="flex-1 lg:ml-64 min-h-screen bg-gray-50">
+<div class="flex-1 lg:ml-64 pt-16 min-h-screen bg-gray-50">
     <!-- Header Section -->
     <div class="bg-white shadow-sm border-b border-gray-200">
         <div class="px-4 sm:px-6 lg:px-8 py-6">
@@ -339,4 +339,103 @@ document.getElementById('deleteModal').addEventListener('click', function(e) {
         postToDelete = null;
     }
 });
+
+// Unified toast notification function (matches youthlist.php style)
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `stacked-toast fixed right-4 z-[99999] p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full`;
+    
+    switch(type) {
+        case 'success':
+            notification.className += ' bg-green-500 text-white';
+            break;
+        case 'error':
+            notification.className += ' bg-red-500 text-white';
+            break;
+        case 'warning':
+            notification.className += ' bg-yellow-500 text-white';
+            break;
+        default:
+            notification.className += ' bg-blue-500 text-white';
+    }
+    
+    // Calculate stacking position based on existing notifications
+    const existingToasts = document.querySelectorAll('.stacked-toast');
+    let topOffset = 16; // Initial top offset (1rem = 16px)
+    existingToasts.forEach(toast => {
+        topOffset += toast.offsetHeight + 16; // Add height + 16px gap
+    });
+    notification.style.top = topOffset + 'px';
+    
+    // Get appropriate icon based on type
+    let icon = '';
+    switch(type) {
+        case 'success':
+            icon = '<svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>';
+            break;
+        case 'error':
+            icon = '<svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" /></svg>';
+            break;
+        case 'warning':
+            icon = '<svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" /></svg>';
+            break;
+        case 'info':
+        default:
+            icon = '<svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01" /></svg>';
+            break;
+    }
+    
+    notification.innerHTML = `
+        <div class="flex items-center">
+            ${icon}
+            <span class="mr-2">${message}</span>
+            <button onclick="this.parentElement.parentElement.remove(); repositionToasts();" class="ml-2 text-white hover:text-gray-200 focus:outline-none">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                </svg>
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+        notification.classList.remove('translate-x-full');
+    }, 100);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        notification.classList.add('translate-x-full');
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+                repositionToasts();
+            }
+        }, 300);
+    }, 5000);
+}
+
+// Helper function to reposition remaining toasts after one is removed
+function repositionToasts() {
+    const toasts = document.querySelectorAll('.stacked-toast');
+    let topOffset = 16;
+    toasts.forEach(toast => {
+        toast.style.top = topOffset + 'px';
+        topOffset += toast.offsetHeight + 16;
+    });
+}
+
+// Legacy aliases for backward compatibility
+function showSuccessToast(message) {
+    showNotification(message, 'success');
+}
+
+function showErrorToast(message) {
+    showNotification(message, 'error');
+}
+
+function showToast(message, type='success') {
+    showNotification(message, type);
+}
 </script>

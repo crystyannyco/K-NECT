@@ -456,3 +456,73 @@ if (!function_exists('send_account_deactivated_notification')) {
         return $result;
     }
 }
+
+if (!function_exists('send_account_reactivated_notification')) {
+    /**
+     * Send account reactivation notification via Email and SMS
+     * 
+     * @param array $user User data array containing email, phone_number, name, etc.
+     * @return array Result array with 'email' and 'sms' boolean keys
+     */
+    function send_account_reactivated_notification($user) {
+        $result = ['email' => false, 'sms' => false];
+        
+        // Prepare user information
+        $firstName = $user['first_name'] ?? '';
+        $lastName = $user['last_name'] ?? '';
+        $userName = trim($firstName . ' ' . $lastName);
+        $email = $user['email'] ?? '';
+        $phoneNumber = $user['phone_number'] ?? '';
+        $userId = $user['user_id'] ?? '';
+        
+        // Send Email Notification
+        if (!empty($email)) {
+            try {
+                $emailService = \Config\Services::email();
+                $emailService->setTo($email);
+                $emailService->setSubject('Account Reactivated - K-NECT');
+                
+                $message = view('emails/account_reactivated', [
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
+                    'user_id' => $userId,
+                    'email' => $email
+                ]);
+                
+                $emailService->setMessage($message);
+                
+                if ($emailService->send()) {
+                    $result['email'] = true;
+                    log_message('info', "Account reactivation email sent successfully to {$email}");
+                } else {
+                    log_message('error', "Failed to send account reactivation email to {$email}: " . $emailService->printDebugger(['headers']));
+                }
+            } catch (\Exception $e) {
+                log_message('error', "Account reactivation email exception for {$email}: " . $e->getMessage());
+            }
+        }
+        
+        // Send SMS Notification
+        if (!empty($phoneNumber)) {
+            try {
+                $smsMessage = "Good news, {$userName}!\n\n";
+                $smsMessage .= "Your K-NECT account has been REACTIVATED.\n\n";
+                $smsMessage .= "You can now log in and access all platform features.\n\n";
+                $smsMessage .= "Login at: " . base_url('login');
+
+                $smsResult = send_sms($phoneNumber, $smsMessage);
+
+                if ($smsResult && !isset($smsResult['error'])) {
+                    $result['sms'] = true;
+                    log_message('info', "Account reactivation SMS sent successfully to {$phoneNumber}");
+                } else {
+                    log_message('error', "Failed to send account reactivation SMS to {$phoneNumber}");
+                }
+            } catch (\Exception $e) {
+                log_message('error', "Account reactivation SMS exception for {$phoneNumber}: " . $e->getMessage());
+            }
+        }
+        
+        return $result;
+    }
+}

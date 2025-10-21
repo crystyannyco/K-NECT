@@ -25,8 +25,8 @@ class SecurityHeadersFilter implements FilterInterface
         // Set generic server name
         $response->setHeader('Server', 'Web Server');
 
-        // Prevent clickjacking - DENY is more secure than SAMEORIGIN
-        $response->setHeader('X-Frame-Options', 'DENY');
+        // Prevent clickjacking - SAMEORIGIN allows iframes from same domain (needed for document preview)
+        $response->setHeader('X-Frame-Options', 'SAMEORIGIN');
 
         // Prevent MIME sniffing - CRITICAL for security
         $response->setHeader('X-Content-Type-Options', 'nosniff');
@@ -68,13 +68,13 @@ class SecurityHeadersFilter implements FilterInterface
             $isProduction
                 ? "style-src 'self' 'nonce-{$nonce}' https://fonts.googleapis.com https://cdn.datatables.net https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://accounts.google.com"
                 : "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.datatables.net https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://accounts.google.com",
-            // Image sources - allow data URIs and specific domains
-            "img-src 'self' data: blob: https://lh3.googleusercontent.com https://www.google.com",
+            // Image sources - allow data URIs and specific domains (including sample image sources for profiling)
+            "img-src 'self' data: blob: https://lh3.googleusercontent.com https://www.google.com https://i.pinimg.com https://philsys.gov.ph",
             // Font sources
             "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com",
             // Connect sources - removed wildcards, specific APIs only
-            "connect-src 'self' https://accounts.google.com https://www.googleapis.com https://apis.google.com https://oauth2.googleapis.com wss://localhost:* ws://localhost:*",
-            // Frame sources for Google OAuth and Calendar
+            "connect-src 'self' https://accounts.google.com https://www.googleapis.com https://apis.google.com https://oauth2.googleapis.com wss://localhost:* ws://localhost:* https://cdnjs.cloudflare.com https://cdn.jsdelivr.net",
+            // Frame sources for Google OAuth, Calendar, and document preview
             "frame-src 'self' https://accounts.google.com https://www.google.com https://calendar.google.com",
             // Child sources (fallback for workers/frames)
             "child-src 'self' https://accounts.google.com",
@@ -90,8 +90,8 @@ class SecurityHeadersFilter implements FilterInterface
             "base-uri 'self'",
             // Form action restriction
             "form-action 'self'",
-            // Frame ancestors - prevent embedding
-            "frame-ancestors 'none'"
+            // Frame ancestors - allow self for document preview iframes
+            "frame-ancestors 'self'"
         ];
         
         // Only add upgrade-insecure-requests in production with HTTPS

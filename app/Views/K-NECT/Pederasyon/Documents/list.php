@@ -38,7 +38,7 @@ $totalPages = (int) max(1, ceil($total / max(1, $perPage)));
 ?>
 
 <div class="min-h-screen bg-gray-50">
-    <div class="max-w-7xl mx-auto p-0">
+    <div class="max-w-7xl mx-auto p-0 mb-6">
         <div class="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200">
             <div class="px-6 py-4 space-y-4 sm:space-y-6">
                 
@@ -381,9 +381,8 @@ function showSuccessToast(message) {
             </div>
 
             <!-- Actions -->
-            <div class="relative ml-auto mt-2 sm:mt-0" x-data="{ open: false }">
-                <button @click="open = !open" 
-                        @click.away="open = false"
+            <div class="relative ml-auto mt-2 sm:mt-0">
+                <button onclick="toggleDropdown(event, 'dropdown-<?= $doc['id'] ?>')" 
                         class="inline-flex items-center justify-center w-7 h-7 rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
                         title="Actions">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -391,14 +390,8 @@ function showSuccessToast(message) {
                     </svg>
                 </button>
                 
-                <div x-show="open" 
-                     x-transition:enter="transition ease-out duration-100"
-                     x-transition:enter-start="transform opacity-0 scale-95"
-                     x-transition:enter-end="transform opacity-100 scale-100"
-                     x-transition:leave="transition ease-in duration-75"
-                     x-transition:leave-start="transform opacity-100 scale-100"
-                     x-transition:leave-end="transform opacity-0 scale-95"
-                     class="absolute right-0 mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                <div id="dropdown-<?= $doc['id'] ?>" 
+                     class="hidden absolute right-0 mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
                     
                     <a href="<?= base_url('admin/documents/download/' . $doc['id']) ?>" 
                        class="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors">
@@ -409,32 +402,24 @@ function showSuccessToast(message) {
                     </a>
                     
                     <a href="javascript:void(0)" onclick="openDocumentModal(<?= $doc['id'] ?>)" 
-                                    class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors w-full text-left cursor-pointer">
-                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors w-full text-left cursor-pointer">
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
                          </svg>
                          View Details
                      </a>
                                  
-                                 <a href="<?= base_url('admin/documents/share/' . $doc['id']) ?>" 
-                                    class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors">
-                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
-                                     </svg>
-                                     Share
-                                 </a>
-                                 
-                                 <a href="<?= base_url('admin/documents/edit/' . $doc['id']) ?>" 
-                                    class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 transition-colors">
-                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <a href="<?= base_url('admin/documents/edit/' . $doc['id']) ?>" 
+                        class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 transition-colors">
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                         Edit
-                        </a>
+                    </a>
                      
-                                 <button onclick="deleteDocument(<?= $doc['id'] ?>)" 
-                                         class="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-colors"
-                                         data-doc-id="<?= $doc['id'] ?>"
+                     <button onclick="deleteDocument(<?= $doc['id'] ?>)" 
+                             class="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-colors"
+                             data-doc-id="<?= $doc['id'] ?>"
                                          type="button"
                                          title="Delete document">
                                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

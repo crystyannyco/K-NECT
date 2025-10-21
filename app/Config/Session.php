@@ -77,8 +77,11 @@ class Session extends BaseConfig
      * --------------------------------------------------------------------------
      *
      * How many seconds between CI regenerating the session ID.
+     * 
+     * INCREASED to 3600 (1 hour) for multi-step profiling form to prevent
+     * session regeneration during form completion which could take 10-15 minutes.
      */
-    public int $timeToUpdate = 300;
+    public int $timeToUpdate = 3600;
 
     /**
      * --------------------------------------------------------------------------
@@ -88,8 +91,11 @@ class Session extends BaseConfig
      * Whether to destroy session data associated with the old session ID
      * when auto-regenerating the session ID. When set to TRUE, provides better
      * security against session fixation attacks.
+     * 
+     * SET TO FALSE for profiling form to prevent data loss during session regeneration.
+     * This allows session data to be preserved when session ID changes.
      */
-    public bool $regenerateDestroy = true;
+    public bool $regenerateDestroy = false;
 
     /**
      * --------------------------------------------------------------------------

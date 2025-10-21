@@ -203,7 +203,7 @@
         <?php endif; endif; ?>
 
 <!-- Results Summary -->
-<div class="flex items-center justify-between mb-4">
+<div class="flex items-center justify-between mb-4 mt-4">
     <div class="text-xs text-gray-600">
         <?php 
         $totalDocs = count($documents ?? []);
@@ -403,9 +403,8 @@
                   </div>
 
                   <!-- Actions -->
-                  <div class="relative ml-4 mt-4 md:mt-0" x-data="{ open: false }">
-                    <button @click="open = !open" 
-                            @click.away="open = false"
+                  <div class="relative ml-4 mt-4 md:mt-0">
+                    <button onclick="toggleDropdown(event, 'dropdown-<?= $doc['id'] ?>')" 
                             class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
                             title="Actions">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -413,14 +412,8 @@
                         </svg>
                     </button>
                     
-                    <div x-show="open" 
-                         x-transition:enter="transition ease-out duration-100"
-                         x-transition:enter-start="transform opacity-0 scale-95"
-                         x-transition:enter-end="transform opacity-100 scale-100"
-                         x-transition:leave="transition ease-in duration-75"
-                         x-transition:leave-start="transform opacity-100 scale-100"
-                         x-transition:leave-end="transform opacity-0 scale-95"
-                         class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                    <div id="dropdown-<?= $doc['id'] ?>" 
+                         class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
                         
                         <a href="<?= base_url('admin/documents/download/' . $doc['id']) ?>" 
                            class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors">
@@ -430,30 +423,22 @@
                             Download
                         </a>
                         
-                                                        <button onclick="openDocumentModal(<?= $doc['id'] ?>)" 
-                                   class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors w-full text-left">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
-                                    </svg>
-                                    View Details
-                                </button>
+                        <button onclick="openDocumentModal(<?= $doc['id'] ?>)" 
+                               class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors w-full text-left">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
+                            </svg>
+                            View Details
+                        </button>
                                 
-                                <a href="<?= base_url('admin/documents/share/' . $doc['id']) ?>" 
-                                   class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
-                                    </svg>
-                                    Share
-                                </a>
-                                
-                                <?php
-                                $canEditDelete = false;
-                                if (session('role') === 'super_admin') {
-                                    $canEditDelete = true;
-                                } elseif (session('role') === 'admin') {
-                                    $canEditDelete = (strtolower(trim($doc['uploaded_by'])) === strtolower(trim(session('username'))) && ($uploaderRole !== 'super_admin'));
-                                }
-                                ?>
+                        <?php
+                        $canEditDelete = false;
+                        if (session('role') === 'super_admin') {
+                            $canEditDelete = true;
+                        } elseif (session('role') === 'admin') {
+                            $canEditDelete = (strtolower(trim($doc['uploaded_by'])) === strtolower(trim(session('username'))) && ($uploaderRole !== 'super_admin'));
+                        }
+                        ?>
                                 
                                 <?php if ($canEditDelete): ?>
                             <a href="<?= base_url('admin/documents/edit/' . $doc['id']) ?>" 
@@ -1250,5 +1235,31 @@ document.addEventListener('keydown', function(e) {
 });
 </script>
 
-<!-- Alpine.js for dropdown functionality -->
-<script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script> 
+
+<!-- Dropdown Toggle Script -->
+<script>
+function toggleDropdown(event, dropdownId) {
+    event.stopPropagation();
+    
+    // Close all other dropdowns
+    document.querySelectorAll('[id^="dropdown-"]').forEach(dropdown => {
+        if (dropdown.id !== dropdownId) {
+            dropdown.classList.add('hidden');
+        }
+    });
+    
+    // Toggle current dropdown
+    const dropdown = document.getElementById(dropdownId);
+    dropdown.classList.toggle('hidden');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('[id^="dropdown-"]') && !event.target.closest('button[onclick^="toggleDropdown"]')) {
+        document.querySelectorAll('[id^="dropdown-"]').forEach(dropdown => {
+            dropdown.classList.add('hidden');
+        });
+    }
+});
+</script>
+

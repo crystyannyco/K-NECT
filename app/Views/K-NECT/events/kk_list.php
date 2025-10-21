@@ -438,6 +438,59 @@ function closeCalendarModal() {
     const categoryFilter = document.getElementById('categoryFilter');
     const clearFiltersBtn = document.getElementById('clearFilters');
     let activeStatus = 'all'; // Default to all tab
+    
+    
+    // Auto-refresh mechanism to check for newly published scheduled events
+    let autoRefreshInterval = null;
+    let lastPublishTimestamp = 0;
+    
+    function startAutoRefresh() {
+        // Check every 5 seconds for newly published events (trigger-based)
+        autoRefreshInterval = setInterval(function() {
+            checkForNewlyPublishedEvents();
+        }, 5000); // 5000 ms = 5 seconds
+        
+        console.log('Auto-refresh started: Checking for newly published events every 5 seconds');
+    }
+    
+    function stopAutoRefresh() {
+        if (autoRefreshInterval) {
+            clearInterval(autoRefreshInterval);
+            autoRefreshInterval = null;
+            console.log('Auto-refresh stopped');
+        }
+    }
+    
+    function checkForNewlyPublishedEvents() {
+        // Check the publish trigger timestamp (very lightweight check)
+        fetch('/events/check-publish-trigger', {
+            method: 'GET',
+            headers: { 
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.timestamp !== undefined) {
+                const triggerTimestamp = data.timestamp;
+                
+                // If trigger timestamp changed, events were just published
+                if (triggerTimestamp > lastPublishTimestamp && lastPublishTimestamp > 0) {
+                    console.log(`New events published! Trigger timestamp: ${triggerTimestamp}, Last timestamp: ${lastPublishTimestamp}`);
+                    // Reload the page to show newly published events
+                    window.location.reload();
+                }
+                
+                // Update last known timestamp
+                lastPublishTimestamp = triggerTimestamp;
+            }
+        })
+        .catch(error => {
+            console.error('Error checking for newly published events:', error);
+        });
+    }
+
 
     // Function to show/hide no events message
     function updateNoEventsMessage(visibleCount) {
@@ -565,7 +618,35 @@ function closeCalendarModal() {
     
     // Initialize with "all" status as default
     setActiveTab('all');
+        
+    // Initialize publish trigger timestamp and start auto-refresh for scheduled events
+    fetch('/events/check-publish-trigger', {
+        method: 'GET',
+        headers: { 
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.timestamp !== undefined) {
+            lastPublishTimestamp = data.timestamp;
+            console.log('Initial publish trigger timestamp:', lastPublishTimestamp);
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching initial trigger timestamp:', error);
+    });
+    
+    // Start auto-refresh to check for newly published scheduled events
+    startAutoRefresh();
 })();
+
+// Stop auto-refresh when user leaves the page
+window.addEventListener('beforeunload', function() {
+    stopAutoRefresh();
+});
+
 
 // Close modals when clicking outside
 document.addEventListener('click', function(e) {

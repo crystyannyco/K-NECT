@@ -1,69 +1,5 @@
 <!-- Main Content Area -->
-<div class="flex-1 lg:ml-64 min-h-screen bg-gray-50">
-    <!-- Header Section -->
-    <div class="bg-white shadow-sm border-b border-gray-200">
-        <div class="px-4 sm:px-6 lg:px-8 py-6">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                <div class="flex-1 min-w-0">
-                    <nav class="flex" aria-label="Breadcrumb">
-                        <ol class="flex items-center space-x-4">
-                            <li>
-                                <div>
-                                    <a href="<?= base_url('/bulletin') ?>" class="text-gray-400 hover:text-gray-500">
-                                        <svg class="flex-shrink-0 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fill-rule="evenodd" d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9H15a1 1 0 110 2H7.414l2.293 2.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
-                                        </svg>
-                                        <span class="sr-only">Back</span>
-                                    </a>
-                                </div>
-                            </li>
-                            <li>
-                                <div class="flex items-center">
-                                    <svg class="flex-shrink-0 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 111.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
-                                    </svg>
-                                    <a href="<?= base_url('/bulletin') ?>" class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700">
-                                        Bulletin Board
-                                    </a>
-                                </div>
-                            </li>
-                            <li>
-                                <div class="flex items-center">
-                                    <svg class="flex-shrink-0 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 111.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
-                                    </svg>
-                                    <span class="ml-4 text-sm font-medium text-gray-500">Post</span>
-                                </div>
-                            </li>
-                        </ol>
-                    </nav>
-                </div>
-                
-                <?php if (
-                    ($user_type === 'pederasyon') ||
-                    ($user_type === 'sk' && $post['author_id'] == ($user_id ?? session('user_id')) && (string)($post['barangay_id'] ?? '') === (string)($barangay_id ?? ''))
-                ): ?>
-                <div class="mt-4 sm:mt-0 sm:ml-4 flex space-x-3">
-                    <a href="<?= base_url('/bulletin/edit/' . $post['id']) ?>" 
-                       class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                        </svg>
-                        Edit Post
-                    </a>
-                    <button onclick="deletePost(<?= $post['id'] ?>)" 
-                            class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                        </svg>
-                        Delete
-                    </button>
-                </div>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-
+<div class="flex-1 lg:ml-64 min-h-screen bg-gray-50 pt-16">
     <!-- Main Content -->
     <div class="px-4 sm:px-6 lg:px-8 py-6">
         <div class="max-w-7xl mx-auto">
@@ -230,6 +166,28 @@
                     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                         <h3 class="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
                         <div class="space-y-3">
+                            <?php if (
+                                ($user_type === 'pederasyon') ||
+                                ($user_type === 'sk' && $post['author_id'] == ($user_id ?? session('user_id')) && (string)($post['barangay_id'] ?? '') === (string)($barangay_id ?? ''))
+                            ): ?>
+                            <!-- Edit Post Button -->
+                            <a href="<?= base_url('/bulletin/edit/' . $post['id']) ?>" 
+                               class="w-full inline-flex justify-center items-center px-4 py-2 border border-blue-300 rounded-md shadow-sm text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                </svg>
+                                Edit This Post
+                            </a>
+                            <!-- Delete Post Button -->
+                            <button onclick="deletePost(<?= $post['id'] ?>)" 
+                                    class="w-full inline-flex justify-center items-center px-4 py-2 border border-red-300 rounded-md shadow-sm text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                                Delete This Post
+                            </button>
+                            <div class="border-t border-gray-200 my-3"></div>
+                            <?php endif; ?>
                             <a href="<?= base_url('/bulletin/create') ?>" 
                                class="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -340,21 +298,95 @@ document.getElementById('deleteModal').addEventListener('click', function(e) {
 });
 </script>
 <script>
-// Lightweight toast helper for this page
-function showToast(message, type='success'){
-    let c = document.getElementById('toastContainer');
-    if (!c){
-        c = document.createElement('div');
-        c.id = 'toastContainer';
-        c.className = 'fixed top-4 right-4 z-[100000] flex flex-col gap-2 items-end pointer-events-none';
-        document.body.appendChild(c);
+// Unified toast notification function (matches youthlist.php style)
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `stacked-toast fixed right-4 z-[99999] p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full`;
+    
+    switch(type) {
+        case 'success':
+            notification.className += ' bg-green-500 text-white';
+            break;
+        case 'error':
+            notification.className += ' bg-red-500 text-white';
+            break;
+        case 'warning':
+            notification.className += ' bg-yellow-500 text-white';
+            break;
+        default:
+            notification.className += ' bg-blue-500 text-white';
     }
-    const el = document.createElement('div');
-    el.className = `pointer-events-auto max-w-sm w-80 rounded-lg shadow-lg ring-1 ring-black/10 px-4 py-3 text-sm text-white ${type==='success'?'bg-emerald-600':'bg-rose-600'}`;
-    el.textContent = message;
-    c.appendChild(el);
-    setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateY(-4px)'; el.style.transition='all .25s ease'; }, 2200);
-    setTimeout(()=>{ el.remove(); }, 2600);
+    
+    // Calculate stacking position based on existing notifications
+    const existingToasts = document.querySelectorAll('.stacked-toast');
+    let topOffset = 16; // Initial top offset (1rem = 16px)
+    existingToasts.forEach(toast => {
+        topOffset += toast.offsetHeight + 16; // Add height + 16px gap
+    });
+    notification.style.top = topOffset + 'px';
+    
+    // Get appropriate icon based on type
+    let icon = '';
+    switch(type) {
+        case 'success':
+            icon = '<svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>';
+            break;
+        case 'error':
+            icon = '<svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" /></svg>';
+            break;
+        case 'warning':
+            icon = '<svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" /></svg>';
+            break;
+        case 'info':
+        default:
+            icon = '<svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01" /></svg>';
+            break;
+    }
+    
+    notification.innerHTML = `
+        <div class="flex items-center">
+            ${icon}
+            <span class="mr-2">${message}</span>
+            <button onclick="this.parentElement.parentElement.remove(); repositionToasts();" class="ml-2 text-white hover:text-gray-200 focus:outline-none">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                </svg>
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+        notification.classList.remove('translate-x-full');
+    }, 100);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        notification.classList.add('translate-x-full');
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+                repositionToasts();
+            }
+        }, 300);
+    }, 5000);
+}
+
+// Helper function to reposition remaining toasts after one is removed
+function repositionToasts() {
+    const toasts = document.querySelectorAll('.stacked-toast');
+    let topOffset = 16;
+    toasts.forEach(toast => {
+        toast.style.top = topOffset + 'px';
+        topOffset += toast.offsetHeight + 16;
+    });
+}
+
+// Legacy alias for backward compatibility
+function showToast(message, type='success') {
+    showNotification(message, type);
 }
 </script>
 <script>
@@ -363,7 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
     const t = params.get('toast');
     if (t === 'updated') {
-        showToast('Bulletin post updated successfully');
+        showNotification('Bulletin post updated successfully', 'success');
         window.history.replaceState({}, document.title, window.location.pathname);
     }
 });

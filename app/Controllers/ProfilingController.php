@@ -92,6 +92,14 @@ class ProfilingController extends BaseController
 
     public function profiling()
     {
+        // Debug logging
+        log_message('debug', 'Profiling page loaded');
+        log_message('debug', 'Session ID: ' . (method_exists(session(), 'session_id') ? session()->session_id : session_id()));
+        log_message('debug', 'profiling_step: ' . (session('profiling_step') ?? 'NULL'));
+        log_message('debug', 'Has profile_data: ' . (session('profile_data') ? 'YES (' . count(session('profile_data')) . ' keys)' : 'NO'));
+        log_message('debug', 'Has demographic_data: ' . (session('demographic_data') ? 'YES' : 'NO'));
+        log_message('debug', 'Has account_data: ' . (session('account_data') ? 'YES' : 'NO'));
+        
         // Clean up any stale temporary uploads from previous attempts
         $this->cleanupOldTempFiles(3600);
 
@@ -158,20 +166,28 @@ class ProfilingController extends BaseController
         // Debug CSRF token
         $receivedToken = $this->request->getPost('csrf_test_name');
         $sessionToken = session('csrf_test_name');
+        $allPost = $this->request->getPost();
         log_message('debug', 'CSRF Debug - Received Token: ' . ($receivedToken ?? 'NULL'));
         log_message('debug', 'CSRF Debug - Session Token: ' . ($sessionToken ?? 'NULL'));
         log_message('debug', 'CSRF Debug - Tokens Match: ' . (($receivedToken === $sessionToken) ? 'YES' : 'NO'));
+        log_message('debug', 'CSRF Debug - All POST keys: ' . implode(', ', array_keys($allPost)));
+        log_message('debug', 'CSRF Debug - POST has csrf_test_name: ' . (isset($allPost['csrf_test_name']) ? 'YES' : 'NO'));
         
         $step = session('profiling_step') ?? 1;
+        
+        // Handle terms acceptance on step 1 (qualification page)
         $acceptedInitialTerms = $this->request->getPost('accept_terms');
-        if ($acceptedInitialTerms) {
+        if ($step == 1 && $acceptedInitialTerms) {
             $accountData = session('account_data') ?? [];
             $accountData['agreement'] = 1;
             session()->set('account_data', $accountData);
             session()->set('profiling_terms_ack', true);
-        }
-        if ($step == 1) {
             session()->set('profiling_step', 2);
+            return redirect()->to(base_url('profiling'));
+        }
+        
+        // If on step 1 and no form data submitted (just viewing), stay on step 1
+        if ($step == 1 && !$this->request->getPost('first_name')) {
             return redirect()->to(base_url('profiling'));
         }
 
@@ -274,8 +290,14 @@ class ProfilingController extends BaseController
             session()->set('profiling_step', 2);
             session()->set('profile_data', $userData + ['region' => 'Region V', 'province' => 'Camarines Sur', 'municipality' => 'Iriga City', 'barangay' => $addressData['barangay'], 'zone_purok' => $addressData['zone_purok'], 'age_group' => $ageGroup]);
             
+            // Force session save before redirect
+            session()->markAsFlashdata('_ci_old_input');
             $postData = $this->request->getPost();
             session()->setFlashdata('_ci_old_input', $postData);
+            
+            log_message('debug', 'ProfilingStep1 validation failed - profile_data set: ' . json_encode($userData));
+            log_message('debug', 'Session ID: ' . (method_exists(session(), 'session_id') ? session()->session_id : session_id()));
+            
             return redirect()->back()
                 ->with('validation_user', $userModel->validation)
                 ->with('validation_address', $addressModel->validation);
@@ -290,8 +312,15 @@ class ProfilingController extends BaseController
 
     public function profilingStep2()
     {
+        // Debug logging
+        log_message('debug', 'ProfilingStep2 called');
+        log_message('debug', 'Session profiling_step: ' . (session('profiling_step') ?? 'null'));
+        log_message('debug', 'Has profile_data: ' . (session('profile_data') ? 'yes' : 'no'));
+        log_message('debug', 'Has demographic_data: ' . (session('demographic_data') ? 'yes' : 'no'));
+        
         $profile = session('profile_data');
         if (!$profile) {
+            log_message('debug', 'No profile data found - redirecting to profiling');
             return redirect()->to(base_url('profiling'));
         }
         
@@ -313,6 +342,10 @@ class ProfilingController extends BaseController
         $birthCertFile = $this->request->getFile('birth_certificate');
     $uploadIdFile = $this->request->getFile('upload_id');
     $uploadIdBackFile = $this->request->getFile('upload_id-back');
+        
+        log_message('debug', 'File uploads - birth_cert: ' . ($birthCertFile && $birthCertFile->isValid() ? $birthCertFile->getName() : 'none') . 
+                             ', upload_id: ' . ($uploadIdFile && $uploadIdFile->isValid() ? $uploadIdFile->getName() : 'none'));
+        
         $certificatePath = FCPATH . 'uploads/certificate/';
         $idPath = FCPATH . 'uploads/id/';
         // Ensure directories exist
@@ -423,7 +456,8 @@ class ProfilingController extends BaseController
         $userExtInfoModel = new UserExtInfoModel();
 
     if (!empty($fileErrors) || !$userExtInfoModel->validate($demo)) {
-            session()->set('profiling_step', 3);
+            log_message('debug', 'Validation failed - fileErrors: ' . json_encode($fileErrors) . ', modelErrors: ' . json_encode($userExtInfoModel->errors()));
+            session()->set('profiling_step', 2);
             session()->set('demographic_data', $demo);
             $postData = $this->request->getPost();
             // Remove file uploads from post data before storing in session (they can't be serialized)
@@ -441,9 +475,12 @@ class ProfilingController extends BaseController
         if (empty($demo['upload_id'])) {
             $fileErrors['upload_id'] = 'Valid ID is required.';
         }
+        
+        log_message('debug', 'Required files check - birth_cert: ' . ($demo['birth_certificate'] ?? 'MISSING') . ', upload_id: ' . ($demo['upload_id'] ?? 'MISSING'));
 
     if (!empty($fileErrors)) {
-            session()->set('profiling_step', 3);
+            log_message('debug', 'Required files missing - errors: ' . json_encode($fileErrors));
+            session()->set('profiling_step', 2);
             session()->set('demographic_data', $demo);
             $postData = $this->request->getPost();
             // Remove file uploads from post data before storing in session (they can't be serialized)
@@ -456,6 +493,8 @@ class ProfilingController extends BaseController
         // Save demographic data to session and go to step 4 (account)
         session()->set('demographic_data', $demo);
         session()->set('profiling_step', 4);
+        log_message('debug', 'ProfilingStep2 completed successfully - moving to step 4');
+        log_message('debug', 'Files uploaded: birth_cert=' . ($demo['birth_certificate'] ?? 'none') . ', upload_id=' . ($demo['upload_id'] ?? 'none'));
         return redirect()->to(base_url('profiling'));
     }
 

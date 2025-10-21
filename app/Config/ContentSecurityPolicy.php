@@ -54,21 +54,21 @@ class ContentSecurityPolicy extends BaseConfig
      *
      * @var list<string>|string
      */
-    public $scriptSrc = 'self';
+    public $scriptSrc = ['self', 'unsafe-inline', 'unsafe-eval', 'https://cdn.tailwindcss.com', 'https://unpkg.com', 'https://code.jquery.com', 'https://cdn.datatables.net', 'https://cdnjs.cloudflare.com', 'https://cdn.jsdelivr.net'];
 
     /**
      * Lists allowed stylesheets' URLs.
      *
      * @var list<string>|string
      */
-    public $styleSrc = 'self';
+    public $styleSrc = ['self', 'unsafe-inline', 'https://fonts.googleapis.com', 'https://cdnjs.cloudflare.com', 'https://cdn.datatables.net', 'https://cdn.jsdelivr.net'];
 
     /**
-     * Defines the origins from which images can be loaded.
+     * Specifies the origins from which images can be loaded.
      *
      * @var list<string>|string
      */
-    public $imageSrc = 'self';
+    public $imageSrc = ['self', 'data:', 'blob:', 'https:', 'http:', 'https://i.pinimg.com', 'https://philsys.gov.ph', 'https://lh3.googleusercontent.com', 'https://www.google.com'];
 
     /**
      * Restricts the URLs that can appear in a page's `<base>` element.
@@ -92,14 +92,14 @@ class ContentSecurityPolicy extends BaseConfig
      *
      * @var list<string>|string
      */
-    public $connectSrc = 'self';
+    public $connectSrc = ['self', 'https://accounts.google.com', 'https://www.googleapis.com', 'https://apis.google.com', 'https://oauth2.googleapis.com', 'wss://localhost:*', 'ws://localhost:*', 'https://cdnjs.cloudflare.com', 'https://cdn.jsdelivr.net'];
 
     /**
      * Specifies the origins that can serve web fonts.
      *
      * @var list<string>|string
      */
-    public $fontSrc;
+    public $fontSrc = ['self', 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com', 'data:'];
 
     /**
      * Lists valid endpoints for submission from `<form>` tags.
@@ -116,7 +116,7 @@ class ContentSecurityPolicy extends BaseConfig
      *
      * @var list<string>|string|null
      */
-    public $frameAncestors;
+    public $frameAncestors = 'self';
 
     /**
      * The frame-src directive restricts the URLs which may
@@ -124,7 +124,7 @@ class ContentSecurityPolicy extends BaseConfig
      *
      * @var list<string>|string|null
      */
-    public $frameSrc;
+    public $frameSrc = 'self';
 
     /**
      * Restricts the origins allowed to deliver video and audio.

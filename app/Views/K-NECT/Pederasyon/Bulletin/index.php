@@ -1,15 +1,27 @@
 <!-- Main Content Area -->
-<?= $this->include('K-NECT/includes/bulletin-assets') ?>
-<div class="flex-1 lg:ml-64 min-h-screen bg-gray-50 pt-24">
-    <!-- Unified compact header removed per request -->
-
-    <!-- System-wide Stats removed per request -->
-
-    <!-- Urgent section removed (simplified to match SK compact design) -->
-
+<div class="flex-1 lg:ml-64 min-h-screen bg-gray-50 pt-16">
     <!-- Main Content Grid -->
-    <div class="py-6 px-6">
-        <div class="grid grid-cols-1 gap-6">
+    <div class="px-4 sm:px-6 lg:px-8 py-6">
+        <div class="max-w-7xl mx-auto space-y-6">
+            <!-- Flash Messages -->
+            <?php if (session()->getFlashdata('success')): ?>
+                <div class="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+                    <span class="block sm:inline"><?= session()->getFlashdata('success') ?></span>
+                </div>
+            <?php endif; ?>
+            
+            <?php if (session()->getFlashdata('error')): ?>
+                <div class="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                    <span class="block sm:inline"><?= session()->getFlashdata('error') ?></span>
+                </div>
+            <?php endif; ?>
+
+            <?php if (session()->getFlashdata('warning')): ?>
+                <div class="mb-6 bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative" role="alert">
+                    <span class="block sm:inline"><?= session()->getFlashdata('warning') ?></span>
+                </div>
+            <?php endif; ?>
+
             <!-- Main Content Area -->
             <div class="w-full">
 
@@ -124,7 +136,7 @@
                         <i class="fa-solid fa-list text-gray-500"></i>
                         <span>All Posts</span>
                     </h2>
-                    <div id="posts-container" class="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    <div id="posts-container" class="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                         <?php if (!empty($posts)): ?>
                             <?php foreach ($posts as $post): ?>
                             <article class="group relative flex flex-col bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition" data-id="<?= $post['id'] ?>">
@@ -264,22 +276,49 @@
 
                             function renderPosts(posts){
                                 if (!Array.isArray(posts) || posts.length === 0) {
-                                    postsContainer.innerHTML = `<div class=\"col-span-full\"><div class=\"bg-white border border-dashed border-gray-300 rounded-xl p-10 text-center\"><div class=\"mx-auto w-16 h-16 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mb-4\"><i class=\"fa-regular fa-newspaper text-xl\"></i></div><h3 class=\"text-lg font-semibold text-gray-900\">No posts found</h3><p class=\"text-gray-500 mt-1\">Try different keywords or filters.</p></div></div>`;
+                                    postsContainer.innerHTML = `<div class="col-span-full text-center py-12 sm:py-16"><div class="text-gray-400 mb-4"><svg class="w-16 h-16 sm:w-20 sm:h-20 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path></svg></div><h3 class="text-base sm:text-lg font-medium text-gray-900 mb-2">No posts found</h3><p class="text-sm sm:text-base text-gray-500 px-4">No posts match your current filters. Try adjusting your search criteria.</p></div>`;
                                     return;
                                 }
                                 postsContainer.innerHTML = posts.map(post => {
                                     const title = post.title || 'Untitled';
                                     const hasImg = !!post.featured_image;
-                                    const categoryChip = post.category_name ? `<span class=\"inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold\" style=\"background-color:${post.category_color}20;color:${post.category_color}\">${post.category_name}</span>` : '';
-                                    const featChip = boolish(post.is_featured) ? `<span class=\"inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-yellow-100 text-yellow-700\">Featured</span>` : '';
-                                    const urgentChip = boolish(post.is_urgent) ? `<span class=\"inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700\">Urgent</span>` : '';
-                                    const visChip = `<span class=\"inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-700\">${(post.visibility||'public')[0].toUpperCase()+(post.visibility||'public').slice(1)}</span>`;
-                                    const statusChip = (post.status && post.status !== 'published') ? `<span class=\"inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-200 text-gray-700\">${post.status[0].toUpperCase()+post.status.slice(1)}</span>` : '';
-                                    const excerpt = (post.excerpt || (post.content||'').replace(/<[^>]*>/g,'')).substring(0,220);
+                                    const categoryChip = post.category_name ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium" style="background-color:${post.category_color}20;color:${post.category_color}">${post.category_name}</span>` : '';
+                                    const featChip = boolish(post.is_featured) ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-yellow-100 text-yellow-800">⭐ Featured</span>` : '';
+                                    const urgentChip = boolish(post.is_urgent) ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-red-100 text-red-800">🚨 Urgent</span>` : '';
+                                    const visChip = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-gray-100 text-gray-700">${(post.visibility||'public')[0].toUpperCase()+(post.visibility||'public').slice(1)}</span>`;
+                                    const statusChip = (post.status && post.status !== 'published') ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-gray-200 text-gray-700">${post.status[0].toUpperCase()+post.status.slice(1)}</span>` : '';
+                                    const excerpt = (post.excerpt || (post.content||'').replace(/<[^>]*>/g,'')).substring(0,120);
                                     const dateStr = post.published_at || post.created_at ? new Date(post.published_at || post.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
                                     const views = parseInt(post.view_count||0).toLocaleString();
-                                    const initial = ((post.first_name||'U')[0]||'U').toUpperCase();
-                                    return `<article class=\"group relative flex flex-col bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition\" data-id=\"${post.id}\">\n <div class=\"relative media w-full overflow-hidden rounded-t-xl\">\n ${hasImg?`<img src=\"${baseImgUrl}${post.featured_image}\" alt=\"${title}\" class=\"w-full h-full object-cover duration-500 group-hover:scale-105\">`:`<div class=\"absolute inset-0 bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center text-blue-300\"><i class=\"fa-regular fa-image text-3xl\"></i></div>`}\n <div class=\"absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent opacity-60 group-hover:opacity-70 transition\"></div>\n <div class=\"absolute top-2 left-2 flex flex-wrap gap-1\">${categoryChip}${featChip}${urgentChip}${visChip}${statusChip}</div>\n </div>\n <div class=\"p-4 flex flex-col gap-2 flex-1\">\n <h3 class=\"text-base font-semibold text-gray-900 leading-snug line-clamp-2 group-hover:text-blue-600 transition\"><a href=\"${baseViewUrl}${post.id}\" class=\"relative z-10\">${title}</a></h3>\n <p class=\"text-sm text-gray-600 leading-relaxed line-clamp-3\">${excerpt}${excerpt.length>=220?'...':''}</p>\n </div>\n <div class=\"px-4 pb-4 flex items-center justify-between text-xs text-gray-500\">\n <div class=\"flex items-center gap-2\">\n <div class=\"h-6 w-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center text-[10px] font-medium shadow-sm\">${initial}</div>\n <span>${(post.first_name||'')+' '+(post.last_name||'')}</span><span class=\"text-gray-400\">•</span><span>${dateStr}</span>\n </div>\n <div class=\"flex items-center gap-3\"><span class=\"flex items-center gap-1\"><i class=\"fa-regular fa-eye\"></i>${views}</span></div>\n </div>\n <a href=\"${baseViewUrl}${post.id}\" class=\"absolute inset-0\" aria-label=\"Read post: ${title}\"></a>\n</article>`;
+                                    const authorName = `${post.first_name || ''} ${post.last_name || ''}`.trim() || 'Unknown';
+                                    return `<article class="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden group">
+                                        ${hasImg ? `<div class="relative h-40 sm:h-48 overflow-hidden bg-gray-100"><img src="${baseImgUrl}${post.featured_image}" alt="${title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"><div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div></div>` : ''}
+                                        <div class="p-4 sm:p-5">
+                                            <div class="flex flex-wrap items-center gap-2 mb-3">${urgentChip}${featChip}${categoryChip}${visChip}${statusChip}</div>
+                                            <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                                                <a href="${baseViewUrl}${post.id}" class="hover:underline">${title}</a>
+                                            </h3>
+                                            <p class="text-xs sm:text-sm text-gray-600 mb-4 leading-relaxed line-clamp-3">${excerpt}${excerpt.length>=120?'...':''}</p>
+                                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-gray-500 pt-3 border-t border-gray-100">
+                                                <div class="flex items-center flex-wrap gap-2 sm:gap-3">
+                                                    <span class="flex items-center gap-1">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                                        <span class="truncate max-w-[120px]">${authorName}</span>
+                                                    </span>
+                                                    <span class="hidden sm:inline">•</span>
+                                                    <span class="flex items-center gap-1">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                        ${dateStr}
+                                                    </span>
+                                                    <span class="flex items-center gap-1 text-gray-400">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                                        ${views}
+                                                    </span>
+                                                </div>
+                                                <a href="${baseViewUrl}${post.id}" class="text-blue-600 hover:text-blue-800 font-medium text-xs sm:text-sm transition-colors">Read more →</a>
+                                            </div>
+                                        </div>
+                                    </article>`;
                                 }).join('');
                             }
 
@@ -483,23 +522,113 @@
 document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
     const t = params.get('toast');
-    if (t === 'created') showToast('Bulletin post created successfully');
-    if (t === 'updated') showToast('Bulletin post updated successfully');
-    if (t === 'deleted') showToast('Bulletin post deleted');
+    if (t === 'created') showNotification('Bulletin post created successfully', 'success');
+    if (t === 'updated') showNotification('Bulletin post updated successfully', 'success');
+    if (t === 'deleted') showNotification('Bulletin post deleted', 'success');
     if (t) {
         // Clean up query so refresh doesn't repeat toast
         window.history.replaceState({}, document.title, window.location.pathname);
     }
 });
-function showToast(message, type='success'){
-    let c = document.getElementById('toastContainer');
-    if (!c){ c = document.createElement('div'); c.id='toastContainer'; c.className='fixed top-4 right-4 z-[100000] flex flex-col gap-2 items-end pointer-events-none'; document.body.appendChild(c); }
-    const el = document.createElement('div');
-    el.className = `pointer-events-auto max-w-sm w-80 rounded-lg shadow-lg ring-1 ring-black/10 px-4 py-3 text-sm text-white ${type==='success'?'bg-emerald-600':'bg-rose-600'}`;
-    el.textContent = message;
-    c.appendChild(el);
-    setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateY(-4px)'; el.style.transition='all .25s ease'; }, 2000);
-    setTimeout(()=>{ el.remove(); }, 2400);
+
+// Unified toast notification function (matches youthlist.php style)
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `stacked-toast fixed right-4 z-[99999] p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full`;
+    
+    switch(type) {
+        case 'success':
+            notification.className += ' bg-green-500 text-white';
+            break;
+        case 'error':
+            notification.className += ' bg-red-500 text-white';
+            break;
+        case 'warning':
+            notification.className += ' bg-yellow-500 text-white';
+            break;
+        default:
+            notification.className += ' bg-blue-500 text-white';
+    }
+    
+    // Calculate stacking position based on existing notifications
+    const existingToasts = document.querySelectorAll('.stacked-toast');
+    let topOffset = 16; // Initial top offset (1rem = 16px)
+    existingToasts.forEach(toast => {
+        topOffset += toast.offsetHeight + 16; // Add height + 16px gap
+    });
+    notification.style.top = topOffset + 'px';
+    
+    // Get appropriate icon based on type
+    let icon = '';
+    switch(type) {
+        case 'success':
+            icon = '<svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>';
+            break;
+        case 'error':
+            icon = '<svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" /></svg>';
+            break;
+        case 'warning':
+            icon = '<svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" /></svg>';
+            break;
+        case 'info':
+        default:
+            icon = '<svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01" /></svg>';
+            break;
+    }
+    
+    notification.innerHTML = `
+        <div class="flex items-center">
+            ${icon}
+            <span class="mr-2">${message}</span>
+            <button onclick="this.parentElement.parentElement.remove(); repositionToasts();" class="ml-2 text-white hover:text-gray-200 focus:outline-none">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                </svg>
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+        notification.classList.remove('translate-x-full');
+    }, 100);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        notification.classList.add('translate-x-full');
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+                repositionToasts();
+            }
+        }, 300);
+    }, 5000);
+}
+
+// Helper function to reposition remaining toasts after one is removed
+function repositionToasts() {
+    const toasts = document.querySelectorAll('.stacked-toast');
+    let topOffset = 16;
+    toasts.forEach(toast => {
+        toast.style.top = topOffset + 'px';
+        topOffset += toast.offsetHeight + 16;
+    });
+}
+
+// Legacy alias for backward compatibility
+function showToast(message, type='success') {
+    showNotification(message, type);
+}
+
+// Legacy aliases for old function names
+function showSuccessToast(message) {
+    showNotification(message, 'success');
+}
+
+function showErrorToast(message) {
+    showNotification(message, 'error');
 }
 </script>
 <style>

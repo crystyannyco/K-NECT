@@ -446,11 +446,14 @@
             resendBtn.disabled = true;
             resendText.textContent = 'Sending...';
 
+            const otpData = new FormData();
+            otpData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
+
             fetch('<?= base_url('send-otp') ?>', {
                 method: 'POST',
+                body: otpData,
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Content-Type': 'application/json'
+                    'X-Requested-With': 'XMLHttpRequest'
                 }
             })
             .then(response => response.json())

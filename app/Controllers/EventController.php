@@ -1889,4 +1889,70 @@ class EventController extends BaseController
             ]);
         }
     }
+        
+    /**
+     * Get count of published events (for auto-refresh check)
+     * This endpoint is called periodically to detect newly published scheduled events
+     */
+    public function getPublishedCount()
+    {
+        try {
+            $eventModel = new EventModel();
+            
+            // Count all published events
+            $count = $eventModel->where('status', 'Published')->countAllResults();
+            
+            return $this->response->setJSON([
+                'success' => true,
+                'count' => $count,
+                'timestamp' => date('Y-m-d H:i:s')
+            ]);
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error getting published event count: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Failed to get event count',
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+    
+    /**
+     * Check if events were recently published (using trigger file)
+     * This provides faster detection than counting events
+     */
+    public function checkPublishTrigger()
+    {
+        try {
+            $triggerFile = WRITEPATH . 'cache/events_published_trigger.txt';
+            
+            // Check if trigger file exists and get its timestamp
+            if (file_exists($triggerFile)) {
+                $lastPublishTime = (int) file_get_contents($triggerFile);
+                
+                return $this->response->setJSON([
+                    'success' => true,
+                    'last_publish_timestamp' => $lastPublishTime,
+                    'last_publish_datetime' => date('Y-m-d H:i:s', $lastPublishTime),
+                    'has_trigger' => true
+                ]);
+            } else {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'has_trigger' => false,
+                    'message' => 'No publish events detected yet'
+                ]);
+            }
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error checking publish trigger: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Failed to check publish trigger',
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
 } 

@@ -240,7 +240,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->get('/documents/api/detail/(:num)', 'DocumentMainController::apiDetail/$1');
     $routes->get('/documents/download/(:num)', 'DocumentMainController::download/$1');
     $routes->get('/documents/preview/(:num)', 'DocumentMainController::preview/$1');
-    $routes->get('/documents/shared', 'DocumentMainController::sharedDocuments');
+    // $routes->get('/documents/shared', 'DocumentMainController::sharedDocuments');
 
     // ============== Module: Document Test ============== //
     $routes->get('test-document-upload', 'DocumentTestController::testUpload');
@@ -259,6 +259,11 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->get('city-events', 'EventController::cityEvents');
     // Removed manual publish testing route
     $routes->post('events/bulk_delete', 'EventController::bulkDelete');
+    
+    // Auto-refresh endpoints for checking newly published scheduled events
+    $routes->get('events/get-published-count', 'EventController::getPublishedCount');
+    $routes->get('events/check-publish-trigger', 'EventController::checkPublishTrigger');
+
 
     // ============== Module: SMS Testing & Dashboard (Admin + Super Admin) ============== //
     $routes->get('sms-test', 'SMSTestController::index');
@@ -374,10 +379,10 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->get('/admin/documents/version-history/(:num)', 'DocumentMainController::versionHistory/$1');
     $routes->post('/admin/documents/bulk-delete', 'DocumentMainController::bulkDelete');
     $routes->post('/admin/documents/bulk-download', 'DocumentMainController::bulkDownload');
-    $routes->get('/admin/documents/share/(:num)', 'DocumentMainController::share/$1');
-    $routes->post('/admin/documents/share/(:num)', 'DocumentMainController::share/$1');
-    $routes->get('/admin/documents/revoke-share/(:num)/(:num)', 'DocumentMainController::revokeShare/$1/$2');
-    $routes->get('/admin/documents/shared', 'DocumentMainController::sharedDocuments');
+    // $routes->get('/admin/documents/share/(:num)', 'DocumentMainController::share/$1');
+    // $routes->post('/admin/documents/share/(:num)', 'DocumentMainController::share/$1');
+    // $routes->get('/admin/documents/revoke-share/(:num)/(:num)', 'DocumentMainController::revokeShare/$1/$2');
+    // $routes->get('/admin/documents/shared', 'DocumentMainController::sharedDocuments');
     // Serve uploaded files through controller
     $routes->get('uploads/(.*)', 'FileController::serve/$1');
 
@@ -417,10 +422,10 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->get('/admin/documents/version-history/(:num)', 'DocumentMainController::versionHistory/$1');
     $routes->post('/admin/documents/bulk-delete', 'DocumentMainController::bulkDelete');
     $routes->post('/admin/documents/bulk-download', 'DocumentMainController::bulkDownload');
-    $routes->get('/admin/documents/share/(:num)', 'DocumentMainController::share/$1');
-    $routes->post('/admin/documents/share/(:num)', 'DocumentMainController::share/$1');
-    $routes->get('/admin/documents/revoke-share/(:num)/(:num)', 'DocumentMainController::revokeShare/$1/$2');
-    $routes->get('/admin/documents/shared', 'DocumentMainController::sharedDocuments');
+    // $routes->get('/admin/documents/share/(:num)', 'DocumentMainController::share/$1');
+    // $routes->post('/admin/documents/share/(:num)', 'DocumentMainController::share/$1');
+    // $routes->get('/admin/documents/revoke-share/(:num)/(:num)', 'DocumentMainController::revokeShare/$1/$2');
+    // $routes->get('/admin/documents/shared', 'DocumentMainController::sharedDocuments');
     $routes->get('uploads/(:any)', 'Shared\FileController::serve/$1');
 
     // ============================================================================

@@ -123,6 +123,58 @@
             let globalActiveStatus = 'all';
             let globalActiveBarangayId = 0;
             let globalActiveCategory = '';
+            
+                        // Auto-refresh mechanism to check for newly published scheduled events
+            let autoRefreshInterval = null;
+            let lastPublishTimestamp = 0;
+            
+            function startAutoRefresh() {
+                // Check every 5 seconds for publish trigger (very lightweight check)
+                autoRefreshInterval = setInterval(function() {
+                    checkForNewlyPublishedEvents();
+                }, 5000); // 5000 ms = 5 seconds (fast detection)
+                
+                console.log('Auto-refresh started: Checking for newly published events every 5 seconds');
+            }
+            
+            function stopAutoRefresh() {
+                if (autoRefreshInterval) {
+                    clearInterval(autoRefreshInterval);
+                    autoRefreshInterval = null;
+                    console.log('Auto-refresh stopped');
+                }
+            }
+            
+            function checkForNewlyPublishedEvents() {
+                // Check trigger file for publish events (very lightweight - just reads timestamp)
+                fetch('/events/check-publish-trigger', {
+                    method: 'GET',
+                    headers: { 
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.has_trigger) {
+                        const triggerTimestamp = data.last_publish_timestamp;
+                        
+                        // If trigger timestamp is newer than what we last saw, reload the page
+                        if (triggerTimestamp > lastPublishTimestamp && lastPublishTimestamp > 0) {
+                            console.log(`New scheduled event published! Trigger time: ${data.last_publish_datetime}`);
+                            console.log('Reloading page to show newly published event...');
+                            // Reload the page to show newly published events
+                            window.location.reload();
+                        }
+                        
+                        // Update last known timestamp
+                        lastPublishTimestamp = triggerTimestamp;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking for newly published events:', error);
+                });
+            }
 
             // Consolidated filtering function
             function filterEvents() {
@@ -303,6 +355,40 @@
                     const options = { month: 'long', year: 'numeric' };
                     currentMonthYear.textContent = now.toLocaleDateString('en-US', options);
                 }
+                                
+                // Initialize publish trigger timestamp and start auto-refresh for scheduled events
+                // Fetch initial timestamp to establish baseline
+                fetch('/events/check-publish-trigger', {
+                    method: 'GET',
+                    headers: { 
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.has_trigger) {
+                        lastPublishTimestamp = data.last_publish_timestamp;
+                        console.log('Initial publish trigger timestamp:', lastPublishTimestamp, '(' + data.last_publish_datetime + ')');
+                    } else {
+                        // No trigger file yet, set to current time
+                        lastPublishTimestamp = Math.floor(Date.now() / 1000);
+                        console.log('No publish trigger yet, using current timestamp:', lastPublishTimestamp);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching initial publish trigger:', error);
+                    lastPublishTimestamp = Math.floor(Date.now() / 1000);
+                });
+                
+                // Start auto-refresh to check for newly published scheduled events
+                startAutoRefresh();
+            });
+            
+            // Stop auto-refresh when user leaves the page
+            window.addEventListener('beforeunload', function() {
+                stopAutoRefresh();
+
             });
             </script>
             

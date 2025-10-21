@@ -505,11 +505,15 @@
             
             <!-- Modal Footer -->
             <div class="flex items-center justify-end pt-3 border-t space-x-2">
-                <button type="button" onclick="closeDeactivateModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-4 rounded transition-colors duration-200">
+                <button type="button" onclick="closeDeactivateModal()" id="cancelDeactivateBtn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-4 rounded transition-colors duration-200">
                     Cancel
                 </button>
-                <button type="button" onclick="confirmDeactivation()" class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded transition-colors duration-200">
-                    Deactivate
+                <button type="button" onclick="confirmDeactivation()" id="confirmDeactivateBtn" class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded transition-colors duration-200 inline-flex items-center">
+                    <svg id="deactivateLoadingSpinner" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white hidden" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span id="deactivateBtnText">Deactivate</span>
                 </button>
             </div>
         </div>
@@ -537,8 +541,14 @@
             
             <!-- Modal Footer -->
             <div class="flex items-center justify-end pt-3 border-t space-x-2">
-                <button type="button" onclick="closeReactivateModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-4 rounded transition-colors duration-200">Cancel</button>
-                <button type="button" onclick="confirmReactivate()" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded transition-colors duration-200">Reactivate</button>
+                <button type="button" onclick="closeReactivateModal()" id="cancelReactivateBtn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-4 rounded transition-colors duration-200">Cancel</button>
+                <button type="button" onclick="confirmReactivate()" id="confirmReactivateBtn" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded transition-colors duration-200 inline-flex items-center">
+                    <svg id="reactivateLoadingSpinner" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white hidden" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span id="reactivateBtnText">Reactivate</span>
+                </button>
             </div>
         </div>
     </div>
@@ -1058,6 +1068,27 @@ function closeDeactivateModal() {
     currentDeactivateUserName = '';
     document.querySelectorAll('input[name="deactivateReason"]').forEach(radio => radio.checked = false);
     document.getElementById('manualDeactivationReason').value = '';
+    
+    // Reset button state
+    const confirmBtn = document.getElementById('confirmDeactivateBtn');
+    const cancelBtn = document.getElementById('cancelDeactivateBtn');
+    const btnText = document.getElementById('deactivateBtnText');
+    const spinner = document.getElementById('deactivateLoadingSpinner');
+    
+    if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.classList.add('hover:bg-red-700');
+        confirmBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+    }
+    if (cancelBtn) {
+        cancelBtn.disabled = false;
+    }
+    if (spinner) {
+        spinner.classList.add('hidden');
+    }
+    if (btnText) {
+        btnText.textContent = 'Deactivate';
+    }
 }
 
 function confirmDeactivation() {
@@ -1080,6 +1111,19 @@ function confirmDeactivation() {
         showNotification('No user selected for deactivation', 'error');
         return;
     }
+    
+    // Show loading state
+    const confirmBtn = document.getElementById('confirmDeactivateBtn');
+    const cancelBtn = document.getElementById('cancelDeactivateBtn');
+    const btnText = document.getElementById('deactivateBtnText');
+    const spinner = document.getElementById('deactivateLoadingSpinner');
+    
+    confirmBtn.disabled = true;
+    cancelBtn.disabled = true;
+    confirmBtn.classList.remove('hover:bg-red-700');
+    confirmBtn.classList.add('opacity-75', 'cursor-not-allowed');
+    spinner.classList.remove('hidden');
+    btnText.textContent = 'Deactivating...';
     
     // Determine the reason value and custom reason
     let reasonValue = '';
@@ -1108,11 +1152,28 @@ function confirmDeactivation() {
             closeDeactivateModal();
             setTimeout(() => { location.reload(); }, 1000);
         } else {
+            // Reset button state on error
+            confirmBtn.disabled = false;
+            cancelBtn.disabled = false;
+            confirmBtn.classList.add('hover:bg-red-700');
+            confirmBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+            spinner.classList.add('hidden');
+            btnText.textContent = 'Deactivate';
+            
             showNotification(data.message || 'Error deactivating user', 'error');
         }
     })
     .catch(error => {
         console.error('Error:', error);
+        
+        // Reset button state on error
+        confirmBtn.disabled = false;
+        cancelBtn.disabled = false;
+        confirmBtn.classList.add('hover:bg-red-700');
+        confirmBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+        spinner.classList.add('hidden');
+        btnText.textContent = 'Deactivate';
+        
         showNotification('Error deactivating user', 'error');
     });
 }
@@ -1128,13 +1189,48 @@ function closeReactivateModal() {
     document.getElementById('reactivateUserModal').classList.add('hidden');
     currentReactivateUserId = null;
     currentReactivateUserName = '';
+    
+    // Reset button state
+    const confirmBtn = document.getElementById('confirmReactivateBtn');
+    const cancelBtn = document.getElementById('cancelReactivateBtn');
+    const btnText = document.getElementById('reactivateBtnText');
+    const spinner = document.getElementById('reactivateLoadingSpinner');
+    
+    if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.classList.add('hover:bg-green-700');
+        confirmBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+    }
+    if (cancelBtn) {
+        cancelBtn.disabled = false;
+    }
+    if (spinner) {
+        spinner.classList.add('hidden');
+    }
+    if (btnText) {
+        btnText.textContent = 'Reactivate';
+    }
 }
 
 function confirmReactivate() {
     if (!currentReactivateUserId) {
-    showNotification('No user selected for reactivation', 'error');
+        showNotification('No user selected for reactivation', 'error');
         return;
     }
+    
+    // Show loading state
+    const confirmBtn = document.getElementById('confirmReactivateBtn');
+    const cancelBtn = document.getElementById('cancelReactivateBtn');
+    const btnText = document.getElementById('reactivateBtnText');
+    const spinner = document.getElementById('reactivateLoadingSpinner');
+    
+    confirmBtn.disabled = true;
+    cancelBtn.disabled = true;
+    confirmBtn.classList.remove('hover:bg-green-700');
+    confirmBtn.classList.add('opacity-75', 'cursor-not-allowed');
+    spinner.classList.remove('hidden');
+    btnText.textContent = 'Reactivating...';
+    
     fetch('<?= base_url('user-status/reactivate') ?>', {
         method: 'POST',
         headers: {
@@ -1146,16 +1242,33 @@ function confirmReactivate() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showNotification(`User ${currentReactivateUserName} has been reactivated`, 'success');
+            showNotification(`User ${currentReactivateUserName} has been reactivated successfully. Email notification sent.`, 'success');
             closeReactivateModal();
             setTimeout(() => { location.reload(); }, 1000);
         } else {
+            // Reset button state on error
+            confirmBtn.disabled = false;
+            cancelBtn.disabled = false;
+            confirmBtn.classList.add('hover:bg-green-700');
+            confirmBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+            spinner.classList.add('hidden');
+            btnText.textContent = 'Reactivate';
+            
             showNotification(data.message || 'Error reactivating user', 'error');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-    showNotification('Error reactivating user', 'error');
+        
+        // Reset button state on error
+        confirmBtn.disabled = false;
+        cancelBtn.disabled = false;
+        confirmBtn.classList.add('hover:bg-green-700');
+        confirmBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+        spinner.classList.add('hidden');
+        btnText.textContent = 'Reactivate';
+        
+        showNotification('Error reactivating user', 'error');
     });
 }
 

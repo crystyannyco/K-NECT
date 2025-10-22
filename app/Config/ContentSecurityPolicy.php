@@ -54,7 +54,7 @@ class ContentSecurityPolicy extends BaseConfig
      *
      * @var list<string>|string
      */
-    public $scriptSrc = ['self', 'unsafe-inline', 'unsafe-eval', 'https://cdn.tailwindcss.com', 'https://unpkg.com', 'https://code.jquery.com', 'https://cdn.datatables.net', 'https://cdnjs.cloudflare.com', 'https://cdn.jsdelivr.net'];
+    public $scriptSrc = ['self', 'unsafe-inline', 'unsafe-eval', 'https://unpkg.com', 'https://code.jquery.com', 'https://cdn.datatables.net', 'https://cdnjs.cloudflare.com', 'https://cdn.jsdelivr.net'];
 
     /**
      * Lists allowed stylesheets' URLs.

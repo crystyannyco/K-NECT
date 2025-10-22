@@ -282,7 +282,6 @@ class SKController extends BaseController
             'totalDocuments' => $totalDocuments,
             'pederasyonDocuments' => $pederasyonDocuments,
             'skDocuments' => $skDocuments,
-            'sharedDocuments' => $sharedDocuments,
             // New overview payload
             'featuredPosts' => $featuredPosts,
             'urgentPosts' => $urgentPosts,

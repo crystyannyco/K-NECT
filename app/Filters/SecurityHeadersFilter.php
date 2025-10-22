@@ -62,8 +62,8 @@ class SecurityHeadersFilter implements FilterInterface
             "default-src 'self'",
             // Script sources - removed wildcards, specific CDNs only
             $isProduction 
-                ? "script-src 'self' 'nonce-{$nonce}' https://cdn.tailwindcss.com https://code.jquery.com https://cdn.datatables.net https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://apis.google.com https://accounts.google.com"
-                : "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://code.jquery.com https://cdn.datatables.net https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://apis.google.com https://accounts.google.com",
+                ? "script-src 'self' 'nonce-{$nonce}' https://code.jquery.com https://cdn.datatables.net https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://apis.google.com https://accounts.google.com"
+                : "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://code.jquery.com https://cdn.datatables.net https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://apis.google.com https://accounts.google.com",
             // Style sources - specific CDNs only
             $isProduction
                 ? "style-src 'self' 'nonce-{$nonce}' https://fonts.googleapis.com https://cdn.datatables.net https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://accounts.google.com"

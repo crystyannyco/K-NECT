@@ -114,6 +114,17 @@
             gap: 12px;
             pointer-events: none;
         }
+        
+        /* Mobile-specific toast positioning */
+        @media (max-width: 640px) {
+            .toast-container {
+                top: 10px;
+                right: 10px;
+                left: 10px;
+                gap: 8px;
+            }
+        }
+        
         .toast-notification {
             background: #ef4444;
             color: white;
@@ -127,6 +138,18 @@
             pointer-events: auto;
             max-width: 400px;
             word-wrap: break-word;
+            font-size: 14px;
+        }
+        
+        /* Mobile-specific toast styling */
+        @media (max-width: 640px) {
+            .toast-notification {
+                padding: 10px 14px;
+                border-radius: 6px;
+                font-size: 12px;
+                max-width: 100%;
+                box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+            }
         }
         .toast-notification.show {
             opacity: 1;
@@ -575,100 +598,100 @@ document.addEventListener('DOMContentLoaded',function(){
             </script>
         <?php endif; ?>
         <!-- Progress Stepper -->
-        <ol class="flex items-center justify-between w-full mb-6 sm:mb-8 md:mb-10 lg:mb-12 xl:mb-16 px-2 sm:px-4 md:px-6 lg:px-8">
+        <ol class="flex items-center justify-between w-full mb-4 sm:mb-8 md:mb-10 lg:mb-12 xl:mb-16 px-1 sm:px-4 md:px-6 lg:px-8">
             <!-- Step 1 Circle: Qualification -->
             <li class="flex flex-col items-center relative">
                 <?php if ($step > 1): ?>
-                    <span class="flex items-center justify-center w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 xl:w-8 xl:h-8 bg-blue-600 border-2 border-blue-600 rounded-full text-white text-xs sm:text-sm font-bold transition-all duration-300 hover:scale-110">
-                        <svg class="w-2 h-2 sm:w-3 sm:h-3 md:w-4 md:h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                    <span class="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-9 lg:h-9 xl:w-10 xl:h-10 bg-blue-600 border-2 border-blue-600 rounded-full text-white text-xs sm:text-sm font-bold transition-all duration-300 hover:scale-110">
+                        <svg class="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
                     </span>
                 <?php elseif ($step == 1): ?>
-                    <span class="flex items-center justify-center w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 xl:w-8 xl:h-8 bg-blue-600 border-2 border-blue-600 rounded-full text-white text-xs sm:text-sm font-bold transition-all duration-300 animate-pulse">
+                    <span class="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-9 lg:h-9 xl:w-10 xl:h-10 bg-blue-600 border-2 border-blue-600 rounded-full text-white text-xs sm:text-sm font-bold transition-all duration-300 animate-pulse">
                         1
                     </span>
                 <?php else: ?>
-                    <span class="flex items-center justify-center w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 xl:w-8 xl:h-8 bg-white border-2 border-blue-600 rounded-full text-blue-600 text-xs sm:text-sm font-bold transition-all duration-300">
+                    <span class="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-9 lg:h-9 xl:w-10 xl:h-10 bg-white border-2 border-blue-600 rounded-full text-blue-600 text-xs sm:text-sm font-bold transition-all duration-300">
                         1
                     </span>
                 <?php endif; ?>
-                <span class="absolute left-1/2 -translate-x-1/2 top-full mt-1 sm:mt-2 text-xs sm:text-sm text-gray-500 font-medium">Qualification</span>
+                <span class="absolute left-1/2 -translate-x-1/2 top-full mt-0.5 sm:mt-2 text-[9px] sm:text-xs md:text-sm text-gray-500 font-medium whitespace-nowrap">Qualification</span>
             </li>
             <!-- Line between Step 1 and Step 2 -->
-            <div class="flex-1 h-0.5 sm:h-1 mx-1 sm:mx-2 transition-all duration-500 ease-in-out <?php echo ($step >= 2) ? 'bg-blue-600' : 'bg-blue-100'; ?>"></div>
+            <div class="flex-1 h-0.5 sm:h-1 mx-0.5 sm:mx-2 transition-all duration-500 ease-in-out <?php echo ($step >= 2) ? 'bg-blue-600' : 'bg-blue-100'; ?>"></div>
             <!-- Step 2 Circle: Profile -->
             <li class="flex flex-col items-center relative">
                 <?php if ($step > 2): ?>
-                    <span class="flex items-center justify-center w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 xl:w-8 xl:h-8 bg-blue-600 border-2 border-blue-600 rounded-full text-white text-xs sm:text-sm font-bold transition-all duration-300 hover:scale-110">
-                        <svg class="w-2 h-2 sm:w-3 sm:h-3 md:w-4 md:h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                    <span class="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-9 lg:h-9 xl:w-10 xl:h-10 bg-blue-600 border-2 border-blue-600 rounded-full text-white text-xs sm:text-sm font-bold transition-all duration-300 hover:scale-110">
+                        <svg class="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
                     </span>
                 <?php elseif ($step == 2): ?>
-                    <span class="flex items-center justify-center w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 xl:w-8 xl:h-8 bg-blue-600 border-2 border-blue-600 rounded-full text-white text-xs sm:text-sm font-bold transition-all duration-300 animate-pulse">
+                    <span class="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-9 lg:h-9 xl:w-10 xl:h-10 bg-blue-600 border-2 border-blue-600 rounded-full text-white text-xs sm:text-sm font-bold transition-all duration-300 animate-pulse">
                         2
                     </span>
                 <?php else: ?>
-                    <span class="flex items-center justify-center w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 xl:w-8 xl:h-8 bg-white border-2 border-blue-600 rounded-full text-blue-600 text-xs sm:text-sm font-bold transition-all duration-300">
+                    <span class="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-9 lg:h-9 xl:w-10 xl:h-10 bg-white border-2 border-blue-600 rounded-full text-blue-600 text-xs sm:text-sm font-bold transition-all duration-300">
                         2
                     </span>
                 <?php endif; ?>
-                <span class="absolute left-1/2 -translate-x-1/2 top-full mt-1 sm:mt-2 text-xs sm:text-sm text-gray-500 font-medium">Profile</span>
+                <span class="absolute left-1/2 -translate-x-1/2 top-full mt-0.5 sm:mt-2 text-[9px] sm:text-xs md:text-sm text-gray-500 font-medium whitespace-nowrap">Profile</span>
             </li>
             <!-- Line between Step 2 and Step 3 -->
-            <div class="flex-1 h-0.5 sm:h-1 mx-1 sm:mx-2 transition-all duration-500 ease-in-out <?php echo ($step >= 3) ? 'bg-blue-600' : 'bg-blue-100'; ?>"></div>
+            <div class="flex-1 h-0.5 sm:h-1 mx-0.5 sm:mx-2 transition-all duration-500 ease-in-out <?php echo ($step >= 3) ? 'bg-blue-600' : 'bg-blue-100'; ?>"></div>
             <!-- Step 3 Circle: Demographic -->
             <li class="flex flex-col items-center relative">
                 <?php if ($step > 3): ?>
-                    <span class="flex items-center justify-center w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 xl:w-8 xl:h-8 bg-blue-600 border-2 border-blue-600 rounded-full text-white text-xs sm:text-sm font-bold transition-all duration-300 hover:scale-110">
-                        <svg class="w-2 h-2 sm:w-3 sm:h-3 md:w-4 md:h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                    <span class="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-9 lg:h-9 xl:w-10 xl:h-10 bg-blue-600 border-2 border-blue-600 rounded-full text-white text-xs sm:text-sm font-bold transition-all duration-300 hover:scale-110">
+                        <svg class="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
                     </span>
                 <?php elseif ($step == 3): ?>
-                    <span class="flex items-center justify-center w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 xl:w-8 xl:h-8 bg-blue-600 border-2 border-blue-600 rounded-full text-white text-xs sm:text-sm font-bold transition-all duration-300 animate-pulse">
+                    <span class="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-9 lg:h-9 xl:w-10 xl:h-10 bg-blue-600 border-2 border-blue-600 rounded-full text-white text-xs sm:text-sm font-bold transition-all duration-300 animate-pulse">
                         3
                     </span>
                 <?php else: ?>
-                    <span class="flex items-center justify-center w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 xl:w-8 xl:h-8 bg-white border-2 border-blue-600 rounded-full text-blue-600 text-xs sm:text-sm font-bold transition-all duration-300">
+                    <span class="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-9 lg:h-9 xl:w-10 xl:h-10 bg-white border-2 border-blue-600 rounded-full text-blue-600 text-xs sm:text-sm font-bold transition-all duration-300">
                         3
                     </span>
                 <?php endif; ?>
-                <span class="absolute left-1/2 -translate-x-1/2 top-full mt-1 sm:mt-2 text-xs sm:text-sm text-gray-500 font-medium">Demographic</span>
+                <span class="absolute left-1/2 -translate-x-1/2 top-full mt-0.5 sm:mt-2 text-[9px] sm:text-xs md:text-sm text-gray-500 font-medium whitespace-nowrap">Demographic</span>
             </li>
             <!-- Line between Step 3 and Step 4 -->
-            <div class="flex-1 h-0.5 sm:h-1 mx-1 sm:mx-2 transition-all duration-500 ease-in-out <?php echo ($step >= 4) ? 'bg-blue-600' : 'bg-blue-100'; ?>"></div>
+            <div class="flex-1 h-0.5 sm:h-1 mx-0.5 sm:mx-2 transition-all duration-500 ease-in-out <?php echo ($step >= 4) ? 'bg-blue-600' : 'bg-blue-100'; ?>"></div>
             <!-- Step 4 Circle: Account -->
             <li class="flex flex-col items-center relative">
                 <?php if ($step > 4): ?>
-                    <span class="flex items-center justify-center w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 xl:w-8 xl:h-8 bg-blue-600 border-2 border-blue-600 rounded-full text-white text-xs sm:text-sm font-bold transition-all duration-300 hover:scale-110">
-                        <svg class="w-2 h-2 sm:w-3 sm:h-3 md:w-4 md:h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                    <span class="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-9 lg:h-9 xl:w-10 xl:h-10 bg-blue-600 border-2 border-blue-600 rounded-full text-white text-xs sm:text-sm font-bold transition-all duration-300 hover:scale-110">
+                        <svg class="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
                     </span>
                 <?php elseif ($step == 4): ?>
-                    <span class="flex items-center justify-center w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 xl:w-8 xl:h-8 bg-blue-600 border-2 border-blue-600 rounded-full text-white text-xs sm:text-sm font-bold transition-all duration-300 animate-pulse">
+                    <span class="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-9 lg:h-9 xl:w-10 xl:h-10 bg-blue-600 border-2 border-blue-600 rounded-full text-white text-xs sm:text-sm font-bold transition-all duration-300 animate-pulse">
                         4
                     </span>
                 <?php else: ?>
-                    <span class="flex items-center justify-center w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 xl:w-8 xl:h-8 bg-white border-2 border-blue-600 rounded-full text-blue-600 text-xs sm:text-sm font-bold transition-all duration-300">
+                    <span class="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-9 lg:h-9 xl:w-10 xl:h-10 bg-white border-2 border-blue-600 rounded-full text-blue-600 text-xs sm:text-sm font-bold transition-all duration-300">
                         4
                     </span>
                 <?php endif; ?>
-                <span class="absolute left-1/2 -translate-x-1/2 top-full mt-1 sm:mt-2 text-xs sm:text-sm text-gray-500 font-medium">Account</span>
+                <span class="absolute left-1/2 -translate-x-1/2 top-full mt-0.5 sm:mt-2 text-[9px] sm:text-xs md:text-sm text-gray-500 font-medium whitespace-nowrap">Account</span>
             </li>
             <!-- Line between Step 4 and Step 5 -->
-            <div class="flex-1 h-0.5 sm:h-1 mx-1 sm:mx-2 transition-all duration-500 ease-in-out <?php echo ($step >= 5) ? 'bg-blue-600' : 'bg-blue-100'; ?>"></div>
+            <div class="flex-1 h-0.5 sm:h-1 mx-0.5 sm:mx-2 transition-all duration-500 ease-in-out <?php echo ($step >= 5) ? 'bg-blue-600' : 'bg-blue-100'; ?>"></div>
             <!-- Step 5 Circle: Finish -->
             <li class="flex flex-col items-center relative">
                 <?php if ($step == 5): ?>
-                    <span class="flex items-center justify-center w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 xl:w-8 xl:h-8 bg-blue-600 border-2 border-blue-600 rounded-full text-white text-xs sm:text-sm font-bold transition-all duration-300 animate-bounce">
+                    <span class="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-9 lg:h-9 xl:w-10 xl:h-10 bg-blue-600 border-2 border-blue-600 rounded-full text-white text-xs sm:text-sm font-bold transition-all duration-300 animate-bounce">
                         5
                     </span>
                 <?php else: ?>
-                    <span class="flex items-center justify-center w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 xl:w-8 xl:h-8 bg-white border-2 border-blue-600 rounded-full text-blue-600 text-xs sm:text-sm font-bold transition-all duration-300">
+                    <span class="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-9 lg:h-9 xl:w-10 xl:h-10 bg-white border-2 border-blue-600 rounded-full text-blue-600 text-xs sm:text-sm font-bold transition-all duration-300">
                         5
                     </span>
                 <?php endif; ?>
-                <span class="absolute left-1/2 -translate-x-1/2 top-full mt-1 sm:mt-2 text-xs sm:text-sm text-gray-500 font-medium">Finish</span>
+                <span class="absolute left-1/2 -translate-x-1/2 top-full mt-0.5 sm:mt-2 text-[9px] sm:text-xs md:text-sm text-gray-500 font-medium whitespace-nowrap">Finish</span>
             </li>
         </ol>
         <!-- Step 1: Qualification -->
         <div class="qualification_container step-transition" id="part0" style="<?= $step == 1 ? '' : 'display:none;' ?>">
-            <div class="relative bg-blue-50 rounded-xl sm:rounded-2xl md:rounded-3xl p-4 sm:p-6 md:p-8 lg:p-10 xl:p-12 border border-blue-100 shadow-lg animate-slide-in overflow-hidden">
+            <div class="relative bg-blue-50 rounded-xl mt-8 sm:rounded-2xl md:rounded-3xl p-4 sm:p-6 md:p-8 lg:p-10 xl:p-12 border border-blue-100 shadow-lg animate-slide-in overflow-hidden">
 
                 <!-- Introduction Section -->
                 <div class="qualification-card bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl md:rounded-2xl p-4 sm:p-6 md:p-8 mb-4 sm:mb-6 border border-white/50 shadow-md relative z-10">
@@ -834,8 +857,9 @@ document.addEventListener('DOMContentLoaded',function(){
                                 NYC reporting, and youth development in Iriga City.
                             </p>
                             <div class="mt-3 flex items-center space-x-2 text-xs text-green-700 bg-green-100/50 rounded-lg p-2">
-                                <svg class="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.99 1.73l-2.35 1.05a1.99 1.99 0 01-1.85 0L12 16a2 2 0 01-1.85 0L8.37 14.78"></path>
+                                <svg class="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 22s8-4 8-10V6l-8-4-8 4v6c0 6 8 10 8 10z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4"></path>
                                 </svg>
                                 <span>Compliant with 
                                     <a href="https://privacy.gov.ph/data-privacy-act/" 
@@ -851,7 +875,7 @@ document.addEventListener('DOMContentLoaded',function(){
                 </div>
                 
                 <!-- Call to Action -->
-                <div class="text-center pt-4 px-4 sm:px-0">
+                <div class="text-center pt-4">
                     <div class="bg-blue-600 rounded-lg p-4 sm:p-6 shadow-md">
                         <div class="text-center space-y-3 sm:space-y-4">
                             <h3 class="text-lg sm:text-xl font-bold text-white">Ready to Get Started?</h3>
@@ -864,7 +888,7 @@ document.addEventListener('DOMContentLoaded',function(){
                                 <div class="mb-3 sm:mb-4 text-left">
                                     <label class="flex items-start space-x-2 sm:space-x-3 cursor-pointer p-2 sm:p-3 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
                          <input type="checkbox" id="terms-checkbox" name="accept_terms" value="1" 
-                             class="mt-1 w-3 h-3 sm:w-4 sm:h-4 text-blue-600 bg-white border-2 border-white rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
+                             class="mt-1 w-4 h-4 sm:w-4 sm:h-4 text-blue-600 bg-white border-2 border-white rounded focus:ring-blue-500 focus:ring-2 cursor-pointer flex-shrink-0"
                              <?= !empty($account_data['agreement']) ? 'checked' : '' ?> data-server-accepted="<?= !empty($account_data['agreement']) ? '1' : '0' ?>">
                                         <div class="text-white text-xs sm:text-sm leading-relaxed">
                                             <span>I have read and agree to the </span>
@@ -909,16 +933,16 @@ document.addEventListener('DOMContentLoaded',function(){
         </div>
         <!-- Step 2: Profile Form -->
         <div class="profile_container step-transition" id="part1" style="<?= $step == 2 ? '' : 'display:none;' ?>">
-            <div class="animate-slide-in px-2 sm:px-0">
+            <div class="animate-slide-in px-2 mt-8 sm:px-0">
                 <div class="text-center mb-6 sm:mb-8 md:mb-10">
-                    <h2 class="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-slate-800 mb-2 px-2">Personal Information</h2>
+                    <h2 class="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-slate-800 px-2">Personal Information</h2>
                     <p class="text-xs sm:text-sm md:text-base text-slate-600 px-4">Tell us about yourself to get started</p>
                 </div>
                 
                 <form action="<?= base_url('profiling/step1') ?>" method="post" class="space-y-4 sm:space-y-6 md:space-y-8" id="step1Form" enctype="multipart/form-data">
                     <?= csrf_field() ?>
                     <!-- Name Section -->
-                    <div class="form-section rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 mx-2 sm:mx-0">
+                    <div class="form-section rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 sm:mx-0">
                         <h3 class="text-base sm:text-lg md:text-xl font-semibold text-slate-800 mb-3 sm:mb-4 md:mb-6 flex items-center">
                             <div class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
                                 <svg class="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -976,7 +1000,7 @@ document.addEventListener('DOMContentLoaded',function(){
                     </div>
 
                     <!-- Location Section -->
-                    <div class="form-section rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 mx-2 sm:mx-0">
+                    <div class="form-section rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 sm:mx-0">
                         <h3 class="text-base sm:text-lg md:text-xl font-semibold text-slate-800 mb-3 sm:mb-4 md:mb-6 flex items-center">
                             <div class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
                                 <svg class="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1107,7 +1131,7 @@ document.addEventListener('DOMContentLoaded',function(){
                                         <!-- Sex -->
                                         <div class="space-y-1 sm:space-y-2">
                                             <label class="block text-xs sm:text-sm font-medium text-slate-700">
-                                                Sex (Assigned at Birth)<span class="text-red-500">*</span>
+                                                Sex <span style="font-size:11px; line-height:1; display:inline-block;">(Assigned at Birth)</span><span class="text-red-500">*</span>
                                             </label>
                                             <select name="sex" data-required="true"
                                                 class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= session('validation_user') && session('validation_user')->hasError('sex') ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base">
@@ -1152,12 +1176,12 @@ document.addEventListener('DOMContentLoaded',function(){
                                         </label>
                                         <!-- Info tooltip at top: appears on hover -->
                                         <div class="relative group ml-3">
-                                            <button type="button" class="text-slate-400 hover:text-slate-700 p-1 focus:outline-none" aria-describedby="birthdate_note" aria-label="Date of birth help">
+                                            <button type="button" class="text-slate-400 hover:text-slate-700 p-1 focus:outline-none" aria-describedby="birthdate_note" aria-label="Date of birth help" aria-expanded="false">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                                     <path fill-rule="evenodd" d="M18 10A8 8 0 11 2 10a8 8 0 0116 0zm-8-4a1 1 0 10-0 2 1 1 0 000-2zm1 8a1 1 0 10-2 0v-4a1 1 0 112 0v4z" clip-rule="evenodd" />
                                                 </svg>
                                             </button>
-                                            <div id="birthdate_note" role="tooltip" class="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute right-0 top-full mt-2 w-72 bg-white border border-slate-200 text-xs text-slate-700 p-3 rounded shadow-lg z-50 hidden sm:block">
+                                            <div id="birthdate_note" role="tooltip" class="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute right-0 top-full mt-2 w-72 bg-white border border-slate-200 text-xs text-slate-700 p-3 rounded shadow-lg z-50 hidden sm:block" data-clickable-tooltip>
                                                 Note: Some years, months, and dates are disabled because only individuals who are at least 15 years old (or turning 15 within one month) and not older than 30 years old are eligible, in accordance with <u>DILG Memorandum Circular No. 2022-324.</u>
                                             </div>
                                         </div>
@@ -1313,7 +1337,7 @@ document.addEventListener('DOMContentLoaded',function(){
         </div>
         <!-- Step 3: Demographic Form -->
         <div class="demographic_container step-transition" id="part2" style="<?= $step == 3 ? '' : 'display:none;' ?>">
-            <div class="animate-slide-in px-2 sm:px-0">
+            <div class="animate-slide-in px-2 mt-8 sm:px-0">
                 <div class="text-center mb-6 sm:mb-8 md:mb-10">
                     <h2 class="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-slate-800 mb-2 px-2">Demographic Characteristics</h2>
                     <p class="text-xs sm:text-sm md:text-base text-slate-600 px-4">Please provide your demographic information</p>
@@ -1322,7 +1346,7 @@ document.addEventListener('DOMContentLoaded',function(){
                 <form action="<?= base_url('profiling/step2') ?>" method="post" class="space-y-4 sm:space-y-6 md:space-y-8" id="step2Form" enctype="multipart/form-data">
                     <?= csrf_field() ?>
                     <!-- Basic Information Section -->
-                    <div class="form-section rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 mx-2 sm:mx-0">
+                    <div class="form-section rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 sm:mx-0">
                         <h3 class="text-base sm:text-lg md:text-xl font-semibold text-slate-800 mb-3 sm:mb-4 md:mb-6 flex items-center">
                             <div class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
                                 <svg class="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1439,7 +1463,7 @@ document.addEventListener('DOMContentLoaded',function(){
                         </div>
                     </div>
                     <!-- Voting & Assembly Section -->
-                    <div class="form-section rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 mx-2 sm:mx-0">
+                    <div class="form-section rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6   sm:mx-0">
                         <h3 class="text-base sm:text-lg md:text-xl font-semibold text-slate-800 mb-3 sm:mb-4 md:mb-6 flex items-center">
                             <div class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
                                 <svg class="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1588,7 +1612,7 @@ document.addEventListener('DOMContentLoaded',function(){
                         </div>
                     </div>
                     <!-- Document Uploads Section -->
-                    <div class="form-section rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 mx-2 sm:mx-0">
+                    <div class="form-section rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6  sm:mx-0">
                         <h3 class="text-base sm:text-lg md:text-xl font-semibold text-slate-800 mb-3 sm:mb-4 md:mb-6 flex items-center">
                             <div class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
                                 <svg class="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1794,7 +1818,7 @@ document.addEventListener('DOMContentLoaded',function(){
         
         <!-- Step 4: Account Form -->
         <div class="account_container step-transition" id="part3" style="<?= $step == 4 ? '' : 'display:none;' ?>">
-            <div class="animate-slide-in px-2 sm:px-0">
+            <div class="animate-slide-in px-2 mt-8 sm:px-0">
                 <div class="text-center mb-6 sm:mb-8 md:mb-10">
                     <h2 class="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-slate-800 mb-2 px-2">Account Information</h2>
                     <p class="text-xs sm:text-sm md:text-base text-slate-600 px-4">Create your account credentials and upload your profile picture</p>
@@ -1803,7 +1827,7 @@ document.addEventListener('DOMContentLoaded',function(){
                 <form action="<?= base_url('profiling/step3') ?>" method="post" class="space-y-4 sm:space-y-6 md:space-y-8" id="step3Form" enctype="multipart/form-data">
                     <?= csrf_field() ?>
                     <!-- Account Credentials Section -->
-                    <div class="form-section rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 mx-2 sm:mx-0">
+                    <div class="form-section rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6  sm:mx-0">
                         <h3 class="text-base sm:text-lg md:text-xl font-semibold text-slate-800 mb-3 sm:mb-4 md:mb-6 flex items-center">
                             <div class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
                                 <svg class="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1996,7 +2020,7 @@ document.addEventListener('DOMContentLoaded',function(){
                         </div>
                     </div>
                     <!-- Profile Picture Section -->
-                    <div class="form-section rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 mx-2 sm:mx-0">
+                    <div class="form-section rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6  sm:mx-0">
                         <h3 class="text-base sm:text-lg md:text-xl font-semibold text-slate-800 mb-3 sm:mb-4 md:mb-6 flex items-center">
                             <div class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
                                 <svg class="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2078,7 +2102,7 @@ document.addEventListener('DOMContentLoaded',function(){
         </div>
         <!-- Sample Profile Picture Modal -->
         <div id="samplePicModal" class="fixed inset-0 flex items-center justify-center z-50 hidden p-4">
-            <div class="bg-white border border-blue-400 text-blue-700 px-4 sm:px-8 pt-4 sm:pt-6 pb-3 sm:pb-4 rounded-lg shadow-lg relative animate-fade-in max-w-sm w-full mx-2 sm:mx-4 flex flex-col items-center z-20">
+            <div class="bg-white border border-blue-400 text-blue-700 px-4 sm:px-8 pt-4 sm:pt-6 pb-3 sm:pb-4 rounded-lg shadow-lg relative animate-fade-in max-w-3xl lg:max-w-5xl w-full mx-2 sm:mx-4 flex flex-col items-center z-20 max-h-[90vh] overflow-y-auto">
                 <span class="block text-base sm:text-lg font-semibold mb-2">Sample 1x1 Picture</span>
                 <div class="w-48 h-48 sm:w-60 sm:h-60 overflow-hidden border border-gray-300 rounded-md bg-white mb-2">
                     <img src="https://i.pinimg.com/736x/d4/5e/77/d45e7768a551280b6597d3cb5caa589b.jpg" alt="Sample 1x1" class="w-full h-120 object-cover object-top -mt-5">
@@ -2091,7 +2115,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
         <!-- Sample Birth Certificate Modal -->
         <div id="sampleBirthCertModal" class="fixed inset-0 flex items-center justify-center z-50 hidden p-2 sm:p-4">
-            <div class="bg-white border border-green-400 text-green-700 px-4 sm:px-8 pt-4 sm:pt-6 pb-3 sm:pb-4 rounded-lg shadow-lg relative animate-fade-in max-w-3xl w-full mx-2 sm:mx-4 flex flex-col items-center z-20">
+            <div class="bg-white border border-green-400 text-green-700 px-4 sm:px-8 pt-4 sm:pt-6 pb-3 sm:pb-4 rounded-lg shadow-lg relative animate-fade-in max-w-3xl lg:max-w-5xl w-full mx-2 sm:mx-4 flex flex-col items-center z-20 max-h-[90vh] overflow-y-auto">
                 <span class="block text-base sm:text-lg font-semibold mb-2 sm:mb-3">Sample Birth Certificate</span>
                 
                 <!-- Content Container -->
@@ -2151,8 +2175,8 @@ document.addEventListener('DOMContentLoaded',function(){
         </div>
 
         <!-- Sample Valid ID Modal -->
-        <div id="sampleValidIdModal" class="fixed inset-0 flex items-center justify-center z-50 hidden p-2 sm:p-4">
-            <div class="bg-white border border-blue-400 text-blue-700 px-4 sm:px-8 pt-4 sm:pt-6 pb-3 sm:pb-4 rounded-lg shadow-lg relative animate-fade-in max-w-3xl w-full mx-2 sm:mx-4 flex flex-col items-center z-20">
+        <div id="sampleValidIdModal" class="fixed inset-0 flex items-center justify-center z-50 hidden p-4">
+            <div class="bg-white border border-blue-400 text-blue-700 px-4 sm:px-8 pt-4 sm:pt-6 pb-3 sm:pb-4 rounded-lg shadow-lg relative animate-fade-in max-w-3xl lg:max-w-5xl w-full mx-2 sm:mx-4 flex flex-col items-center z-20 max-h-[90vh] overflow-y-auto">
                 <span class="block text-base sm:text-lg font-semibold mb-2 sm:mb-3">Sample Valid ID</span>
                 
                 <!-- Content wrapper with responsive flex direction -->
@@ -2162,7 +2186,7 @@ document.addEventListener('DOMContentLoaded',function(){
                         <!-- Front ID -->
                         <div class="text-center">
                             <h5 class="text-xs sm:text-sm font-medium text-gray-700 mb-2">Front Side</h5>
-                            <div class="w-full h-32 sm:h-48 md:h-50 overflow-hidden border border-gray-300 rounded-md bg-gray-100 relative">
+                            <div class="w-full h-48 sm:h-48 md:h-56 overflow-hidden border border-gray-300 rounded-md bg-gray-100 relative">
                                 <!-- Loading placeholder for front -->
                                 <div id="idFrontLoading" class="absolute inset-0 flex items-center justify-center">
                                     <div class="text-center p-2 sm:p-4">
@@ -2173,19 +2197,19 @@ document.addEventListener('DOMContentLoaded',function(){
                                     </div>
                                 </div>
                                 <!-- Actual front image -->
-                                <img id="idFrontImage" 
-                                     src="https://philsys.gov.ph/wp-content/uploads/2022/11/PhilID-specimen-Front_highres1-768x432.png" 
-                                     alt="Sample Valid ID Front" 
-                                     class="w-full h-full object-contain hidden"
-                                     onload="document.getElementById('idFrontLoading').style.display='none'; this.style.display='block';"
-                                     onerror="const el=document.getElementById('idFrontLoading'); if(el){const xs=el.querySelector('.text-xs');if(xs)xs.textContent='ID Front';}">
+                          <img id="idFrontImage" 
+                              src="https://philsys.gov.ph/wp-content/uploads/2022/11/PhilID-specimen-Front_highres1-768x432.png" 
+                              alt="Sample Valid ID Front" 
+                              class="w-full h-full object-contain hidden"
+                              onload="document.getElementById('idFrontLoading').style.display='none'; this.style.display='block';"
+                              onerror="const el=document.getElementById('idFrontLoading'); if(el){const xs=el.querySelector('.text-xs');if(xs)xs.textContent='ID Front';}">
                             </div>
                         </div>
                         
                         <!-- Back ID -->
                         <div class="text-center">
                             <h5 class="text-sm font-medium text-gray-700 mb-2">Back Side</h5>
-                            <div style="width: 100%; height: 200px; overflow: hidden; border: 1px solid #d1d5db; border-radius: 0.375rem; background: #f3f4f6; position: relative;">
+                            <div class="w-full h-48 sm:h-48 md:h-56 overflow-hidden border border-gray-300 rounded-md bg-gray-100 relative">
                                 <!-- Loading placeholder for back -->
                                 <div id="idBackLoading" class="absolute inset-0 flex items-center justify-center">
                                     <div class="text-center p-4">
@@ -2196,12 +2220,12 @@ document.addEventListener('DOMContentLoaded',function(){
                                     </div>
                                 </div>
                                 <!-- Actual back image -->
-                                <img id="idBackImage" 
-                                     src="https://philsys.gov.ph/wp-content/uploads/2022/11/PhilID-specimen-Back_highres2-768x432.png" 
-                                     alt="Sample Valid ID Back" 
-                                     style="width: 100%; height: 100%; object-fit: contain; display: none;"
-                                     onload="document.getElementById('idBackLoading').style.display='none'; this.style.display='block';"
-                                     onerror="const el=document.getElementById('idBackLoading'); if(el){const xs=el.querySelector('.text-xs');if(xs)xs.textContent='ID Back';}">
+                          <img id="idBackImage" 
+                              src="https://philsys.gov.ph/wp-content/uploads/2022/11/PhilID-specimen-Back_highres2-768x432.png" 
+                              alt="Sample Valid ID Back" 
+                              class="w-full h-full object-contain hidden"
+                              onload="document.getElementById('idBackLoading').style.display='none'; this.style.display='block';"
+                              onerror="const el=document.getElementById('idBackLoading'); if(el){const xs=el.querySelector('.text-xs');if(xs)xs.textContent='ID Back';}">
                             </div>
                         </div>
                     </div>
@@ -2237,8 +2261,8 @@ document.addEventListener('DOMContentLoaded',function(){
         
         <!-- Step 5: Preview Information -->
         <div class="preview_container step-transition" id="part4" style="<?= $step == 5 ? '' : 'display:none;' ?>">
-            <div class="animate-slide-in">
-                <div class="text-center mb-8">
+            <div class="animate-slide-in mt-8 ">
+                <div class="text-center mb-8 ">
                     <h2 class="text-3xl font-bold text-slate-800 mb-2">Review Your Information</h2>
                     <p class="text-slate-600">Please review all the information below before submitting your registration</p>
                 </div>
@@ -2820,7 +2844,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
     <!-- Terms and Conditions Modal -->
     <div id="terms-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden p-2 sm:p-4">
-        <div class="bg-white rounded-lg sm:rounded-2xl shadow-2xl relative animate-fade-in max-w-5xl max-h-[95vh] w-full mx-2 sm:mx-4 z-20 border border-gray-100 flex flex-col">
+        <div class="bg-white rounded-lg sm:rounded-2xl shadow-2xl relative animate-fade-in max-w-3xl lg:max-w-5xl max-h-[90vh] w-full mx-2 sm:mx-4 z-20 border border-gray-100 flex flex-col">
             <!-- Modal Header -->
             <div class="flex items-center justify-between p-3 sm:p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-lg sm:rounded-t-2xl flex-shrink-0">
                 <div class="flex items-center space-x-2 sm:space-x-3">
@@ -2839,28 +2863,28 @@ document.addEventListener('DOMContentLoaded',function(){
             <!-- Modal Body -->
             <div class="p-3 sm:p-8 overflow-y-auto custom-scrollbar flex-grow min-h-0">
                 <div class="prose prose-sm max-w-none space-y-4 sm:space-y-6">
-                    <div class="bg-white border border-gray-200 rounded-lg sm:rounded-xl p-3 sm:p-6 mb-4 sm:mb-6 shadow-sm">
-                        <h4 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4 flex items-center">
-                            <span class="bg-blue-100 text-blue-800 text-xs sm:text-sm font-medium mr-2 sm:mr-3 px-2 sm:px-2.5 py-0.5 rounded-full">1</span>
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 mb-6 shadow-sm">
+                        <h4 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                            <span class="bg-blue-100 text-blue-800 text-sm font-medium mr-3 px-2.5 py-0.5 rounded-full">1</span>
                             Acceptance of Terms
                         </h4>
-                        <p class="text-gray-700 leading-relaxed text-sm sm:text-base">
+                        <p class="text-gray-700 leading-relaxed">
                             By accessing and using the K-NECT Youth Profiling System, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions and our Privacy Policy.
                         </p>
                     </div>
 
-                    <div class="bg-white border border-gray-200 rounded-lg sm:rounded-xl p-3 sm:p-6 mb-4 sm:mb-6 shadow-sm">
-                        <h4 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4 flex items-center">
-                            <span class="bg-blue-100 text-blue-800 text-xs sm:text-sm font-medium mr-2 sm:mr-3 px-2 sm:px-2.5 py-0.5 rounded-full">2</span>
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 mb-6 shadow-sm">
+                        <h4 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                            <span class="bg-blue-100 text-blue-800 text-sm font-medium mr-3 px-2.5 py-0.5 rounded-full">2</span>
                             Eligibility
                         </h4>
-                        <p class="text-gray-700 leading-relaxed mb-3 sm:mb-4 text-sm sm:text-base">
+                        <p class="text-gray-700 leading-relaxed mb-4">
                             This service is intended for youth aged 15-30 years old who are residents of Iriga City's 36 barangays. By registering, you confirm that:
                         </p>
-                        <div class="bg-gray-50 rounded-lg p-3 sm:p-4">
+                        <div class="bg-gray-50 rounded-lg p-4">
                             <ul class="space-y-2">
-                                <li class="flex items-center text-gray-700 text-sm sm:text-base">
-                                    <svg class="w-3 h-3 sm:w-4 sm:h-4 text-green-500 mr-2 sm:mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <li class="flex items-center text-gray-700">
+                                    <svg class="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
                                     </svg>
                                     You are between 15-30 years of age (or turning 15 within 1 month)
@@ -3079,10 +3103,10 @@ document.addEventListener('DOMContentLoaded',function(){
                     <span class="text-xs sm:text-sm text-blue-700 font-medium">By accepting, you agree to these terms</span>
                 </div>
                 <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
-                    <button id="decline-terms-btn" class="w-full sm:w-auto px-4 sm:px-6 py-2 text-sm sm:text-base text-gray-600 bg-gray-100 border border-gray-300 rounded-lg font-medium hover:bg-gray-200 transition-colors duration-200 order-2 sm:order-1">
+                    <button id="decline-terms-btn" class="w-full sm:w-auto px-4 mt-2 sm:px-6 py-2 text-sm sm:text-base text-gray-600 bg-gray-100 border border-gray-300 rounded-lg font-medium hover:bg-gray-200 transition-colors duration-200 order-2 sm:order-1">
                         Decline
                     </button>
-                    <button id="accept-terms-btn" class="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 sm:px-8 py-2 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center text-sm sm:text-base order-1 sm:order-2">
+                    <button id="accept-terms-btn" class="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 sm:px-8 py-2 pt-2 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center text-sm sm:text-base order-1 sm:order-2">
                         <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
@@ -3096,7 +3120,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
     <!-- Privacy Policy Modal -->
     <div id="privacy-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden p-2 sm:p-4">
-        <div class="bg-white rounded-lg sm:rounded-2xl shadow-2xl relative animate-fade-in max-w-5xl max-h-[95vh] w-full mx-2 sm:mx-4 z-20 border border-gray-100 flex flex-col">
+        <div class="bg-white rounded-lg sm:rounded-2xl shadow-2xl relative animate-fade-in max-w-3xl lg:max-w-5xl max-h-[90vh] w-full mx-2 sm:mx-4 z-20 border border-gray-100 flex flex-col">
             <!-- Modal Header -->
             <div class="flex items-center justify-between p-3 sm:p-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-lg sm:rounded-t-2xl flex-shrink-0">
                 <div class="flex items-center space-x-2 sm:space-x-3">
@@ -3115,24 +3139,24 @@ document.addEventListener('DOMContentLoaded',function(){
             <!-- Modal Body -->
             <div class="p-3 sm:p-8 overflow-y-auto custom-scrollbar flex-grow min-h-0">
                 <div class="prose prose-sm max-w-none space-y-4 sm:space-y-6">
-                    <div class="bg-white border border-gray-200 rounded-lg sm:rounded-xl p-3 sm:p-6 mb-4 sm:mb-6 shadow-sm">
-                        <h4 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4 flex items-center">
-                            <span class="bg-green-100 text-green-800 text-xs sm:text-sm font-medium mr-2 sm:mr-3 px-2 sm:px-2.5 py-0.5 rounded-full">1</span>
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 mb-6 shadow-sm">
+                        <h4 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                            <span class="bg-green-100 text-green-800 text-sm font-medium mr-3 px-2.5 py-0.5 rounded-full">1</span>
                             Information We Collect
                         </h4>
-                        <p class="text-gray-700 leading-relaxed mb-3 sm:mb-4 text-sm sm:text-base">We collect the following types of information:</p>
+                        <p class="text-gray-700 leading-relaxed mb-4">We collect the following types of information:</p>
                         
-                        <div class="space-y-3 sm:space-y-4">
-                            <div class="bg-green-50 rounded-lg p-3 sm:p-4">
-                                <h5 class="text-base sm:text-lg font-semibold text-green-800 mb-2 sm:mb-3 flex items-center">
-                                    <svg class="w-4 h-4 sm:w-5 sm:h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="space-y-4">
+                            <div class="bg-green-50 rounded-lg p-4">
+                                <h5 class="text-lg font-semibold text-green-800 mb-3 flex items-center">
+                                    <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                     </svg>
                                     Personal Information:
                                 </h5>
                                 <ul class="space-y-2">
-                                    <li class="flex items-center text-gray-700 text-sm sm:text-base">
-                                        <svg class="w-3 h-3 sm:w-4 sm:h-4 text-green-500 mr-2 sm:mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <li class="flex items-center text-gray-700">
+                                        <svg class="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
                                         </svg>
                                         Full name, date of birth, and contact information
@@ -3443,7 +3467,7 @@ document.addEventListener('DOMContentLoaded',function(){
                     <span class="text-xs sm:text-sm text-green-700 font-medium">Your privacy is protected by law</span>
                 </div>
                 <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
-                    <button id="decline-privacy-btn" class="w-full sm:w-auto px-4 sm:px-6 py-2 text-sm sm:text-base text-gray-600 bg-gray-100 border border-gray-300 rounded-lg font-medium hover:bg-gray-200 transition-colors duration-200 order-2 sm:order-1">
+                    <button id="decline-privacy-btn" class="w-full sm:w-auto px-4 mt-2 sm:px-6 py-2 text-sm sm:text-base text-gray-600 bg-gray-100 border border-gray-300 rounded-lg font-medium hover:bg-gray-200 transition-colors duration-200 order-2 sm:order-1">
                         Close
                     </button>
                     <button id="accept-privacy-btn" class="w-full sm:w-auto bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 sm:px-8 py-2 rounded-lg font-medium hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center text-sm sm:text-base order-1 sm:order-2">
@@ -6814,6 +6838,82 @@ document.addEventListener('DOMContentLoaded',function(){
             // DOM already loaded
             initializeTermsAndConditions();
         }
+    </script>
+    <script>
+        (function(){
+            // Utility: determine if device supports touch
+            var isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+            // Find all buttons that reference a tooltip via aria-describedby
+            var tooltipButtons = document.querySelectorAll('button[aria-describedby]');
+
+            tooltipButtons.forEach(function(btn){
+                var tid = btn.getAttribute('aria-describedby');
+                if (!tid) return;
+                var tooltip = document.getElementById(tid);
+                if (!tooltip) return;
+
+                // Only enable click toggle for tooltips marked data-clickable-tooltip
+                if (!tooltip.hasAttribute('data-clickable-tooltip')) return;
+
+                // Ensure tooltip is initially hidden for click interactions
+                // We'll toggle classes inline so we don't interfere with hover styles on non-touch.
+                btn.addEventListener('click', function(e){
+                    e.preventDefault();
+                    var expanded = btn.getAttribute('aria-expanded') === 'true';
+                    if (expanded) {
+                        // hide
+                        tooltip.classList.add('hidden');
+                        tooltip.style.opacity = '';
+                        btn.setAttribute('aria-expanded', 'false');
+                    } else {
+                        // show: remove hidden and set opacity to fully visible
+                        tooltip.classList.remove('hidden');
+                        // Small timeout to allow transition if any
+                        setTimeout(function(){ tooltip.style.opacity = '1'; }, 10);
+                        btn.setAttribute('aria-expanded', 'true');
+                    }
+                });
+            });
+
+            // Close any open clickable tooltip when clicking/tapping outside
+            document.addEventListener('click', function(e){
+                // If click target is inside a tooltip or on its controlling button, ignore
+                var openButtons = document.querySelectorAll('button[aria-describedby][aria-expanded="true"]');
+                if (!openButtons.length) return;
+
+                openButtons.forEach(function(openBtn){
+                    var tid = openBtn.getAttribute('aria-describedby');
+                    var tooltip = document.getElementById(tid);
+                    if (!tooltip) return;
+
+                    if (openBtn.contains(e.target) || tooltip.contains(e.target)) {
+                        // Click inside - don't close
+                        return;
+                    }
+
+                    // Otherwise close
+                    tooltip.classList.add('hidden');
+                    tooltip.style.opacity = '';
+                    openBtn.setAttribute('aria-expanded', 'false');
+                });
+            });
+
+            // Close on Escape
+            document.addEventListener('keydown', function(e){
+                if (e.key === 'Escape' || e.key === 'Esc') {
+                    var openButtons = document.querySelectorAll('button[aria-describedby][aria-expanded="true"]');
+                    openButtons.forEach(function(openBtn){
+                        var tid = openBtn.getAttribute('aria-describedby');
+                        var tooltip = document.getElementById(tid);
+                        if (!tooltip) return;
+                        tooltip.classList.add('hidden');
+                        tooltip.style.opacity = '';
+                        openBtn.setAttribute('aria-expanded', 'false');
+                    });
+                }
+            });
+        })();
     </script>
 </body>
 </html>

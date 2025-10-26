@@ -232,12 +232,27 @@
         #stories .news-btn.next{right:16px}
     }
     @media (max-width:1023px){
-        #stories .news-btn{width:32px;height:32px;background:rgba(255,255,255,.95)}
+        #stories .news-btn{width:32px;height:32px;background:#ffffff;border:1px solid var(--primary-200)}
         #stories .news-btn.prev{left:8px}
         #stories .news-btn.next{right:8px}
     }
     @media (max-width:639px){
         #stories .news-card{border-radius:12px}
+    }
+    @media (max-width:520px){
+        #stories .news-btn{width:28px;height:28px;background:#ffffff;border:1px solid var(--primary-200)}
+        #stories .news-btn.prev{left:4px}
+        #stories .news-btn.next{right:4px}
+    }
+    @media (max-width:400px){
+        #stories .news-btn{width:26px;height:26px;background:#ffffff;border:1px solid var(--primary-200)}
+        #stories .news-btn.prev{left:2px}
+        #stories .news-btn.next{right:2px}
+    }
+    @media (max-width:360px){
+        #stories .news-btn{width:24px;height:24px;background:#ffffff;border:1px solid var(--primary-200)}
+        #stories .news-btn.prev{left:1px}
+        #stories .news-btn.next{right:1px}
     }
     /* skeleton placeholders */
     .skeleton{background:linear-gradient(90deg,#e5e7eb,#f1f5f9 30%,#e5e7eb 60%);background-size:200% 100%;animation:shimmer 1.2s linear infinite}

@@ -1644,24 +1644,8 @@
                                         break;
                                 }
                             } else if (userType === 'SK Chairperson') {
-                                const userPosition = parseInt(userData.position) || 0;
-                                switch(userPosition) {
-                                    case 1:
-                                        position = 'SK Chairperson';
-                                        break;
-                                    case 2:
-                                        position = 'SK Kagawad';
-                                        break;
-                                    case 3:
-                                        position = 'SK Secretary';
-                                        break;
-                                    case 4:
-                                        position = 'SK Treasurer';
-                                        break;
-                                    default:
-                                        position = 'SK Official';
-                                        break;
-                                }
+                                // SK Chairperson should be shown as SK Pederasyon Member in official list
+                                position = 'SK Pederasyon Member';
                             }
                             
                             // Format birthday for display
@@ -1771,22 +1755,22 @@
             fetch('<?= base_url('documents/logos') ?>')
                 .then(response => response.json())
                 .then(data => {
-                    if (data.success) {
+                    if (data && data.success && data.data) {
                         const logos = data.data;
                         
                         // Load Pederasyon logo
                         const pederasyonLogoDiv = document.getElementById('official-list-pederasyon-logo');
-                        if (logos.pederasyon && pederasyonLogoDiv) {
+                        if (logos.pederasyon && logos.pederasyon.file_path && pederasyonLogoDiv) {
                             pederasyonLogoDiv.innerHTML = `<img src="<?= base_url() ?>${logos.pederasyon.file_path}" alt="Pederasyon Logo" class="w-full h-full object-contain">`;
                         }
                         
                         // Load Iriga City logo
                         const irigaLogoDiv = document.getElementById('official-list-iriga-logo');
-                        if (logos.iriga_city && irigaLogoDiv) {
+                        if (logos.iriga_city && logos.iriga_city.file_path && irigaLogoDiv) {
                             irigaLogoDiv.innerHTML = `<img src="<?= base_url() ?>${logos.iriga_city.file_path}" alt="Iriga City Logo" class="w-full h-full object-contain">`;
                         }
                     } else {
-                        console.error('Failed to load logos:', data.message);
+                        console.error('Failed to load logos:', data ? data.message : 'No data');
                     }
                 })
                 .catch(error => {
@@ -1868,11 +1852,12 @@
                     let pederasyonLogo = null;
                     let irigaLogo = null;
                     
-                    if (data.success && data.data) {
+                    // Add null/undefined checks to prevent errors
+                    if (data && data.success && data.data) {
                         const logos = data.data;
                         
                         // Load Pederasyon logo
-                        if (logos.pederasyon) {
+                        if (logos.pederasyon && logos.pederasyon.file_path) {
                             const pederasyonPromise = new Promise((resolve) => {
                                 const img = new Image();
                                 img.crossOrigin = 'anonymous';
@@ -1889,7 +1874,7 @@
                         }
                         
                         // Load Iriga City logo
-                        if (logos.iriga_city) {
+                        if (logos.iriga_city && logos.iriga_city.file_path) {
                             const irigaPromise = new Promise((resolve) => {
                                 const img = new Image();
                                 img.crossOrigin = 'anonymous';
@@ -2207,22 +2192,22 @@
             fetch('<?= base_url('documents/logos') ?>')
                 .then(response => response.json())
                 .then(data => {
-                    if (data.success) {
+                    if (data && data.success && data.data) {
                         const logos = data.data;
                         
                         // Load Pederasyon logo for credentials
                         const pederasyonLogoDiv = document.getElementById('credentials-pederasyon-logo');
-                        if (logos.pederasyon && pederasyonLogoDiv) {
+                        if (logos.pederasyon && logos.pederasyon.file_path && pederasyonLogoDiv) {
                             pederasyonLogoDiv.innerHTML = `<img src="<?= base_url() ?>${logos.pederasyon.file_path}" alt="Pederasyon Logo" class="w-full h-full object-contain">`;
                         }
                         
                         // Load Iriga City logo for credentials
                         const irigaLogoDiv = document.getElementById('credentials-iriga-logo');
-                        if (logos.iriga_city && irigaLogoDiv) {
+                        if (logos.iriga_city && logos.iriga_city.file_path && irigaLogoDiv) {
                             irigaLogoDiv.innerHTML = `<img src="<?= base_url() ?>${logos.iriga_city.file_path}" alt="Iriga City Logo" class="w-full h-full object-contain">`;
                         }
                     } else {
-                        console.error('Failed to load logos for credentials:', data.message);
+                        console.error('Failed to load logos for credentials:', data ? data.message : 'No data');
                     }
                 })
                 .catch(error => {
@@ -2427,446 +2412,288 @@
 
     // printCredentials removed as requested
 
-        function downloadCredentialsPDF() {
+        async function downloadCredentialsPDF() {
             // Show loading notification
-            // Removed generating toast per request
-            
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('l', 'mm', 'a4'); // landscape orientation
-            
-            // First fetch logos to include in PDF if available
-            fetch('<?= base_url('documents/logos') ?>')
-                .then(response => response.json())
-                .then(data => {
-                    const promises = [];
-                    let pederasyonLogo = null;
-                    let irigaLogo = null;
-                    
-                    if (data.success && data.data) {
-                        const logos = data.data;
-                        
-                        // Load Pederasyon logo
-                        if (logos.pederasyon) {
-                            const pederasyonPromise = new Promise((resolve) => {
-                                const img = new Image();
-                                img.crossOrigin = 'anonymous';
-                                img.onload = function() {
-                                    pederasyonLogo = this;
-                                    resolve();
-                                };
-                                img.onerror = function() {
-                                    resolve(); // Continue even if logo fails to load
-                                };
-                                img.src = '<?= base_url() ?>' + logos.pederasyon.file_path;
-                            });
-                            promises.push(pederasyonPromise);
+            const button = event.target;
+            const originalHTML = button.innerHTML;
+            button.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Generating PDF...';
+            button.disabled = true;
+
+            try {
+                // Fetch logos with proper error handling
+                const logosResp = await fetch('<?= base_url('documents/logos') ?>');
+                const logosJson = (logosResp.ok ? await logosResp.json() : { success: false, data: {} });
+                const logos = (logosJson && logosJson.success && logosJson.data) ? logosJson.data : {};
+
+                const pederasyonLogoPath = (logos.pederasyon?.file_path) || '';
+                const irigaLogoPath = (logos.iriga_city?.file_path) || '';
+                const pederasyonLogoUrl = pederasyonLogoPath ? '<?= base_url() ?>' + pederasyonLogoPath : '';
+                const irigaLogoUrl = irigaLogoPath ? '<?= base_url() ?>' + irigaLogoPath : '';
+
+                // Helper to convert image URL to data URL
+                const imageUrlToDataUrl = (url) => {
+                    return new Promise((resolve) => {
+                        if (!url) {
+                            resolve(null);
+                            return;
                         }
-                        
-                        // Load Iriga City logo
-                        if (logos.iriga_city) {
-                            const irigaPromise = new Promise((resolve) => {
-                                const img = new Image();
-                                img.crossOrigin = 'anonymous';
-                                img.onload = function() {
-                                    irigaLogo = this;
-                                    resolve();
-                                };
-                                img.onerror = function() {
-                                    resolve(); // Continue even if logo fails to load
-                                };
-                                img.src = '<?= base_url() ?>' + logos.iriga_city.file_path;
-                            });
-                            promises.push(irigaPromise);
-                        }
-                    }
+                        const img = new Image();
+                        img.crossOrigin = 'anonymous';
+                        img.onload = function() {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = this.naturalWidth;
+                            canvas.height = this.naturalHeight;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(this, 0, 0);
+                            try {
+                                resolve(canvas.toDataURL('image/png'));
+                            } catch (e) {
+                                console.error('Canvas toDataURL failed:', e);
+                                resolve(null);
+                            }
+                        };
+                        img.onerror = () => resolve(null);
+                        img.src = url;
+                    });
+                };
+
+                // Load both logos as data URLs
+                const [pederasyonLogoDataUrl, irigaLogoDataUrl] = await Promise.all([
+                    imageUrlToDataUrl(pederasyonLogoUrl),
+                    imageUrlToDataUrl(irigaLogoUrl)
+                ]);
+
+                // Generate PDF with loaded logos
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('l', 'mm', 'a4'); // landscape orientation
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const centerX = pageWidth / 2;
+                let y = 20;
+
+                // Helper to get image format from data URL
+                const getImgFmt = (dataUrl) => {
+                    if (!dataUrl) return 'PNG';
+                    if (dataUrl.includes('image/jpeg') || dataUrl.includes('image/jpg')) return 'JPEG';
+                    if (dataUrl.includes('image/png')) return 'PNG';
+                    return 'PNG';
+                };
+
+                // Add logos if available
+                const logoSize = 25;
+                if (pederasyonLogoDataUrl) {
+                    doc.addImage(pederasyonLogoDataUrl, getImgFmt(pederasyonLogoDataUrl), 40, 15, logoSize, logoSize, undefined, 'FAST');
+                }
+                if (irigaLogoDataUrl) {
+                    doc.addImage(irigaLogoDataUrl, getImgFmt(irigaLogoDataUrl), 232, 15, logoSize, logoSize, undefined, 'FAST');
+                }
+                
+                // Header text (centered)
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(12);
+                doc.text("REPUBLIC OF THE PHILIPPINES", centerX, 20, { align: 'center' });
+                doc.text("PROVINCE OF CAMARINES SUR", centerX, 25, { align: 'center' });
+                doc.text("CITY OF IRIGA", centerX, 30, { align: 'center' });
+                
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(10);
+                doc.text("PANLUNGSOD NA PEDERASYON NG MGA", centerX, 35, { align: 'center' });
+                doc.text("SANGGUNIANG KABATAAN", centerX, 39, { align: 'center' });
+                
+                y = 60;
+                
+                // Get officials data for credentials
+                const officials = <?= json_encode($user_list ?? []) ?>;
+                // Include SK Chairpersons (user_type=2, accepted)
+                const baseSk = officials.filter(user => parseInt(user.user_type) === 2 && parseInt(user.status) === 2);
+                // Pederasyon (user_type=3, accepted)
+                const pederasyonOfficials = officials.filter(user => parseInt(user.user_type) === 3 && parseInt(user.status) === 2);
+                // Per rule: Pederasyon officers are also SK, include them in SK list if they have SK credentials
+                const pedWithSkCreds = pederasyonOfficials.filter(user => (user.sk_username && user.sk_username !== '') && (user.sk_password && user.sk_password !== ''));
+                const skOfficials = [...baseSk, ...pedWithSkCreds];
+                
+                // Get the currently active tab
+                const activeTab = getActiveCredentialsTab();
+                
+                // SK Officials Section - only show if SK tab is active
+                if (activeTab === 'sk' && skOfficials.length > 0) {
+                    // Title
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(12);
+                    doc.text("SANGGUNIANG KABATAAN", centerX, 55, { align: 'center' });
+                    doc.text("OFFICIALS CREDENTIALS", centerX, 60, { align: 'center' });
+                    y += 8;
                     
-                    // Wait for all logos to load, then generate PDF
-                    Promise.all(promises).then(() => {
-                        try {
-                            // Header with logos positioned beside the header
-                            if (pederasyonLogo) {
-                                doc.addImage(pederasyonLogo, 'JPEG', 40, 15, 25, 25);
-                            }
-                            if (irigaLogo) {
-                                doc.addImage(irigaLogo, 'JPEG', 232, 15, 25, 25);
-                            }
-                            
-                            // Header text (centered)
-                            doc.setFont("helvetica", "bold");
-                            doc.setFontSize(12);
-                            doc.text("REPUBLIC OF THE PHILIPPINES", 148, 20, { align: 'center' });
-                            doc.text("PROVINCE OF CAMARINES SUR", 148, 25, { align: 'center' });
-                            doc.text("CITY OF IRIGA", 148, 30, { align: 'center' });
-                            
-                            doc.setFont("helvetica", "normal");
-                            doc.setFontSize(10);
-                            doc.text("PANLUNGSOD NA PEDERASYON NG MGA", 148, 35, { align: 'center' });
-                            doc.text("SANGGUNIANG KABATAAN", 148, 39, { align: 'center' });
-                            
-                            // Title
-                            doc.setFont("helvetica", "bold");
-                            doc.setFontSize(12);
-                            doc.text("PANLUNGSOD NA PEDERASYON NG MGA KABATAAN", 148, 50, { align: 'center' });
-                            doc.text("OFFICIALS CREDENTIALS", 148, 55, { align: 'center' });
-                            
-                            let yPosition = 70;
-                            
-                            // Get officials data for credentials
-                            const officials = <?= json_encode($user_list ?? []) ?>;
-                            // Include SK Chairpersons (user_type=2, accepted)
-                            const baseSk = officials.filter(user => parseInt(user.user_type) === 2 && parseInt(user.status) === 2);
-                            // Pederasyon (user_type=3, accepted)
-                            const pederasyonOfficials = officials.filter(user => parseInt(user.user_type) === 3 && parseInt(user.status) === 2);
-                            // Per rule: Pederasyon officers are also SK, include them in SK list if they have SK credentials
-                            const pedWithSkCreds = pederasyonOfficials.filter(user => (user.sk_username && user.sk_username !== '') && (user.sk_password && user.sk_password !== ''));
-                            const skOfficials = [...baseSk, ...pedWithSkCreds];
-                            
-                            // Get the currently active tab
-                            const activeTab = getActiveCredentialsTab();
-                            
-                            // SK Officials Section - only show if SK tab is active
-                            if (activeTab === 'sk' && skOfficials.length > 0) {
-                                doc.setFont("helvetica", "bold");
-                                doc.setFontSize(10);
-                                doc.text("SANGGUNIANG KABATAAN OFFICIALS LOGIN CREDENTIALS", 148, yPosition, { align: 'center' });
-                                yPosition += 8;
-                                
-                                // Prepare SK Officials table data
-                                const skTableData = skOfficials.map(official => {
-                                    const fullName = `${official.first_name || ''} ${official.middle_name || ''} ${official.last_name || ''}`.trim();
-                                    const barangay = getBarangayName(official.barangay);
-                                    const skPassword = (official.sk_password && official.sk_password.length > 20) ? '********' : (official.sk_password || 'N/A');
-                                    
-                                    return [
-                                        official.user_id || '',
-                                        fullName,
-                                        barangay,
-                                        'SK Chairperson',
-                                        official.sk_username || 'N/A',
-                                        skPassword
-                                    ];
-                                });
-                                
-                                // Add SK Officials table with simple styling
-                                doc.autoTable({
-                                    head: [['User ID', 'Full Name', 'Barangay', 'Position', 'Username', 'Password']],
-                                    body: skTableData,
-                                    startY: yPosition,
-                                    styles: { 
-                                        fontSize: 7,
-                                        cellPadding: 1.5,
-                                        halign: 'center',
-                                        valign: 'middle',
-                                        textColor: [0, 0, 0],
-                                        fontStyle: 'normal',
-                                        font: 'helvetica',
-                                        lineWidth: 0.1,
-                                        lineColor: [0, 0, 0]
-                                    },
-                                    headStyles: {
-                                        fillColor: [220, 220, 220],
-                                        textColor: [0, 0, 0],
-                                        fontStyle: 'bold',
-                                        fontSize: 7,
-                                        font: 'helvetica',
-                                        halign: 'center'
-                                    },
-                                    columnStyles: {
-                                        0: { cellWidth: 18, halign: 'center' }, // User ID
-                                        1: { cellWidth: 50, halign: 'center' }, // Full Name
-                                        2: { cellWidth: 32, halign: 'center' }, // Barangay
-                                        3: { cellWidth: 35, halign: 'center' }, // Position
-                                        4: { cellWidth: 30, halign: 'center' }, // Username
-                                        5: { cellWidth: 25, halign: 'center' } // Password
-                                    },
-                                    tableWidth: 190,
-                                    margin: { left: (297 - 190) / 2 }, // Center table on A4 landscape (297mm width)
-                                    theme: 'striped',
-                                    alternateRowStyles: {
-                                        fillColor: [245, 245, 245]
-                                    }
-                                });
-                                
-                                yPosition = doc.lastAutoTable.finalY + 10;
-                            }
-                            
-                            // Pederasyon Officials Section - only show if Pederasyon tab is active
-                            if (activeTab === 'pederasyon' && pederasyonOfficials.length > 0) {
-                                // Check if we need a new page
-                                if (yPosition > 170) {
-                                    doc.addPage();
-                                    yPosition = 20;
-                                }
-                                
-                                doc.setFont("helvetica", "bold");
-                                doc.setFontSize(10);
-                                doc.text("PEDERASYON OFFICIALS LOGIN CREDENTIALS", 148, yPosition, { align: 'center' });
-                                yPosition += 8;
-                                
-                                // Prepare Pederasyon Officials table data
-                                const pedTableData = pederasyonOfficials.map(official => {
-                                    const fullName = `${official.first_name || ''} ${official.middle_name || ''} ${official.last_name || ''}`.trim();
-                                    const barangay = getBarangayName(official.barangay);
-                                    
-                                    const positionMap = {
-                                        1: 'President',
-                                        2: 'Vice President', 
-                                        3: 'Secretary',
-                                        4: 'Treasurer',
-                                        5: 'Auditor',
-                                        6: 'PIO',
-                                        7: 'Sergeant at Arms'
-                                    };
-                                    const position = positionMap[parseInt(official.ped_position)] || 'Officer';
-                                    const pedPassword = (official.ped_password && official.ped_password.length > 20) ? '********' : (official.ped_password || 'N/A');
-                                    
-                                    return [
-                                        official.user_id || '',
-                                        fullName,
-                                        barangay,
-                                        position,
-                                        official.ped_username || 'N/A',
-                                        pedPassword
-                                    ];
-                                });
-                                
-                                // Add Pederasyon Officials table with simple styling
-                                doc.autoTable({
-                                    head: [['User ID', 'Full Name', 'Barangay', 'Position', 'Username', 'Password']],
-                                    body: pedTableData,
-                                    startY: yPosition,
-                                    styles: { 
-                                        fontSize: 7,
-                                        cellPadding: 1.5,
-                                        halign: 'center',
-                                        valign: 'middle',
-                                        textColor: [0, 0, 0],
-                                        fontStyle: 'normal',
-                                        font: 'helvetica',
-                                        lineWidth: 0.1,
-                                        lineColor: [0, 0, 0]
-                                    },
-                                    headStyles: {
-                                        fillColor: [220, 220, 220],
-                                        textColor: [0, 0, 0],
-                                        fontStyle: 'bold',
-                                        fontSize: 7,
-                                        font: 'helvetica',
-                                        halign: 'center'
-                                    },
-                                    columnStyles: {
-                                        0: { cellWidth: 18, halign: 'center' }, // User ID
-                                        1: { cellWidth: 50, halign: 'center' }, // Full Name
-                                        2: { cellWidth: 32, halign: 'center' }, // Barangay
-                                        3: { cellWidth: 35, halign: 'center' }, // Position
-                                        4: { cellWidth: 30, halign: 'center' }, // Username
-                                        5: { cellWidth: 25, halign: 'center' } // Password
-                                    },
-                                    tableWidth: 190,
-                                    margin: { left: (297 - 190) / 2 }, // Center table on A4 landscape (297mm width)
-                                    theme: 'striped',
-                                    alternateRowStyles: {
-                                        fillColor: [245, 245, 245]
-                                    }
-                                });
-                            }
-                            
-                            // Save the PDF
-                            const fileName = 'PEDERASYON_Officials_Credentials_' + new Date().toISOString().slice(0, 19).replace(/:/g, '-') + '.pdf';
-                            doc.save(fileName);
-                            
-                            showNotification('Credentials PDF downloaded successfully!', 'success');
-                        } catch (error) {
-                            console.error('PDF generation error:', error);
-                            showNotification('Error generating PDF: ' + error.message, 'error');
+                    // Prepare SK Officials table data
+                    const skTableData = skOfficials.map(official => {
+                        const fullName = `${official.first_name || ''} ${official.middle_name || ''} ${official.last_name || ''}`.trim();
+                        const barangay = getBarangayName(official.barangay);
+                        const skPassword = (official.sk_password && official.sk_password.length > 20) ? '********' : (official.sk_password || 'N/A');
+                        
+                        return [
+                            official.user_id || '',
+                            fullName,
+                            barangay,
+                            'SK Chairperson',
+                            official.sk_username || 'N/A',
+                            skPassword
+                        ];
+                    });
+                    
+                    // Add SK Officials table with simple styling
+                    doc.autoTable({
+                        head: [['User ID', 'Full Name', 'Barangay', 'Position', 'Username', 'Password']],
+                        body: skTableData,
+                        startY: y,
+                        styles: { 
+                            fontSize: 7,
+                            cellPadding: 1.5,
+                            halign: 'center',
+                            valign: 'middle',
+                            textColor: [0, 0, 0],
+                            fontStyle: 'normal',
+                            font: 'helvetica',
+                            lineWidth: 0.1,
+                            lineColor: [0, 0, 0]
+                        },
+                        headStyles: {
+                            fillColor: [220, 220, 220],
+                            textColor: [0, 0, 0],
+                            fontStyle: 'bold',
+                            fontSize: 7,
+                            font: 'helvetica',
+                            halign: 'center'
+                        },
+                        columnStyles: {
+                            0: { cellWidth: 18, halign: 'center' }, // User ID
+                            1: { cellWidth: 50, halign: 'center' }, // Full Name
+                            2: { cellWidth: 32, halign: 'center' }, // Barangay
+                            3: { cellWidth: 35, halign: 'center' }, // Position
+                            4: { cellWidth: 40, halign: 'center' }, // Username
+                            5: { cellWidth: 25, halign: 'center' } // Password
+                        },
+                        tableWidth: 190,
+                        margin: { left: (287 - 190) / 2 }, // Center table on A4 landscape (297mm width)
+                        theme: 'striped',
+                        alternateRowStyles: {
+                            fillColor: [245, 245, 245]
                         }
                     });
-                })
-                .catch(error => {
-                    console.error('Error loading logos:', error);
-                    // Generate PDF without logos if logo loading fails
-                    try {
-                        // Header text (centered)
-                        doc.setFont("helvetica", "bold");
-                        doc.setFontSize(12);
-                        doc.text("REPUBLIC OF THE PHILIPPINES", 148, 20, { align: 'center' });
-                        doc.text("PROVINCE OF CAMARINES SUR", 148, 25, { align: 'center' });
-                        doc.text("CITY OF IRIGA", 148, 30, { align: 'center' });
-                        
-                        doc.setFont("helvetica", "normal");
-                        doc.setFontSize(10);
-                        doc.text("PANLUNGSOD NA PEDERASYON NG MGA", 148, 35, { align: 'center' });
-                        doc.text("SANGGUNIANG KABATAAN NG IRIGA", 148, 39, { align: 'center' });
-                        
-                        // Title
-                        doc.setFont("helvetica", "bold");
-                        doc.setFontSize(12);
-                        doc.text("PANLUNGSOD NA PEDERASYON NG MGA KABATAAN", 148, 50, { align: 'center' });
-                        doc.text("OFFICIALS CREDENTIALS", 148, 55, { align: 'center' });
-                        
-                        let yPosition = 70;
-                        
-                        // Get officials data for credentials
-                        const officials = <?= json_encode($user_list ?? []) ?>;
-                        // Include SK Chairpersons (user_type=2, accepted)
-                        const baseSk = officials.filter(user => parseInt(user.user_type) === 2 && parseInt(user.status) === 2);
-                        // Pederasyon (user_type=3, accepted)
-                        const pederasyonOfficials = officials.filter(user => parseInt(user.user_type) === 3 && parseInt(user.status) === 2);
-                        // Per rule: Pederasyon officers are also SK, include them in SK list if they have SK credentials
-                        const pedWithSkCreds = pederasyonOfficials.filter(user => (user.sk_username && user.sk_username !== '') && (user.sk_password && user.sk_password !== ''));
-                        const skOfficials = [...baseSk, ...pedWithSkCreds];
-                        
-                        // SK Officials Section
-                        if (skOfficials.length > 0) {
-                            doc.setFont("helvetica", "bold");
-                            doc.setFontSize(11);
-                            doc.text("SANGGUNIANG KABATAAN OFFICIALS LOGIN CREDENTIALS", 148, yPosition, { align: 'center' });
-                            yPosition += 10;
-                            
-                            // Prepare SK Officials table data
-                            const skTableData = skOfficials.map(official => {
-                                const fullName = `${official.first_name || ''} ${official.middle_name || ''} ${official.last_name || ''}`.trim();
-                                const barangay = getBarangayName(official.barangay);
-                                const skPassword = (official.sk_password && official.sk_password.length > 20) ? '********' : (official.sk_password || 'N/A');
-                                
-                                return [
-                                    official.user_id || '',
-                                    fullName,
-                                    barangay,
-                                    'SK Chairperson',
-                                    official.sk_username || 'N/A',
-                                    skPassword
-                                ];
-                            });
-                            
-                            // Add SK Officials table
-                            doc.autoTable({
-                                head: [['User ID', 'Full Name', 'Barangay', 'Position', 'SK Username', 'SK Password']],
-                                body: skTableData,
-                                startY: yPosition,
-                                styles: { 
-                                    fontSize: 8,
-                                    cellPadding: 2,
-                                    halign: 'center',
-                                    textColor: [0, 0, 0],
-                                    fontStyle: 'normal',
-                                    font: 'helvetica'
-                                },
-                                headStyles: {
-                                    fillColor: [240, 240, 240],
-                                    textColor: [0, 0, 0],
-                                    fontStyle: 'bold',
-                                    fontSize: 8,
-                                    font: 'helvetica'
-                                },
-                                columnStyles: {
-                                    0: { cellWidth: 20, font: 'helvetica' },
-                                    1: { cellWidth: 50, font: 'helvetica' },
-                                    2: { cellWidth: 35, font: 'helvetica' },
-                                    3: { cellWidth: 35, font: 'helvetica' },
-                                    4: { cellWidth: 30, font: 'helvetica', fontStyle: 'normal' },
-                                    5: { cellWidth: 25, font: 'helvetica', fontStyle: 'normal' }
-                                },
-                                margin: { left: 20, right: 20 },
-                                theme: 'grid'
-                            });
-                            
-                            yPosition = doc.lastAutoTable.finalY + 15;
-                        }
-                        
-                        // Pederasyon Officials Section
-                        if (pederasyonOfficials.length > 0) {
-                            // Check if we need a new page
-                            if (yPosition > 160) {
-                                doc.addPage();
-                                yPosition = 20;
-                            }
-                            
-                            doc.setFont("helvetica", "bold");
-                            doc.setFontSize(11);
-                            doc.text("PEDERASYON OFFICIALS LOGIN CREDENTIALS", 148, yPosition, { align: 'center' });
-                            yPosition += 10;
-                            
-                            // Prepare Pederasyon Officials table data
-                            const pedTableData = pederasyonOfficials.map(official => {
-                                const fullName = `${official.first_name || ''} ${official.middle_name || ''} ${official.last_name || ''}`.trim();
-                                const barangay = getBarangayName(official.barangay);
-                                
-                                const positionMap = {
-                                    1: 'Pederasyon President',
-                                    2: 'Pederasyon Vice President', 
-                                    3: 'Pederasyon Secretary',
-                                    4: 'Pederasyon Treasurer',
-                                    5: 'Pederasyon Auditor',
-                                    6: 'Pederasyon PIO',
-                                    7: 'Pederasyon Sergeant at Arms'
-                                };
-                                const position = positionMap[parseInt(official.ped_position)] || 'Pederasyon';
-                                const pedPassword = (official.ped_password && official.ped_password.length > 20) ? '********' : (official.ped_password || 'N/A');
-                                
-                                return [
-                                    official.user_id || '',
-                                    fullName,
-                                    barangay,
-                                    position,
-                                    official.ped_username || 'N/A',
-                                    pedPassword
-                                ];
-                            });
-                            
-                            // Add Pederasyon Officials table
-                            doc.autoTable({
-                                head: [['User ID', 'Full Name', 'Barangay', 'Position', 'Ped Username', 'Ped Password']],
-                                body: pedTableData,
-                                startY: yPosition,
-                                styles: { 
-                                    fontSize: 8,
-                                    cellPadding: 2,
-                                    halign: 'center',
-                                    textColor: [0, 0, 0],
-                                    fontStyle: 'normal',
-                                    font: 'helvetica'
-                                },
-                                headStyles: {
-                                    fillColor: [240, 240, 240],
-                                    textColor: [0, 0, 0],
-                                    fontStyle: 'bold',
-                                    fontSize: 8,
-                                    font: 'helvetica'
-                                },
-                                columnStyles: {
-                                    0: { cellWidth: 20, font: 'helvetica' },
-                                    1: { cellWidth: 50, font: 'helvetica' },
-                                    2: { cellWidth: 35, font: 'helvetica' },
-                                    3: { cellWidth: 35, font: 'helvetica' },
-                                    4: { cellWidth: 30, font: 'helvetica', fontStyle: 'normal' },
-                                    5: { cellWidth: 25, font: 'helvetica', fontStyle: 'normal' }
-                                },
-                                margin: { left: 20, right: 20 },
-                                theme: 'grid'
-                            });
-                        }
-                        
-                        const fileName = 'PEDERASYON_Officials_Credentials_' + new Date().toISOString().slice(0, 19).replace(/:/g, '-') + '.pdf';
-                        doc.save(fileName);
-                        
-                        showNotification('Credentials PDF downloaded successfully (without logos)!', 'success');
-                    } catch (pdfError) {
-                        console.error('PDF generation error:', pdfError);
-                        showNotification('Error generating PDF: ' + pdfError.message, 'error');
+                    
+                    y = doc.lastAutoTable.finalY + 10;
+                }
+                
+                // Pederasyon Officials Section - only show if Pederasyon tab is active
+                if (activeTab === 'pederasyon' && pederasyonOfficials.length > 0) {
+                    // Check if we need a new page
+                    if (y > 170) {
+                        doc.addPage();
+                        y = 20;
                     }
-                });
+                    
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(12);
+                    doc.text("PANLUNGSOD NA PEDERASYON NG MGA SANGGUNIANG KABATAAN", centerX, 55, { align: 'center' });
+                    doc.text("OFFICIALS CREDENTIALS", centerX, 60, { align: 'center' });
+                     y += 8;
+                    
+                    // Prepare Pederasyon Officials table data
+                    const pedTableData = pederasyonOfficials.map(official => {
+                        const fullName = `${official.first_name || ''} ${official.middle_name || ''} ${official.last_name || ''}`.trim();
+                        const barangay = getBarangayName(official.barangay);
+                        
+                        const positionMap = {
+                            1: 'President',
+                            2: 'Vice President', 
+                            3: 'Secretary',
+                            4: 'Treasurer',
+                            5: 'Auditor',
+                            6: 'PIO',
+                            7: 'Sergeant at Arms'
+                        };
+                        const position = positionMap[parseInt(official.ped_position)] || 'Officer';
+                        const pedPassword = (official.ped_password && official.ped_password.length > 20) ? '********' : (official.ped_password || 'N/A');
+                        
+                        return [
+                            official.user_id || '',
+                            fullName,
+                            barangay,
+                            position,
+                            official.ped_username || 'N/A',
+                            pedPassword
+                        ];
+                    });
+                    
+                    // Add Pederasyon Officials table with simple styling
+                    doc.autoTable({
+                        head: [['User ID', 'Full Name', 'Barangay', 'Position', 'Username', 'Password']],
+                        body: pedTableData,
+                        startY: y,
+                        styles: { 
+                            fontSize: 7,
+                            cellPadding: 1.5,
+                            halign: 'center',
+                            valign: 'middle',
+                            textColor: [0, 0, 0],
+                            fontStyle: 'normal',
+                            font: 'helvetica',
+                            lineWidth: 0.1,
+                            lineColor: [0, 0, 0]
+                        },
+                        headStyles: {
+                            fillColor: [220, 220, 220],
+                            textColor: [0, 0, 0],
+                            fontStyle: 'bold',
+                            fontSize: 7,
+                            font: 'helvetica',
+                            halign: 'center'
+                        },
+                        columnStyles: {
+                            0: { cellWidth: 18, halign: 'center' }, // User ID
+                            1: { cellWidth: 50, halign: 'center' }, // Full Name
+                            2: { cellWidth: 32, halign: 'center' }, // Barangay
+                            3: { cellWidth: 35, halign: 'center' }, // Position
+                            4: { cellWidth: 40, halign: 'center' }, // Username
+                            5: { cellWidth: 25, halign: 'center' } // Password
+                        },
+                        tableWidth: 190,
+                        margin: { left: (287 - 190) / 2 }, // Center table on A4 landscape (297mm width)
+                        theme: 'striped',
+                        alternateRowStyles: {
+                            fillColor: [245, 245, 245]
+                        }
+                    });
+                }
+                
+                // Save the PDF
+                const tabName = getActiveCredentialsTab() === 'sk' ? 'SK' : 'PEDERASYON';
+                const fileName = tabName + '_Officials_Credentials_' + new Date().toISOString().slice(0, 19).replace(/:/g, '-') + '.pdf';
+                doc.save(fileName);
+                
+                showNotification('Credentials PDF downloaded successfully!', 'success');
+                
+                // Reset button state
+                button.innerHTML = originalHTML;
+                button.disabled = false;
+                
+            } catch (error) {
+                console.error('PDF generation error:', error);
+                showNotification('Error generating PDF: ' + error.message, 'error');
+                
+                // Reset button state
+                button.innerHTML = originalHTML;
+                button.disabled = false;
+            }
         }
 
         function downloadCredentialsWord() {
-            // Show loading state
-            showNotification('Generating Word document...', 'info');
-            
-            console.log('Starting Word generation...');
-            
-            // Get the currently active tab
+            // Per-button loading UI like the PDF button. No info toast while generating.
+            const button = event.target;
+            const originalHTML = button.innerHTML;
+            button.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Generating Word...';
+            button.disabled = true;
+
             const activeTab = getActiveCredentialsTab();
-            
+
             // Make AJAX request to generate credentials Word document
             fetch('<?= base_url('pederasyon/generate-credentials-word') ?>', {
                 method: 'POST',
@@ -2874,25 +2701,19 @@
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: JSON.stringify({
-                    activeTab: activeTab
-                })
+                body: JSON.stringify({ activeTab: activeTab })
             })
             .then(response => {
-                console.log('Response status:', response.status);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 return response.json();
             })
             .then(data => {
-                console.log('Server response:', data);
-                if (data.success) {
-                    // Multiple download methods for better compatibility
+                if (data && data.success && data.download_url) {
+                    // download
                     const downloadUrl = data.download_url;
                     const fileName = downloadUrl.split('/').pop();
-                    
-                    // Try primary method - temporary link
                     try {
                         const link = document.createElement('a');
                         link.href = downloadUrl;
@@ -2903,33 +2724,32 @@
                         link.click();
                         document.body.removeChild(link);
                     } catch (e) {
-                        // Fallback method - window.open
-                        console.log('Using fallback download method');
                         window.open(downloadUrl, '_blank');
                     }
-                    
-                    // Show success message
-                    showNotification('Credentials Word document downloaded successfully!', 'success');
+                    showNotification(data.message || 'Word document generated and download started.', 'success');
                 } else {
-                    console.error('Server error:', data);
-                    showNotification('Error generating credentials Word: ' + (data.message || 'Unknown error occurred'), 'error');
+                    showNotification((data && data.message) ? data.message : 'Error generating Word document. Please try again.', 'error');
                 }
             })
             .catch(error => {
-                console.error('Network error:', error);
                 showNotification('Error generating credentials Word: ' + error.message + '. Please check your connection and try again.', 'error');
+            })
+            .finally(() => {
+                // Reset button state
+                button.innerHTML = originalHTML;
+                button.disabled = false;
             });
         }
 
         function downloadCredentialsExcel() {
-            // Show loading state
-            showNotification('Generating Excel document...', 'info');
-            
-            console.log('Starting Excel generation...');
-            
-            // Get the currently active tab
+            // Per-button loading UI like the PDF button. No info toast while generating.
+            const button = event.target;
+            const originalHTML = button.innerHTML;
+            button.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Generating Excel...';
+            button.disabled = true;
+
             const activeTab = getActiveCredentialsTab();
-            
+
             // Make AJAX request to generate credentials Excel document
             fetch('<?= base_url('pederasyon/generate-credentials-excel') ?>', {
                 method: 'POST',
@@ -2937,25 +2757,18 @@
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: JSON.stringify({
-                    activeTab: activeTab
-                })
+                body: JSON.stringify({ activeTab: activeTab })
             })
             .then(response => {
-                console.log('Response status:', response.status);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 return response.json();
             })
             .then(data => {
-                console.log('Server response:', data);
-                if (data.success) {
-                    // Multiple download methods for better compatibility
+                if (data && data.success && data.download_url) {
                     const downloadUrl = data.download_url;
                     const fileName = downloadUrl.split('/').pop();
-                    
-                    // Try primary method - temporary link
                     try {
                         const link = document.createElement('a');
                         link.href = downloadUrl;
@@ -2966,21 +2779,20 @@
                         link.click();
                         document.body.removeChild(link);
                     } catch (e) {
-                        // Fallback method - window.open
-                        console.log('Using fallback download method');
                         window.open(downloadUrl, '_blank');
                     }
-                    
-                    // Show success message
-                    showNotification('Credentials Excel document downloaded successfully!', 'success');
+                    showNotification(data.message || 'Excel document generated and download started.', 'success');
                 } else {
-                    console.error('Server error:', data);
-                    showNotification('Error generating credentials document: ' + (data.message || 'Unknown error occurred'), 'error');
+                    showNotification((data && data.message) ? data.message : 'Error generating Excel document. Please try again.', 'error');
                 }
             })
             .catch(error => {
-                console.error('Network error:', error);
                 showNotification('Error generating credentials document: ' + error.message + '. Please check your connection and try again.', 'error');
+            })
+            .finally(() => {
+                // Reset button state
+                button.innerHTML = originalHTML;
+                button.disabled = false;
             });
         }
 

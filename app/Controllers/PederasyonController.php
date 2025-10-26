@@ -648,24 +648,27 @@ class PederasyonController extends BaseController
             // Get logos for the Word document
             $logos = $this->getLogosForDocument();
 
-            // Generate Word document
-            $outputWordFile = $this->generateOfficialListWordDocument($officials, $logos);
+            // Generate Word document directly to output
+            $phpWord = $this->generateOfficialListWordDocument($officials, $logos);
             
-            if ($outputWordFile && file_exists($outputWordFile)) {
-                // Return the Word file for download
-                $fileName = basename($outputWordFile);
-                log_message('info', 'Word document ready for download: ' . $fileName);
-                return $this->response->setJSON([
-                    'success' => true, 
-                    'message' => 'Official List Word document generated successfully',
-                    'download_url' => base_url('uploads/generated/' . $fileName),
-                    'official_count' => count($officials)
-                ]);
+            if ($phpWord) {
+                // Generate filename
+                $fileName = 'PEDERASYON_Official_List_' . date('Y-m-d_His') . '.docx';
+                
+                // Set headers for download
+                header('Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+                header('Content-Disposition: attachment;filename="' . $fileName . '"');
+                header('Cache-Control: max-age=0');
+                
+                // Write directly to output
+                $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
+                $writer->save('php://output');
+                exit;
             } else {
-                log_message('error', 'Word document file not created or does not exist');
+                log_message('error', 'Word document generation failed');
                 return $this->response->setJSON([
                     'success' => false, 
-                    'message' => 'Error generating Word document - file not created'
+                    'message' => 'Error generating Word document'
                 ]);
             }
         } catch (\Exception $e) {
@@ -822,29 +825,22 @@ class PederasyonController extends BaseController
                     $birthday = $official['birthdate'] ? date('m/d/Y', strtotime($official['birthdate'])) : '';
                     $sex = $official['sex'] == '1' ? 'Male' : ($official['sex'] == '2' ? 'Female' : '');
                     
-                    // Determine specific position
+                    // Determine specific position - only show SK Pederasyon positions
                     $position = '';
                     if ($userType === 3) { // Pederasyon Officer
                         $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : 0;
                         switch($pedPosition) {
-                            case 1: $position = 'Pederasyon President'; break;
-                            case 2: $position = 'Pederasyon Vice President'; break;
-                            case 3: $position = 'Pederasyon Secretary'; break;
-                            case 4: $position = 'Pederasyon Treasurer'; break;
-                            case 5: $position = 'Pederasyon Auditor'; break;
-                            case 6: $position = 'Pederasyon Public Information Officer'; break;
-                            case 7: $position = 'Pederasyon Sergeant at Arms'; break;
-                            default: $position = 'Pederasyon Officer | SK Chairperson'; break;
+                            case 1: $position = 'SK Pederasyon President'; break;
+                            case 2: $position = 'SK Pederasyon Vice President'; break;
+                            case 3: $position = 'SK Pederasyon Secretary'; break;
+                            case 4: $position = 'SK Pederasyon Treasurer'; break;
+                            case 5: $position = 'SK Pederasyon Auditor'; break;
+                            case 6: $position = 'SK Pederasyon Public Information Officer'; break;
+                            case 7: $position = 'SK Pederasyon Sergeant at Arms'; break;
+                            default: $position = 'SK Pederasyon Member'; break;
                         }
-                    } else if ($userType === 2) { // SK Chairperson
-                        $userPosition = isset($official['position']) ? (int)$official['position'] : 0;
-                        switch($userPosition) {
-                            case 1: $position = 'SK Chairperson'; break;
-                            case 2: $position = 'SK Councilor'; break;
-                            case 3: $position = 'SK Secretary'; break;
-                            case 4: $position = 'SK Treasurer'; break;
-                            default: $position = 'SK Official'; break;
-                        }
+                    } else if ($userType === 2) { // SK Chairperson - also show as SK Pederasyon Member
+                        $position = 'SK Pederasyon Member';
                     }
                     
                     // Add row to table
@@ -909,20 +905,9 @@ class PederasyonController extends BaseController
             $approvedCell->addText($presidentName ?: '________________', ['name' => 'Arial', 'size' => 8, 'bold' => true], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             $approvedCell->addText('Pederasyon President', ['name' => 'Arial', 'size' => 8, 'bold' => true], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
             
-            // Save the document
-            $outputDir = FCPATH . 'uploads/generated/';
-            if (!is_dir($outputDir)) {
-                mkdir($outputDir, 0755, true);
-            }
-            
-            $fileName = 'PEDERASYON_Official_List_' . date('Y-m-d') . '.docx';
-            $outputPath = $outputDir . $fileName;
-            
-            $objWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
-            $objWriter->save($outputPath);
-            
-            log_message('info', 'Word document saved to: ' . $outputPath);
-            return $outputPath;
+            // Return the PhpWord object instead of saving to file
+            log_message('info', 'Word document generated successfully');
+            return $phpWord;
             
         } catch (\Exception $e) {
             log_message('error', 'Error in generateOfficialListWordDocument: ' . $e->getMessage());
@@ -1029,24 +1014,27 @@ class PederasyonController extends BaseController
                 return $this->response->setJSON(['success' => false, 'message' => 'No officials found for the official list']);
             }
 
-            // Generate Excel document (no logos)
-            $outputExcelFile = $this->generateOfficialListExcelDocument($officials);
+            // Generate Excel document directly to output
+            $spreadsheet = $this->generateOfficialListExcelDocument($officials);
             
-            if ($outputExcelFile && file_exists($outputExcelFile)) {
-                // Return the Excel file for download
-                $fileName = basename($outputExcelFile);
-                log_message('info', 'Excel document ready for download: ' . $fileName);
-                return $this->response->setJSON([
-                    'success' => true, 
-                    'message' => 'Official List Excel document generated successfully',
-                    'download_url' => base_url('uploads/generated/' . $fileName),
-                    'official_count' => count($officials)
-                ]);
+            if ($spreadsheet) {
+                // Generate filename
+                $fileName = 'PEDERASYON_Official_List_' . date('Y-m-d_His') . '.xlsx';
+                
+                // Set headers for download
+                header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                header('Content-Disposition: attachment;filename="' . $fileName . '"');
+                header('Cache-Control: max-age=0');
+                
+                // Write directly to output
+                $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+                $writer->save('php://output');
+                exit;
             } else {
-                log_message('error', 'Excel document file not created or does not exist');
+                log_message('error', 'Excel document generation failed');
                 return $this->response->setJSON([
                     'success' => false, 
-                    'message' => 'Error generating Excel document - file not created'
+                    'message' => 'Error generating Excel document'
                 ]);
             }
         } catch (\Exception $e) {
@@ -1182,29 +1170,22 @@ class PederasyonController extends BaseController
                     $birthday = $official['birthdate'] ? date('m/d/Y', strtotime($official['birthdate'])) : '';
                     $sex = $official['sex'] == '1' ? 'Male' : ($official['sex'] == '2' ? 'Female' : '');
                     
-                    // Determine specific position
+                    // Determine specific position - only show SK Pederasyon positions
                     $position = '';
                     if ($userType === 3) { // Pederasyon Officer
                         $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : 0;
                         switch($pedPosition) {
-                            case 1: $position = 'Pederasyon President'; break;
-                            case 2: $position = 'Pederasyon Vice President'; break;
-                            case 3: $position = 'Pederasyon Secretary'; break;
-                            case 4: $position = 'Pederasyon Treasurer'; break;
-                            case 5: $position = 'Pederasyon Auditor'; break;
-                            case 6: $position = 'Pederasyon Public Information Officer'; break;
-                            case 7: $position = 'Pederasyon Sergeant at Arms'; break;
-                            default: $position = 'Pederasyon Officer | SK Chairperson'; break;
+                            case 1: $position = 'SK Pederasyon President'; break;
+                            case 2: $position = 'SK Pederasyon Vice President'; break;
+                            case 3: $position = 'SK Pederasyon Secretary'; break;
+                            case 4: $position = 'SK Pederasyon Treasurer'; break;
+                            case 5: $position = 'SK Pederasyon Auditor'; break;
+                            case 6: $position = 'SK Pederasyon Public Information Officer'; break;
+                            case 7: $position = 'SK Pederasyon Sergeant at Arms'; break;
+                            default: $position = 'SK Pederasyon Member'; break;
                         }
-                    } else if ($userType === 2) { // SK Chairperson
-                        $userPosition = isset($official['position']) ? (int)$official['position'] : 0;
-                        switch($userPosition) {
-                            case 1: $position = 'SK Chairperson'; break;
-                            case 2: $position = 'SK Councilor'; break;
-                            case 3: $position = 'SK Secretary'; break;
-                            case 4: $position = 'SK Treasurer'; break;
-                            default: $position = 'SK Official'; break;
-                        }
+                    } else if ($userType === 2) { // SK Chairperson - also show as SK Pederasyon Member
+                        $position = 'SK Pederasyon Member';
                     }
                     
                     // Add data to Excel with proper formatting
@@ -1317,20 +1298,9 @@ class PederasyonController extends BaseController
             $sheet->getPageMargins()->setLeft(0.5);
             $sheet->getPageMargins()->setRight(0.5);
 
-            // Save the document
-            $outputDir = FCPATH . 'uploads/generated/';
-            if (!is_dir($outputDir)) {
-                mkdir($outputDir, 0755, true);
-            }
-            
-            $fileName = 'PEDERASYON_Official_List_' . date('Y-m-d') . '.xlsx';
-            $outputPath = $outputDir . $fileName;
-            
-            $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
-            $writer->save($outputPath);
-            
-            log_message('info', 'Excel document saved to: ' . $outputPath);
-            return $outputPath;
+            // Return the Spreadsheet object instead of saving to file
+            log_message('info', 'Excel document generated successfully');
+            return $spreadsheet;
             
         } catch (\Exception $e) {
             log_message('error', 'Error in generateOfficialListExcelDocument: ' . $e->getMessage());
@@ -1369,24 +1339,27 @@ class PederasyonController extends BaseController
                 return $this->response->setJSON(['success' => false, 'message' => 'No SK Chairpersons found for credentials generation']);
             }
 
-            // Generate credentials document
-            $outputCredentialsFile = $this->generateCredentialsDocument($officials);
+            // Generate credentials document directly to output
+            $spreadsheet = $this->generateCredentialsDocument($officials);
             
-            if ($outputCredentialsFile && file_exists($outputCredentialsFile)) {
-                // Return the credentials file for download
-                $fileName = basename($outputCredentialsFile);
-                log_message('info', 'Credentials document ready for download: ' . $fileName);
-                return $this->response->setJSON([
-                    'success' => true, 
-                    'message' => 'Credentials document generated successfully',
-                    'download_url' => base_url('uploads/generated/' . $fileName),
-                    'official_count' => count($officials)
-                ]);
+            if ($spreadsheet) {
+                // Generate filename
+                $fileName = 'PEDERASYON_Officials_Credentials_' . date('Y-m-d_His') . '.xlsx';
+                
+                // Set headers for download
+                header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                header('Content-Disposition: attachment;filename="' . $fileName . '"');
+                header('Cache-Control: max-age=0');
+                
+                // Write directly to output
+                $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+                $writer->save('php://output');
+                exit;
             } else {
-                log_message('error', 'Credentials document file not created or does not exist');
+                log_message('error', 'Credentials document generation failed');
                 return $this->response->setJSON([
                     'success' => false, 
-                    'message' => 'Error generating credentials document - file not created'
+                    'message' => 'Error generating credentials document'
                 ]);
             }
         } catch (\Exception $e) {
@@ -1533,24 +1506,17 @@ class PederasyonController extends BaseController
                     if ($userType === 3) { // Pederasyon Officer
                         $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : 0;
                         switch($pedPosition) {
-                            case 1: $position = 'Pederasyon President'; break;
-                            case 2: $position = 'Pederasyon Vice President'; break;
-                            case 3: $position = 'Pederasyon Secretary'; break;
-                            case 4: $position = 'Pederasyon Treasurer'; break;
-                            case 5: $position = 'Pederasyon Auditor'; break;
-                            case 6: $position = 'Pederasyon Public Information Officer'; break;
-                            case 7: $position = 'Pederasyon Sergeant at Arms'; break;
-                            default: $position = 'Pederasyon Officer | SK Chairperson'; break;
+                            case 1: $position = 'SK Pederasyon President'; break;
+                            case 2: $position = 'SK Pederasyon Vice President'; break;
+                            case 3: $position = 'SK Pederasyon Secretary'; break;
+                            case 4: $position = 'SK Pederasyon Treasurer'; break;
+                            case 5: $position = 'SK Pederasyon Auditor'; break;
+                            case 6: $position = 'SK Pederasyon Public Information Officer'; break;
+                            case 7: $position = 'SK Pederasyon Sergeant at Arms'; break;
+                            default: $position = 'SK Pederasyon Member'; break;
                         }
-                    } else if ($userType === 2) { // SK Chairperson
-                        $userPosition = isset($official['position']) ? (int)$official['position'] : 0;
-                        switch($userPosition) {
-                            case 1: $position = 'SK Chairperson'; break;
-                            case 2: $position = 'SK Councilor'; break;
-                            case 3: $position = 'SK Secretary'; break;
-                            case 4: $position = 'SK Treasurer'; break;
-                            default: $position = 'SK Official'; break;
-                        }
+                    } else if ($userType === 2) { // SK Chairperson - show as SK Pederasyon Member
+                        $position = 'SK Pederasyon Member';
                     }
                     
                     // Add data to Excel with proper formatting
@@ -1598,20 +1564,9 @@ class PederasyonController extends BaseController
             $sheet->getPageMargins()->setLeft(0.5);
             $sheet->getPageMargins()->setRight(0.5);
 
-            // Save the document
-            $outputDir = FCPATH . 'uploads/generated/';
-            if (!is_dir($outputDir)) {
-                mkdir($outputDir, 0755, true);
-            }
-            
-            $fileName = 'PEDERASYON_Officials_Credentials_' . date('Y-m-d') . '.xlsx';
-            $outputPath = $outputDir . $fileName;
-            
-            $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
-            $writer->save($outputPath);
-            
-            log_message('info', 'Credentials document saved to: ' . $outputPath);
-            return $outputPath;
+            // Return the Spreadsheet object instead of saving to file
+            log_message('info', 'Credentials Excel document generated successfully');
+            return $spreadsheet;
             
         } catch (\Exception $e) {
             log_message('error', 'Error in generateCredentialsDocument: ' . $e->getMessage());
@@ -1661,8 +1616,10 @@ class PederasyonController extends BaseController
                     $fullName .= ' ' . esc($u['middle_name']);
                 }
 
-                // SK Chairperson credentials (user_type=2 & has sk_username/password & position=1 if provided)
-                if ($userType === 2) {
+                // SK Chairperson credentials tab logic:
+                // - Include user_type = 2 (SK Chairperson) with sk_username/password
+                // - Include user_type = 3 (Pederasyon) with sk_username/password (they are also SK Chairpersons)
+                if ($userType === 2 || $userType === 3) {
                     $skUsername = $u['sk_username'] ?? '';
                     $skPassword = $u['sk_password'] ?? '';
                     // Only include if both fields exist
@@ -1678,13 +1635,14 @@ class PederasyonController extends BaseController
                     }
                 }
 
-                // Pederasyon credentials (user_type=3 & ped_username/password)
+                // Pederasyon credentials tab logic:
+                // - Include only user_type = 3 with ped_username/password
                 if ($userType === 3) {
                     $pedUsername = $u['ped_username'] ?? '';
                     $pedPassword = $u['ped_password'] ?? '';
                     if ($pedUsername && $pedPassword) {
                         $pedPosCode = isset($u['ped_position']) ? (int)$u['ped_position'] : 0;
-                        $pedPosLabel = $pedPositionMap[$pedPosCode] ?? 'Officer';
+                        $pedPosLabel = $pedPositionMap[$pedPosCode] ?? 'Member';
                         $pedCredentials[] = [
                             'userId'   => $userId,
                             'name'     => $fullName,
@@ -1731,38 +1689,21 @@ class PederasyonController extends BaseController
             $users = $profileController->getAllUsersWithExtendedInfo();
             $users = $profileController->processUsersForMemberListing($users, 'pederasyon');
             
-            // Filter only SK Chairpersons (user_type=2 AND position=1 with Accepted status)
+            // Filter for credentials: Include user_type=2 (SK Chairpersons) and user_type=3 (Pederasyon) with Accepted status
             $officials = array_filter($users, function($user) {
                 $userType = isset($user['user_type']) ? (int)$user['user_type'] : 1;
-                $position = isset($user['position']) ? (int)$user['position'] : 0;
                 $status = isset($user['status']) ? (int)$user['status'] : 1;
-                return $userType === 2 && $position === 1 && $status === 2; // Only SK Chairpersons, Accepted
+                // Include both SK Chairpersons (type 2) and Pederasyon (type 3), both Accepted
+                return ($userType === 2 || $userType === 3) && $status === 2;
             });
 
             if (empty($officials)) {
-                return $this->response->setJSON(['success' => false, 'message' => 'No SK Chairpersons found for credentials PDF generation']);
+                return $this->response->setJSON(['success' => false, 'message' => 'No officials found for credentials PDF generation']);
             }
 
-            // Generate credentials PDF document
-            $outputPdfFile = $this->generateCredentialsPDFDocument($officials);
+            // Generate credentials PDF document directly to output
+            $this->generateCredentialsPDFDocument($officials);
             
-            if ($outputPdfFile && file_exists($outputPdfFile)) {
-                // Return the credentials PDF file for download
-                $fileName = basename($outputPdfFile);
-                log_message('info', 'Credentials PDF document ready for download: ' . $fileName);
-                return $this->response->setJSON([
-                    'success' => true, 
-                    'message' => 'Credentials PDF document generated successfully',
-                    'download_url' => base_url('uploads/generated/' . $fileName),
-                    'official_count' => count($officials)
-                ]);
-            } else {
-                log_message('error', 'Credentials PDF document file not created or does not exist');
-                return $this->response->setJSON([
-                    'success' => false, 
-                    'message' => 'Error generating credentials PDF document - file not created'
-                ]);
-            }
         } catch (\Exception $e) {
             log_message('error', 'Error in generateCredentialsPDF: ' . $e->getMessage());
             log_message('error', 'Stack trace: ' . $e->getTraceAsString());
@@ -2031,15 +1972,15 @@ class PederasyonController extends BaseController
                     $barangay = BarangayHelper::getBarangayName($official['barangay']);
                     
                     $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : 0;
-                    $position = 'Pederasyon Officer | SK Chairperson';
+                    $position = 'SK Pederasyon Member';
                     switch($pedPosition) {
-                        case 1: $position = 'Pederasyon President'; break;
-                        case 2: $position = 'Pederasyon Vice President'; break;
-                        case 3: $position = 'Pederasyon Secretary'; break;
-                        case 4: $position = 'Pederasyon Treasurer'; break;
-                        case 5: $position = 'Pederasyon Auditor'; break;
-                        case 6: $position = 'Pederasyon Public Information Officer'; break;
-                        case 7: $position = 'Pederasyon Sergeant at Arms'; break;
+                        case 1: $position = 'SK Pederasyon President'; break;
+                        case 2: $position = 'SK Pederasyon Vice President'; break;
+                        case 3: $position = 'SK Pederasyon Secretary'; break;
+                        case 4: $position = 'SK Pederasyon Treasurer'; break;
+                        case 5: $position = 'SK Pederasyon Auditor'; break;
+                        case 6: $position = 'SK Pederasyon Public Information Officer'; break;
+                        case 7: $position = 'SK Pederasyon Sergeant at Arms'; break;
                     }
                     
                     // Check if password is hashed and mask it
@@ -2083,20 +2024,17 @@ class PederasyonController extends BaseController
             // Render the HTML as PDF
             $dompdf->render();
             
-            // Save the document
-            $outputDir = FCPATH . 'uploads/generated/';
-            if (!is_dir($outputDir)) {
-                mkdir($outputDir, 0755, true);
-            }
+            // Generate filename
+            $fileName = 'PEDERASYON_Officials_Credentials_' . date('Y-m-d_His') . '.pdf';
             
-            $fileName = 'PEDERASYON_Officials_Credentials_' . date('Y-m-d') . '.pdf';
-            $outputPath = $outputDir . $fileName;
+            // Set headers for download
+            header('Content-Type: application/pdf');
+            header('Content-Disposition: attachment;filename="' . $fileName . '"');
+            header('Cache-Control: max-age=0');
             
-            // Save PDF to file
-            file_put_contents($outputPath, $dompdf->output());
-            
-            log_message('info', 'Credentials PDF document saved to: ' . $outputPath);
-            return $outputPath;
+            // Output PDF directly
+            echo $dompdf->output();
+            exit;
             
         } catch (\Exception $e) {
             log_message('error', 'Error in generateCredentialsPDFDocument: ' . $e->getMessage());
@@ -2127,37 +2065,40 @@ class PederasyonController extends BaseController
             $users = $profileController->getAllUsersWithExtendedInfo();
             $users = $profileController->processUsersForMemberListing($users, 'pederasyon');
             
-        // Filter only SK Chairpersons (user_type=2 AND position=1 with Accepted status)
-        $officials = array_filter($users, function($user) {
+            // Filter for credentials: Include user_type=2 (SK Chairpersons) and user_type=3 (Pederasyon) with Accepted status
+            $officials = array_filter($users, function($user) {
                 $userType = isset($user['user_type']) ? (int)$user['user_type'] : 1;
-                $position = isset($user['position']) ? (int)$user['position'] : 0;
                 $status = isset($user['status']) ? (int)$user['status'] : 1;
-                
-                return $userType === 2 && $position === 1 && $status === 2; // Only SK Chairpersons, Accepted
+                // Include both SK Chairpersons (type 2) and Pederasyon (type 3), both Accepted
+                return ($userType === 2 || $userType === 3) && $status === 2;
             });
 
             if (empty($officials)) {
                 return $this->response->setJSON(['success' => false, 'message' => 'No officials found for credentials Word generation']);
             }
 
-            // Generate credentials Word document
-            $outputWordFile = $this->generateCredentialsWordDocument($officials, $activeTab);
+            // Generate credentials Word document directly to output
+            $phpWord = $this->generateCredentialsWordDocument($officials, $activeTab);
             
-            if ($outputWordFile && file_exists($outputWordFile)) {
-                // Return the credentials Word file for download
-                $fileName = basename($outputWordFile);
-                log_message('info', 'Credentials Word document ready for download: ' . $fileName);
-                return $this->response->setJSON([
-                    'success' => true, 
-                    'message' => 'Credentials Word document generated successfully',
-                    'download_url' => base_url('uploads/generated/' . $fileName),
-                    'official_count' => count($officials)
-                ]);
+            if ($phpWord) {
+                // Generate filename
+                $tabName = ($activeTab === 'sk') ? 'SK' : 'PEDERASYON';
+                $fileName = $tabName . '_Officials_Credentials_' . date('Y-m-d_His') . '.docx';
+                
+                // Set headers for download
+                header('Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+                header('Content-Disposition: attachment;filename="' . $fileName . '"');
+                header('Cache-Control: max-age=0');
+                
+                // Write directly to output
+                $objWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
+                $objWriter->save('php://output');
+                exit;
             } else {
-                log_message('error', 'Credentials Word document file not created or does not exist');
+                log_message('error', 'Credentials Word document generation failed');
                 return $this->response->setJSON([
                     'success' => false, 
-                    'message' => 'Error generating credentials Word document - file not created'
+                    'message' => 'Error generating credentials Word document'
                 ]);
             }
         } catch (\Exception $e) {
@@ -2269,9 +2210,6 @@ class PederasyonController extends BaseController
             
             // Add horizontal line and title
             $section->addTextBreak();
-            $section->addText('PANLUNGSOD NA PEDERASYON NG MGA KABATAAN', $titleStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-            $section->addText('OFFICIALS CREDENTIALS', $titleStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-            $section->addTextBreak();
 
             // Separate SK and Pederasyon officials (3 appears in both lists)
             $skOfficials = [];
@@ -2338,7 +2276,8 @@ class PederasyonController extends BaseController
 
             // Pederasyon Officials Section - only show if Pederasyon tab is active
             if ($activeTab === 'pederasyon' && !empty($pederasyonOfficials)) {
-                $section->addText('PEDERASYON OFFICIALS LOGIN CREDENTIALS', $titleStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $section->addText('PANLUNGSOD NA PEDERASYON NG MGA KABATAAN', $titleStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $section->addText('OFFICIALS LOGIN CREDENTIALS', $titleStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
                 $section->addTextBreak();
                 
                 // Create Pederasyon credentials table
@@ -2364,15 +2303,15 @@ class PederasyonController extends BaseController
                     $barangay = BarangayHelper::getBarangayName($official['barangay']);
                     
                     $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : 0;
-                    $position = 'Pederasyon Officer | SK Chairperson';
+                    $position = 'SK Pederasyon Member';
                     switch($pedPosition) {
-                        case 1: $position = 'Pederasyon President'; break;
-                        case 2: $position = 'Pederasyon Vice President'; break;
-                        case 3: $position = 'Pederasyon Secretary'; break;
-                        case 4: $position = 'Pederasyon Treasurer'; break;
-                        case 5: $position = 'Pederasyon Auditor'; break;
-                        case 6: $position = 'Pederasyon Public Information Officer'; break;
-                        case 7: $position = 'Pederasyon Sergeant at Arms'; break;
+                        case 1: $position = 'SK Pederasyon President'; break;
+                        case 2: $position = 'SK Pederasyon Vice President'; break;
+                        case 3: $position = 'SK Pederasyon Secretary'; break;
+                        case 4: $position = 'SK Pederasyon Treasurer'; break;
+                        case 5: $position = 'SK Pederasyon Auditor'; break;
+                        case 6: $position = 'SK Pederasyon Public Information Officer'; break;
+                        case 7: $position = 'SK Pederasyon Sergeant at Arms'; break;
                     }
                     
                     // Check if password is hashed and mask it
@@ -2395,20 +2334,9 @@ class PederasyonController extends BaseController
                 }
             }
 
-            // Save the document
-            $outputDir = FCPATH . 'uploads/generated/';
-            if (!is_dir($outputDir)) {
-                mkdir($outputDir, 0755, true);
-            }
-            
-            $fileName = 'PEDERASYON_Officials_Credentials_' . date('Y-m-d') . '.docx';
-            $outputPath = $outputDir . $fileName;
-            
-            $objWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
-            $objWriter->save($outputPath);
-            
-            log_message('info', 'Credentials Word document saved to: ' . $outputPath);
-            return $outputPath;
+            // Return the PhpWord object instead of saving to file
+            log_message('info', 'Credentials Word document generated successfully');
+            return $phpWord;
             
         } catch (\Exception $e) {
             log_message('error', 'Error in generateCredentialsWordDocument: ' . $e->getMessage());
@@ -2431,37 +2359,40 @@ class PederasyonController extends BaseController
             $users = $profileController->getAllUsersWithExtendedInfo();
             $users = $profileController->processUsersForMemberListing($users, 'pederasyon');
             
-        // Filter only SK Chairpersons (user_type=2 AND position=1 with Accepted status)
-        $officials = array_filter($users, function($user) {
+            // Filter for credentials: Include user_type=2 (SK Chairpersons) and user_type=3 (Pederasyon) with Accepted status
+            $officials = array_filter($users, function($user) {
                 $userType = isset($user['user_type']) ? (int)$user['user_type'] : 1;
-                $position = isset($user['position']) ? (int)$user['position'] : 0;
                 $status = isset($user['status']) ? (int)$user['status'] : 1;
-                
-                return $userType === 2 && $position === 1 && $status === 2; // Only SK Chairpersons, Accepted
+                // Include both SK Chairpersons (type 2) and Pederasyon (type 3), both Accepted
+                return ($userType === 2 || $userType === 3) && $status === 2;
             });
 
             if (empty($officials)) {
-                return $this->response->setJSON(['success' => false, 'message' => 'No SK Chairpersons found for credentials Excel generation']);
+                return $this->response->setJSON(['success' => false, 'message' => 'No officials found for credentials Excel generation']);
             }
 
-            // Generate Excel document
-            $outputExcelFile = $this->generateCredentialsExcelDocument($officials, $activeTab);
+            // Generate Excel document directly to output
+            $spreadsheet = $this->generateCredentialsExcelDocument($officials, $activeTab);
             
-            if ($outputExcelFile && file_exists($outputExcelFile)) {
-                // Return the Excel file for download
-                $fileName = basename($outputExcelFile);
-                log_message('info', 'Credentials Excel document ready for download: ' . $fileName);
-                return $this->response->setJSON([
-                    'success' => true, 
-                    'message' => 'Credentials Excel document generated successfully',
-                    'download_url' => base_url('uploads/generated/' . $fileName),
-                    'official_count' => count($officials)
-                ]);
+            if ($spreadsheet) {
+                // Generate filename
+                $tabName = ($activeTab === 'sk') ? 'SK' : 'PEDERASYON';
+                $fileName = $tabName . '_Officials_Credentials_' . date('Y-m-d_His') . '.xlsx';
+                
+                // Set headers for download
+                header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                header('Content-Disposition: attachment;filename="' . $fileName . '"');
+                header('Cache-Control: max-age=0');
+                
+                // Write directly to output
+                $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+                $writer->save('php://output');
+                exit;
             } else {
-                log_message('error', 'Credentials Excel document file not created or does not exist');
+                log_message('error', 'Credentials Excel document generation failed');
                 return $this->response->setJSON([
                     'success' => false, 
-                    'message' => 'Error generating credentials Excel document - file not created'
+                    'message' => 'Error generating credentials Excel document'
                 ]);
             }
         } catch (\Exception $e) {
@@ -2524,23 +2455,6 @@ class PederasyonController extends BaseController
             $sheet->setCellValue('A' . $currentRow, 'SANGGUNIANG KABATAAN NG IRIGA');
             $sheet->mergeCells('A' . $currentRow . ':F' . $currentRow);
             $sheet->getStyle('A' . $currentRow)->getFont()->setBold(false)->setSize(10);
-            $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('A' . $currentRow)->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
-            $currentRow++;
-
-            $currentRow++; // Empty row
-
-            // Title
-            $sheet->setCellValue('A' . $currentRow, 'PANLUNGSOD NA PEDERASYON NG MGA KABATAAN');
-            $sheet->mergeCells('A' . $currentRow . ':F' . $currentRow);
-            $sheet->getStyle('A' . $currentRow)->getFont()->setBold(true)->setSize(14);
-            $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('A' . $currentRow)->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
-            $currentRow++;
-
-            $sheet->setCellValue('A' . $currentRow, 'OFFICIALS CREDENTIALS');
-            $sheet->mergeCells('A' . $currentRow . ':F' . $currentRow);
-            $sheet->getStyle('A' . $currentRow)->getFont()->setBold(true)->setSize(12);
             $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
             $sheet->getStyle('A' . $currentRow)->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
             $currentRow++;
@@ -2629,7 +2543,16 @@ class PederasyonController extends BaseController
 
             // Pederasyon Officials Section - only show if Pederasyon tab is active
             if ($activeTab === 'pederasyon' && !empty($pederasyonOfficials)) {
-                $sheet->setCellValue('A' . $currentRow, 'PEDERASYON OFFICIALS LOGIN CREDENTIALS');
+                // Two-line title for Pederasyon (matching Word document format)
+                $sheet->setCellValue('A' . $currentRow, 'PANLUNGSOD NA PEDERASYON NG MGA KABATAAN');
+                $sheet->mergeCells('A' . $currentRow . ':F' . $currentRow);
+                $sheet->getStyle('A' . $currentRow)->getFont()->setBold(true)->setSize(11);
+                $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('A' . $currentRow)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID);
+                $sheet->getStyle('A' . $currentRow)->getFill()->getStartColor()->setARGB('FFE8E8E8');
+                $currentRow++;
+                
+                $sheet->setCellValue('A' . $currentRow, 'OFFICIALS LOGIN CREDENTIALS');
                 $sheet->mergeCells('A' . $currentRow . ':F' . $currentRow);
                 $sheet->getStyle('A' . $currentRow)->getFont()->setBold(true)->setSize(11);
                 $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
@@ -2659,15 +2582,15 @@ class PederasyonController extends BaseController
                     $barangay = BarangayHelper::getBarangayName($official['barangay']);
                     
                     $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : 0;
-                    $position = 'Pederasyon Officer | SK Chairperson';
+                    $position = 'SK Pederasyon Member';
                     switch($pedPosition) {
-                        case 1: $position = 'Pederasyon President'; break;
-                        case 2: $position = 'Pederasyon Vice President'; break;
-                        case 3: $position = 'Pederasyon Secretary'; break;
-                        case 4: $position = 'Pederasyon Treasurer'; break;
-                        case 5: $position = 'Pederasyon Auditor'; break;
-                        case 6: $position = 'Pederasyon Public Information Officer'; break;
-                        case 7: $position = 'Pederasyon Sergeant at Arms'; break;
+                        case 1: $position = 'SK Pederasyon President'; break;
+                        case 2: $position = 'SK Pederasyon Vice President'; break;
+                        case 3: $position = 'SK Pederasyon Secretary'; break;
+                        case 4: $position = 'SK Pederasyon Treasurer'; break;
+                        case 5: $position = 'SK Pederasyon Auditor'; break;
+                        case 6: $position = 'SK Pederasyon Public Information Officer'; break;
+                        case 7: $position = 'SK Pederasyon Sergeant at Arms'; break;
                     }
                     
                     // Check if password is hashed and mask it
@@ -2717,20 +2640,9 @@ class PederasyonController extends BaseController
             $sheet->getPageMargins()->setLeft(0.5);
             $sheet->getPageMargins()->setRight(0.5);
 
-            // Save the document
-            $outputDir = FCPATH . 'uploads/generated/';
-            if (!is_dir($outputDir)) {
-                mkdir($outputDir, 0755, true);
-            }
-            
-            $fileName = 'PEDERASYON_Officials_Credentials_' . date('Y-m-d') . '.xlsx';
-            $outputPath = $outputDir . $fileName;
-            
-            $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
-            $writer->save($outputPath);
-            
-            log_message('info', 'Credentials Excel document saved to: ' . $outputPath);
-            return $outputPath;
+            // Return the Spreadsheet object instead of saving to file
+            log_message('info', 'Credentials Excel document generated successfully');
+            return $spreadsheet;
             
         } catch (\Exception $e) {
             log_message('error', 'Error in generateCredentialsExcelDocument: ' . $e->getMessage());
@@ -2774,23 +2686,28 @@ class PederasyonController extends BaseController
                 return $this->response->setJSON(['success' => false, 'message' => 'No attendance records found for this event']);
             }
             
-            // Generate Excel document
-            $outputFile = $this->generateAttendanceExcelDocument($event, $attendanceRecords, $barangayName);
+            // Generate Excel document directly to output
+            $spreadsheet = $this->generateAttendanceExcelDocument($event, $attendanceRecords, $barangayName);
             
-            if ($outputFile && file_exists($outputFile)) {
-                $fileName = basename($outputFile);
-                log_message('info', 'Pederasyon Excel document ready for download: ' . $fileName);
-                return $this->response->setJSON([
-                    'success' => true, 
-                    'message' => 'Attendance report Excel document generated successfully',
-                    'download_url' => base_url('uploads/generated/' . $fileName),
-                    'record_count' => count($attendanceRecords)
-                ]);
+            if ($spreadsheet) {
+                // Generate filename
+                $eventTitle = preg_replace('/[^a-zA-Z0-9_-]/', '_', $event['title']);
+                $fileName = $eventTitle . '_Attendance_Report_' . date('Y-m-d_His') . '.xlsx';
+                
+                // Set headers for download
+                header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                header('Content-Disposition: attachment;filename="' . $fileName . '"');
+                header('Cache-Control: max-age=0');
+                
+                // Write directly to output
+                $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+                $writer->save('php://output');
+                exit;
             } else {
-                log_message('error', 'Excel document file not created or does not exist');
+                log_message('error', 'Excel document generation failed');
                 return $this->response->setJSON([
                     'success' => false, 
-                    'message' => 'Error generating Excel document - file not created'
+                    'message' => 'Error generating Excel document'
                 ]);
             }
         } catch (\Exception $e) {
@@ -2843,24 +2760,28 @@ class PederasyonController extends BaseController
             $logos = $this->getLogosForDocument();
             log_message('info', 'Retrieved ' . count($logos) . ' logos for document');
             
-            // Generate Word document
-            $outputFile = $this->generateAttendanceWordDocument($event, $attendanceRecords, $logos, $barangayName);
+            // Generate Word document directly to output
+            $phpWord = $this->generateAttendanceWordDocument($event, $attendanceRecords, $logos, $barangayName);
             
-            if ($outputFile && file_exists($outputFile)) {
-                $fileName = basename($outputFile);
-                $fileSize = filesize($outputFile);
-                log_message('info', 'Pederasyon Word document ready for download: ' . $fileName . ' (Size: ' . $fileSize . ' bytes)');
-                return $this->response->setJSON([
-                    'success' => true, 
-                    'message' => 'Attendance report Word document generated successfully',
-                    'download_url' => base_url('uploads/generated/' . $fileName),
-                    'record_count' => count($attendanceRecords)
-                ]);
+            if ($phpWord) {
+                // Generate filename
+                $eventTitle = preg_replace('/[^a-zA-Z0-9_-]/', '_', $event['title']);
+                $fileName = 'Pederasyon_Attendance_Report_' . $eventTitle . '_' . date('Y-m-d_His') . '.docx';
+                
+                // Set headers for download
+                header('Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+                header('Content-Disposition: attachment;filename="' . $fileName . '"');
+                header('Cache-Control: max-age=0');
+                
+                // Write directly to output
+                $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
+                $writer->save('php://output');
+                exit;
             } else {
-                log_message('error', 'Word document file not created or does not exist at path: ' . ($outputFile ?: 'null'));
+                log_message('error', 'Word document generation failed');
                 return $this->response->setJSON([
                     'success' => false, 
-                    'message' => 'Error generating Word document - file not created'
+                    'message' => 'Error generating Word document'
                 ]);
             }
         } catch (\Exception $e) {
@@ -3133,21 +3054,9 @@ class PederasyonController extends BaseController
             $sheet->getPageMargins()->setTop(0.5)->setRight(0.5)->setBottom(0.5)->setLeft(0.5);
             $sheet->getPageSetup()->setFitToPage(false);
             
-            // Save the document
-            $outputDir = FCPATH . 'uploads/generated/';
-            if (!is_dir($outputDir)) {
-                mkdir($outputDir, 0755, true);
-            }
-            
-            $eventTitle = preg_replace('/[^a-zA-Z0-9_-]/', '_', $event['title']);
-            $fileName = $eventTitle . '_Attendance_Report_' . date('Y-m-d') . '.xlsx';
-            $outputPath = $outputDir . $fileName;
-            
-            $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
-            $writer->save($outputPath);
-            
-            log_message('info', 'Pederasyon Attendance Excel document saved to: ' . $outputPath);
-            return $outputPath;
+            // Return the Spreadsheet object instead of saving to file
+            log_message('info', 'Pederasyon Attendance Excel document generated successfully');
+            return $spreadsheet;
             
         } catch (\Exception $e) {
             log_message('error', 'Error in generateAttendanceExcelDocument: ' . $e->getMessage());
@@ -3376,30 +3285,9 @@ class PederasyonController extends BaseController
                 $table->addCell($colWidths[9])->addText($pmStatus, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             }
             
-            // Save the document
-            $outputDir = FCPATH . 'uploads/generated/';
-            if (!is_dir($outputDir)) {
-                if (!mkdir($outputDir, 0755, true)) {
-                    throw new \Exception('Failed to create output directory: ' . $outputDir);
-                }
-                log_message('info', 'Created output directory: ' . $outputDir);
-            }
-            
-            $eventTitle = preg_replace('/[^a-zA-Z0-9_-]/', '_', $event['title']);
-            $fileName = 'Pederasyon_Attendance_Report_' . $eventTitle . '_' . date('Y-m-d') . '.docx';
-            $outputPath = $outputDir . $fileName;
-            
-            log_message('info', 'Attempting to save Word document to: ' . $outputPath);
-            
-            $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
-            $writer->save($outputPath);
-            
-            if (!file_exists($outputPath)) {
-                throw new \Exception('Word document was not created at expected path: ' . $outputPath);
-            }
-            
-            log_message('info', 'Pederasyon Attendance Word document saved successfully to: ' . $outputPath);
-            return $outputPath;
+            // Return the PhpWord object instead of saving to file
+            log_message('info', 'Pederasyon Attendance Word document generated successfully');
+            return $phpWord;
             
         } catch (\Exception $e) {
             log_message('error', 'Error in generateAttendanceWordDocument: ' . $e->getMessage());

@@ -1158,10 +1158,18 @@
                 
                 const dbId = userRow.find('.rowCheckbox').val();
                 
+                // Handle "NULL" string for SK Pederasyon Member position
+                let pedPositionValue;
+                if (newPosition === 'NULL') {
+                    pedPositionValue = 'NULL';
+                } else {
+                    pedPositionValue = parseInt(newPosition, 10);
+                }
+                
                 $.ajax({
                     url: '<?= base_url('updateOfficerPosition') ?>',
                     method: 'POST',
-                    data: { user_id: dbId || userId, ped_position: parseInt(newPosition, 10) },
+                    data: { user_id: dbId || userId, ped_position: pedPositionValue },
                     dataType: 'json',
                     success: function(response) {
                         if (response.success) {
@@ -1299,7 +1307,15 @@
 
                         const userData = byId[String(displayUserId)];
                         let birthday = 'N/A';
-                        let position = positionText ? `SK Pederasyon ${positionText}` : 'SK Pederasyon Officer';
+                        
+                        // Clean up position text: remove SK Chairperson, fix terminology
+                        let position = positionText || 'SK Pederasyon Member';
+                        // Remove any "SK Chairperson" text from position
+                        position = position.replace(/SK Chairperson[,\s]*/gi, '').trim();
+                        // Replace "Pederasyon Officer" with "SK Pederasyon Member"
+                        position = position.replace(/Pederasyon Officer/gi, 'SK Pederasyon Member');
+                        // Ensure default is "SK Pederasyon Member" if position becomes empty
+                        if (!position) position = 'SK Pederasyon Member';
 
                         if (userData) {
                             if (userData.birthdate) {
@@ -1331,6 +1347,21 @@
                 // Store signature names globally for PDF generation
                 window.pederasyonSecretary = secretaryName;
                 window.pederasyonPresident = presidentName;
+
+                // Sort officials by position hierarchy (highest position first)
+                officials.sort((a, b) => {
+                    const getPositionRank = (position) => {
+                        if (position.includes('President') && !position.includes('Vice')) return 1; // President
+                        if (position.includes('Vice President')) return 2; // Vice President
+                        if (position.includes('Secretary')) return 3; // Secretary
+                        if (position.includes('Treasurer')) return 4; // Treasurer
+                        if (position.includes('Auditor')) return 5; // Auditor
+                        if (position.includes('Public Information Officer')) return 6; // PIO
+                        if (position.includes('Sergeant at Arms')) return 7; // Sergeant at Arms
+                        return 8; // Member or others
+                    };
+                    return getPositionRank(a.position) - getPositionRank(b.position);
+                });
 
                 // Update UI
                 const noOfficialsEl = document.getElementById('noOfficials');
@@ -1444,74 +1475,217 @@
         }
         
         // Download PDF (client-side)
-        function downloadOfficialListPDF() {
+        async function downloadOfficialListPDF() {
+            // Per-button loading UI (no info toast)
             const button = event.target;
             const originalHTML = button.innerHTML;
             button.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Generating PDF...';
             button.disabled = true;
-            const officialsCount = document.getElementById('officialListTableBody').children.length;
-            if (officialsCount === 0) {
-                showNotification('No officials to download.', 'error');
+
+            try {
+                // Check if there are officials to download
+                const officialsCount = document.getElementById('officialListTableBody').children.length;
+                if (officialsCount === 0) {
+                    showNotification('No officials to download.', 'error');
+                    button.innerHTML = originalHTML;
+                    button.disabled = false;
+                    return;
+                }
+
+                // Fetch logos with proper error handling
+                const logosResp = await fetch('<?= base_url('documents/logos') ?>');
+                const logosJson = (logosResp.ok ? await logosResp.json() : { success: false, data: {} });
+                const logos = (logosJson && logosJson.success && logosJson.data) ? logosJson.data : {};
+
+                const pederasyonLogoPath = (logos.pederasyon?.file_path) || '';
+                const irigaLogoPath = (logos.iriga_city?.file_path) || '';
+                const pederasyonLogoUrl = pederasyonLogoPath ? '<?= base_url() ?>' + pederasyonLogoPath : '';
+                const irigaLogoUrl = irigaLogoPath ? '<?= base_url() ?>' + irigaLogoPath : '';
+
+                // Helper to convert image URL to data URL
+                const imageUrlToDataUrl = (url) => {
+                    return new Promise((resolve) => {
+                        if (!url) {
+                            resolve(null);
+                            return;
+                        }
+                        const img = new Image();
+                        img.crossOrigin = 'anonymous';
+                        img.onload = function() {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = this.naturalWidth;
+                            canvas.height = this.naturalHeight;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(this, 0, 0);
+                            try {
+                                resolve(canvas.toDataURL('image/png'));
+                            } catch (e) {
+                                console.error('Canvas toDataURL failed:', e);
+                                resolve(null);
+                            }
+                        };
+                        img.onerror = () => resolve(null);
+                        img.src = url;
+                    });
+                };
+
+                // Load both logos as data URLs
+                const [pederasyonLogoDataUrl, irigaLogoDataUrl] = await Promise.all([
+                    imageUrlToDataUrl(pederasyonLogoUrl),
+                    imageUrlToDataUrl(irigaLogoUrl)
+                ]);
+
+                // Generate PDF with loaded logos
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('l', 'mm', 'a4'); // landscape orientation
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const pageCenter = pageWidth / 2;
+                let headerY = 20;
+
+                // Helper to get image format from data URL
+                const getImgFmt = (dataUrl) => {
+                    if (!dataUrl) return 'PNG';
+                    if (dataUrl.includes('image/jpeg') || dataUrl.includes('image/jpg')) return 'JPEG';
+                    if (dataUrl.includes('image/png')) return 'PNG';
+                    return 'PNG';
+                };
+
+                // Calculate positioning to match the layout
+                const logoSize = 15;
+                const textBlockWidth = 100;
+
+                // Add logos if available - positioned directly beside the text block
+                if (pederasyonLogoDataUrl) {
+                    doc.addImage(pederasyonLogoDataUrl, getImgFmt(pederasyonLogoDataUrl), pageCenter - (textBlockWidth/2) - logoSize - 5, headerY + 8, logoSize, logoSize, undefined, 'FAST');
+                }
+                if (irigaLogoDataUrl) {
+                    doc.addImage(irigaLogoDataUrl, getImgFmt(irigaLogoDataUrl), pageCenter + (textBlockWidth/2) + 5, headerY + 8, logoSize, logoSize, undefined, 'FAST');
+                }
+
+                // Header text (centered) - positioned between the logos
+                doc.setFontSize(14);
+                doc.setFont(undefined, 'bold');
+                doc.text('REPUBLIC OF THE PHILIPPINES', pageCenter, headerY + 8, { align: 'center' });
+                doc.text('PROVINCE OF CAMARINES SUR', pageCenter, headerY + 16, { align: 'center' });
+                doc.text('CITY OF IRIGA', pageCenter, headerY + 24, { align: 'center' });
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'normal');
+                doc.text('PANLUNGSOD NA PEDERASYON NG MGA', pageCenter, headerY + 28, { align: 'center' });
+                doc.text('SANGGUNIANG KABATAAN NG IRIGA', pageCenter, headerY + 34, { align: 'center' });
+
+                // Line
+                doc.line(30, headerY + 40, pageWidth - 30, headerY + 40);
+
+                // Title
+                doc.setFontSize(12);
+                doc.setFont(undefined, 'bold');
+                doc.text('PANLUNGSOD NA PEDERASYON NG MGA KABATAAN', pageCenter, headerY + 50, { align: 'center' });
+                doc.setFontSize(10);
+                doc.text('OFFICIAL LIST', pageCenter, headerY + 58, { align: 'center' });
+
+                // Table data
+                const tableData = [];
+                const headers = ['User ID', 'Barangay', 'Name', 'Age', 'Birthday', 'Sex', 'Position'];
+
+                $('#officialListTableBody tr').each(function() {
+                    const row = [];
+                    $(this).find('td').each(function() {
+                        row.push($(this).text().trim());
+                    });
+                    if (row.length > 0) {
+                        tableData.push(row);
+                    }
+                });
+
+                // Add centered table with proper margins
+                const tableWidth = 225;
+                const startX = (pageWidth - tableWidth) / 2;
+
+                doc.autoTable({
+                    head: [headers],
+                    body: tableData,
+                    startY: headerY + 65,
+                    margin: { left: startX },
+                    styles: {
+                        fontSize: 8,
+                        cellPadding: 1,
+                        halign: 'center',
+                        textColor: [0, 0, 0],
+                        lineColor: [0, 0, 0],
+                        lineWidth: 0.2
+                    },
+                    headStyles: {
+                        fillColor: [255, 255, 255],
+                        textColor: [0, 0, 0],
+                        halign: 'center',
+                        fontStyle: 'bold',
+                        cellPadding: 1,
+                        lineColor: [0, 0, 0],
+                        lineWidth: 0.2
+                    },
+                    bodyStyles: {
+                        lineColor: [0, 0, 0],
+                        lineWidth: 0.2,
+                        fillColor: [255, 255, 255]
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 25 }, // User ID
+                        1: { cellWidth: 35 }, // Barangay
+                        2: { cellWidth: 60 }, // Name
+                        3: { cellWidth: 20 }, // Age
+                        4: { cellWidth: 25 }, // Birthday
+                        5: { cellWidth: 20 }, // Sex
+                        6: { cellWidth: 40 }  // Position
+                    },
+                    tableWidth: 'wrap',
+                    theme: 'grid'
+                });
+
+                // Signature section - centered and aligned
+                const finalY = doc.lastAutoTable.finalY + 20;
+                const signatureSpacing = 80;
+                const leftSignatureX = pageCenter - signatureSpacing;
+                const rightSignatureX = pageCenter + signatureSpacing - 40;
+
+                doc.setFont(undefined, 'normal');
+                doc.setFontSize(10);
+
+                // Left signature (Prepared by)
+                doc.text('Prepared by:', leftSignatureX, finalY, { align: 'center' });
+                doc.text('________________', leftSignatureX, finalY + 20, { align: 'center' });
+                doc.setFont(undefined, 'bold');
+                const secretaryName = window.pederasyonSecretary || '________________';
+                doc.text(secretaryName, leftSignatureX, finalY + 25, { align: 'center' });
+                doc.setFont(undefined, 'normal');
+                doc.text('Pederasyon Secretary', leftSignatureX, finalY + 30, { align: 'center' });
+
+                // Right signature (Approved by)
+                doc.text('Approved by:', rightSignatureX, finalY, { align: 'center' });
+                doc.text('________________', rightSignatureX, finalY + 20, { align: 'center' });
+                doc.setFont(undefined, 'bold');
+                const presidentName = window.pederasyonPresident || '________________';
+                doc.text(presidentName, rightSignatureX, finalY + 25, { align: 'center' });
+                doc.setFont(undefined, 'normal');
+                doc.text('Pederasyon President', rightSignatureX, finalY + 30, { align: 'center' });
+
+                // Save the PDF
+                doc.save('PEDERASYON_Official_List.pdf');
+
+                // Show success notification
+                showNotification('Official List PDF document generated and downloaded successfully!', 'success');
+
+                // Reset button state
                 button.innerHTML = originalHTML;
                 button.disabled = false;
-                return;
+
+            } catch (error) {
+                console.error('PDF generation error:', error);
+                showNotification('Error generating PDF: ' + error.message, 'error');
+
+                // Reset button state
+                button.innerHTML = originalHTML;
+                button.disabled = false;
             }
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('l', 'mm', 'a4');
-            fetch('<?= base_url('documents/logos') ?>')
-                .then(r => r.json())
-                .then(data => {
-                    const promises = [];
-                    let pLogo = null, iLogo = null;
-                    const logos = (data && data.success) ? (data.data || {}) : {};
-                    if (logos.pederasyon) {
-                        promises.push(new Promise(resolve => { const img = new Image(); img.crossOrigin='anonymous'; img.onload=function(){pLogo=this; resolve();}; img.onerror=()=>resolve(); img.src='<?= base_url() ?>'+logos.pederasyon.file_path; }));
-                    }
-                    if (logos.iriga_city) {
-                        promises.push(new Promise(resolve => { const img = new Image(); img.crossOrigin='anonymous'; img.onload=function(){iLogo=this; resolve();}; img.onerror=()=>resolve(); img.src='<?= base_url() ?>'+logos.iriga_city.file_path; }));
-                    }
-                    Promise.all(promises).then(()=>generatePDFWithLogos(doc, pLogo, iLogo));
-                })
-                .catch(() => generatePDFWithLogos(doc, null, null));
-        }
-        
-        function generatePDFWithLogos(doc, pLogo, iLogo) {
-            const pageWidth = doc.internal.pageSize.getWidth();
-            const center = pageWidth / 2;
-            let headerY = 20;
-            const logoSize = 15, textBlockWidth = 100;
-            if (pLogo) doc.addImage(pLogo, 'PNG', center - (textBlockWidth/2) - logoSize - 5, headerY + 8, logoSize, logoSize);
-            if (iLogo) doc.addImage(iLogo, 'PNG', center + (textBlockWidth/2) + 5, headerY + 8, logoSize, logoSize);
-            doc.setFontSize(14); doc.setFont(undefined, 'bold');
-            doc.text('REPUBLIC OF THE PHILIPPINES', center, headerY + 8, { align: 'center' });
-            doc.text('PROVINCE OF CAMARINES SUR', center, headerY + 16, { align: 'center' });
-            doc.text('CITY OF IRIGA', center, headerY + 24, { align: 'center' });
-            doc.setFontSize(10); doc.setFont(undefined, 'normal');
-            doc.text('PANLUNGSOD NA PEDERASYON NG MGA', center, headerY + 28, { align: 'center' });
-            doc.text('SANGGUNIANG KABATAAN NG IRIGA', center, headerY + 34, { align: 'center' });
-            doc.line(30, headerY + 40, pageWidth - 30, headerY + 40);
-            doc.setFontSize(12); doc.setFont(undefined, 'bold');
-            doc.text('PANLUNGSOD NA PEDERASYON NG MGA KABATAAN', center, headerY + 50, { align: 'center' });
-            doc.setFontSize(10); doc.text('OFFICIAL LIST', center, headerY + 58, { align: 'center' });
-            const headers = ['User ID', 'Barangay', 'Name', 'Age', 'Birthday', 'Sex', 'Position'];
-            const tableData = [];
-            $('#officialListTableBody tr').each(function(){ const row=[]; $(this).find('td').each(function(){ row.push($(this).text().trim()); }); if(row.length>0) tableData.push(row); });
-            const tableWidth = 225; const startX = (pageWidth - tableWidth) / 2;
-            doc.autoTable({ head:[headers], body:tableData, startY: headerY + 65, margin:{ left:startX }, styles:{ fontSize:8, cellPadding:1, halign:'center', textColor:[0,0,0], lineColor:[0,0,0], lineWidth:0.2 }, headStyles:{ fillColor:[255,255,255], textColor:[0,0,0], halign:'center', fontStyle:'bold', cellPadding:1, lineColor:[0,0,0], lineWidth:0.2 }, bodyStyles:{ lineColor:[0,0,0], lineWidth:0.2, fillColor:[255,255,255] }, columnStyles:{ 0:{cellWidth:25}, 1:{cellWidth:35}, 2:{cellWidth:60}, 3:{cellWidth:20}, 4:{cellWidth:25}, 5:{cellWidth:20}, 6:{cellWidth:40} }, tableWidth:'wrap', theme:'grid' });
-            const finalY = doc.lastAutoTable.finalY + 20; const spacing = 80; const leftX = center - spacing; const rightX = center + spacing - 40;
-            doc.setFont(undefined, 'normal'); doc.setFontSize(10);
-            doc.text('Prepared by:', leftX, finalY, { align: 'center' });
-            doc.text('________________', leftX, finalY + 20, { align: 'center' });
-            doc.setFont(undefined, 'bold'); doc.text(window.pederasyonSecretary || '________________', leftX, finalY + 25, { align: 'center' });
-            doc.setFont(undefined, 'normal'); doc.text('Pederasyon Secretary', leftX, finalY + 30, { align: 'center' });
-            doc.text('Approved by:', rightX, finalY, { align: 'center' });
-            doc.text('________________', rightX, finalY + 20, { align: 'center' });
-            doc.setFont(undefined, 'bold'); doc.text(window.pederasyonPresident || '________________', rightX, finalY + 25, { align: 'center' });
-            doc.setFont(undefined, 'normal'); doc.text('Pederasyon President', rightX, finalY + 30, { align: 'center' });
-            doc.save('PEDERASYON_Official_List.pdf');
-            showNotification('Official List PDF document generated and downloaded successfully!', 'success');
-            const trigger = document.querySelector('#officialListModal button[onclick="downloadOfficialListPDF()"]');
-            if (trigger) { trigger.innerHTML = 'Download PDF'; trigger.disabled = false; }
         }
         
         // Download Word (server-generated)

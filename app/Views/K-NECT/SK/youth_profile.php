@@ -2740,25 +2740,29 @@
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                // Create a temporary link to download the Word document
-                const link = document.createElement('a');
-                link.href = data.download_url;
-                link.download = data.download_url.split('/').pop();
-                link.style.display = 'none';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                
-            // Show success message
-            showNotification('Word document generated and downloaded successfully!', 'success');
-            } else {
-                console.error('Server error:', data);
-                showNotification('Error generating Word document: ' + (data.message || 'Unknown error occurred'), 'error');
+            // Get the filename from Content-Disposition header if available
+            const contentDisposition = response.headers.get('Content-Disposition');
+            let fileName = 'KK_List.docx';
+            if (contentDisposition) {
+                const matches = /filename="([^"]+)"/.exec(contentDisposition);
+                if (matches && matches[1]) {
+                    fileName = matches[1];
+                }
             }
+            return response.blob().then(blob => ({ blob, fileName }));
+        })
+        .then(({ blob, fileName }) => {
+            // Create download link
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            showNotification('Word document generated and downloaded successfully!', 'success');
         })
         .catch(error => {
             console.error('Network error:', error);
@@ -2792,25 +2796,29 @@
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                // Create a temporary link to download the Excel document
-                const link = document.createElement('a');
-                link.href = data.download_url;
-                link.download = data.download_url.split('/').pop();
-                link.style.display = 'none';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                
-            // Show success message
-            showNotification('Excel document generated and downloaded successfully!', 'success');
-            } else {
-                console.error('Server error:', data);
-                showNotification('Error generating Excel document: ' + (data.message || 'Unknown error occurred'), 'error');
+            // Get the filename from Content-Disposition header if available
+            const contentDisposition = response.headers.get('Content-Disposition');
+            let fileName = 'KK_List.xlsx';
+            if (contentDisposition) {
+                const matches = /filename="([^"]+)"/.exec(contentDisposition);
+                if (matches && matches[1]) {
+                    fileName = matches[1];
+                }
             }
+            return response.blob().then(blob => ({ blob, fileName }));
+        })
+        .then(({ blob, fileName }) => {
+            // Create download link
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            showNotification('Excel document generated and downloaded successfully!', 'success');
         })
         .catch(error => {
             console.error('Network error:', error);

@@ -249,6 +249,12 @@
                         <p class="text-sm text-gray-600 mt-1">Manage user types and credentials</p>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-3">
+                        <button id="downloadOfficialListBtn" onclick="openOfficialListModal()" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors justify-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                            </svg>
+                            Download Official List
+                        </button>
                         <button id="downloadCredentialsBtn" class="inline-flex items-center px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg transition-colors justify-center">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -264,14 +270,8 @@
                         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                             <!-- Role Status Tabs -->
                             <div class="flex flex-wrap gap-2">
-                                <button class="status-tab active bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="officials" title="All SK Chairpersons & Pederasyon Officers">
-                                    ALL Officials (<span id="countOfficials">0</span>)
-                                </button>
-                                <button class="status-tab bg-gray-100 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="all">
+                                <button class="status-tab active bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="all">
                                     All (<span id="countAll">0</span>)
-                                </button>
-                                <button class="status-tab bg-green-100 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="pederasyon">
-                                    Pederasyon (<span id="countPederasyon">0</span>)
                                 </button>
                                 <button class="status-tab bg-yellow-100 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="sk">
                                     SK Chairperson (<span id="countSK">0</span>)
@@ -381,7 +381,7 @@
                                                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     <?php
                                                         $type = isset($user['user_type']) ? (int)$user['user_type'] : 1;
-                                                        echo $type == 1 ? 'KK Member' : ($type == 2 ? 'SK Chairperson' : ($type == 3 ? 'Pederasyon' : 'Unknown'));
+                                                        echo $type == 1 ? 'KK Member' : ($type == 2 ? 'SK Chairperson' : ($type == 3 ? 'SK Chairperson' : 'Unknown'));
                                                     ?>
                                                 </td>
                                                 <td class="px-4 py-4 whitespace-nowrap action-cell">
@@ -447,7 +447,7 @@
             </div>
             <div class="mb-4">
                 <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
-                    <strong>Note:</strong> A Pederasyon Officer is also the SK Chairperson. If a barangay already has a Pederasyon or SK Chairperson, other users in that barangay can only be KK Members. Unavailable options are disabled.
+                    <strong>Note:</strong> If a barangay already has an SK Chairperson, other users in that barangay can only be KK Members. Unavailable options are disabled.
                 </div>
             </div>
             <div class="mb-6">
@@ -455,7 +455,6 @@
                 <select id="bulkNewPosition" class="w-full border border-gray-300 rounded-md px-2 py-2 text-base focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
                     <option value="1">KK Member</option>
                     <option value="2">SK Chairperson</option>
-                    <option value="3">Pederasyon</option>
                 </select>
                 <div id="bulkRoleDynamicNote" class="hidden mt-2 text-sm text-orange-600 bg-orange-50 border border-orange-200 rounded-lg p-2"></div>
             </div>
@@ -527,7 +526,6 @@
                         <select id="modalUserType" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-3">
                             <option value="1">KK Member</option>
                             <option value="2">SK Chairperson</option>
-                            <option value="3">Pederasyon</option>
                         </select>
                         
                         <!-- Hidden fields for storing user data -->
@@ -787,7 +785,6 @@
         let originalCounts = {
             all: 0,
             sk: 0,
-            pederasyon: 0,
             kk: 0
         };
         
@@ -866,7 +863,7 @@
 
             // Calculate original counts from all data (not filtered)
             function calculateOriginalCounts() {
-                let allCount = 0, skCount = 0, pederasyonCount = 0, kkCount = 0;
+                let allCount = 0, skCount = 0, kkCount = 0;
                 let approvedCount = 0, pendingCount = 0, rejectedCount = 0;
                 
                 // Count all rows, not just visible ones
@@ -876,10 +873,8 @@
                         const status = parseInt($(this).data('status')) || 1;
                         
                         allCount++;
-                        if (userType === 'SK Chairperson' || userType === 'SK Chairperson') {
+                        if (userType === 'SK Chairperson') {
                             skCount++;
-                        } else if (userType === 'Pederasyon') {
-                            pederasyonCount++;
                         } else if (userType === 'KK Member') {
                             kkCount++;
                         }
@@ -899,7 +894,6 @@
                 originalCounts = {
                     all: allCount,
                     sk: skCount,
-                    pederasyon: pederasyonCount,
                     kk: kkCount,
                     approved: approvedCount,
                     pending: pendingCount,
@@ -911,9 +905,6 @@
             function updateDisplayedCounts() {
                 $('#countAll').text(originalCounts.all);
                 $('#countSK').text(originalCounts.sk);
-                // Officials = SK + Pederasyon (derived)
-                $('#countOfficials').text(originalCounts.sk + originalCounts.pederasyon);
-                $('#countPederasyon').text(originalCounts.pederasyon);
                 $('#countKK').text(originalCounts.kk);
                 
                 // Update status dropdown option text with counts
@@ -934,11 +925,9 @@
                 $('.status-tab[data-role]').removeClass('active bg-blue-500 text-white')
                     .addClass('bg-gray-100');
                 $('.status-tab[data-role="sk"]').removeClass('bg-gray-100').addClass('bg-yellow-100');
-                $('.status-tab[data-role="pederasyon"]').removeClass('bg-gray-100').addClass('bg-green-100');
-                $('.status-tab[data-role="officials"]').removeClass('bg-gray-100').addClass('bg-indigo-100');
                 $('.status-tab[data-role="kk"]').removeClass('bg-gray-100').addClass('bg-red-100');
                 
-                tab.removeClass('bg-gray-100 bg-yellow-100 bg-green-100 bg-red-100')
+                tab.removeClass('bg-gray-100 bg-yellow-100 bg-red-100')
                     .addClass('active bg-blue-500 text-white');
             }
 
@@ -956,13 +945,8 @@
                     let regex = '';
                     if (roleFilter === 'sk') {
                         regex = '^(SK Chairperson)$';
-                    } else if (roleFilter === 'pederasyon') {
-                        regex = '^(Pederasyon)'; // Positions begin with Pederasyon
                     } else if (roleFilter === 'kk') {
                         regex = '^(KK Member)$';
-                    } else if (roleFilter === 'officials') {
-                        // Combine SK Chairperson + any Pederasyon
-                        regex = '^(SK Chairperson|Pederasyon)';
                     }
                     if (regex) {
                         table.column(7).search(regex, true, false);
@@ -1018,7 +1002,7 @@
 
             // Clear filters
             $('#clearFilters').on('click', function() {
-                $('.status-tab[data-role="officials"]').trigger('click');
+                $('.status-tab[data-role="all"]').trigger('click');
                 $('#statusFilter').val('all');
                 $('#barangayFilter').val('');
                 table.search('').columns().search('').draw();
@@ -1031,7 +1015,7 @@
 
             // Function to restore saved filters
             function restoreFilters() {
-                const savedRoleTab = localStorage.getItem('activeRoleTab') || 'officials';
+                const savedRoleTab = localStorage.getItem('activeRoleTab') || 'all';
                 const savedStatusFilter = localStorage.getItem('activeStatusFilter') || 'all';
                 const savedBarangayFilter = localStorage.getItem('activeBarangayFilter') || '';
                 
@@ -1139,7 +1123,6 @@
             $(document).on('click', '.view-user-btn', function(e) {
                 e.preventDefault();
                 var userId = $(this).data('id');
-                console.log('View button clicked, userId:', userId); // Debug log
                 // Open the SK-style view modal
                 if (typeof openViewModal === 'function') {
                     openViewModal(userId);
@@ -1255,13 +1238,11 @@
                     method: 'POST',
                     data: { user_id: userId },
                     success: function(response) {
-                        console.log('User data received:', response); // Debug log
                         if (!response || !response.success || !response.user) {
                             showNotification('User not found.', 'error');
                             return;
                         }
                         var u = response.user;
-                        console.log('User object:', u); // Debug log
                         // Mappings
                         var civilStatusMap = <?= json_encode($field_mappings['civilStatusMap'] ?? []) ?>;
                         var youthClassificationMap = <?= json_encode($field_mappings['youthClassificationMap'] ?? []) ?>;
@@ -1357,14 +1338,11 @@
                         const birthCertFile = u.birth_certificate || '';
                         const uploadIdFile = u.upload_id || '';
                         const uploadIdBackFile = u['upload_id-back'] || '';
-                        console.log('Document files:', { birthCertFile, uploadIdFile, uploadIdBackFile }); // Debug log
                         const docHtml = buildDocPreviewHtml(birthCertFile, uploadIdFile, uploadIdBackFile);
                         document.getElementById('pedModalDocPreview').innerHTML = docHtml;
 
                         // Show modal
-                        // console.log('Showing modal'); // Debug log
-                        // $('#pedPreviewModal').removeClass('hidden');
-                        // console.log('Modal classes after show:', $('#pedPreviewModal').attr('class')); // Debug log
+                        $('#pedPreviewModal').removeClass('hidden');
 
                         // Initialize panzoom for images after DOM updated
                         setTimeout(() => {
@@ -1537,7 +1515,8 @@
             
             // Load official list and then show modal
             setTimeout(() => {
-                document.getElementById('officialListModal').classList.remove('hidden');
+                const modal = document.getElementById('officialListModal');
+                modal.style.display = 'flex';
                 loadOfficialList();
                 
                 // Reset button state after modal is shown
@@ -1550,7 +1529,8 @@
         
         // Close official list modal
         function closeOfficialListModal() {
-            document.getElementById('officialListModal').classList.add('hidden');
+            const modal = document.getElementById('officialListModal');
+            modal.style.display = 'none';
         }
         
         // Helper to format names as: First Middle Last Suffix
@@ -1568,17 +1548,16 @@
             document.getElementById('officialListLoading').classList.remove('hidden');
             document.getElementById('officialListContent').classList.add('hidden');
             
-            // Get officials data from current table (SK Chairperson, Pederasyon, and specific positions)
+            // Get officials data from current table (SK Chairpersons only)
             const officials = [];
-            let secretaryName = '';
-            let presidentName = '';
             
             $('#myTable tbody tr').each(function() {
                 const userType = $(this).find('td').eq(7).text().trim();
                 const status = $(this).find('td').eq(6).find('span').text().trim();
                 
-                // Include SK Chairperson, Pederasyon (which includes Secretary and President), and Accepted status
-                if ((userType === 'SK Chairperson' || userType === 'Pederasyon') && status === 'Accepted') {
+                // Include SK Chairpersons and Pederasyon Officers (who are also SK Chairpersons) with Approved status
+                const isSkOrPed = userType === 'SK Chairperson' || userType === 'Pederasyon Officer';
+                if (isSkOrPed && status === 'Approved') {
                     // Column indices based on table header: 0=checkbox, 1=user_id, 2=barangay, 3=name, 4=age, 5=sex, 6=status, 7=user type
                     const userIdCell = $(this).find('td').eq(1); // This contains the displayed permanent user_id
                     const primaryId = $(this).find('input.rowCheckbox').val(); // hidden primary key from checkbox value
@@ -1602,9 +1581,6 @@
                         if (userData) {
                             actualUserId = userData.user_id || displayUserId || primaryId;
                             
-                            // Debug: Log the user data to console to check birthdate
-                            //
-                            
                             // Handle birthdate with better validation
                             if (userData.birthdate && userData.birthdate !== null && userData.birthdate !== '') {
                                 birthday = userData.birthdate;
@@ -1612,40 +1588,9 @@
                                 birthday = 'N/A';
                             }
                             
-                            // Determine specific position for Pederasyon using ped_position
-                            if (userType === 'Pederasyon') {
-                                const pedPosition = parseInt(userData.ped_position) || 0;
-                                switch(pedPosition) {
-                                    case 1:
-                                        position = 'Pederasyon President';
-                                        presidentName = formatFullNameFromUser(userData);
-                                        break;
-                                    case 2:
-                                        position = 'Pederasyon Vice President';
-                                        break;
-                                    case 3:
-                                        position = 'Pederasyon Secretary';
-                                        secretaryName = formatFullNameFromUser(userData);
-                                        break;
-                                    case 4:
-                                        position = 'Pederasyon Treasurer';
-                                        break;
-                                    case 5:
-                                        position = 'Pederasyon Auditor';
-                                        break;
-                                    case 6:
-                                        position = 'Pederasyon Public Information Officer';
-                                        break;
-                                    case 7:
-                                        position = 'Pederasyon Sergeant at Arms';
-                                        break;
-                                    default:
-                                        position = 'Pederasyon';
-                                        break;
-                                }
-                            } else if (userType === 'SK Chairperson') {
-                                // SK Chairperson should be shown as SK Pederasyon Member in official list
-                                position = 'SK Pederasyon Member';
+                            // SK Chairperson or Pederasyon Officer (both should show as SK Chairperson in official list)
+                            if (userType === 'SK Chairperson' || userType === 'Pederasyon Officer') {
+                                position = 'SK Chairperson';
                             }
                             
                             // Format birthday for display
@@ -1683,10 +1628,6 @@
                 }
             });
             
-            // Store secretary and president names globally for signature section
-            window.pederasyonSecretary = secretaryName;
-            window.pederasyonPresident = presidentName;
-            
             document.getElementById('officialListLoading').classList.add('hidden');
             document.getElementById('officialListContent').classList.remove('hidden');
             
@@ -1709,27 +1650,28 @@
             
             officials.forEach(official => {
                 const row = document.createElement('tr');
+                row.className = 'hover:bg-blue-50 transition-colors';
                 
                 row.innerHTML = `
-                    <td class="border border-black text-center" style="font-size: 8px; padding: 1px;">
+                    <td class="border border-gray-300 text-center py-3 px-4 text-sm text-gray-900">
                         ${official.userId}
                     </td>
-                    <td class="border border-black text-center" style="font-size: 8px; padding: 1px;">
-                        ${official.barangay}
-                    </td>
-                    <td class="border border-black text-center" style="font-size: 8px; padding: 1px;">
+                    <td class="border border-gray-300 text-left py-3 px-4 text-sm text-gray-900">
                         ${official.name}
                     </td>
-                    <td class="border border-black text-center" style="font-size: 8px; padding: 1px;">
-                        ${official.age}
+                    <td class="border border-gray-300 text-center py-3 px-4 text-sm text-gray-900">
+                        ${official.barangay}
                     </td>
-                    <td class="border border-black text-center" style="font-size: 8px; padding: 1px;">
-                        ${official.birthday}
-                    </td>
-                    <td class="border border-black text-center" style="font-size: 8px; padding: 1px;">
+                    <td class="border border-gray-300 text-center py-3 px-4 text-sm text-gray-900">
                         ${official.sex}
                     </td>
-                    <td class="border border-black text-center" style="font-size: 8px; padding: 1px;">
+                    <td class="border border-gray-300 text-center py-3 px-4 text-sm text-gray-900">
+                        ${official.age}
+                    </td>
+                    <td class="border border-gray-300 text-center py-3 px-4 text-sm text-gray-900">
+                        ${official.birthday}
+                    </td>
+                    <td class="border border-gray-300 text-center py-3 px-4 text-sm text-gray-900">
                         ${official.position}
                     </td>
                 `;
@@ -1737,19 +1679,11 @@
                 tbody.appendChild(row);
             });
             
-            // Always load the Pederasyon and Iriga City logos
+            // Load logos
             loadBarangayLogo();
-            
-            // Update signature names if available
-            if (window.pederasyonSecretary) {
-                document.getElementById('secretarySignature').textContent = window.pederasyonSecretary;
-            }
-            if (window.pederasyonPresident) {
-                document.getElementById('presidentSignature').textContent = window.pederasyonPresident;
-            }
         }
         
-        // Load barangay and system logos
+        // Load system logos
         function loadBarangayLogo(barangayName) {
             // Fetch logos from the API
             fetch('<?= base_url('documents/logos') ?>')
@@ -1758,10 +1692,10 @@
                     if (data && data.success && data.data) {
                         const logos = data.data;
                         
-                        // Load Pederasyon logo
+                        // Load City Federation logo
                         const pederasyonLogoDiv = document.getElementById('official-list-pederasyon-logo');
                         if (logos.pederasyon && logos.pederasyon.file_path && pederasyonLogoDiv) {
-                            pederasyonLogoDiv.innerHTML = `<img src="<?= base_url() ?>${logos.pederasyon.file_path}" alt="Pederasyon Logo" class="w-full h-full object-contain">`;
+                            pederasyonLogoDiv.innerHTML = `<img src="<?= base_url() ?>${logos.pederasyon.file_path}" alt="City Federation Logo" class="w-full h-full object-contain">`;
                         }
                         
                         // Load Iriga City logo
@@ -1834,120 +1768,121 @@
         }
         
         // Download official list as PDF
-        function downloadOfficialListPDF() {
+        async function downloadOfficialListPDF() {
             // Show loading state
             const button = event.target;
             const originalHTML = button.innerHTML;
             button.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Generating PDF...';
             button.disabled = true;
             
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('l', 'mm', 'a4'); // landscape orientation
-            
-            // First fetch logos to include in PDF if available
-            fetch('<?= base_url('documents/logos') ?>')
-                .then(response => response.json())
-                .then(data => {
-                    const promises = [];
-                    let pederasyonLogo = null;
-                    let irigaLogo = null;
-                    
-                    // Add null/undefined checks to prevent errors
-                    if (data && data.success && data.data) {
-                        const logos = data.data;
-                        
-                        // Load Pederasyon logo
-                        if (logos.pederasyon && logos.pederasyon.file_path) {
-                            const pederasyonPromise = new Promise((resolve) => {
-                                const img = new Image();
-                                img.crossOrigin = 'anonymous';
-                                img.onload = function() {
-                                    pederasyonLogo = this;
-                                    resolve();
-                                };
-                                img.onerror = function() {
-                                    resolve(); // Continue even if logo fails to load
-                                };
-                                img.src = '<?= base_url() ?>' + logos.pederasyon.file_path;
-                            });
-                            promises.push(pederasyonPromise);
+            try {
+                // Fetch logos from API
+                const logosResp = await fetch('<?= base_url('documents/logos') ?>');
+                const logosJson = (logosResp.ok ? await logosResp.json() : { success: false, data: {} });
+                const logos = (logosJson && logosJson.success && logosJson.data) ? logosJson.data : {};
+
+                const pederasyonLogoPath = (logos.pederasyon?.file_path) || '';
+                const irigaLogoPath = (logos.iriga_city?.file_path) || '';
+                const pederasyonLogoUrl = pederasyonLogoPath ? '<?= base_url() ?>' + pederasyonLogoPath : '';
+                const irigaLogoUrl = irigaLogoPath ? '<?= base_url() ?>' + irigaLogoPath : '';
+
+                // Helper function to convert image URL to data URL
+                const imageUrlToDataUrl = (url) => {
+                    return new Promise((resolve) => {
+                        if (!url) {
+                            resolve(null);
+                            return;
                         }
-                        
-                        // Load Iriga City logo
-                        if (logos.iriga_city && logos.iriga_city.file_path) {
-                            const irigaPromise = new Promise((resolve) => {
-                                const img = new Image();
-                                img.crossOrigin = 'anonymous';
-                                img.onload = function() {
-                                    irigaLogo = this;
-                                    resolve();
-                                };
-                                img.onerror = function() {
-                                    resolve(); // Continue even if logo fails to load
-                                };
-                                img.src = '<?= base_url() ?>' + logos.iriga_city.file_path;
-                            });
-                            promises.push(irigaPromise);
-                        }
-                    }
-                    
-                    // Wait for all logos to load, then generate PDF
-                    Promise.all(promises).then(() => {
-                        generatePDFWithLogos(doc, pederasyonLogo, irigaLogo);
+                        const img = new Image();
+                        img.crossOrigin = 'anonymous';
+                        img.onload = function() {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = this.naturalWidth;
+                            canvas.height = this.naturalHeight;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(this, 0, 0);
+                            try {
+                                resolve(canvas.toDataURL('image/png'));
+                            } catch (e) {
+                                console.error('Canvas toDataURL failed:', e);
+                                resolve(null);
+                            }
+                        };
+                        img.onerror = () => resolve(null);
+                        img.src = url;
                     });
-                })
-                .catch(error => {
-                    console.error('Error fetching logos for PDF:', error);
-                    // Continue with PDF generation without logos
-                    generatePDFWithLogos(doc, null, null);
-                });
+                };
+                
+                // Helper function to determine image format
+                const getImgFmt = (dataUrl) => {
+                    if (!dataUrl) return 'PNG';
+                    if (dataUrl.includes('image/jpeg') || dataUrl.includes('image/jpg')) return 'JPEG';
+                    if (dataUrl.includes('image/png')) return 'PNG';
+                    return 'PNG'; // default
+                };
+                
+                // Load logos as data URLs
+                const [pederasyonLogoData, irigaLogoData] = await Promise.all([
+                    imageUrlToDataUrl(pederasyonLogoUrl),
+                    imageUrlToDataUrl(irigaLogoUrl)
+                ]);
+                
+                // Initialize PDF
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('l', 'mm', 'a4'); // landscape orientation
+                
+                generatePDFWithLogos(doc, pederasyonLogoData, irigaLogoData, button, originalHTML);
+            } catch (error) {
+                console.error('Error generating PDF:', error);
+                showNotification('Error generating PDF. Please try again.', 'error');
+                button.innerHTML = originalHTML;
+                button.disabled = false;
+            }
         }
         
-        function generatePDFWithLogos(doc, pederasyonLogo, irigaLogo) {
+        function generatePDFWithLogos(doc, pederasyonLogoData, irigaLogoData, button, originalHTML) {
             const pageWidth = doc.internal.pageSize.getWidth();
-            const pageCenter = pageWidth / 2;
-            let headerY = 20; // Start higher for better layout
-            
-            // Calculate positioning to match the uploaded image layout
-            const logoSize = 15; // Slightly smaller logos
-            const textBlockWidth = 100; // Width of the main text block
-            
-            // Add logos if available - positioned directly beside the text block like in the image
-            if (pederasyonLogo) {
-                // Add Pederasyon logo (left side) - positioned immediately to the left of text
-                doc.addImage(pederasyonLogo, 'PNG', pageCenter - (textBlockWidth/2) - logoSize - 5, headerY + 8, logoSize, logoSize);
+            const centerX = pageWidth / 2;
+            let y = 20;
+
+            // Helper to get image format from data URL
+            const getImgFmt = (dataUrl) => {
+                if (!dataUrl) return 'PNG';
+                if (dataUrl.includes('image/jpeg') || dataUrl.includes('image/jpg')) return 'JPEG';
+                if (dataUrl.includes('image/png')) return 'PNG';
+                return 'PNG';
+            };
+
+            // Add logos if available (same as credentials)
+            const logoSize = 25;
+            if (pederasyonLogoData) {
+                doc.addImage(pederasyonLogoData, getImgFmt(pederasyonLogoData), 40, 15, logoSize, logoSize, undefined, 'FAST');
+            }
+            if (irigaLogoData) {
+                doc.addImage(irigaLogoData, getImgFmt(irigaLogoData), 232, 15, logoSize, logoSize, undefined, 'FAST');
             }
             
-            if (irigaLogo) {
-                // Add Iriga City logo (right side) - positioned immediately to the right of text
-                doc.addImage(irigaLogo, 'PNG', pageCenter + (textBlockWidth/2) + 5, headerY + 8, logoSize, logoSize);
-            }
+            // Header text (centered) - same as credentials
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(12);
+            doc.text("REPUBLIC OF THE PHILIPPINES", centerX, 20, { align: 'center' });
+            doc.text("PROVINCE OF CAMARINES SUR", centerX, 25, { align: 'center' });
+            doc.text("CITY OF IRIGA", centerX, 30, { align: 'center' });
             
-            // Header text (centered) - positioned between the logos like in the image
-            doc.setFontSize(14);
-            doc.setFont(undefined, 'bold');
-            doc.text('REPUBLIC OF THE PHILIPPINES', pageCenter, headerY + 8, { align: 'center' });
-            doc.text('PROVINCE OF CAMARINES SUR', pageCenter, headerY + 16, { align: 'center' });
-            doc.text('CITY OF IRIGA', pageCenter, headerY + 24, { align: 'center' });
+            doc.setFont("helvetica", "normal");
             doc.setFontSize(10);
-            doc.setFont(undefined, 'normal');
-            doc.text('PANLUNGSOD NA PEDERASYON NG MGA', pageCenter, headerY + 28, { align: 'center' });
-            doc.text('SANGGUNIANG KABATAAN NG IRIGA', pageCenter, headerY + 34, { align: 'center' });
-            
-            // Line
-            doc.line(30, headerY + 40, pageWidth - 30, headerY + 40);
+            doc.text("PANLUNGSOD NA PEDERASYON NG MGA", centerX, 35, { align: 'center' });
+            doc.text("SANGGUNIANG KABATAAN", centerX, 39, { align: 'center' });
             
             // Title
+            doc.setFont("helvetica", "bold");
             doc.setFontSize(12);
-            doc.setFont(undefined, 'bold');
-            doc.text('PANLUNGSOD NA PEDERASYON NG MGA KABATAAN', pageCenter, headerY + 50, { align: 'center' });
-            doc.setFontSize(10);
-            doc.text('OFFICIAL LIST', pageCenter, headerY + 58, { align: 'center' });
+            doc.text("SANGGUNIANG KABATAAN", centerX, 55, { align: 'center' });
+            doc.text("OFFICIAL LIST", centerX, 60, { align: 'center' });
+            y = 68;
             
-            // Table data
+            // Table data - get from modal table
             const tableData = [];
-            const headers = ['User ID', 'Barangay', 'Name', 'Age', 'Birthday', 'Sex', 'Position'];
-            
             $('#officialListTableBody tr').each(function() {
                 const row = [];
                 $(this).find('td').each(function() {
@@ -1958,79 +1893,98 @@
                 }
             });
             
-            // Add centered table with proper margins
-            const tableWidth = 225; // Total width of table
-            const startX = (pageWidth - tableWidth) / 2; // Center the table
-            
+            // Add table with same styling as credentials
             doc.autoTable({
-                head: [headers],
+                head: [['User ID', 'Full Name', 'Barangay', 'Gender', 'Age', 'Birthdate', 'Position']],
                 body: tableData,
-                startY: headerY + 65,
-                margin: { left: startX },
+                startY: y,
                 styles: { 
-                    fontSize: 8,
-                    cellPadding: 1,
+                    fontSize: 7,
+                    cellPadding: 1.5,
                     halign: 'center',
+                    valign: 'middle',
                     textColor: [0, 0, 0],
-                    lineColor: [0, 0, 0],
-                    lineWidth: 0.2
+                    fontStyle: 'normal',
+                    font: 'helvetica',
+                    lineWidth: 0.1,
+                    lineColor: [0, 0, 0]
                 },
-                headStyles: { 
-                    fillColor: [255, 255, 255], // white header
-                    textColor: [0, 0, 0],       // black font
-                    halign: 'center',
+                headStyles: {
+                    fillColor: [220, 220, 220],
+                    textColor: [0, 0, 0],
                     fontStyle: 'bold',
-                    cellPadding: 1,
-                    lineColor: [0, 0, 0],
-                    lineWidth: 0.2
-                },
-                bodyStyles: {
-                    lineColor: [0, 0, 0],
-                    lineWidth: 0.2,
-                    fillColor: [255, 255, 255] // white background
+                    fontSize: 7,
+                    font: 'helvetica',
+                    halign: 'center'
                 },
                 columnStyles: {
-                    0: {cellWidth: 25, halign: 'center'}, // User ID
-                    1: {cellWidth: 35, halign: 'center'}, // Barangay
-                    2: {cellWidth: 60, halign: 'center'}, // Name
-                    3: {cellWidth: 20, halign: 'center'}, // Age
-                    4: {cellWidth: 25, halign: 'center'}, // Birthday
-                    5: {cellWidth: 20, halign: 'center'}, // Sex
-                    6: {cellWidth: 40, halign: 'center'}  // Position
+                    0: { cellWidth: 18, halign: 'center' }, // User ID
+                    1: { cellWidth: 50, halign: 'center' }, // Full Name
+                    2: { cellWidth: 32, halign: 'center' }, // Barangay
+                    3: { cellWidth: 15, halign: 'center' }, // Gender
+                    4: { cellWidth: 15, halign: 'center' }, // Age
+                    5: { cellWidth: 25, halign: 'center' }, // Birthdate
+                    6: { cellWidth: 35, halign: 'center' }  // Position
                 },
-                tableWidth: 'wrap',
-                theme: 'grid'
+                tableWidth: 190,
+                margin: { left: (287 - 190) / 2 }, // Center table on A4 landscape (297mm width)
+                theme: 'striped',
+                alternateRowStyles: {
+                    fillColor: [245, 245, 245]
+                }
             });
             
-            // Signature section - centered and aligned
-            const finalY = doc.lastAutoTable.finalY + 20;
-            const signatureSpacing = 80; // Distance between signature sections
-            const leftSignatureX = pageCenter - signatureSpacing;
-            const rightSignatureX = pageCenter + signatureSpacing - 40; // Adjust for text width
+            // Get Pederasyon President and Secretary names from PHP data
+            let presidentName = '';
+            let secretaryName = '';
             
-            doc.setFont(undefined, 'normal');
-            doc.setFontSize(10);
+            // Get officials data from PHP
+            const officials = <?= json_encode($user_list ?? []) ?>;
+            officials.forEach(official => {
+                const userType = parseInt(official.user_type);
+                const pedPosition = parseInt(official.ped_position);
+                const status = parseInt(official.status);
+                
+                // Only get approved Pederasyon officers
+                if (userType === 3 && status === 2) {
+                    const fullName = `${official.first_name || ''} ${official.middle_name || ''} ${official.last_name || ''}`.replace(/\s+/g, ' ').trim();
+                    
+                    if (pedPosition === 1) { // President
+                        presidentName = fullName;
+                    } else if (pedPosition === 3) { // Secretary
+                        secretaryName = fullName;
+                    }
+                }
+            });
             
-            // Left signature (Prepared by)
+            // Signature section - same positioning as credentials
+            const finalY = doc.lastAutoTable.finalY + 15;
+            const signatureSpacing = 60;
+            const leftSignatureX = centerX - signatureSpacing;
+            const rightSignatureX = centerX + signatureSpacing;
+            
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9);
+            
+            // Left signature (Prepared by - Secretary)
             doc.text('Prepared by:', leftSignatureX, finalY, { align: 'center' });
-            doc.text('________________', leftSignatureX, finalY + 20, { align: 'center' });
-            doc.setFont(undefined, 'bold');
-            const secretaryName = window.pederasyonSecretary || '________________';
-            doc.text(secretaryName, leftSignatureX, finalY + 25, { align: 'center' });
-            doc.setFont(undefined, 'normal');
-            doc.text('Pederasyon Secretary', leftSignatureX, finalY + 30, { align: 'center' });
+            doc.text('_________________________', leftSignatureX, finalY + 18, { align: 'center' });
+            doc.setFont("helvetica", "bold");
+            doc.text(secretaryName || '_________________________', leftSignatureX, finalY + 18, { align: 'center' });
+            doc.setFont("helvetica", "normal");
+            doc.text('Secretary', leftSignatureX, finalY + 23, { align: 'center' });
             
-            // Right signature (Approved by)
+            // Right signature (Approved by - President)
             doc.text('Approved by:', rightSignatureX, finalY, { align: 'center' });
-            doc.text('________________', rightSignatureX, finalY + 20, { align: 'center' });
-            doc.setFont(undefined, 'bold');
-            const presidentName = window.pederasyonPresident || '________________';
-            doc.text(presidentName, rightSignatureX, finalY + 25, { align: 'center' });
-            doc.setFont(undefined, 'normal');
-            doc.text('Pederasyon President', rightSignatureX, finalY + 30, { align: 'center' });
-            
-            // Save the PDF
-            doc.save('PEDERASYON_Official_List.pdf');
+            doc.text('_________________________', rightSignatureX, finalY + 18, { align: 'center' });
+            doc.setFont("helvetica", "bold");
+            doc.text(presidentName || '_________________________', rightSignatureX, finalY + 23, { align: 'center' });
+            doc.setFont("helvetica", "normal");
+            doc.text('President', rightSignatureX, finalY + 28, { align: 'center' });
+
+            // Save the PDF with timestamp
+            const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace('T', '_').split('.')[0];
+            doc.save(`SK_Officials_List_${timestamp}.pdf`);
             
             // Show success notification
             showNotification('Official List PDF document generated and downloaded successfully!', 'success');
@@ -2062,25 +2016,30 @@
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    // Create a temporary link to download the Word document
-                    const link = document.createElement('a');
-                    link.href = data.download_url;
-                    link.download = data.download_url.split('/').pop();
-                    link.style.display = 'none';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    
-                    // Show success message
-                    showNotification('Official List Word document generated and downloaded successfully!', 'success');
-                } else {
-                    console.error('Server error:', data);
-                    showNotification('Error generating Word document: ' + (data.message || 'Unknown error occurred'), 'error');
+                // Get the filename from Content-Disposition header if available
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let fileName = 'SK_Official_List.docx';
+                if (contentDisposition) {
+                    const matches = /filename="([^"]+)"/.exec(contentDisposition);
+                    if (matches && matches[1]) {
+                        fileName = matches[1];
+                    }
                 }
+                return response.blob().then(blob => ({ blob, fileName }));
+            })
+            .then(({ blob, fileName }) => {
+                // Create download link
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileName;
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+                
+                showNotification('Official List Word document generated and downloaded successfully!', 'success');
             })
             .catch(error => {
                 console.error('Network error:', error);
@@ -2115,25 +2074,30 @@
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    // Create a temporary link to download the Excel document
-                    const link = document.createElement('a');
-                    link.href = data.download_url;
-                    link.download = data.download_url.split('/').pop();
-                    link.style.display = 'none';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    
-                    // Show success message
-                    showNotification('Official List Excel document generated and downloaded successfully!', 'success');
-                } else {
-                    console.error('Server error:', data);
-                    showNotification('Error generating Excel document: ' + (data.message || 'Unknown error occurred'), 'error');
+                // Get the filename from Content-Disposition header if available
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let fileName = 'SK_Official_List.xlsx';
+                if (contentDisposition) {
+                    const matches = /filename="([^"]+)"/.exec(contentDisposition);
+                    if (matches && matches[1]) {
+                        fileName = matches[1];
+                    }
                 }
+                return response.blob().then(blob => ({ blob, fileName }));
+            })
+            .then(({ blob, fileName }) => {
+                // Create download link
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileName;
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+                
+                showNotification('Official List Excel document generated and downloaded successfully!', 'success');
             })
             .catch(error => {
                 console.error('Network error:', error);
@@ -2162,7 +2126,8 @@
         // ==================== CREDENTIALS PREVIEW MODAL FUNCTIONALITY ==================== //
         
         function openCredentialsPreviewModal() {
-            document.getElementById('credentialsPreviewModal').classList.remove('hidden');
+            const modal = document.getElementById('credentialsPreviewModal');
+            modal.style.display = 'flex';
             
             // Show loading state
             const credentialsLoadingEl = document.getElementById('credentialsLoading');
@@ -2216,101 +2181,82 @@
                 });
         }
 
-        function showCredentialsTab(tabName) {
-            // Update tab styling using the unified status-tab approach
-            const tabs = document.querySelectorAll('#skCredentialsTab, #pederasyonCredentialsTab');
-            tabs.forEach(tab => {
-                tab.classList.remove('active', 'bg-blue-600', 'text-white', 'border-blue-600');
-                tab.classList.add('bg-white', 'text-gray-600', 'hover:bg-gray-50');
-            });
-            
-            // Show active tab
-            const activeTab = document.getElementById(tabName + 'CredentialsTab');
-            if (activeTab) {
-                activeTab.classList.add('active', 'bg-blue-600', 'text-white', 'border-blue-600');
-                activeTab.classList.remove('bg-white', 'text-gray-600', 'hover:bg-gray-50');
-            }
-            
-            // Show/hide content sections
-            document.querySelectorAll('.credentials-section').forEach(section => {
-                section.classList.add('hidden');
-            });
-            const activeSection = document.getElementById(tabName + 'CredentialsSection');
-            if (activeSection) {
-                activeSection.classList.remove('hidden');
-            }
-        }
+        // Removed showCredentialsTab function since we only show SK Chairpersons now (no tabs needed)
 
         function getActiveCredentialsTab() {
-            // Check which tab is currently active based on styling
-            const skTab = document.getElementById('skCredentialsTab');
-            const pederasyonTab = document.getElementById('pederasyonCredentialsTab');
-            
-            if (skTab.classList.contains('active')) {
-                return 'sk';
-            } else if (pederasyonTab.classList.contains('active')) {
-                return 'pederasyon';
-            }
-            return 'sk'; // Default to SK if no active tab found
+            // Always return 'sk' since we only show SK Chairpersons
+            return 'sk';
         }
 
         function loadCredentialsData() {
-            // Fetch credentials data from the API instead of reading from table rows
+            // Fetch credentials data from the API (SK Chairpersons only)
             fetch('<?= base_url('pederasyon/credentials-data') ?>')
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
-                    if (data.success) {
-                        const skCredentials = data.data.sk || [];
-                        const pederasyonCredentials = data.data.pederasyon || [];
+                    if (data && data.success) {
+                        const skCredentials = (data.data && data.data.sk) ? data.data.sk : [];
                         
                         // Populate SK credentials table
                         populateCredentialsTable('sk', skCredentials);
                         
-                        // Populate Pederasyon credentials table
-                        populateCredentialsTable('pederasyon', pederasyonCredentials);
-                        
-                        // Update counts
-                        document.getElementById('skCredentialsCount').textContent = skCredentials.length;
-                        document.getElementById('pederasyonCredentialsCount').textContent = pederasyonCredentials.length;
+                        // Update count
+                        const countEl = document.getElementById('skCredentialsCount');
+                        if (countEl) {
+                            countEl.textContent = skCredentials.length;
+                        }
                         
                         // Update total count
-                        const totalCount = skCredentials.length + pederasyonCredentials.length;
-                        document.getElementById('credentialsCount').textContent = `Total: ${totalCount} officials with credentials`;
+                        const totalEl = document.getElementById('credentialsCount');
+                        if (totalEl) {
+                            totalEl.textContent = `Total: ${skCredentials.length} SK Chairpersons with credentials`;
+                        }
                         
                         // Show/hide no credentials message
-                        if (totalCount === 0) {
-                            document.getElementById('noCredentials').classList.remove('hidden');
-                            document.getElementById('credentialsTablesContainer').classList.add('hidden');
+                        const noCredsEl = document.getElementById('noCredentials');
+                        const containerEl = document.getElementById('credentialsTablesContainer');
+                        
+                        if (skCredentials.length === 0) {
+                            if (noCredsEl) noCredsEl.classList.remove('hidden');
+                            if (containerEl) containerEl.classList.add('hidden');
                         } else {
-                            document.getElementById('noCredentials').classList.add('hidden');
-                            document.getElementById('credentialsTablesContainer').classList.remove('hidden');
-                            // Show first available tab
-                            if (skCredentials.length > 0) {
-                                showCredentialsTab('sk');
-                            } else if (pederasyonCredentials.length > 0) {
-                                showCredentialsTab('pederasyon');
-                            }
+                            if (noCredsEl) noCredsEl.classList.add('hidden');
+                            if (containerEl) containerEl.classList.remove('hidden');
                         }
                     } else {
-                        console.error('Failed to load credentials data:', data.message);
                         // Show error message
-                        document.getElementById('noCredentials').classList.remove('hidden');
-                        document.getElementById('credentialsTablesContainer').classList.add('hidden');
+                        const noCredsEl = document.getElementById('noCredentials');
+                        const containerEl = document.getElementById('credentialsTablesContainer');
+                        if (noCredsEl) noCredsEl.classList.remove('hidden');
+                        if (containerEl) containerEl.classList.add('hidden');
                     }
                 })
                 .catch(error => {
                     console.error('Error fetching credentials data:', error);
+                    console.error('Error details:', error.message, error.stack);
                     // Show error message
-                    document.getElementById('noCredentials').classList.remove('hidden');
-                    document.getElementById('credentialsTablesContainer').classList.add('hidden');
+                    const noCredsEl = document.getElementById('noCredentials');
+                    const containerEl = document.getElementById('credentialsTablesContainer');
+                    if (noCredsEl) noCredsEl.classList.remove('hidden');
+                    if (containerEl) containerEl.classList.add('hidden');
                 });
         }
 
         function populateCredentialsTable(type, credentials) {
-            const tableBody = document.getElementById(type + 'CredentialsTableBody');
+            const tableBodyId = type + 'CredentialsTableBody';
+            const tableBody = document.getElementById(tableBodyId);
+            
+            if (!tableBody) {
+                return;
+            }
+            
             tableBody.innerHTML = '';
             
-            if (credentials.length === 0) {
+            if (!credentials || credentials.length === 0) {
                 tableBody.innerHTML = `
                     <tr>
                         <td colspan="6" class="border border-gray-300 text-center py-8 bg-gray-50 text-sm text-gray-600">
@@ -2331,23 +2277,44 @@
                 const row = document.createElement('tr');
                 row.className = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
                 
-                // Check if password is hashed (starts with $2y$ or is longer than 20 characters)
-                const isHashedPassword = credential.password && (
-                    credential.password.startsWith('$2y$') || 
-                    credential.password.startsWith('$2b$') ||
-                    credential.password.length > 20
-                );
+                // Handle username display
+                let displayUsername = credential.username || 'N/A';
+                let usernameClass = 'text-gray-900 font-semibold';
+                if (displayUsername === 'Not Set' || displayUsername === 'N/A') {
+                    displayUsername = '<span class="text-gray-400 italic">Not Set</span>';
+                    usernameClass = '';
+                }
                 
-                // Display password: if hashed show asterisks, else show temporary password
-                const displayPassword = isHashedPassword ? '********' : credential.password;
+                // Handle password display
+                let displayPassword = 'N/A';
+                let passwordClass = 'text-gray-900 font-semibold';
+                
+                if (credential.password && credential.password !== 'Not Set') {
+                    // Check if password is hashed (starts with $2y$, $2b$ or is longer than 20 characters)
+                    const isHashedPassword = credential.password.startsWith('$2y$') || 
+                                            credential.password.startsWith('$2b$') ||
+                                            credential.password.length > 20;
+                    
+                    if (isHashedPassword) {
+                        // Show asterisks for hashed passwords
+                        displayPassword = '********';
+                    } else {
+                        // Show actual password if it's not hashed (temporary password)
+                        displayPassword = credential.password;
+                    }
+                } else {
+                    // Show "Not Set" for missing passwords
+                    displayPassword = '<span class="text-gray-400 italic">Not Set</span>';
+                    passwordClass = '';
+                }
                 
                 row.innerHTML = `
-                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${credential.userId}</td>
-                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${credential.name}</td>
-                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${credential.barangay}</td>
-                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${credential.position}</td>
-                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 font-semibold text-xs">${credential.username}</td>
-                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 font-semibold text-xs">${displayPassword}</td>
+                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${credential.userId || 'N/A'}</td>
+                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${credential.name || 'N/A'}</td>
+                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${credential.barangay || 'N/A'}</td>
+                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${credential.position || 'N/A'}</td>
+                    <td class="border border-gray-300 text-center px-2 py-2 ${usernameClass} text-xs">${displayUsername}</td>
+                    <td class="border border-gray-300 text-center px-2 py-2 ${passwordClass} text-xs">${displayPassword}</td>
                 `;
                 tableBody.appendChild(row);
             });
@@ -2407,7 +2374,8 @@
         }
 
         function closeCredentialsPreviewModal() {
-            document.getElementById('credentialsPreviewModal').classList.add('hidden');
+            const modal = document.getElementById('credentialsPreviewModal');
+            modal.style.display = 'none';
         }
 
     // printCredentials removed as requested
@@ -2664,6 +2632,53 @@
                     });
                 }
                 
+                // Get Pederasyon President and Secretary names
+                let presidentName = '';
+                let secretaryName = '';
+                
+                // Find President and Secretary from the officials data (reuse already loaded officials)
+                officials.forEach(official => {
+                    const userType = parseInt(official.user_type);
+                    const pedPosition = parseInt(official.ped_position);
+                    const status = parseInt(official.status);
+                    
+                    // Only get approved Pederasyon officers
+                    if (userType === 3 && status === 2) {
+                        const fullName = `${official.first_name || ''} ${official.middle_name || ''} ${official.last_name || ''}`.replace(/\s+/g, ' ').trim();
+                        
+                        if (pedPosition === 1) { // President
+                            presidentName = fullName;
+                        } else if (pedPosition === 3) { // Secretary
+                            secretaryName = fullName;
+                        }
+                    }
+                });
+                
+                // Add signature section
+                const finalY = doc.lastAutoTable.finalY + 15;
+                const signatureSpacing = 60;
+                const leftSignatureX = centerX - signatureSpacing;
+                const rightSignatureX = centerX + signatureSpacing;
+                
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(9);
+                
+                // Left signature (Prepared by - Secretary)
+                doc.text('Prepared by:', leftSignatureX, finalY, { align: 'center' });
+                doc.text('_________________________', leftSignatureX, finalY + 15, { align: 'center' });
+                doc.setFont("helvetica", "bold");
+                doc.text(secretaryName || '_________________________', leftSignatureX, finalY + 18, { align: 'center' });
+                doc.setFont("helvetica", "normal");
+                doc.text('Secretary', leftSignatureX, finalY + 23, { align: 'center' });
+                
+                // Right signature (Approved by - President)
+                doc.text('Approved by:', rightSignatureX, finalY, { align: 'center' });
+                doc.text('_________________________', rightSignatureX, finalY + 15, { align: 'center' });
+                doc.setFont("helvetica", "bold");
+                doc.text(presidentName || '_________________________', rightSignatureX, finalY + 18, { align: 'center' });
+                doc.setFont("helvetica", "normal");
+                doc.text('President', rightSignatureX, finalY + 23, { align: 'center' });
+                
                 // Save the PDF
                 const tabName = getActiveCredentialsTab() === 'sk' ? 'SK' : 'PEDERASYON';
                 const fileName = tabName + '_Officials_Credentials_' + new Date().toISOString().slice(0, 19).replace(/:/g, '-') + '.pdf';
@@ -2707,29 +2722,30 @@
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                return response.json();
-            })
-            .then(data => {
-                if (data && data.success && data.download_url) {
-                    // download
-                    const downloadUrl = data.download_url;
-                    const fileName = downloadUrl.split('/').pop();
-                    try {
-                        const link = document.createElement('a');
-                        link.href = downloadUrl;
-                        link.download = fileName;
-                        link.target = '_blank';
-                        link.style.display = 'none';
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                    } catch (e) {
-                        window.open(downloadUrl, '_blank');
+                // Get the filename from Content-Disposition header if available
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let fileName = 'Credentials.docx';
+                if (contentDisposition) {
+                    const matches = /filename="([^"]+)"/.exec(contentDisposition);
+                    if (matches && matches[1]) {
+                        fileName = matches[1];
                     }
-                    showNotification(data.message || 'Word document generated and download started.', 'success');
-                } else {
-                    showNotification((data && data.message) ? data.message : 'Error generating Word document. Please try again.', 'error');
                 }
+                return response.blob().then(blob => ({ blob, fileName }));
+            })
+            .then(({ blob, fileName }) => {
+                // Create download link
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileName;
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+                
+                showNotification('Credentials Word document generated and downloaded successfully!', 'success');
             })
             .catch(error => {
                 showNotification('Error generating credentials Word: ' + error.message + '. Please check your connection and try again.', 'error');
@@ -2763,28 +2779,30 @@
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                return response.json();
-            })
-            .then(data => {
-                if (data && data.success && data.download_url) {
-                    const downloadUrl = data.download_url;
-                    const fileName = downloadUrl.split('/').pop();
-                    try {
-                        const link = document.createElement('a');
-                        link.href = downloadUrl;
-                        link.download = fileName;
-                        link.target = '_blank';
-                        link.style.display = 'none';
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                    } catch (e) {
-                        window.open(downloadUrl, '_blank');
+                // Get the filename from Content-Disposition header if available
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let fileName = 'Credentials.xlsx';
+                if (contentDisposition) {
+                    const matches = /filename="([^"]+)"/.exec(contentDisposition);
+                    if (matches && matches[1]) {
+                        fileName = matches[1];
                     }
-                    showNotification(data.message || 'Excel document generated and download started.', 'success');
-                } else {
-                    showNotification((data && data.message) ? data.message : 'Error generating Excel document. Please try again.', 'error');
                 }
+                return response.blob().then(blob => ({ blob, fileName }));
+            })
+            .then(({ blob, fileName }) => {
+                // Create download link
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileName;
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+                
+                showNotification('Credentials Excel document generated and downloaded successfully!', 'success');
             })
             .catch(error => {
                 showNotification('Error generating credentials document: ' + error.message + '. Please check your connection and try again.', 'error');
@@ -2845,7 +2863,7 @@
             }
 
             const proceedChange = () => {
-                const labelMap = {1: 'KK Member', 2: 'SK Chairperson', 3: 'Pederasyon Officer'};
+                const labelMap = {1: 'KK Member', 2: 'SK Chairperson'};
                 // Show confirmation modal instead of confirm()
                 $('#pedRoleChangeMessage').text(`Are you sure you want to change the user type to "${labelMap[newType]}"?`);
                 $('#pedRoleChangeModal').removeClass('hidden').css('display', 'flex');
@@ -3138,7 +3156,6 @@
                         <select id="pedRoleSelect" class="w-full border border-gray-200 rounded-md px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-3">
                             <option value="1">KK member</option>
                             <option value="2">SK Chairperson</option>
-                            <option value="3">Pederasyon Officer</option>
                         </select>
                         <div id="pedSkChairmanNote" class="hidden mt-2 mb-3 text-sm text-orange-600 bg-orange-50 border border-orange-200 rounded-lg p-2"></div>
                         <button id="pedRoleUpdateBtn" class="w-full mt-3 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm">
@@ -3155,7 +3172,7 @@
     </div>
 
     <!-- Credentials Preview Modal -->
-    <div id="credentialsPreviewModal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-50 flex items-center justify-center p-4">
+    <div id="credentialsPreviewModal" class="fixed inset-0 z-50 bg-black bg-opacity-50 items-center justify-center p-4" style="display: none;">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-7xl max-h-[90vh] relative overflow-hidden flex flex-col">
             <!-- Modal Header -->
             <div class="bg-white border-b border-gray-200 px-6 py-4">
@@ -3216,18 +3233,8 @@
                             <hr class="border-gray-300 mb-4">
                             
                             <h2 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 16px 0 24px 0;">PANLUNGSOD NA PEDERASYON NG MGA KABATAAN</h2>
-                            <h3 style="font-family: Arial, sans-serif; font-size: 10pt; font-weight: bold; color: black; margin: 8px 0 16px 0;">OFFICIALS CREDENTIALS</h3>
+                            <h3 style="font-family: Arial, sans-serif; font-size: 10pt; font-weight: bold; color: black; margin: 8px 0 16px 0;">SK CHAIRPERSON CREDENTIALS</h3>
                         </div>
-                    </div>
-
-                    <!-- Tab Navigation - Unified with main UI -->
-                    <div class="mb-3 flex gap-2">
-                        <button onclick="showCredentialsTab('sk')" id="skCredentialsTab" class="status-tab active bg-blue-600 text-white border-blue-600 flex-1 py-2 px-4 rounded-md font-medium text-sm transition-all duration-200">
-                            SK Credentials (<span id="skCredentialsCount">0</span>)
-                        </button>
-                        <button onclick="showCredentialsTab('pederasyon')" id="pederasyonCredentialsTab" class="status-tab bg-white text-gray-600 hover:bg-gray-50 flex-1 py-2 px-4 rounded-md font-medium text-sm transition-all duration-200">
-                            Pederasyon Credentials (<span id="pederasyonCredentialsCount">0</span>)
-                        </button>
                     </div>
 
                     <!-- Credentials Tables Container -->
@@ -3239,9 +3246,12 @@
                                     <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                                     </svg>
-                                    <h4 class="text-lg font-semibold text-gray-900">SK Officials Login Credentials</h4>
+                                    <h4 class="text-lg font-semibold text-gray-900">SK Chairperson Login Credentials</h4> 
+                                    <span class="text-sm font-medium text-blue-900">
+                                        (<span id="skCredentialsCount">0</span>)
+                                    </span>
                                 </div>
-                                <p class="text-sm text-gray-600">Login information for SK Chairperson and Kagawad positions</p>
+                                <p class="text-sm text-gray-600">Login information for SK Chairperson positions across all barangays</p>
                             </div>
                             <div class="overflow-x-auto">
                                 <div class="border-2 border-gray-400 rounded-lg overflow-hidden">
@@ -3263,48 +3273,17 @@
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Pederasyon Credentials Table -->
-                        <div id="pederasyonCredentialsSection" class="credentials-section hidden p-6">
-                            <div class="mb-4">
-                                <div class="flex items-center gap-2">
-                                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-                                    </svg>
-                                    <h4 class="text-lg font-semibold text-gray-900">Pederasyon Officials Login Credentials</h4>
-                                </div>
-                                <p class="text-sm text-gray-600">Login information for Pederasyon officers and executives</p>
-                            </div>
-                            <div class="overflow-x-auto">
-                                <div class="border-2 border-gray-400 rounded-lg overflow-hidden">
-                                    <table class="w-full border-collapse border border-gray-300 rounded-lg overflow-hidden">
-                                        <thead>
-                                            <tr class="bg-gray-50">
-                                                <th class="border border-gray-300 text-center font-bold py-3 px-3 text-gray-700 text-xs">User ID</th>
-                                                <th class="border border-gray-300 text-center font-bold py-3 px-3 text-gray-700 text-xs">Full Name</th>
-                                                <th class="border border-gray-300 text-center font-bold py-3 px-3 text-gray-700 text-xs">Barangay</th>
-                                                <th class="border border-gray-300 text-center font-bold py-3 px-3 text-gray-700 text-xs">Position</th>
-                                                <th class="border border-gray-300 text-center font-bold py-3 px-3 text-gray-700 text-xs">Ped Username</th>
-                                                <th class="border border-gray-300 text-center font-bold py-3 px-3 text-gray-700 text-xs">Ped Password</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="pederasyonCredentialsTableBody">
-                                            <!-- Pederasyon credentials data will be populated here -->
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     <div id="noCredentials" class="text-center py-12 hidden">
-                        <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        <div class="w-16 h-16 mx-auto mb-4 bg-yellow-100 rounded-full flex items-center justify-center">
+                            <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                             </svg>
                         </div>
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">No Credentials Found</h3>
-                        <p class="text-sm text-gray-500">No officials with credentials are currently registered in the system.</p>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">No SK Chairpersons Found</h3>
+                        <p class="text-sm text-gray-600 mb-2">No SK Chairpersons or Pederasyon Officers (Accepted status) found.</p>
+                        <p class="text-xs text-gray-500 mt-3">Required: (user_type=2 AND sk_position=1) OR user_type=3, with status=Accepted</p>
                     </div>
                 </div>
             </div>
@@ -3330,6 +3309,152 @@
                             Word
                         </button>
                         <button onclick="downloadCredentialsExcel()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 shadow-sm">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Excel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Official List Preview Modal -->
+    <div id="officialListModal" class="fixed inset-0 z-50 bg-black bg-opacity-50 items-center justify-center p-4" style="display: none;">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-7xl max-h-[90vh] relative overflow-hidden flex flex-col">
+            <!-- Modal Header -->
+            <div class="bg-white border-b border-gray-200 px-6 py-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900">Officials List</h3>
+                        <p class="text-sm text-gray-600 mt-1">K-NECT System Official SK Chairpersons List</p>
+                    </div>
+                    <button onclick="closeOfficialListModal()" class="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors p-1">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="flex-1 overflow-y-auto p-6">
+                <div id="officialListLoading" class="text-center py-12">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <p class="mt-3 text-gray-600 font-medium">Loading officials list...</p>
+                </div>
+
+                <div id="officialListContent" class="hidden">
+                    <!-- Document Header - Hidden in preview, shown in print -->
+                    <div id="downloadOfficialContent" class="bg-white hidden print:block" style="font-family: Arial, sans-serif;">
+                        <!-- Header Section with Logos -->
+                        <div class="text-center mb-6 print:mb-4" style="font-family: Arial, sans-serif;">
+                            <div class="flex items-center justify-center mb-4">
+                                <!-- Pederasyon Logo (Left) -->
+                                <div class="flex-shrink-0 mr-8">
+                                    <div id="barangay-logo" class="w-16 h-16 rounded flex items-center justify-center">
+                                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                
+                                <!-- Center Text -->
+                                <div class="text-center" style="font-family: Arial, sans-serif;">
+                                    <h2 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 0; line-height: 1.2;">REPUBLIC OF THE PHILIPPINES</h2>
+                                    <h3 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 0; line-height: 1.2;">PROVINCE OF CAMARINES SUR</h3>
+                                    <h3 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 0; line-height: 1.2;">CITY OF IRIGA</h3>
+                                    <h4 style="font-family: Arial, sans-serif; font-size: 9pt; font-weight: normal; color: black; margin: 0; line-height: 1.2;">PANLUNGSOD NA PEDERASYON NG MGA</h4>
+                                    <h4 style="font-family: Arial, sans-serif; font-size: 9pt; font-weight: normal; color: black; margin: 0; line-height: 1.2;">SANGGUNIANG KABATAAN NG IRIGA</h4>
+                                </div>
+                                
+                                <!-- Iriga City Logo (Right) -->
+                                <div class="flex-shrink-0 ml-8">
+                                    <div id="sk-logo" class="w-16 h-16 rounded flex items-center justify-center">
+                                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr class="border-gray-300 mb-4">
+                            
+                            <h2 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 16px 0 8px 0;">SANGGUNIANG KABATAAN</h2>
+                            <h3 style="font-family: Arial, sans-serif; font-size: 10pt; font-weight: bold; color: black; margin: 8px 0 16px 0;">OFFICIAL LIST</h3>
+                        </div>
+                    </div>
+
+                    <!-- Officials List Table -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                        <div class="p-6">
+                            <div class="mb-4">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                                    </svg>
+                                    <h4 class="text-lg font-semibold text-gray-900">SK Officials List</h4>
+                                </div>
+                                <p class="text-sm text-gray-600">Complete list of accepted SK Chairpersons and Pederasyon Officers across all barangays</p>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <div class="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                                    <table class="w-full border-collapse">
+                                        <thead>
+                                            <tr class="bg-blue-50">
+                                                <th class="border border-gray-300 text-center font-semibold py-3 px-4 text-gray-700 text-sm">User ID</th>
+                                                <th class="border border-gray-300 text-center font-semibold py-3 px-4 text-gray-700 text-sm">Full Name</th>
+                                                <th class="border border-gray-300 text-center font-semibold py-3 px-4 text-gray-700 text-sm">Barangay</th>
+                                                <th class="border border-gray-300 text-center font-semibold py-3 px-4 text-gray-700 text-sm">Gender</th>
+                                                <th class="border border-gray-300 text-center font-semibold py-3 px-4 text-gray-700 text-sm">Age</th>
+                                                <th class="border border-gray-300 text-center font-semibold py-3 px-4 text-gray-700 text-sm">Birthdate</th>
+                                                <th class="border border-gray-300 text-center font-semibold py-3 px-4 text-gray-700 text-sm">Position</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="officialListTableBody">
+                                            <!-- Officials data will be populated here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="noOfficials" class="text-center py-12 hidden">
+                        <div class="w-16 h-16 mx-auto mb-4 bg-yellow-100 rounded-full flex items-center justify-center">
+                            <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">No Officials Found</h3>
+                        <p class="text-sm text-gray-600 mb-2">No accepted SK Chairpersons or Pederasyon Officers found in the current table view.</p>
+                        <p class="text-xs text-gray-500">Make sure you have officials with "Accepted" status in the list.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="bg-gray-50 border-t border-gray-200 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div id="officialListCount" class="text-sm font-medium text-gray-700"></div>
+                    <div class="flex gap-3">
+                        <button onclick="closeOfficialListModal()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200">
+                            Close
+                        </button>
+                        <button onclick="downloadOfficialListPDF()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors duration-200 shadow-sm">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            PDF
+                        </button>
+                        <button onclick="downloadOfficialListWord()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 shadow-sm">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Word
+                        </button>
+                        <button onclick="downloadOfficialListExcel()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 shadow-sm">
                             <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>

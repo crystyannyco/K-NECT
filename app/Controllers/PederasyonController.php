@@ -172,13 +172,19 @@ class PederasyonController extends BaseController
     {
         // Use shared ProfileController for common functionality
         $profileController = new ProfileController();
-        // Pass null as statusFilter to show ALL users regardless of approval status
+        // Pass null as statusFilter to show ALL users regardless of approval status (including unverified)
         $users = $profileController->getAllUsersWithExtendedInfo(null, null);
         $users = $profileController->processUsersForMemberListing($users, 'pederasyon');
         
-    $data['user_list'] = $users;
-    // Provide centralized maps for JS in view
-    $data['field_mappings'] = DemographicsHelper::allMapsForJs();
+        // Filter to show KK Members (user_type = 1), SK Chairpersons (user_type = 2), and Pederasyon Officers (user_type = 3)
+        $filteredUsers = array_filter($users, function($user) {
+            $userType = isset($user['user_type']) ? (int)$user['user_type'] : 0;
+            return in_array($userType, [1, 2, 3]); // KK Members, SK Chairpersons, and Pederasyon Officers
+        });
+        
+        $data['user_list'] = array_values($filteredUsers); // Re-index array
+        // Provide centralized maps for JS in view
+        $data['field_mappings'] = DemographicsHelper::allMapsForJs();
         return 
             $this->loadView('K-NECT/Pederasyon/template/header') .
             $this->loadView('K-NECT/Pederasyon/template/sidebar') .
@@ -192,9 +198,10 @@ class PederasyonController extends BaseController
         $users = $profileController->getAllUsersWithExtendedInfo();
         $users = $profileController->processUsersForMemberListing($users, 'pederasyon');
         
-        // Filter only Pederasyon Officers (user_type = 3)
+        // Filter SK Chairpersons (user_type = 2) and Pederasyon Officers (user_type = 3)
         $pedOfficers = array_filter($users, function($user) {
-            return isset($user['user_type']) && (int)$user['user_type'] === 3;
+            $userType = isset($user['user_type']) ? (int)$user['user_type'] : 0;
+            return in_array($userType, [2, 3]); // SK Chairperson or Pederasyon Officer
         });
 
         // Prepare barangay map and computed barangay names for the view (move helper usage to backend)
@@ -204,6 +211,12 @@ class PederasyonController extends BaseController
             $user['barangay_name'] = $barangayId !== null && isset($barangayMap[$barangayId])
                 ? $barangayMap[$barangayId]
                 : ($barangayId ?? '');
+            
+            // For SK Chairpersons (user_type = 2), override position display to "SK Pederasyon Member"
+            if (isset($user['user_type']) && (int)$user['user_type'] === 2) {
+                $user['position_display'] = 'SK Pederasyon Member';
+            }
+            
             return $user;
         }, $pedOfficers);
 
@@ -490,6 +503,12 @@ class PederasyonController extends BaseController
 
         $userModel = new UserModel();
         
+        // Get current user data
+        $user = $userModel->find($userId);
+        if (!$user) {
+            return $this->response->setJSON(['success' => false, 'message' => 'User not found']);
+        }
+        
         // Check position limits - ensure only 1 person per position (except null - SK Pederasyon Member)
         if ($pedPosition !== null) {
             $existingUserWithPosition = $userModel->where('ped_position', $pedPosition)
@@ -517,11 +536,64 @@ class PederasyonController extends BaseController
             }
         }
         
-        // Update the ped_position in the users table
-        $updated = $userModel->update($userId, ['ped_position' => $pedPosition]);
+        // Prepare update data
+        $updateData = ['ped_position' => $pedPosition];
+        
+        // If assigning a position (not null), upgrade to Pederasyon Officer and generate credentials
+        if ($pedPosition !== null) {
+            // Change user_type to 3 (Pederasyon Officer)
+            $updateData['user_type'] = 3;
+            
+            // Generate Pederasyon credentials if they don't exist
+            if (empty($user['ped_username']) || empty($user['ped_password'])) {
+                // Generate unique username: PED_FirstNameLastName (no spaces, no underscores between names)
+                $firstName = preg_replace('/[^a-zA-Z0-9]/', '', $user['first_name'] ?? '');
+                $lastName = preg_replace('/[^a-zA-Z0-9]/', '', $user['last_name'] ?? '');
+                $baseUsername = 'PED_' . ucfirst(strtolower($firstName)) . ucfirst(strtolower($lastName));
+                
+                // Ensure uniqueness
+                $username = $baseUsername;
+                $counter = 1;
+                while ($userModel->where('ped_username', $username)->first()) {
+                    $username = $baseUsername . $counter;
+                    $counter++;
+                }
+                
+                // Generate temporary password (8 characters: mix of uppercase, lowercase, and numbers)
+                $password = $this->generateTemporaryPassword();
+                
+                $updateData['ped_username'] = $username;
+                // Store as plain text temporarily so it shows in credentials list
+                $updateData['ped_password'] = $password;
+                
+                // Return credentials in response
+                $newCredentials = [
+                    'username' => $username,
+                    'password' => $password,
+                    'user_id' => $user['user_id']
+                ];
+            }
+        } else {
+            // If setting to null (regular member), clear Pederasyon credentials
+            // This prevents unauthorized login
+            $updateData['ped_username'] = null;
+            $updateData['ped_password'] = null;
+            // Keep user_type = 3 for SK Chairpersons who are Pederasyon members
+        }
+        
+        // Update the user
+        $updated = $userModel->update($userId, $updateData);
         
         if ($updated) {
-            return $this->response->setJSON(['success' => true, 'message' => 'Officer position updated successfully']);
+            $response = ['success' => true, 'message' => 'Officer position updated successfully'];
+            
+            // If new credentials were generated, include them in the response
+            if (isset($newCredentials)) {
+                $response['newCredentials'] = $newCredentials;
+                $response['showCredentialsModal'] = true;
+            }
+            
+            return $this->response->setJSON($response);
         } else {
             return $this->response->setJSON(['success' => false, 'message' => 'Failed to update officer position']);
         }
@@ -599,10 +671,58 @@ class PederasyonController extends BaseController
         }
 
         $updated = 0;
+        $newCredentials = [];
         
         foreach ($officerIds as $officerId) {
             if (is_numeric($officerId)) {
-                $result = $userModel->update((int)$officerId, ['ped_position' => $pedPosition]);
+                $user = $userModel->find((int)$officerId);
+                if (!$user) continue;
+                
+                // Prepare update data
+                $updateData = ['ped_position' => $pedPosition];
+                
+                // If assigning a position (not null), upgrade to Pederasyon Officer and generate credentials
+                if ($pedPosition !== null) {
+                    // Change user_type to 3 (Pederasyon Officer)
+                    $updateData['user_type'] = 3;
+                    
+                    // Generate Pederasyon credentials if they don't exist
+                    if (empty($user['ped_username']) || empty($user['ped_password'])) {
+                        // Generate unique username: PED_FirstNameLastName
+                        $firstName = preg_replace('/[^a-zA-Z0-9]/', '', $user['first_name'] ?? '');
+                        $lastName = preg_replace('/[^a-zA-Z0-9]/', '', $user['last_name'] ?? '');
+                        $baseUsername = 'PED_' . ucfirst(strtolower($firstName)) . ucfirst(strtolower($lastName));
+                        
+                        // Ensure uniqueness
+                        $username = $baseUsername;
+                        $counter = 1;
+                        while ($userModel->where('ped_username', $username)->first()) {
+                            $username = $baseUsername . $counter;
+                            $counter++;
+                        }
+                        
+                        // Generate temporary password
+                        $password = $this->generateTemporaryPassword();
+                        
+                        $updateData['ped_username'] = $username;
+                        // Store as plain text temporarily
+                        $updateData['ped_password'] = $password;
+                        
+                        // Store credentials for response
+                        $newCredentials[] = [
+                            'user_id' => $user['user_id'],
+                            'name' => $user['first_name'] . ' ' . $user['last_name'],
+                            'username' => $username,
+                            'password' => $password
+                        ];
+                    }
+                } else {
+                    // If setting to null, clear credentials
+                    $updateData['ped_username'] = null;
+                    $updateData['ped_password'] = null;
+                }
+                
+                $result = $userModel->update((int)$officerId, $updateData);
                 if ($result) {
                     $updated++;
                 }
@@ -610,7 +730,15 @@ class PederasyonController extends BaseController
         }
         
         if ($updated > 0) {
-            return $this->response->setJSON(['success' => true, 'message' => "Updated {$updated} officer positions successfully"]);
+            $response = ['success' => true, 'message' => "Updated {$updated} officer position(s) successfully"];
+            
+            // If new credentials were generated, include them in the response
+            if (!empty($newCredentials)) {
+                $response['newCredentials'] = $newCredentials;
+                $response['showCredentialsModal'] = true;
+            }
+            
+            return $this->response->setJSON($response);
         } else {
             return $this->response->setJSON(['success' => false, 'message' => 'Failed to update officer positions']);
         }
@@ -648,29 +776,25 @@ class PederasyonController extends BaseController
             // Get logos for the Word document
             $logos = $this->getLogosForDocument();
 
-            // Generate Word document directly to output
+            // Generate Word document and stream directly to user
+            $fileName = 'Pederasyon_Officials_List_' . date('Y-m-d_His') . '.docx';
             $phpWord = $this->generateOfficialListWordDocument($officials, $logos);
             
-            if ($phpWord) {
-                // Generate filename
-                $fileName = 'PEDERASYON_Official_List_' . date('Y-m-d_His') . '.docx';
-                
-                // Set headers for download
-                header('Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-                header('Content-Disposition: attachment;filename="' . $fileName . '"');
-                header('Cache-Control: max-age=0');
-                
-                // Write directly to output
-                $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
-                $writer->save('php://output');
-                exit;
-            } else {
-                log_message('error', 'Word document generation failed');
-                return $this->response->setJSON([
-                    'success' => false, 
-                    'message' => 'Error generating Word document'
-                ]);
-            }
+            // Stream the file directly to the user
+            $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
+            
+            // Set headers for file download
+            $this->response->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+            $this->response->setHeader('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+            $this->response->setHeader('Cache-Control', 'max-age=0');
+            
+            // Write to output buffer
+            ob_start();
+            $writer->save('php://output');
+            $wordOutput = ob_get_clean();
+            
+            log_message('info', 'Word document streamed successfully: ' . $fileName);
+            return $this->response->setBody($wordOutput);
         } catch (\Exception $e) {
             log_message('error', 'Error in generateOfficialListWord: ' . $e->getMessage());
             log_message('error', 'Stack trace: ' . $e->getTraceAsString());
@@ -780,7 +904,7 @@ class PederasyonController extends BaseController
             
             // Add horizontal line and title
             $section->addTextBreak();
-            $section->addText('PANLUNGSOD NA PEDERASYON NG MGA KABATAAN', $titleStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $section->addText('PANLUNGSOD NA PEDERASYON NG MGA SANGGUNIANG KABATAAN', $titleStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             $section->addText('OFFICIAL LIST', $titleStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             $section->addTextBreak();
             
@@ -796,11 +920,11 @@ class PederasyonController extends BaseController
             // Add table header
             $table->addRow();
             $table->addCell(1200)->addText('User ID', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $table->addCell(2500)->addText('Full Name', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             $table->addCell(1800)->addText('Barangay', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-            $table->addCell(2500)->addText('Name', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $table->addCell(800)->addText('Gender', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             $table->addCell(800)->addText('Age', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-            $table->addCell(1200)->addText('Birthday', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-            $table->addCell(800)->addText('Sex', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $table->addCell(1200)->addText('Birthdate', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             $table->addCell(1700)->addText('Position', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             
             // Process officials and add to table
@@ -825,32 +949,27 @@ class PederasyonController extends BaseController
                     $birthday = $official['birthdate'] ? date('m/d/Y', strtotime($official['birthdate'])) : '';
                     $sex = $official['sex'] == '1' ? 'Male' : ($official['sex'] == '2' ? 'Female' : '');
                     
-                    // Determine specific position - only show SK Pederasyon positions
-                    $position = '';
-                    if ($userType === 3) { // Pederasyon Officer
-                        $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : 0;
-                        switch($pedPosition) {
-                            case 1: $position = 'SK Pederasyon President'; break;
-                            case 2: $position = 'SK Pederasyon Vice President'; break;
-                            case 3: $position = 'SK Pederasyon Secretary'; break;
-                            case 4: $position = 'SK Pederasyon Treasurer'; break;
-                            case 5: $position = 'SK Pederasyon Auditor'; break;
-                            case 6: $position = 'SK Pederasyon Public Information Officer'; break;
-                            case 7: $position = 'SK Pederasyon Sergeant at Arms'; break;
-                            default: $position = 'SK Pederasyon Member'; break;
-                        }
-                    } else if ($userType === 2) { // SK Chairperson - also show as SK Pederasyon Member
-                        $position = 'SK Pederasyon Member';
+                    // Determine position based on ped_position
+                    $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : 0;
+                    $position = 'SK Pederasyon Member';
+                    switch($pedPosition) {
+                        case 1: $position = 'President'; break;
+                        case 2: $position = 'Vice President'; break;
+                        case 3: $position = 'Secretary'; break;
+                        case 4: $position = 'Treasurer'; break;
+                        case 5: $position = 'Auditor'; break;
+                        case 6: $position = 'Public Information Officer'; break;
+                        case 7: $position = 'Sergeant at Arms'; break;
                     }
                     
                     // Add row to table
                     $table->addRow();
                     $table->addCell()->addText($userId, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-                    $table->addCell()->addText($barangay, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
                     $table->addCell()->addText($fullName, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                    $table->addCell()->addText($barangay, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                    $table->addCell()->addText($sex, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
                     $table->addCell()->addText($age, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
                     $table->addCell()->addText($birthday, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-                    $table->addCell()->addText($sex, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
                     $table->addCell()->addText($position, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
                 }
             }
@@ -905,8 +1024,8 @@ class PederasyonController extends BaseController
             $approvedCell->addText($presidentName ?: '________________', ['name' => 'Arial', 'size' => 8, 'bold' => true], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             $approvedCell->addText('Pederasyon President', ['name' => 'Arial', 'size' => 8, 'bold' => true], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
             
-            // Return the PhpWord object instead of saving to file
-            log_message('info', 'Word document generated successfully');
+            // Return the PhpWord object for streaming
+            log_message('info', 'Official List Word document created successfully');
             return $phpWord;
             
         } catch (\Exception $e) {
@@ -1014,29 +1133,29 @@ class PederasyonController extends BaseController
                 return $this->response->setJSON(['success' => false, 'message' => 'No officials found for the official list']);
             }
 
-            // Generate Excel document directly to output
+            // Generate Excel document and stream directly to user
+            $fileName = 'Pederasyon_Officials_List_' . date('Y-m-d_His') . '.xlsx';
             $spreadsheet = $this->generateOfficialListExcelDocument($officials);
             
-            if ($spreadsheet) {
-                // Generate filename
-                $fileName = 'PEDERASYON_Official_List_' . date('Y-m-d_His') . '.xlsx';
-                
-                // Set headers for download
-                header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-                header('Content-Disposition: attachment;filename="' . $fileName . '"');
-                header('Cache-Control: max-age=0');
-                
-                // Write directly to output
-                $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
-                $writer->save('php://output');
-                exit;
-            } else {
-                log_message('error', 'Excel document generation failed');
-                return $this->response->setJSON([
-                    'success' => false, 
-                    'message' => 'Error generating Excel document'
-                ]);
+            // Clear any previous output
+            if (ob_get_level()) {
+                ob_end_clean();
             }
+            
+            // Set headers for file download
+            $this->response->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            $this->response->setHeader('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+            $this->response->setHeader('Cache-Control', 'max-age=0');
+            $this->response->setHeader('Pragma', 'public');
+            
+            // Write to output buffer
+            ob_start();
+            $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+            $writer->save('php://output');
+            $excelOutput = ob_get_clean();
+            
+            log_message('info', 'Excel document streamed successfully: ' . $fileName);
+            return $this->response->setBody($excelOutput);
         } catch (\Exception $e) {
             log_message('error', 'Error in generateOfficialListExcel: ' . $e->getMessage());
             log_message('error', 'Stack trace: ' . $e->getTraceAsString());
@@ -1107,7 +1226,7 @@ class PederasyonController extends BaseController
             $currentRow++; // Empty row
 
             // Title
-            $sheet->setCellValue('A' . $currentRow, 'PANLUNGSOD NA PEDERASYON NG MGA KABATAAN');
+            $sheet->setCellValue('A' . $currentRow, 'PANLUNGSOD NA PEDERASYON NG MGA SANGGUNIANG KABATAAN');
             $sheet->mergeCells('A' . $currentRow . ':G' . $currentRow);
             $sheet->getStyle('A' . $currentRow)->getFont()->setBold(true)->setSize(14);
             $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
@@ -1126,11 +1245,11 @@ class PederasyonController extends BaseController
             // Table headers
             $headers = [
                 'A' => 'User ID',
-                'B' => 'Barangay',
-                'C' => 'Name',
-                'D' => 'Age',
-                'E' => 'Birthday',
-                'F' => 'Sex',
+                'B' => 'Full Name',
+                'C' => 'Barangay',
+                'D' => 'Gender',
+                'E' => 'Age',
+                'F' => 'Birthdate',
                 'G' => 'Position'
             ];
 
@@ -1170,31 +1289,26 @@ class PederasyonController extends BaseController
                     $birthday = $official['birthdate'] ? date('m/d/Y', strtotime($official['birthdate'])) : '';
                     $sex = $official['sex'] == '1' ? 'Male' : ($official['sex'] == '2' ? 'Female' : '');
                     
-                    // Determine specific position - only show SK Pederasyon positions
-                    $position = '';
-                    if ($userType === 3) { // Pederasyon Officer
-                        $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : 0;
-                        switch($pedPosition) {
-                            case 1: $position = 'SK Pederasyon President'; break;
-                            case 2: $position = 'SK Pederasyon Vice President'; break;
-                            case 3: $position = 'SK Pederasyon Secretary'; break;
-                            case 4: $position = 'SK Pederasyon Treasurer'; break;
-                            case 5: $position = 'SK Pederasyon Auditor'; break;
-                            case 6: $position = 'SK Pederasyon Public Information Officer'; break;
-                            case 7: $position = 'SK Pederasyon Sergeant at Arms'; break;
-                            default: $position = 'SK Pederasyon Member'; break;
-                        }
-                    } else if ($userType === 2) { // SK Chairperson - also show as SK Pederasyon Member
-                        $position = 'SK Pederasyon Member';
+                    // Determine position based on ped_position
+                    $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : 0;
+                    $position = 'SK Pederasyon Member';
+                    switch($pedPosition) {
+                        case 1: $position = 'President'; break;
+                        case 2: $position = 'Vice President'; break;
+                        case 3: $position = 'Secretary'; break;
+                        case 4: $position = 'Treasurer'; break;
+                        case 5: $position = 'Auditor'; break;
+                        case 6: $position = 'Public Information Officer'; break;
+                        case 7: $position = 'Sergeant at Arms'; break;
                     }
                     
                     // Add data to Excel with proper formatting
                     $sheet->setCellValue('A' . $currentRow, $userId);
-                    $sheet->setCellValue('B' . $currentRow, $barangay);
-                    $sheet->setCellValue('C' . $currentRow, $fullName);
-                    $sheet->setCellValue('D' . $currentRow, $age);
-                    $sheet->setCellValue('E' . $currentRow, $birthday);
-                    $sheet->setCellValue('F' . $currentRow, $sex);
+                    $sheet->setCellValue('B' . $currentRow, $fullName);
+                    $sheet->setCellValue('C' . $currentRow, $barangay);
+                    $sheet->setCellValue('D' . $currentRow, $sex);
+                    $sheet->setCellValue('E' . $currentRow, $age);
+                    $sheet->setCellValue('F' . $currentRow, $birthday);
                     $sheet->setCellValue('G' . $currentRow, $position);
                     
                     // Style data cells
@@ -1282,12 +1396,12 @@ class PederasyonController extends BaseController
 
             // Set optimal column widths
             $sheet->getColumnDimension('A')->setWidth(12); // User ID
-            $sheet->getColumnDimension('B')->setWidth(18); // Barangay
-            $sheet->getColumnDimension('C')->setWidth(28); // Name
-            $sheet->getColumnDimension('D')->setWidth(6);  // Age
-            $sheet->getColumnDimension('E')->setWidth(12); // Birthday
-            $sheet->getColumnDimension('F')->setWidth(8);  // Sex
-            $sheet->getColumnDimension('G')->setWidth(32); // Position
+            $sheet->getColumnDimension('B')->setWidth(30); // Full Name
+            $sheet->getColumnDimension('C')->setWidth(20); // Barangay
+            $sheet->getColumnDimension('D')->setWidth(10); // Gender
+            $sheet->getColumnDimension('E')->setWidth(8);  // Age
+            $sheet->getColumnDimension('F')->setWidth(15); // Birthdate
+            $sheet->getColumnDimension('G')->setWidth(20); // Position
 
             // Set row heights for headers
             $sheet->getRowDimension($headerRowNum)->setRowHeight(25);
@@ -1298,8 +1412,8 @@ class PederasyonController extends BaseController
             $sheet->getPageMargins()->setLeft(0.5);
             $sheet->getPageMargins()->setRight(0.5);
 
-            // Return the Spreadsheet object instead of saving to file
-            log_message('info', 'Excel document generated successfully');
+            // Return the spreadsheet object for streaming
+            log_message('info', 'Official List Excel spreadsheet created successfully');
             return $spreadsheet;
             
         } catch (\Exception $e) {
@@ -1339,29 +1453,29 @@ class PederasyonController extends BaseController
                 return $this->response->setJSON(['success' => false, 'message' => 'No SK Chairpersons found for credentials generation']);
             }
 
-            // Generate credentials document directly to output
+            // Generate credentials document and stream directly to user
+            $fileName = 'PEDERASYON_Officials_Credentials_' . date('Y-m-d_His') . '.xlsx';
             $spreadsheet = $this->generateCredentialsDocument($officials);
             
-            if ($spreadsheet) {
-                // Generate filename
-                $fileName = 'PEDERASYON_Officials_Credentials_' . date('Y-m-d_His') . '.xlsx';
-                
-                // Set headers for download
-                header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-                header('Content-Disposition: attachment;filename="' . $fileName . '"');
-                header('Cache-Control: max-age=0');
-                
-                // Write directly to output
-                $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
-                $writer->save('php://output');
-                exit;
-            } else {
-                log_message('error', 'Credentials document generation failed');
-                return $this->response->setJSON([
-                    'success' => false, 
-                    'message' => 'Error generating credentials document'
-                ]);
+            // Clear any previous output
+            if (ob_get_level()) {
+                ob_end_clean();
             }
+            
+            // Set headers for file download
+            $this->response->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            $this->response->setHeader('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+            $this->response->setHeader('Cache-Control', 'max-age=0');
+            $this->response->setHeader('Pragma', 'public');
+            
+            // Write to output buffer
+            ob_start();
+            $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+            $writer->save('php://output');
+            $excelOutput = ob_get_clean();
+            
+            log_message('info', 'Credentials Excel streamed successfully: ' . $fileName);
+            return $this->response->setBody($excelOutput);
         } catch (\Exception $e) {
             log_message('error', 'Error in generateCredentials: ' . $e->getMessage());
             log_message('error', 'Stack trace: ' . $e->getTraceAsString());
@@ -1547,13 +1661,13 @@ class PederasyonController extends BaseController
 
             // Set optimal column widths
             $sheet->getColumnDimension('A')->setWidth(12); // User ID
-            $sheet->getColumnDimension('B')->setWidth(25); // Full Name
-            $sheet->getColumnDimension('C')->setWidth(30); // Position
-            $sheet->getColumnDimension('D')->setWidth(18); // Barangay
-            $sheet->getColumnDimension('E')->setWidth(25); // Email
-            $sheet->getColumnDimension('F')->setWidth(15); // Phone
-            $sheet->getColumnDimension('G')->setWidth(10); // Status
-            $sheet->getColumnDimension('H')->setWidth(12); // Date Appointed
+            $sheet->getColumnDimension('B')->setWidth(30); // Full Name
+            $sheet->getColumnDimension('C')->setWidth(20); // Position
+            $sheet->getColumnDimension('D')->setWidth(20); // Barangay
+            $sheet->getColumnDimension('E')->setWidth(30); // Email
+            $sheet->getColumnDimension('F')->setWidth(18); // Phone
+            $sheet->getColumnDimension('G')->setWidth(12); // Status
+            $sheet->getColumnDimension('H')->setWidth(15); // Date Appointed
 
             // Set row heights for headers
             $sheet->getRowDimension($headerRowNum)->setRowHeight(25);
@@ -1564,8 +1678,8 @@ class PederasyonController extends BaseController
             $sheet->getPageMargins()->setLeft(0.5);
             $sheet->getPageMargins()->setRight(0.5);
 
-            // Return the Spreadsheet object instead of saving to file
-            log_message('info', 'Credentials Excel document generated successfully');
+            // Return the spreadsheet object for streaming
+            log_message('info', 'Credentials spreadsheet created successfully');
             return $spreadsheet;
             
         } catch (\Exception $e) {
@@ -1578,16 +1692,146 @@ class PederasyonController extends BaseController
     public function getCredentialsData()
     {
         try {
-            log_message('info', 'Getting credentials data (SK + Pederasyon) ...');
+            log_message('info', 'Getting credentials data for Youth List (SK Chairpersons only) ...');
 
             $profileController = new ProfileController();
             $users = $profileController->getAllUsersWithExtendedInfo();
             $users = $profileController->processUsersForMemberListing($users, 'pederasyon');
 
+            log_message('info', 'Total users fetched: ' . count($users));
+
             $skCredentials = [];
+            $debugCount = 0;
+            $statusFiltered = 0;
+            $userTypeFiltered = 0;
+            $credentialsFiltered = 0;
+
+            foreach ($users as $u) {
+                $debugCount++;
+                $status = isset($u['status']) ? (int)$u['status'] : 0;
+                $userType = isset($u['user_type']) ? (int)$u['user_type'] : 0;
+                $position = isset($u['position']) ? (int)$u['position'] : 0;
+                $skPosition = isset($u['sk_position']) ? (int)$u['sk_position'] : 0;
+                $pedPosition = isset($u['ped_position']) ? (int)$u['ped_position'] : 0;
+                $skUsername = $u['sk_username'] ?? '';
+                $skPassword = $u['sk_password'] ?? '';
+                
+                // Debug logging for first 5 users, SK Chairpersons, or Pederasyon Officers
+                if ($debugCount <= 5 || $userType === 2 || $userType === 3) {
+                    log_message('info', sprintf(
+                        'User #%d: user_id=%s, user_type=%d, sk_position=%d, ped_position=%d, status=%d, sk_username=%s, sk_password=%s',
+                        $debugCount,
+                        $u['user_id'] ?? 'NULL',
+                        $userType,
+                        $skPosition,
+                        $pedPosition,
+                        $status,
+                        $skUsername ? 'SET' : 'EMPTY',
+                        $skPassword ? 'SET' : 'EMPTY'
+                    ));
+                }
+                
+                if ($status !== 2) {
+                    $statusFiltered++;
+                    continue; // Only accepted users eligible for credential listing
+                }
+
+                $skPosition = isset($u['sk_position']) ? (int)$u['sk_position'] : 0;
+                
+                // Include users who are SK Chairpersons:
+                // 1. user_type = 2 (SK Chairperson) AND sk_position = 1 (Chairperson position)
+                // 2. user_type = 3 (Pederasyon Officer - they are also SK Chairpersons from their barangay)
+                $isSkChairperson = ($userType === 2 && $skPosition === 1) || ($userType === 3);
+                
+                if ($isSkChairperson) {
+                    $userId = $u['user_id'] ?? '';
+                    $barangay = \App\Libraries\BarangayHelper::getBarangayName($u['barangay'] ?? '');
+                    
+                    // Consistent Full Name: Last, First Middle
+                    $fullName = esc($u['last_name'] ?? '');
+                    if (!empty($u['first_name'])) {
+                        $fullName .= ', ' . esc($u['first_name']);
+                    }
+                    if (!empty($u['middle_name'])) {
+                        $fullName .= ' ' . esc($u['middle_name']);
+                    }
+
+                    // Determine position label
+                    $positionLabel = 'SK Chairperson';
+
+                    // Include ALL SK Chairpersons, even without credentials
+                    // Frontend will handle display of empty/hashed passwords
+                    $skCredentials[] = [
+                        'userId'   => $userId,
+                        'name'     => $fullName,
+                        'barangay' => $barangay,
+                        'position' => $positionLabel,
+                        'username' => $skUsername ?: 'Not Set',
+                        'password' => $skPassword ?: 'Not Set',
+                        'hasCredentials' => ($skUsername && $skPassword) ? true : false,
+                    ];
+                    
+                    if ($skUsername && $skPassword) {
+                        log_message('info', 'Added SK Chairperson with credentials: ' . $userId . ' - ' . $fullName . ' (' . $positionLabel . ')');
+                    } else {
+                        $credentialsFiltered++;
+                        log_message('info', 'Added SK Chairperson without credentials: ' . $userId . ' - ' . $fullName . ' (' . $positionLabel . ')');
+                    }
+                } else {
+                    if ($status === 2) {
+                        $userTypeFiltered++;
+                    }
+                }
+            }
+
+            log_message('info', 'Filter summary: status_filtered=' . $statusFiltered . ', user_type_filtered=' . $userTypeFiltered . ', credentials_filtered=' . $credentialsFiltered);
+            log_message('info', 'SK Chairperson credentials count: ' . count($skCredentials));
+            
+            // Additional debug info
+            if (count($skCredentials) === 0) {
+                log_message('warning', 'No SK Chairpersons found! Possible reasons:');
+                log_message('warning', '  - No users with (user_type=2 AND sk_position=1) for SK Chairpersons');
+                log_message('warning', '  - No users with user_type=3 for Pederasyon Officers (who are also SK Chairpersons)');
+                log_message('warning', '  - No users with status=2 (Accepted)');
+                log_message('warning', '  - Check the users table for correct user_type, sk_position, and status values');
+                log_message('info', 'Total users processed: ' . $debugCount);
+                log_message('info', 'Users filtered by status: ' . $statusFiltered);
+                log_message('info', 'Users filtered by user_type: ' . $userTypeFiltered);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => [
+                    'sk' => $skCredentials,
+                ],
+                'counts' => [
+                    'sk' => count($skCredentials),
+                    'total' => count($skCredentials)
+                ]
+            ]);
+        } catch (\Exception $e) {
+            log_message('error', 'Error in getCredentialsData: ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Server error: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    // New method for Pederasyon Officers credentials (to be called from ped-officers page)
+    public function getPedOfficersCredentialsData()
+    {
+        try {
+            log_message('info', 'Getting Pederasyon Officers credentials data ...');
+
+            $profileController = new ProfileController();
+            $users = $profileController->getAllUsersWithExtendedInfo();
+            $users = $profileController->processUsersForMemberListing($users, 'pederasyon');
+
             $pedCredentials = [];
 
-            // Map ped_position to labels (keep consistent with front-end & PDF logic)
+            // Map ped_position to labels
             $pedPositionMap = [
                 1 => 'President',
                 2 => 'Vice President',
@@ -1599,78 +1843,77 @@ class PederasyonController extends BaseController
             ];
 
             foreach ($users as $u) {
-                $status = isset($u['status']) ? (int)$u['status'] : 0; // 2 = Accepted
+                $status = isset($u['status']) ? (int)$u['status'] : 0;
                 if ($status !== 2) {
-                    continue; // Only accepted users eligible for credential listing
+                    continue; // Only accepted users
                 }
 
-                $userType = isset($u['user_type']) ? (int)$u['user_type'] : 0; // 2=SK Chairperson, 3=Pederasyon (from project context)
-                $userId = $u['user_id'] ?? '';
-                $barangay = \App\Libraries\BarangayHelper::getBarangayName($u['barangay'] ?? '');
-                // Consistent Full Name: Last, First Middle
-                $fullName = esc($u['last_name'] ?? '');
-                if (!empty($u['first_name'])) {
-                    $fullName .= ', ' . esc($u['first_name']);
-                }
-                if (!empty($u['middle_name'])) {
-                    $fullName .= ' ' . esc($u['middle_name']);
-                }
-
-                // SK Chairperson credentials tab logic:
-                // - Include user_type = 2 (SK Chairperson) with sk_username/password
-                // - Include user_type = 3 (Pederasyon) with sk_username/password (they are also SK Chairpersons)
+                $userType = isset($u['user_type']) ? (int)$u['user_type'] : 0;
+                
+                // Include SK Chairpersons (user_type = 2) and Pederasyon Officers (user_type = 3)
                 if ($userType === 2 || $userType === 3) {
-                    $skUsername = $u['sk_username'] ?? '';
-                    $skPassword = $u['sk_password'] ?? '';
-                    // Only include if both fields exist
-                    if ($skUsername && $skPassword) {
-                        $skCredentials[] = [
-                            'userId'   => $userId,
-                            'name'     => $fullName,
-                            'barangay' => $barangay,
-                            'position' => 'SK Chairperson',
-                            'username' => $skUsername,
-                            'password' => $skPassword,
-                        ];
+                    $userId = $u['user_id'] ?? '';
+                    $barangay = \App\Libraries\BarangayHelper::getBarangayName($u['barangay'] ?? '');
+                    $fullName = esc($u['last_name'] ?? '');
+                    if (!empty($u['first_name'])) {
+                        $fullName .= ', ' . esc($u['first_name']);
                     }
-                }
+                    if (!empty($u['middle_name'])) {
+                        $fullName .= ' ' . esc($u['middle_name']);
+                    }
 
-                // Pederasyon credentials tab logic:
-                // - Include only user_type = 3 with ped_username/password
-                if ($userType === 3) {
+                    // For SK Chairpersons (user_type = 2), use their Pederasyon credentials if available
                     $pedUsername = $u['ped_username'] ?? '';
                     $pedPassword = $u['ped_password'] ?? '';
-                    if ($pedUsername && $pedPassword) {
+                    
+                    // Determine position label and code
+                    $positionLabel = '';
+                    $pedPositionCode = null;
+                    if ($userType === 2) {
+                        // SK Chairperson
+                        $positionLabel = 'SK Pederasyon Member';
+                        $pedPositionCode = null; // No specific position
+                    } else {
+                        // Pederasyon Officer (user_type = 3)
                         $pedPosCode = isset($u['ped_position']) ? (int)$u['ped_position'] : 0;
-                        $pedPosLabel = $pedPositionMap[$pedPosCode] ?? 'Member';
+                        $pedPositionCode = $pedPosCode > 0 ? $pedPosCode : null;
+                        if ($pedPosCode > 0 && isset($pedPositionMap[$pedPosCode])) {
+                            $positionLabel = 'Pederasyon ' . $pedPositionMap[$pedPosCode];
+                        } else {
+                            $positionLabel = 'SK Pederasyon Member';
+                        }
+                    }
+                    
+                    if ($pedUsername && $pedPassword) {
                         $pedCredentials[] = [
-                            'userId'   => $userId,
-                            'name'     => $fullName,
-                            'barangay' => $barangay,
-                            'position' => 'Pederasyon ' . $pedPosLabel,
-                            'username' => $pedUsername,
-                            'password' => $pedPassword,
+                            'user_id'      => $userId,
+                            'first_name'   => $u['first_name'] ?? '',
+                            'middle_name'  => $u['middle_name'] ?? '',
+                            'last_name'    => $u['last_name'] ?? '',
+                            'barangay'     => $u['barangay'] ?? '',
+                            'position'     => $positionLabel,
+                            'ped_position' => $pedPositionCode,
+                            'ped_username' => $pedUsername,
+                            'ped_password' => $pedPassword,
                         ];
                     }
                 }
             }
 
-            log_message('info', 'SK credentials count: ' . count($skCredentials) . ' | Pederasyon credentials count: ' . count($pedCredentials));
+            log_message('info', 'Pederasyon Officers credentials count: ' . count($pedCredentials));
 
             return $this->response->setJSON([
                 'success' => true,
                 'data' => [
-                    'sk' => $skCredentials,
-                    'pederasyon' => $pedCredentials,
+                    'ped' => $pedCredentials,
                 ],
                 'counts' => [
-                    'sk' => count($skCredentials),
-                    'pederasyon' => count($pedCredentials),
-                    'total' => count($skCredentials) + count($pedCredentials)
+                    'ped' => count($pedCredentials),
+                    'total' => count($pedCredentials)
                 ]
             ]);
         } catch (\Exception $e) {
-            log_message('error', 'Error in getCredentialsData: ' . $e->getMessage());
+            log_message('error', 'Error in getPedOfficersCredentialsData: ' . $e->getMessage());
             log_message('error', 'Stack trace: ' . $e->getTraceAsString());
             return $this->response->setJSON([
                 'success' => false,
@@ -1701,9 +1944,17 @@ class PederasyonController extends BaseController
                 return $this->response->setJSON(['success' => false, 'message' => 'No officials found for credentials PDF generation']);
             }
 
-            // Generate credentials PDF document directly to output
-            $this->generateCredentialsPDFDocument($officials);
+            // Generate credentials PDF document and stream directly to user
+            $fileName = 'PEDERASYON_Officials_Credentials_' . date('Y-m-d_His') . '.pdf';
+            $pdfContent = $this->generateCredentialsPDFDocument($officials);
             
+            // Set headers for file download
+            $this->response->setHeader('Content-Type', 'application/pdf');
+            $this->response->setHeader('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+            $this->response->setHeader('Cache-Control', 'max-age=0');
+            
+            log_message('info', 'Credentials PDF streamed successfully: ' . $fileName);
+            return $this->response->setBody($pdfContent);
         } catch (\Exception $e) {
             log_message('error', 'Error in generateCredentialsPDF: ' . $e->getMessage());
             log_message('error', 'Stack trace: ' . $e->getTraceAsString());
@@ -2024,17 +2275,10 @@ class PederasyonController extends BaseController
             // Render the HTML as PDF
             $dompdf->render();
             
-            // Generate filename
-            $fileName = 'PEDERASYON_Officials_Credentials_' . date('Y-m-d_His') . '.pdf';
-            
-            // Set headers for download
-            header('Content-Type: application/pdf');
-            header('Content-Disposition: attachment;filename="' . $fileName . '"');
-            header('Cache-Control: max-age=0');
-            
-            // Output PDF directly
-            echo $dompdf->output();
-            exit;
+            // Return PDF content for streaming
+            $pdfContent = $dompdf->output();
+            log_message('info', 'Credentials PDF document created successfully');
+            return $pdfContent;
             
         } catch (\Exception $e) {
             log_message('error', 'Error in generateCredentialsPDFDocument: ' . $e->getMessage());
@@ -2077,30 +2321,26 @@ class PederasyonController extends BaseController
                 return $this->response->setJSON(['success' => false, 'message' => 'No officials found for credentials Word generation']);
             }
 
-            // Generate credentials Word document directly to output
+            // Generate credentials Word document and stream directly to user
+            $tabName = ($activeTab === 'pederasyon') ? 'Pederasyon' : 'SK';
+            $fileName = $tabName . '_Officials_Credentials_' . date('Y-m-d_His') . '.docx';
             $phpWord = $this->generateCredentialsWordDocument($officials, $activeTab);
             
-            if ($phpWord) {
-                // Generate filename
-                $tabName = ($activeTab === 'sk') ? 'SK' : 'PEDERASYON';
-                $fileName = $tabName . '_Officials_Credentials_' . date('Y-m-d_His') . '.docx';
-                
-                // Set headers for download
-                header('Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-                header('Content-Disposition: attachment;filename="' . $fileName . '"');
-                header('Cache-Control: max-age=0');
-                
-                // Write directly to output
-                $objWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
-                $objWriter->save('php://output');
-                exit;
-            } else {
-                log_message('error', 'Credentials Word document generation failed');
-                return $this->response->setJSON([
-                    'success' => false, 
-                    'message' => 'Error generating credentials Word document'
-                ]);
-            }
+            // Stream the file directly to the user
+            $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
+            
+            // Set headers for file download
+            $this->response->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+            $this->response->setHeader('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+            $this->response->setHeader('Cache-Control', 'max-age=0');
+            
+            // Write to output buffer
+            ob_start();
+            $writer->save('php://output');
+            $wordOutput = ob_get_clean();
+            
+            log_message('info', 'Credentials Word streamed successfully: ' . $fileName);
+            return $this->response->setBody($wordOutput);
         } catch (\Exception $e) {
             log_message('error', 'Error in generateCredentialsWord: ' . $e->getMessage());
             log_message('error', 'Stack trace: ' . $e->getTraceAsString());
@@ -2334,8 +2574,8 @@ class PederasyonController extends BaseController
                 }
             }
 
-            // Return the PhpWord object instead of saving to file
-            log_message('info', 'Credentials Word document generated successfully');
+            // Return the PhpWord object for streaming
+            log_message('info', 'Credentials Word document created successfully');
             return $phpWord;
             
         } catch (\Exception $e) {
@@ -2371,30 +2611,30 @@ class PederasyonController extends BaseController
                 return $this->response->setJSON(['success' => false, 'message' => 'No officials found for credentials Excel generation']);
             }
 
-            // Generate Excel document directly to output
+            // Generate Excel document and stream directly to user
+            $tabName = ($activeTab === 'pederasyon') ? 'Pederasyon' : 'SK';
+            $fileName = $tabName . '_Officials_Credentials_' . date('Y-m-d_His') . '.xlsx';
             $spreadsheet = $this->generateCredentialsExcelDocument($officials, $activeTab);
             
-            if ($spreadsheet) {
-                // Generate filename
-                $tabName = ($activeTab === 'sk') ? 'SK' : 'PEDERASYON';
-                $fileName = $tabName . '_Officials_Credentials_' . date('Y-m-d_His') . '.xlsx';
-                
-                // Set headers for download
-                header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-                header('Content-Disposition: attachment;filename="' . $fileName . '"');
-                header('Cache-Control: max-age=0');
-                
-                // Write directly to output
-                $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
-                $writer->save('php://output');
-                exit;
-            } else {
-                log_message('error', 'Credentials Excel document generation failed');
-                return $this->response->setJSON([
-                    'success' => false, 
-                    'message' => 'Error generating credentials Excel document'
-                ]);
+            // Clear any previous output
+            if (ob_get_level()) {
+                ob_end_clean();
             }
+            
+            // Set headers for file download
+            $this->response->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            $this->response->setHeader('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+            $this->response->setHeader('Cache-Control', 'max-age=0');
+            $this->response->setHeader('Pragma', 'public');
+            
+            // Write to output buffer
+            ob_start();
+            $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+            $writer->save('php://output');
+            $excelOutput = ob_get_clean();
+            
+            log_message('info', 'Credentials Excel streamed successfully: ' . $fileName);
+            return $this->response->setBody($excelOutput);
         } catch (\Exception $e) {
             log_message('error', 'Error in generateCredentialsExcel: ' . $e->getMessage());
             log_message('error', 'Stack trace: ' . $e->getTraceAsString());
@@ -2640,8 +2880,8 @@ class PederasyonController extends BaseController
             $sheet->getPageMargins()->setLeft(0.5);
             $sheet->getPageMargins()->setRight(0.5);
 
-            // Return the Spreadsheet object instead of saving to file
-            log_message('info', 'Credentials Excel document generated successfully');
+            // Return the spreadsheet object for streaming
+            log_message('info', 'Credentials Excel spreadsheet created successfully');
             return $spreadsheet;
             
         } catch (\Exception $e) {
@@ -2686,30 +2926,31 @@ class PederasyonController extends BaseController
                 return $this->response->setJSON(['success' => false, 'message' => 'No attendance records found for this event']);
             }
             
-            // Generate Excel document directly to output
+            // Generate Excel document and stream directly to user
+            $eventTitle = preg_replace('/[^a-zA-Z0-9_-]/', '_', $event['title']);
+            $eventDate = date('Y-m-d', strtotime($event['start_datetime']));
+            $fileName = 'Pederasyon_' . $eventTitle . '_Attendance_' . $eventDate . '.xlsx';
             $spreadsheet = $this->generateAttendanceExcelDocument($event, $attendanceRecords, $barangayName);
             
-            if ($spreadsheet) {
-                // Generate filename
-                $eventTitle = preg_replace('/[^a-zA-Z0-9_-]/', '_', $event['title']);
-                $fileName = $eventTitle . '_Attendance_Report_' . date('Y-m-d_His') . '.xlsx';
-                
-                // Set headers for download
-                header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-                header('Content-Disposition: attachment;filename="' . $fileName . '"');
-                header('Cache-Control: max-age=0');
-                
-                // Write directly to output
-                $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
-                $writer->save('php://output');
-                exit;
-            } else {
-                log_message('error', 'Excel document generation failed');
-                return $this->response->setJSON([
-                    'success' => false, 
-                    'message' => 'Error generating Excel document'
-                ]);
+            // Clear any previous output
+            if (ob_get_level()) {
+                ob_end_clean();
             }
+            
+            // Set headers for file download
+            $this->response->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            $this->response->setHeader('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+            $this->response->setHeader('Cache-Control', 'max-age=0');
+            $this->response->setHeader('Pragma', 'public');
+            
+            // Write to output buffer
+            ob_start();
+            $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+            $writer->save('php://output');
+            $excelOutput = ob_get_clean();
+            
+            log_message('info', 'Pederasyon Attendance Excel streamed successfully: ' . $fileName);
+            return $this->response->setBody($excelOutput);
         } catch (\Exception $e) {
             log_message('error', 'Error in Pederasyon generateAttendanceReportExcel: ' . $e->getMessage());
             return $this->response->setJSON([
@@ -2760,30 +3001,27 @@ class PederasyonController extends BaseController
             $logos = $this->getLogosForDocument();
             log_message('info', 'Retrieved ' . count($logos) . ' logos for document');
             
-            // Generate Word document directly to output
+            // Generate Word document and stream directly to user
+            $eventTitle = preg_replace('/[^a-zA-Z0-9_-]/', '_', $event['title']);
+            $eventDate = date('Y-m-d', strtotime($event['start_datetime']));
+            $fileName = 'Pederasyon_' . $eventTitle . '_Attendance_' . $eventDate . '.docx';
             $phpWord = $this->generateAttendanceWordDocument($event, $attendanceRecords, $logos, $barangayName);
             
-            if ($phpWord) {
-                // Generate filename
-                $eventTitle = preg_replace('/[^a-zA-Z0-9_-]/', '_', $event['title']);
-                $fileName = 'Pederasyon_Attendance_Report_' . $eventTitle . '_' . date('Y-m-d_His') . '.docx';
-                
-                // Set headers for download
-                header('Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-                header('Content-Disposition: attachment;filename="' . $fileName . '"');
-                header('Cache-Control: max-age=0');
-                
-                // Write directly to output
-                $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
-                $writer->save('php://output');
-                exit;
-            } else {
-                log_message('error', 'Word document generation failed');
-                return $this->response->setJSON([
-                    'success' => false, 
-                    'message' => 'Error generating Word document'
-                ]);
-            }
+            // Stream the file directly to the user
+            $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
+            
+            // Set headers for file download
+            $this->response->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+            $this->response->setHeader('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+            $this->response->setHeader('Cache-Control', 'max-age=0');
+            
+            // Write to output buffer
+            ob_start();
+            $writer->save('php://output');
+            $wordOutput = ob_get_clean();
+            
+            log_message('info', 'Pederasyon Attendance Word streamed successfully: ' . $fileName);
+            return $this->response->setBody($wordOutput);
         } catch (\Exception $e) {
             log_message('error', 'Error in Pederasyon generateAttendanceReportWord: ' . $e->getMessage());
             log_message('error', 'Stack trace: ' . $e->getTraceAsString());
@@ -3054,8 +3292,8 @@ class PederasyonController extends BaseController
             $sheet->getPageMargins()->setTop(0.5)->setRight(0.5)->setBottom(0.5)->setLeft(0.5);
             $sheet->getPageSetup()->setFitToPage(false);
             
-            // Return the Spreadsheet object instead of saving to file
-            log_message('info', 'Pederasyon Attendance Excel document generated successfully');
+            // Return the spreadsheet object for streaming
+            log_message('info', 'Pederasyon Attendance Excel spreadsheet created successfully');
             return $spreadsheet;
             
         } catch (\Exception $e) {
@@ -3285,7 +3523,7 @@ class PederasyonController extends BaseController
                 $table->addCell($colWidths[9])->addText($pmStatus, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             }
             
-            // Return the PhpWord object instead of saving to file
+            // Return the PhpWord object for streaming
             log_message('info', 'Pederasyon Attendance Word document generated successfully');
             return $phpWord;
             
@@ -3362,33 +3600,36 @@ class PederasyonController extends BaseController
                                 continue;
                             }
                         }
-                    }
-
-                    $updateData = ['user_type' => $newUserType];
-                    
-                    // Apply position handling rules based on user type transitions
-                    $currentUserType = (int)($user['user_type'] ?? 1);
-                    
-                    if ($currentUserType == 3 && $newUserType == 2) {
-                        // From Pederasyon → SK: ped_position must be updated to NULL
-                        $updateData['ped_position'] = null;
-                    } elseif (($currentUserType == 3 || $currentUserType == 2) && $newUserType == 1) {
-                        // From Pederasyon or SK → KK: Both position and ped_position must be updated to NULL
-                        $updateData['position'] = null;
-                        $updateData['ped_position'] = null;
-                    } elseif ($currentUserType == 1 && $newUserType == 2) {
-                        // From KK → SK: position must be updated to 1
-                        $updateData['position'] = 1;
-                    } elseif ($currentUserType == 1 && $newUserType == 3) {
-                        // From KK → Pederasyon: position must be updated to 1
-                        $updateData['position'] = 1;
-                    }
-                    
-                    // If user is pending (status = 1), auto-accept them and generate user_id
-                    if ((int)$user['status'] === 1) {
-                        $updateData['status'] = 2; // Accept the user
                         
-                        // Ensure we have a unique user_id if missing
+                        // Auto-verify when changing to SK Chairperson
+                        $updateData['status'] = 2;
+                        
+                        // Generate USER_ID if missing
+                        if (empty($user['user_id'])) {
+                            $attempts = 0;
+                            $newId = null;
+                            do {
+                                $newId = UserHelper::generateYearPrefixedUserId();
+                                $exists = $userModel->where('user_id', $newId)->first();
+                                $attempts++;
+                            } while ($exists && $attempts < 5);
+                            
+                            if (!$newId) {
+                                $errors[] = "Failed to generate unique user_id for user ID $userId";
+                                continue;
+                            }
+                            $updateData['user_id'] = $newId;
+                        }
+                        
+                        // Generate SK credentials if missing
+                        if (empty($user['sk_username']) || empty($user['sk_password'])) {
+                            $updateData['sk_username'] = UserHelper::generateSKUsername($user['first_name'], $user['last_name']);
+                            $updateData['sk_password'] = UserHelper::generatePassword(8);
+                        }
+                    } elseif ($newUserType === 3 && (int)($user['status'] ?? 0) === 1) {
+                        // Auto-verify for Pederasyon promotions
+                        $updateData['status'] = 2;
+                        
                         if (empty($user['user_id'])) {
                             $attempts = 0;
                             $newId = null;
@@ -3558,6 +3799,515 @@ class PederasyonController extends BaseController
         } catch (\Exception $e) {
             log_message('error', 'Error in checkSKChairpersonByBarangay: ' . $e->getMessage());
             return $this->response->setJSON(['success' => false, 'message' => 'An error occurred while checking SK Chairperson']);
+        }
+    }
+
+    /**
+     * Generate a temporary password (8 characters: uppercase, lowercase, and numbers)
+     * This password will be stored as plain text so it can be shown to the user once
+     * User should change it on first login
+     */
+    private function generateTemporaryPassword()
+    {
+        $uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $lowercase = 'abcdefghijklmnopqrstuvwxyz';
+        $numbers = '0123456789';
+        
+        // Ensure at least one of each type
+        $password = '';
+        $password .= $uppercase[random_int(0, strlen($uppercase) - 1)];
+        $password .= $lowercase[random_int(0, strlen($lowercase) - 1)];
+        $password .= $numbers[random_int(0, strlen($numbers) - 1)];
+        
+        // Fill the rest randomly
+        $allChars = $uppercase . $lowercase . $numbers;
+        for ($i = 3; $i < 8; $i++) {
+            $password .= $allChars[random_int(0, strlen($allChars) - 1)];
+        }
+        
+        // Shuffle the password
+        return str_shuffle($password);
+    }
+
+    /**
+     * Generate Pederasyon Officers Credentials Word Document
+     */
+    public function generatePedCredentialsWord()
+    {
+        // Preflight: Zip is required for PhpWord (DOCX)
+        if (!class_exists('ZipArchive') || !extension_loaded('zip')) {
+            $ini = function_exists('php_ini_loaded_file') ? (php_ini_loaded_file() ?: 'php.ini') : 'php.ini';
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Missing PHP zip extension. Enable extension=zip in ' . $ini . ' and restart the server to generate Word documents.'
+            ]);
+        }
+        try {
+            log_message('info', 'Starting Pederasyon Officers Credentials Word generation...');
+            
+            // Use shared ProfileController for common functionality
+            $profileController = new ProfileController();
+            $users = $profileController->getAllUsersWithExtendedInfo();
+            $users = $profileController->processUsersForMemberListing($users, 'pederasyon');
+            
+            // Filter Pederasyon Officers (user_type = 3, accepted)
+            $officials = array_filter($users, function($user) {
+                $userType = isset($user['user_type']) ? (int)$user['user_type'] : 1;
+                $status = isset($user['status']) ? (int)$user['status'] : 1;
+                return $userType === 3 && $status === 2; // Pederasyon Officers, Accepted
+            });
+
+            if (empty($officials)) {
+                return $this->response->setJSON(['success' => false, 'message' => 'No Pederasyon officers found for credentials']);
+            }
+
+            // Get logos for the Word document
+            $logos = $this->getLogosForDocument();
+
+            // Generate Word document and stream directly to user
+            $fileName = 'Pederasyon_Officers_Credentials_' . date('Y-m-d_His') . '.docx';
+            $phpWord = $this->generatePedCredentialsWordDocument($officials, $logos);
+            
+            // Stream the file directly to the user
+            $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
+            
+            // Set headers for file download
+            $this->response->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+            $this->response->setHeader('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+            $this->response->setHeader('Cache-Control', 'max-age=0');
+            
+            // Write to output buffer
+            ob_start();
+            $writer->save('php://output');
+            $wordOutput = ob_get_clean();
+
+            log_message('info', 'Pederasyon credentials Word streamed successfully: ' . $fileName);
+            return $this->response->setBody($wordOutput);
+        } catch (\Exception $e) {
+            log_message('error', 'Error in generatePedCredentialsWord: ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+            return $this->response->setJSON([
+                'success' => false, 
+                'message' => 'Server error: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    private function generatePedCredentialsWordDocument($officials, $logos = [])
+    {
+        try {
+            require_once FCPATH . '../vendor/autoload.php';
+            
+            $phpWord = new \PhpOffice\PhpWord\PhpWord();
+        
+            // Set document properties
+            $properties = $phpWord->getDocInfo();
+            $properties->setCreator('K-NECT System');
+            $properties->setCompany('Panlungsod na Pederasyon ng mga Sangguniang Kabataan ng Iriga');
+            $properties->setTitle('Pederasyon Officers Credentials');
+            $properties->setDescription('Login credentials for Pederasyon officers generated from K-NECT System');
+            $properties->setCategory('Government Document');
+            $properties->setSubject('Officers Credentials');
+            
+            // Add section with landscape orientation
+            $section = $phpWord->addSection([
+                'orientation' => 'landscape',
+                'marginLeft' => 720,
+                'marginRight' => 720,
+                'marginTop' => 720,
+                'marginBottom' => 720
+            ]);
+            
+            // Header styles
+            $headerStyle = ['name' => 'Arial', 'size' => 12, 'bold' => true];
+            $subHeaderStyle = ['name' => 'Arial', 'size' => 10, 'bold' => false];
+            $titleStyle = ['name' => 'Arial', 'size' => 12, 'bold' => true];
+            $tableHeaderStyle = ['name' => 'Arial', 'size' => 8, 'bold' => true];
+            $tableCellStyle = ['name' => 'Arial', 'size' => 8];
+            
+            // Create header section with logos
+            $headerTable = $section->addTable([
+                'borderSize' => 0,
+                'borderColor' => 'FFFFFF',
+                'width' => 100 * 50,
+                'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER
+            ]);
+            $headerTable->addRow();
+            
+            // Left logo cell (Pederasyon)
+            $leftCell = $headerTable->addCell(2000, ['valign' => 'center']);
+            if (isset($logos['pederasyon'])) {
+                $logoPath = FCPATH . $logos['pederasyon']['file_path'];
+                if (file_exists($logoPath)) {
+                    try {
+                        $leftCell->addImage($logoPath, [
+                            'width' => 60,
+                            'height' => 60,
+                            'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER
+                        ]);
+                    } catch (\Exception $e) {
+                        $leftCell->addText('PEDERASYON LOGO', $subHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                    }
+                }
+            }
+            
+            // Center text cell
+            $centerCell = $headerTable->addCell(6000, ['valign' => 'center']);
+            $centerCell->addText('REPUBLIC OF THE PHILIPPINES', $headerStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $centerCell->addText('PROVINCE OF CAMARINES SUR', $headerStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $centerCell->addText('CITY OF IRIGA', $headerStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $centerCell->addText('PANLUNGSOD NA PEDERASYON NG MGA', $subHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $centerCell->addText('SANGGUNIANG KABATAAN NG IRIGA', $subHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            
+            // Right logo cell (Iriga City)
+            $rightCell = $headerTable->addCell(2000, ['valign' => 'center']);
+            if (isset($logos['iriga_city'])) {
+                $logoPath = FCPATH . $logos['iriga_city']['file_path'];
+                if (file_exists($logoPath)) {
+                    try {
+                        $rightCell->addImage($logoPath, [
+                            'width' => 60,
+                            'height' => 60,
+                            'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER
+                        ]);
+                    } catch (\Exception $e) {
+                        $rightCell->addText('IRIGA LOGO', $subHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                    }
+                }
+            }
+            
+            // Add horizontal line and title
+            $section->addTextBreak();
+            $section->addText('PANLUNGSOD NA PEDERASYON NG MGA SANGGUNIANG KABATAAN', $titleStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $section->addText('OFFICIALS LOGIN CREDENTIALS', $titleStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $section->addTextBreak();
+            
+            // Create Pederasyon credentials table
+            // For landscape A4: ~15840 twips width, minus margins = ~13500 usable width
+            $pedTable = $section->addTable([
+                'borderSize' => 4,
+                'borderColor' => '000000',
+                'cellMargin' => 20,
+                'width' => 13500,
+                'unit' => \PhpOffice\PhpWord\SimpleType\TblWidth::TWIP,
+                'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER
+            ]);
+            
+            // Add Pederasyon table header - proportional widths totaling 13500 twips
+            $pedTable->addRow();
+            $pedTable->addCell(1100, ['valign' => 'center'])->addText('User ID', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $pedTable->addCell(3400, ['valign' => 'center'])->addText('Full Name', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $pedTable->addCell(2100, ['valign' => 'center'])->addText('Barangay', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $pedTable->addCell(2500, ['valign' => 'center'])->addText('Position', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $pedTable->addCell(2700, ['valign' => 'center'])->addText('Username', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $pedTable->addCell(1700, ['valign' => 'center'])->addText('Password', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            
+            // Find President and Secretary for signatures
+            $presidentName = '';
+            $secretaryName = '';
+            
+            foreach ($officials as $official) {
+                $fullName = trim(($official['first_name'] ?? '') . ' ' . ($official['middle_name'] ?? '') . ' ' . ($official['last_name'] ?? ''));
+                $barangay = BarangayHelper::getBarangayName($official['barangay']);
+                
+                $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : 0;
+                $position = 'SK Pederasyon Member';
+                switch($pedPosition) {
+                    case 1: $position = 'SK Pederasyon President'; $presidentName = $fullName; break;
+                    case 2: $position = 'SK Pederasyon Vice President'; break;
+                    case 3: $position = 'SK Pederasyon Secretary'; $secretaryName = $fullName; break;
+                    case 4: $position = 'SK Pederasyon Treasurer'; break;
+                    case 5: $position = 'SK Pederasyon Auditor'; break;
+                    case 6: $position = 'SK Pederasyon Public Information Officer'; break;
+                    case 7: $position = 'SK Pederasyon Sergeant at Arms'; break;
+                }
+                
+                // Check if password is hashed and mask it
+                $pedPassword = $official['ped_password'] ?? 'N/A';
+                if ($pedPassword !== 'N/A' && (
+                    strpos($pedPassword, '$2y$') === 0 || 
+                    strpos($pedPassword, '$2b$') === 0 ||
+                    strlen($pedPassword) > 20
+                )) {
+                    $pedPassword = '********';
+                }
+                
+                $pedTable->addRow();
+                $pedTable->addCell(1100, ['valign' => 'center'])->addText(esc($official['user_id'] ?? ''), $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $pedTable->addCell(3400, ['valign' => 'center'])->addText(esc($fullName), $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $pedTable->addCell(2100, ['valign' => 'center'])->addText(esc($barangay), $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $pedTable->addCell(2500, ['valign' => 'center'])->addText(esc($position), $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $pedTable->addCell(2700, ['valign' => 'center'])->addText(esc($official['ped_username'] ?? 'N/A'), $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $pedTable->addCell(1700, ['valign' => 'center'])->addText(esc($pedPassword), $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            }
+
+            // Add signature section
+            $section->addTextBreak(2);
+            $signatureTable = $section->addTable([
+                'borderSize' => 0,
+                'borderColor' => 'FFFFFF',
+                'width' => 13500,
+                'unit' => \PhpOffice\PhpWord\SimpleType\TblWidth::TWIP,
+                'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER
+            ]);
+            $signatureTable->addRow();
+            
+            // Left signature (Prepared by - Secretary)
+            $leftSigCell = $signatureTable->addCell(6750, ['valign' => 'top']);
+            $leftSigCell->addText('Prepared by:', $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $leftSigCell->addTextBreak(2);
+            $leftSigCell->addText('_________________________', $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $leftSigCell->addText($secretaryName ?: '_________________________', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $leftSigCell->addText('Secretary', $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            
+            // Right signature (Approved by - President)
+            $rightSigCell = $signatureTable->addCell(6750, ['valign' => 'top']);
+            $rightSigCell->addText('Approved by:', $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $rightSigCell->addTextBreak(2);
+            $rightSigCell->addText('_________________________', $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $rightSigCell->addText($presidentName ?: '_________________________', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $rightSigCell->addText('President', $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+
+            return $phpWord;
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error in generatePedCredentialsWordDocument: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Generate Pederasyon Officers Credentials Excel Document
+     */
+    public function generatePedCredentialsExcel()
+    {
+        // Preflight: Zip is required for PhpSpreadsheet (XLSX)
+        if (!class_exists('ZipArchive') || !extension_loaded('zip')) {
+            $ini = function_exists('php_ini_loaded_file') ? (php_ini_loaded_file() ?: 'php.ini') : 'php.ini';
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Missing PHP zip extension. Enable extension=zip in ' . $ini . ' and restart the server to generate Excel documents.'
+            ]);
+        }
+        try {
+            log_message('info', 'Starting Pederasyon Officers Credentials Excel generation...');
+            
+            // Use shared ProfileController for common functionality
+            $profileController = new ProfileController();
+            $users = $profileController->getAllUsersWithExtendedInfo();
+            $users = $profileController->processUsersForMemberListing($users, 'pederasyon');
+            
+            // Filter Pederasyon Officers (user_type = 3, accepted)
+            $officials = array_filter($users, function($user) {
+                $userType = isset($user['user_type']) ? (int)$user['user_type'] : 1;
+                $status = isset($user['status']) ? (int)$user['status'] : 1;
+                return $userType === 3 && $status === 2; // Pederasyon Officers, Accepted
+            });
+
+            if (empty($officials)) {
+                return $this->response->setJSON(['success' => false, 'message' => 'No Pederasyon officers found for credentials']);
+            }
+
+            // Generate Excel document and stream directly to user
+            $fileName = 'Pederasyon_Officers_Credentials_' . date('Y-m-d_His') . '.xlsx';
+            $spreadsheet = $this->generatePedCredentialsExcelDocument($officials);
+            
+            // Clear any previous output
+            if (ob_get_level()) {
+                ob_end_clean();
+            }
+            
+            // Set headers for file download
+            $this->response->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            $this->response->setHeader('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+            $this->response->setHeader('Cache-Control', 'max-age=0');
+            $this->response->setHeader('Pragma', 'public');
+            
+            // Write to output buffer
+            ob_start();
+            $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+            $writer->save('php://output');
+            $excelOutput = ob_get_clean();
+            
+            log_message('info', 'Pederasyon credentials Excel streamed successfully: ' . $fileName);
+            return $this->response->setBody($excelOutput);
+        } catch (\Exception $e) {
+            log_message('error', 'Error in generatePedCredentialsExcel: ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+            return $this->response->setJSON([
+                'success' => false, 
+                'message' => 'Server error: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    private function generatePedCredentialsExcelDocument($officials)
+    {
+        try {
+            require_once FCPATH . '../vendor/autoload.php';
+
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+
+            // Set page orientation to landscape
+            $sheet->getPageSetup()->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE);
+            $sheet->getPageSetup()->setPaperSize(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::PAPERSIZE_A4);
+            $sheet->getPageSetup()->setFitToPage(true);
+            $sheet->getPageSetup()->setFitToWidth(1);
+            $sheet->getPageSetup()->setFitToHeight(0);
+
+            // Start content from row 1
+            $currentRow = 1;
+
+            // Header text (same format as official list)
+            $sheet->setCellValue('A' . $currentRow, 'REPUBLIC OF THE PHILIPPINES');
+            $sheet->mergeCells('A' . $currentRow . ':F' . $currentRow);
+            $sheet->getStyle('A' . $currentRow)->getFont()->setBold(true)->setSize(12);
+            $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('A' . $currentRow)->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+            $currentRow++;
+
+            $sheet->setCellValue('A' . $currentRow, 'PROVINCE OF CAMARINES SUR');
+            $sheet->mergeCells('A' . $currentRow . ':F' . $currentRow);
+            $sheet->getStyle('A' . $currentRow)->getFont()->setBold(true)->setSize(12);
+            $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('A' . $currentRow)->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+            $currentRow++;
+
+            $sheet->setCellValue('A' . $currentRow, 'CITY OF IRIGA');
+            $sheet->mergeCells('A' . $currentRow . ':F' . $currentRow);
+            $sheet->getStyle('A' . $currentRow)->getFont()->setBold(true)->setSize(12);
+            $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('A' . $currentRow)->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+            $currentRow++;
+
+            $sheet->setCellValue('A' . $currentRow, 'PANLUNGSOD NA PEDERASYON NG MGA');
+            $sheet->mergeCells('A' . $currentRow . ':F' . $currentRow);
+            $sheet->getStyle('A' . $currentRow)->getFont()->setBold(false)->setSize(10);
+            $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('A' . $currentRow)->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+            $currentRow++;
+
+            $sheet->setCellValue('A' . $currentRow, 'SANGGUNIANG KABATAAN NG IRIGA');
+            $sheet->mergeCells('A' . $currentRow . ':F' . $currentRow);
+            $sheet->getStyle('A' . $currentRow)->getFont()->setBold(false)->setSize(10);
+            $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('A' . $currentRow)->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+            $currentRow++;
+
+            $currentRow++; // Empty row
+
+            // Title
+            $sheet->setCellValue('A' . $currentRow, 'PANLUNGSOD NA PEDERASYON NG MGA SANGGUNIANG KABATAAN');
+            $sheet->mergeCells('A' . $currentRow . ':F' . $currentRow);
+            $sheet->getStyle('A' . $currentRow)->getFont()->setBold(true)->setSize(12);
+            $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $currentRow++;
+
+            $sheet->setCellValue('A' . $currentRow, 'OFFICIALS LOGIN CREDENTIALS');
+            $sheet->mergeCells('A' . $currentRow . ':F' . $currentRow);
+            $sheet->getStyle('A' . $currentRow)->getFont()->setBold(true)->setSize(12);
+            $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $currentRow++;
+
+            $currentRow++; // Empty row
+
+            // Table header
+            $headerRow = $currentRow;
+            $headers = ['User ID', 'Full Name', 'Barangay', 'Position', 'Username', 'Password'];
+            $column = 'A';
+            foreach ($headers as $header) {
+                $sheet->setCellValue($column . $headerRow, $header);
+                $sheet->getStyle($column . $headerRow)->getFont()->setBold(true)->setSize(10);
+                $sheet->getStyle($column . $headerRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle($column . $headerRow)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('DDDDDD');
+                $sheet->getStyle($column . $headerRow)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+                $column++;
+            }
+            $currentRow++;
+
+            // Find President and Secretary for signatures
+            $presidentName = '';
+            $secretaryName = '';
+
+            // Populate table data
+            foreach ($officials as $official) {
+                $fullName = trim(($official['first_name'] ?? '') . ' ' . ($official['middle_name'] ?? '') . ' ' . ($official['last_name'] ?? ''));
+                $barangay = BarangayHelper::getBarangayName($official['barangay']);
+                
+                $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : 0;
+                $position = 'SK Pederasyon Member';
+                switch($pedPosition) {
+                    case 1: $position = 'SK Pederasyon President'; $presidentName = $fullName; break;
+                    case 2: $position = 'SK Pederasyon Vice President'; break;
+                    case 3: $position = 'SK Pederasyon Secretary'; $secretaryName = $fullName; break;
+                    case 4: $position = 'SK Pederasyon Treasurer'; break;
+                    case 5: $position = 'SK Pederasyon Auditor'; break;
+                    case 6: $position = 'SK Pederasyon Public Information Officer'; break;
+                    case 7: $position = 'SK Pederasyon Sergeant at Arms'; break;
+                }
+                
+                // Check if password is hashed and mask it
+                $pedPassword = $official['ped_password'] ?? 'N/A';
+                if ($pedPassword !== 'N/A' && (
+                    strpos($pedPassword, '$2y$') === 0 || 
+                    strpos($pedPassword, '$2b$') === 0 ||
+                    strlen($pedPassword) > 20
+                )) {
+                    $pedPassword = '********';
+                }
+                
+                $sheet->setCellValue('A' . $currentRow, $official['user_id'] ?? '');
+                $sheet->setCellValue('B' . $currentRow, $fullName);
+                $sheet->setCellValue('C' . $currentRow, $barangay);
+                $sheet->setCellValue('D' . $currentRow, $position);
+                $sheet->setCellValue('E' . $currentRow, $official['ped_username'] ?? 'N/A');
+                $sheet->setCellValue('F' . $currentRow, $pedPassword);
+                
+                // Apply styling to data rows
+                $sheet->getStyle('A' . $currentRow . ':F' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('A' . $currentRow . ':F' . $currentRow)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+                
+                $currentRow++;
+            }
+
+            // Add signature section
+            $currentRow += 2;
+            $sheet->setCellValue('B' . $currentRow, 'Prepared by:');
+            $sheet->setCellValue('E' . $currentRow, 'Approved by:');
+            $sheet->getStyle('B' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('E' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            
+            $currentRow += 3;
+            $sheet->setCellValue('B' . $currentRow, '_________________________');
+            $sheet->setCellValue('E' . $currentRow, '_________________________');
+            $sheet->getStyle('B' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('E' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            
+            $currentRow++;
+            $sheet->setCellValue('B' . $currentRow, $secretaryName ?: '_________________________');
+            $sheet->setCellValue('E' . $currentRow, $presidentName ?: '_________________________');
+            $sheet->getStyle('B' . $currentRow)->getFont()->setBold(true);
+            $sheet->getStyle('E' . $currentRow)->getFont()->setBold(true);
+            $sheet->getStyle('B' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('E' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            
+            $currentRow++;
+            $sheet->setCellValue('B' . $currentRow, 'Secretary');
+            $sheet->setCellValue('E' . $currentRow, 'President');
+            $sheet->getStyle('B' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('E' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+            // Auto-size columns
+            foreach (range('A', 'F') as $col) {
+                $sheet->getColumnDimension($col)->setAutoSize(true);
+            }
+
+            return $spreadsheet;
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error in generatePedCredentialsExcelDocument: ' . $e->getMessage());
+            throw $e;
         }
     }
 

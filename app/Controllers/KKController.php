@@ -402,80 +402,6 @@ class KKController extends BaseController
     }
 
     /**
-     * Update account settings
-     */
-    public function updateAccount()
-    {
-        $session = session();
-        $userId = $session->get('user_id');
-        
-        if (!$userId) {
-            return redirect()->to('login')->with('error', 'Please login to update account settings.');
-        }
-
-        // Handle account settings update
-        $userModel = new UserModel();
-        
-        try {
-            $userModel->update($userId, [
-                'language' => $this->request->getPost('language'),
-                'timezone' => $this->request->getPost('timezone')
-            ]);
-            
-            return redirect()->to('kk/settings')->with('success', 'Account settings updated successfully.');
-        } catch (\Exception $e) {
-            return redirect()->to('kk/settings')->with('error', 'Failed to update account settings: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Update notification preferences
-     */
-    public function updateNotifications()
-    {
-        $session = session();
-        $userId = $session->get('user_id');
-        
-        if (!$userId) {
-            return redirect()->to('login')->with('error', 'Please login to update notification settings.');
-        }
-
-        // Handle notification settings update
-        // TODO: Implement NotificationSettingsModel when needed
-        /*
-        $notificationModel = new NotificationSettingsModel();
-        
-        $data = [
-            'user_id' => $userId,
-            'email_events' => $this->request->getPost('email_events') ? 1 : 0,
-            'email_announcements' => $this->request->getPost('email_announcements') ? 1 : 0,
-            'email_reminders' => $this->request->getPost('email_reminders') ? 1 : 0,
-            'email_newsletter' => $this->request->getPost('email_newsletter') ? 1 : 0,
-            'sms_events' => $this->request->getPost('sms_events') ? 1 : 0,
-            'sms_emergency' => $this->request->getPost('sms_emergency') ? 1 : 0,
-            'app_all' => $this->request->getPost('app_all') ? 1 : 0
-        ];
-
-        try {
-            // Check if settings already exist
-            $existingSettings = $notificationModel->where('user_id', $userId)->first();
-            if ($existingSettings) {
-                $notificationModel->update($existingSettings['id'], $data);
-            } else {
-                $notificationModel->insert($data);
-            }
-            
-            return redirect()->to('kk/settings')->with('success', 'Notification preferences updated successfully.');
-        } catch (\Exception $e) {
-            return redirect()->to('kk/settings')->with('error', 'Failed to update notification preferences: ' . $e->getMessage());
-        }
-        */
-        
-        // Temporary implementation - just return success message
-        return redirect()->to('kk/settings')->with('success', 'Notification preferences will be implemented soon.');
-    }
-
-    /**
      * Update password
      */
     public function updatePassword()
@@ -544,51 +470,6 @@ class KKController extends BaseController
         } catch (\Exception $e) {
             return redirect()->to('kk/settings')->with('error', 'Failed to update password: ' . $e->getMessage());
         }
-    }
-
-    /**
-     * Update privacy settings
-     */
-    public function updatePrivacy()
-    {
-        $session = session();
-        $userId = $session->get('user_id');
-        
-        if (!$userId) {
-            return redirect()->to('login')->with('error', 'Please login to update privacy settings.');
-        }
-
-        // Handle privacy settings update
-        // TODO: Implement PrivacySettingsModel when needed
-        /*
-        $privacyModel = new PrivacySettingsModel();
-        
-        $data = [
-            'user_id' => $userId,
-            'profile_visibility' => $this->request->getPost('profile_visibility'),
-            'show_email' => $this->request->getPost('show_email') ? 1 : 0,
-            'show_phone' => $this->request->getPost('show_phone') ? 1 : 0,
-            'show_attendance' => $this->request->getPost('show_attendance') ? 1 : 0,
-            'show_events' => $this->request->getPost('show_events') ? 1 : 0
-        ];
-
-        try {
-            // Check if settings already exist
-            $existingSettings = $privacyModel->where('user_id', $userId)->first();
-            if ($existingSettings) {
-                $privacyModel->update($existingSettings['id'], $data);
-            } else {
-                $privacyModel->insert($data);
-            }
-            
-            return redirect()->to('kk/settings')->with('success', 'Privacy settings updated successfully.');
-        } catch (\Exception $e) {
-            return redirect()->to('kk/settings')->with('error', 'Failed to update privacy settings: ' . $e->getMessage());
-        }
-        */
-        
-        // Temporary implementation - just return success message
-        return redirect()->to('kk/settings')->with('success', 'Privacy settings will be implemented soon.');
     }
 
     /**

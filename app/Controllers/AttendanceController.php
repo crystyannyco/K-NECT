@@ -1217,30 +1217,28 @@ class AttendanceController extends BaseController
                 return $this->response->setJSON(['success' => false, 'message' => 'No attendance records found for this event']);
             }
             
-            // Generate Excel document directly to output
+            // Generate Excel document and stream directly to user
+            $eventTitle = preg_replace('/[^a-zA-Z0-9_-]/', '_', $event['title']);
+            $eventDate = date('Y-m-d', strtotime($event['start_datetime']));
+            $fileName = 'SK_' . $eventTitle . '_Attendance_' . $eventDate . '.xlsx';
+            
             $spreadsheet = $this->generateAttendanceExcelDocument($event, $attendanceRecords, $barangayName);
             
-            if ($spreadsheet) {
-                // Generate filename
-                $eventTitle = preg_replace('/[^a-zA-Z0-9_-]/', '_', $event['title']);
-                $fileName = $eventTitle . '_Attendance_Report_' . date('Y-m-d_His') . '.xlsx';
-                
-                // Set headers for download
-                header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-                header('Content-Disposition: attachment;filename="' . $fileName . '"');
-                header('Cache-Control: max-age=0');
-                
-                // Write directly to output
-                $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
-                $writer->save('php://output');
-                exit;
-            } else {
-                log_message('error', 'Excel document generation failed');
-                return $this->response->setJSON([
-                    'success' => false, 
-                    'message' => 'Error generating Excel document'
-                ]);
-            }
+            // Stream the file directly to the user
+            $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+            
+            // Set headers for file download
+            $this->response->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            $this->response->setHeader('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+            $this->response->setHeader('Cache-Control', 'max-age=0');
+            
+            // Write to output buffer
+            ob_start();
+            $writer->save('php://output');
+            $excelOutput = ob_get_clean();
+            
+            log_message('info', 'Excel document streamed successfully: ' . $fileName);
+            return $this->response->setBody($excelOutput);
         } catch (\Exception $e) {
             log_message('error', 'Error in generateAttendanceReportExcel: ' . $e->getMessage());
             return $this->response->setJSON([
@@ -1286,30 +1284,28 @@ class AttendanceController extends BaseController
             // Get logos for the Word document
             $logos = $this->getLogosForDocument();
             
-            // Generate Word document directly to output
+            // Generate Word document and stream directly to user
+            $eventTitle = preg_replace('/[^a-zA-Z0-9_-]/', '_', $event['title']);
+            $eventDate = date('Y-m-d', strtotime($event['start_datetime']));
+            $fileName = 'SK_' . $eventTitle . '_Attendance_' . $eventDate . '.docx';
+            
             $phpWord = $this->generateAttendanceWordDocument($event, $attendanceRecords, $logos, $barangayName);
             
-            if ($phpWord) {
-                // Generate filename
-                $eventTitle = preg_replace('/[^a-zA-Z0-9_-]/', '_', $event['title']);
-                $fileName = $eventTitle . '_Attendance_Report_' . date('Y-m-d_His') . '.docx';
-                
-                // Set headers for download
-                header('Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-                header('Content-Disposition: attachment;filename="' . $fileName . '"');
-                header('Cache-Control: max-age=0');
-                
-                // Write directly to output
-                $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
-                $writer->save('php://output');
-                exit;
-            } else {
-                log_message('error', 'Word document generation failed');
-                return $this->response->setJSON([
-                    'success' => false, 
-                    'message' => 'Error generating Word document'
-                ]);
-            }
+            // Stream the file directly to the user
+            $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
+            
+            // Set headers for file download
+            $this->response->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+            $this->response->setHeader('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+            $this->response->setHeader('Cache-Control', 'max-age=0');
+            
+            // Write to output buffer
+            ob_start();
+            $writer->save('php://output');
+            $wordOutput = ob_get_clean();
+            
+            log_message('info', 'Word document streamed successfully: ' . $fileName);
+            return $this->response->setBody($wordOutput);
         } catch (\Exception $e) {
             log_message('error', 'Error in generateAttendanceReportWord: ' . $e->getMessage());
             return $this->response->setJSON([
@@ -1518,8 +1514,8 @@ class AttendanceController extends BaseController
             $sheet->getColumnDimension('I')->setWidth(12); // PM Time-Out
             $sheet->getColumnDimension('J')->setWidth(10); // PM Status
             
-            // Return the Spreadsheet object instead of saving to file
-            log_message('info', 'Excel document generated successfully');
+            // Return the spreadsheet object for streaming
+            log_message('info', 'Excel spreadsheet created successfully');
             return $spreadsheet;
             
         } catch (\Exception $e) {
@@ -1745,8 +1741,8 @@ class AttendanceController extends BaseController
                 $table->addCell($colWidths[9])->addText($pmStatus, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             }
             
-            // Return the PhpWord object instead of saving to file
-            log_message('info', 'Word document generated successfully');
+            // Return the PhpWord object for streaming
+            log_message('info', 'Word document created successfully');
             return $phpWord;
             
         } catch (\Exception $e) {

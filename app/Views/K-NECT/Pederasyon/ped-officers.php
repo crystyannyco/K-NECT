@@ -1,4 +1,4 @@
-
+﻿
 <style>
         /* Clean Color Palette: Blue (#3b82f6), Gray (#6b7280), Dark Gray (#374151), White (#ffffff) */
         table.dataTable thead th {
@@ -20,7 +20,7 @@
         /* Responsive table container */
         .table-container {
             width: 100%;
-            overflow-x: auto;
+            overflow-x: hidden;
             -webkit-overflow-scrolling: touch;
         }
 
@@ -28,7 +28,7 @@
         .dataTables_scrollHead,
         .dataTables_scrollBody,
         .dataTables_scrollFoot {
-            overflow-x: auto !important;
+            overflow-x: hidden !important;
         }
 
         /* Ensure table responsiveness */
@@ -60,6 +60,11 @@
             .table-container {
                 margin: -0.5rem;
                 padding: 0.5rem;
+                overflow-x: auto;
+            }
+            
+            .dataTables_scrollBody {
+                overflow-x: auto !important;
             }
             
             /* Ensure header spans full width on mobile */
@@ -155,6 +160,12 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                             </svg>
                             Download Official List
+                        </button>
+                        <button id="downloadCredentialsBtn" class="inline-flex items-center px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg transition-colors justify-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            Download Credentials
                         </button>
                     </div>
                 </div>
@@ -259,32 +270,37 @@
                                                 </td>
                                                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     <?php
-                                                        $pedPosition = isset($officer['ped_position']) ? (int)$officer['ped_position'] : 0;
-                                                        switch($pedPosition) {
-                                                            case 1:
-                                                                echo 'SK Pederasyon President';
-                                                                break;
-                                                            case 2:
-                                                                echo 'SK Pederasyon Vice President';
-                                                                break;
-                                                            case 3:
-                                                                echo 'SK Pederasyon Secretary';
-                                                                break;
-                                                            case 4:
-                                                                echo 'SK Pederasyon Treasurer';
-                                                                break;
-                                                            case 5:
-                                                                echo 'SK Pederasyon Auditor';
-                                                                break;
-                                                            case 6:
-                                                                echo 'SK Pederasyon Public Information Officer';
-                                                                break;
-                                                            case 7:
-                                                                echo 'SK Pederasyon Sergeant at Arms';
-                                                                break;
-                                                            default:
-                                                                echo 'SK Pederasyon Member';
-                                                                break;
+                                                        // Use position_display if set (for SK Chairpersons), otherwise use ped_position
+                                                        if (isset($officer['position_display'])) {
+                                                            echo esc($officer['position_display']);
+                                                        } else {
+                                                            $pedPosition = isset($officer['ped_position']) ? (int)$officer['ped_position'] : 0;
+                                                            switch($pedPosition) {
+                                                                case 1:
+                                                                    echo 'SK Pederasyon President';
+                                                                    break;
+                                                                case 2:
+                                                                    echo 'SK Pederasyon Vice President';
+                                                                    break;
+                                                                case 3:
+                                                                    echo 'SK Pederasyon Secretary';
+                                                                    break;
+                                                                case 4:
+                                                                    echo 'SK Pederasyon Treasurer';
+                                                                    break;
+                                                                case 5:
+                                                                    echo 'SK Pederasyon Auditor';
+                                                                    break;
+                                                                case 6:
+                                                                    echo 'SK Pederasyon Public Information Officer';
+                                                                    break;
+                                                                case 7:
+                                                                    echo 'SK Pederasyon Sergeant at Arms';
+                                                                    break;
+                                                                default:
+                                                                    echo 'SK Pederasyon Member';
+                                                                    break;
+                                                            }
                                                         }
                                                     ?>
                                                 </td>
@@ -692,16 +708,26 @@
             // DataTable initialization
             const table = $('#myTable').DataTable({
                 columnDefs: [
-                    { orderable: false, targets: 0 }
+                    { orderable: false, targets: 0, width: '40px' },  // Checkbox column
+                    { width: '60px', targets: 1 },   // ID column
+                    { width: '120px', targets: 2 },  // Barangay column
+                    { width: 'auto', targets: 3 },   // Name column
+                    { width: '50px', targets: 4 },   // Age column
+                    { width: '60px', targets: 5 },   // Sex column
+                    { width: '100px', targets: 6 },  // Status column
+                    { width: '120px', targets: 7 },  // Position column
+                    { width: '80px', targets: 8 }    // Action column
                 ],
                 order: [[1, 'asc']],
                 scrollCollapse: true,
                 scrollY: '500px',
-                scrollX: true,
+                scrollX: false,
                 paging: true,
                 pageLength: 25,
                 info: true,
                 searching: true,
+                autoWidth: false,
+                responsive: false,
                 language: {
                     search: "Search officers:",
                     searchPlaceholder: "Type to search...",
@@ -1212,16 +1238,565 @@
     </script>
 
     <script>
+        // ==================== CREDENTIALS FUNCTIONALITY ==================== //
+        
+        // Open credentials preview modal
+        function openPedCredentialsPreviewModal() {
+            const modal = document.getElementById('pedCredentialsPreviewModal');
+            modal.style.display = 'flex';
+            
+            // Show loading state
+            const credentialsLoadingEl = document.getElementById('pedCredentialsLoading');
+            const credentialsContentEl = document.getElementById('pedCredentialsContent');
+
+            if (credentialsLoadingEl) credentialsLoadingEl.classList.remove('hidden');
+            if (credentialsContentEl) credentialsContentEl.classList.add('hidden');
+
+            // Load credentials data after short delay for UX
+            const doLoadCredentials = () => {
+                loadPedCredentialsLogos();
+                loadPedCredentialsData();
+                if (credentialsLoadingEl) credentialsLoadingEl.classList.add('hidden');
+                if (credentialsContentEl) credentialsContentEl.classList.remove('hidden');
+            };
+
+            if (credentialsLoadingEl) {
+                setTimeout(doLoadCredentials, 800);
+            } else {
+                doLoadCredentials();
+            }
+        }
+        
+        // Close credentials preview modal
+        function closePedCredentialsPreviewModal() {
+            const modal = document.getElementById('pedCredentialsPreviewModal');
+            if (!modal) return;
+            modal.style.display = 'none';
+        }
+        
+        // Load logos for credentials modal
+        function loadPedCredentialsLogos() {
+            fetch('<?= base_url('documents/logos') ?>')
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.success && data.data) {
+                        const logos = data.data;
+                        
+                        // Load Pederasyon logo
+                        const pederasyonLogoDiv = document.getElementById('ped-credentials-pederasyon-logo');
+                        if (logos.pederasyon && logos.pederasyon.file_path && pederasyonLogoDiv) {
+                            pederasyonLogoDiv.innerHTML = `<img src="<?= base_url() ?>${logos.pederasyon.file_path}" alt="Pederasyon Logo" class="w-full h-full object-contain">`;
+                        }
+                        
+                        // Load Iriga City logo
+                        const irigaLogoDiv = document.getElementById('ped-credentials-iriga-logo');
+                        if (logos.iriga_city && logos.iriga_city.file_path && irigaLogoDiv) {
+                            irigaLogoDiv.innerHTML = `<img src="<?= base_url() ?>${logos.iriga_city.file_path}" alt="Iriga City Logo" class="w-full h-full object-contain">`;
+                        }
+                    } else {
+                        console.error('Failed to load logos for credentials:', data ? data.message : 'No data');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching logos for credentials:', error);
+                });
+        }
+        
+        // Load credentials data from API
+        function loadPedCredentialsData() {
+            fetch('<?= base_url('pederasyon/ped-officers-credentials-data') ?>')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data && data.success) {
+                        const pedCredentials = (data.data && data.data.ped) ? data.data.ped : [];
+                        
+                        // Populate credentials table
+                        populatePedCredentialsTable(pedCredentials);
+                        
+                        // Update count
+                        const countEl = document.getElementById('pedCredentialsCount');
+                        if (countEl) {
+                            countEl.textContent = pedCredentials.length;
+                        }
+                        
+                        // Update total count
+                        const totalEl = document.getElementById('pedCredentialsTotalCount');
+                        if (totalEl) {
+                            totalEl.textContent = `Total: ${pedCredentials.length} Pederasyon Officers with credentials`;
+                        }
+                        
+                        // Show/hide no credentials message
+                        const noCredsEl = document.getElementById('pedNoCredentials');
+                        const containerEl = document.getElementById('pedCredentialsTablesContainer');
+                        
+                        if (pedCredentials.length === 0) {
+                            if (noCredsEl) noCredsEl.classList.remove('hidden');
+                            if (containerEl) containerEl.classList.add('hidden');
+                        } else {
+                            if (noCredsEl) noCredsEl.classList.add('hidden');
+                            if (containerEl) containerEl.classList.remove('hidden');
+                        }
+                    } else {
+                        // Show error message
+                        const noCredsEl = document.getElementById('pedNoCredentials');
+                        const containerEl = document.getElementById('pedCredentialsTablesContainer');
+                        if (noCredsEl) noCredsEl.classList.remove('hidden');
+                        if (containerEl) containerEl.classList.add('hidden');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching credentials data:', error);
+                    // Show error message
+                    const noCredsEl = document.getElementById('pedNoCredentials');
+                    const containerEl = document.getElementById('pedCredentialsTablesContainer');
+                    if (noCredsEl) noCredsEl.classList.remove('hidden');
+                    if (containerEl) containerEl.classList.add('hidden');
+                });
+        }
+        
+        // Populate credentials table
+        function populatePedCredentialsTable(credentials) {
+            const tableBody = document.getElementById('pedCredentialsTableBody');
+            
+            if (!tableBody) {
+                return;
+            }
+            
+            tableBody.innerHTML = '';
+            
+            if (!credentials || credentials.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="border border-gray-300 text-center py-8 bg-gray-50 text-sm text-gray-600">
+                            <div class="flex flex-col items-center">
+                                <svg class="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                <div class="font-semibold mb-1">No Pederasyon Credentials</div>
+                                <div>No Pederasyon officers with credentials found.</div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            credentials.forEach((credential, index) => {
+                const row = document.createElement('tr');
+                row.className = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+                
+                // Format full name
+                const fullName = `${credential.first_name || ''} ${credential.middle_name || ''} ${credential.last_name || ''}`.trim() || 'N/A';
+                const barangayName = getBarangayName(credential.barangay);
+                
+                // Handle username display
+                let displayUsername = credential.ped_username || 'N/A';
+                let usernameClass = 'text-gray-900 font-semibold';
+                if (displayUsername === 'Not Set' || displayUsername === 'N/A') {
+                    displayUsername = '<span class="text-gray-400 italic">Not Set</span>';
+                    usernameClass = '';
+                }
+                
+                // Handle password display
+                let displayPassword = 'N/A';
+                let passwordClass = 'text-gray-900 font-semibold';
+                
+                if (credential.ped_password && credential.ped_password !== 'Not Set') {
+                    // Check if password is hashed (starts with $2y$, $2b$ or is longer than 20 characters)
+                    const isHashedPassword = credential.ped_password.startsWith('$2y$') || 
+                                            credential.ped_password.startsWith('$2b$') ||
+                                            credential.ped_password.length > 20;
+                    
+                    if (isHashedPassword) {
+                        // Show asterisks for hashed passwords
+                        displayPassword = '********';
+                    } else {
+                        // Show actual password if it's not hashed (temporary password)
+                        displayPassword = credential.ped_password;
+                    }
+                } else {
+                    // Show "Not Set" for missing passwords
+                    displayPassword = '<span class="text-gray-400 italic">Not Set</span>';
+                    passwordClass = '';
+                }
+                
+                row.innerHTML = `
+                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${credential.user_id || 'N/A'}</td>
+                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${fullName}</td>
+                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${barangayName || 'N/A'}</td>
+                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${credential.position || 'N/A'}</td>
+                    <td class="border border-gray-300 text-center px-2 py-2 ${usernameClass} text-xs">${displayUsername}</td>
+                    <td class="border border-gray-300 text-center px-2 py-2 ${passwordClass} text-xs">${displayPassword}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // Download credentials as PDF (client-side generation using jsPDF)
+        async function downloadPedCredentialsPDF() {
+            const button = event.target;
+            const originalHTML = button.innerHTML;
+            button.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Generating PDF...';
+            button.disabled = true;
+
+            try {
+                // Fetch logos with proper error handling
+                const logosResp = await fetch('<?= base_url('documents/logos') ?>');
+                const logosJson = (logosResp.ok ? await logosResp.json() : { success: false, data: {} });
+                const logos = (logosJson && logosJson.success && logosJson.data) ? logosJson.data : {};
+
+                const pederasyonLogoPath = (logos.pederasyon?.file_path) || '';
+                const irigaLogoPath = (logos.iriga_city?.file_path) || '';
+                const pederasyonLogoUrl = pederasyonLogoPath ? '<?= base_url() ?>' + pederasyonLogoPath : '';
+                const irigaLogoUrl = irigaLogoPath ? '<?= base_url() ?>' + irigaLogoPath : '';
+
+                // Helper to convert image URL to data URL
+                const imageUrlToDataUrl = (url) => {
+                    return new Promise((resolve) => {
+                        if (!url) {
+                            resolve(null);
+                            return;
+                        }
+                        const img = new Image();
+                        img.crossOrigin = 'anonymous';
+                        img.onload = function() {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = this.naturalWidth;
+                            canvas.height = this.naturalHeight;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(this, 0, 0);
+                            try {
+                                resolve(canvas.toDataURL('image/png'));
+                            } catch (e) {
+                                console.error('Canvas toDataURL failed:', e);
+                                resolve(null);
+                            }
+                        };
+                        img.onerror = () => resolve(null);
+                        img.src = url;
+                    });
+                };
+
+                // Load both logos as data URLs
+                const [pederasyonLogoDataUrl, irigaLogoDataUrl] = await Promise.all([
+                    imageUrlToDataUrl(pederasyonLogoUrl),
+                    imageUrlToDataUrl(irigaLogoUrl)
+                ]);
+
+                // Fetch credentials data
+                const credResp = await fetch('<?= base_url('pederasyon/ped-officers-credentials-data') ?>');
+                const credJson = await credResp.json();
+                
+                if (!credJson.success || !credJson.data || !credJson.data.ped || credJson.data.ped.length === 0) {
+                    throw new Error('No Pederasyon credentials found');
+                }
+                
+                // Extract the ped array from the nested structure
+                const pedOfficials = credJson.data.ped;
+
+                // Generate PDF with loaded logos
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('l', 'mm', 'a4'); // landscape orientation
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const centerX = pageWidth / 2;
+                let y = 20;
+
+                // Helper to get image format from data URL
+                const getImgFmt = (dataUrl) => {
+                    if (!dataUrl) return 'PNG';
+                    if (dataUrl.includes('image/jpeg') || dataUrl.includes('image/jpg')) return 'JPEG';
+                    if (dataUrl.includes('image/png')) return 'PNG';
+                    return 'PNG';
+                };
+
+                // Add logos if available
+                const logoSize = 25;
+                if (pederasyonLogoDataUrl) {
+                    doc.addImage(pederasyonLogoDataUrl, getImgFmt(pederasyonLogoDataUrl), 40, 15, logoSize, logoSize, undefined, 'FAST');
+                }
+                if (irigaLogoDataUrl) {
+                    doc.addImage(irigaLogoDataUrl, getImgFmt(irigaLogoDataUrl), 232, 15, logoSize, logoSize, undefined, 'FAST');
+                }
+                
+                // Header text (centered)
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(12);
+                doc.text("REPUBLIC OF THE PHILIPPINES", centerX, 20, { align: 'center' });
+                doc.text("PROVINCE OF CAMARINES SUR", centerX, 25, { align: 'center' });
+                doc.text("CITY OF IRIGA", centerX, 30, { align: 'center' });
+                
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(10);
+                doc.text("PANLUNGSOD NA PEDERASYON NG MGA", centerX, 35, { align: 'center' });
+                doc.text("SANGGUNIANG KABATAAN", centerX, 39, { align: 'center' });
+                
+                y = 60;
+                
+                // Title
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(12);
+                doc.text("PANLUNGSOD NA PEDERASYON NG MGA SANGGUNIANG KABATAAN", centerX, 55, { align: 'center' });
+                doc.text("OFFICIALS CREDENTIALS", centerX, 60, { align: 'center' });
+                y += 8;
+                
+                // Prepare Pederasyon Officials table data
+                const pedTableData = pedOfficials.map(official => {
+                    const fullName = `${official.first_name || ''} ${official.middle_name || ''} ${official.last_name || ''}`.trim();
+                    const barangay = getBarangayName(official.barangay);
+                    
+                    const positionMap = {
+                        1: 'President',
+                        2: 'Vice President', 
+                        3: 'Secretary',
+                        4: 'Treasurer',
+                        5: 'Auditor',
+                        6: 'PIO',
+                        7: 'Sergeant at Arms'
+                    };
+                    const position = positionMap[parseInt(official.ped_position)] || 'SK Pederasyon Member';
+                    const pedPassword = (official.ped_password && official.ped_password.length > 20) ? '********' : (official.ped_password || 'N/A');
+                    
+                    return [
+                        official.user_id || '',
+                        fullName,
+                        barangay,
+                        position,
+                        official.ped_username || 'N/A',
+                        pedPassword
+                    ];
+                });
+                
+                // Add Pederasyon Officials table with simple styling
+                doc.autoTable({
+                    head: [['User ID', 'Full Name', 'Barangay', 'Position', 'Username', 'Password']],
+                    body: pedTableData,
+                    startY: y,
+                    styles: { 
+                        fontSize: 7,
+                        cellPadding: 1.5,
+                        halign: 'center',
+                        valign: 'middle',
+                        textColor: [0, 0, 0],
+                        fontStyle: 'normal',
+                        font: 'helvetica',
+                        lineWidth: 0.1,
+                        lineColor: [0, 0, 0]
+                    },
+                    headStyles: {
+                        fillColor: [220, 220, 220],
+                        textColor: [0, 0, 0],
+                        fontStyle: 'bold',
+                        fontSize: 7,
+                        font: 'helvetica',
+                        halign: 'center'
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 16, halign: 'center' }, // User ID - reduced from 18
+                        1: { cellWidth: 48, halign: 'center' }, // Full Name - reduced from 50
+                        2: { cellWidth: 30, halign: 'center' }, // Barangay - reduced from 32
+                        3: { cellWidth: 36, halign: 'center' }, // Position - increased from 35
+                        4: { cellWidth: 38, halign: 'center' }, // Username - reduced from 40
+                        5: { cellWidth: 22, halign: 'center' } // Password - reduced from 25
+                    },
+                    tableWidth: 190,
+                    margin: { left: (287 - 190) / 2 }, // Center table on A4 landscape (297mm width)
+                    theme: 'striped',
+                    alternateRowStyles: {
+                        fillColor: [245, 245, 245]
+                    }
+                });
+                
+                // Get Pederasyon President and Secretary names
+                let presidentName = '';
+                let secretaryName = '';
+                
+                pedOfficials.forEach(official => {
+                    const fullName = `${official.first_name || ''} ${official.middle_name || ''} ${official.last_name || ''}`.replace(/\s+/g, ' ').trim();
+                    const pedPosition = parseInt(official.ped_position);
+                    
+                    if (pedPosition === 1) { // President
+                        presidentName = fullName;
+                    } else if (pedPosition === 3) { // Secretary
+                        secretaryName = fullName;
+                    }
+                });
+                
+                // Add signature section
+                const finalY = doc.lastAutoTable.finalY + 15;
+                const signatureSpacing = 60;
+                const leftSignatureX = centerX - signatureSpacing;
+                const rightSignatureX = centerX + signatureSpacing;
+                
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(9);
+                
+                // Left signature (Prepared by - Secretary)
+                doc.text('Prepared by:', leftSignatureX, finalY, { align: 'center' });
+                doc.text('_________________________', leftSignatureX, finalY + 18, { align: 'center' });
+                doc.setFont("helvetica", "bold");
+                doc.text(secretaryName || '_________________________', leftSignatureX, finalY + 23, { align: 'center' });
+                doc.setFont("helvetica", "normal");
+                doc.text('Secretary', leftSignatureX, finalY + 28, { align: 'center' });
+                
+                // Right signature (Approved by - President)
+                doc.text('Approved by:', rightSignatureX, finalY, { align: 'center' });
+                doc.text('_________________________', rightSignatureX, finalY + 18, { align: 'center' });
+                doc.setFont("helvetica", "bold");
+                doc.text(presidentName || '_________________________', rightSignatureX, finalY + 23, { align: 'center' });
+                doc.setFont("helvetica", "normal");
+                doc.text('President', rightSignatureX, finalY + 28, { align: 'center' });
+                
+                // Save the PDF
+                const fileName = 'Pederasyon_Officials_Credentials_' + new Date().toISOString().slice(0, 19).replace(/:/g, '-') + '.pdf';
+                doc.save(fileName);
+                
+                showNotification('Credentials PDF downloaded successfully!', 'success');
+                
+            } catch (error) {
+                console.error('PDF generation error:', error);
+                showNotification('Error generating PDF: ' + error.message, 'error');
+            } finally {
+                // Reset button state
+                button.innerHTML = originalHTML;
+                button.disabled = false;
+            }
+        }
+        
+        // Download credentials as Word (server-generated)
+        function downloadPedCredentialsWord() {
+            const button = event.target;
+            const originalHTML = button.innerHTML;
+            button.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Generating Word...';
+            button.disabled = true;
+
+            // Make AJAX request to generate Pederasyon credentials Word document
+            fetch('<?= base_url('pederasyon/generate-ped-credentials-word') ?>', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                // Get the filename from Content-Disposition header if available
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let fileName = 'Pederasyon_Credentials.docx';
+                if (contentDisposition) {
+                    const matches = /filename="([^"]+)"/.exec(contentDisposition);
+                    if (matches && matches[1]) {
+                        fileName = matches[1];
+                    }
+                }
+                return response.blob().then(blob => ({ blob, fileName }));
+            })
+            .then(({ blob, fileName }) => {
+                // Create download link
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileName;
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+                
+                showNotification('Credentials Word document generated and downloaded successfully!', 'success');
+            })
+            .catch(error => {
+                showNotification('Error generating credentials Word: ' + error.message + '. Please check your connection and try again.', 'error');
+            })
+            .finally(() => {
+                // Reset button state
+                button.innerHTML = originalHTML;
+                button.disabled = false;
+            });
+        }
+        
+        // Download credentials as Excel (server-generated)
+        function downloadPedCredentialsExcel() {
+            const button = event.target;
+            const originalHTML = button.innerHTML;
+            button.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Generating Excel...';
+            button.disabled = true;
+
+            // Make AJAX request to generate Pederasyon credentials Excel document
+            fetch('<?= base_url('pederasyon/generate-ped-credentials-excel') ?>', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                // Get the filename from Content-Disposition header if available
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let fileName = 'Pederasyon_Credentials.xlsx';
+                if (contentDisposition) {
+                    const matches = /filename="([^"]+)"/.exec(contentDisposition);
+                    if (matches && matches[1]) {
+                        fileName = matches[1];
+                    }
+                }
+                return response.blob().then(blob => ({ blob, fileName }));
+            })
+            .then(({ blob, fileName }) => {
+                // Create download link
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileName;
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+                
+                showNotification('Credentials Excel document generated and downloaded successfully!', 'success');
+            })
+            .catch(error => {
+                showNotification('Error generating credentials Excel: ' + error.message + '. Please check your connection and try again.', 'error');
+            })
+            .finally(() => {
+                // Reset button state
+                button.innerHTML = originalHTML;
+                button.disabled = false;
+            });
+        }
+        
         // ==================== OFFICIAL LIST FUNCTIONALITY (moved from youthlist) ==================== //
         
         // Open official list modal
         function openOfficialListModal() {
             const button = document.getElementById('downloadOfficialListBtn');
+            if (!button) return;
             const originalHTML = button.innerHTML;
+            
             button.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Loading Official List...';
             button.disabled = true;
             setTimeout(() => {
-                document.getElementById('officialListModal').classList.remove('hidden');
+                const modal = document.getElementById('officialListModal');
+                if (!modal) {
+                    console.error('Official list modal not found');
+                    button.innerHTML = originalHTML;
+                    button.disabled = false;
+                    return;
+                }
+                modal.classList.remove('hidden');
+                modal.style.display = 'flex';
                 loadOfficialList();
                 setTimeout(() => { button.innerHTML = originalHTML; button.disabled = false; }, 500);
             }, 100);
@@ -1229,7 +1804,10 @@
         
         // Close official list modal
         function closeOfficialListModal() {
-            document.getElementById('officialListModal').classList.add('hidden');
+            const modal = document.getElementById('officialListModal');
+            if (!modal) return;
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
         }
         
         // Helper to format names as: First Middle Last
@@ -1307,16 +1885,8 @@
 
                         const userData = byId[String(displayUserId)];
                         let birthday = 'N/A';
+                        let position = 'SK Pederasyon Member';
                         
-                        // Clean up position text: remove SK Chairperson, fix terminology
-                        let position = positionText || 'SK Pederasyon Member';
-                        // Remove any "SK Chairperson" text from position
-                        position = position.replace(/SK Chairperson[,\s]*/gi, '').trim();
-                        // Replace "Pederasyon Officer" with "SK Pederasyon Member"
-                        position = position.replace(/Pederasyon Officer/gi, 'SK Pederasyon Member');
-                        // Ensure default is "SK Pederasyon Member" if position becomes empty
-                        if (!position) position = 'SK Pederasyon Member';
-
                         if (userData) {
                             if (userData.birthdate) {
                                 const birthDate = new Date(userData.birthdate);
@@ -1324,9 +1894,19 @@
                                     birthday = birthDate.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
                                 }
                             }
+                            
+                            // Determine position based on ped_position
                             const pedPos = parseInt(userData.ped_position) || 0;
-                            if (pedPos === 1) { presidentName = formatFullNameFromUser(userData); }
-                            if (pedPos === 3) { secretaryName = formatFullNameFromUser(userData); }
+                            switch(pedPos) {
+                                case 1: position = 'SK Perasyon President'; presidentName = formatFullNameFromUser(userData); break;
+                                case 2: position = 'SK Perasyon Vice President'; break;
+                                case 3: position = 'SK Perasyon Secretary'; secretaryName = formatFullNameFromUser(userData); break;
+                                case 4: position = 'SK Perasyon Treasurer'; break;
+                                case 5: position = 'SK Perasyon Auditor'; break;
+                                case 6: position = 'SK Perasyon Public Information Officer'; break;
+                                case 7: position = 'SK Perasyon Sergeant at Arms'; break;
+                                default: position = 'SK Pederasyon Member'; break;
+                            }
                         }
 
                         officials.push({ 
@@ -1700,12 +2280,25 @@
                 return;
             }
             fetch('<?= base_url('pederasyon/generate-official-list-word') ?>', { method:'POST', headers:{ 'Content-Type':'application/json', 'X-Requested-With':'XMLHttpRequest' }, body: JSON.stringify({}) })
-                .then(res => res.json())
-                .then(data => {
-                    if (data && data.success && data.download_url) {
-                        const a = document.createElement('a'); a.href = data.download_url; a.download = data.download_url.split('/').pop(); a.style.display='none'; document.body.appendChild(a); a.click(); a.remove();
-                        showNotification('Official List Word document generated and downloaded successfully!', 'success');
-                    } else { showNotification('Error generating Word document: ' + (data.message || 'Unknown error.'), 'error'); }
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const contentDisposition = response.headers.get('Content-Disposition');
+                    let fileName = 'PEDERASYON_Official_List.docx';
+                    if (contentDisposition) {
+                        const matches = /filename="([^"]+)"/.exec(contentDisposition);
+                        if (matches && matches[1]) { fileName = matches[1]; }
+                    }
+                    return response.blob().then(blob => ({ blob, fileName }));
+                })
+                .then(({ blob, fileName }) => {
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url; link.download = fileName; link.style.display = 'none';
+                    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                    showNotification('Official List Word document generated and downloaded successfully!', 'success');
                 })
                 .catch(err => { showNotification('Error generating Word document: ' + err.message, 'error'); })
                 .finally(() => { button.innerHTML = originalHTML; button.disabled = false; });
@@ -1723,24 +2316,230 @@
                 return;
             }
             fetch('<?= base_url('pederasyon/generate-official-list-excel') ?>', { method:'POST', headers:{ 'Content-Type':'application/json', 'X-Requested-With':'XMLHttpRequest' }, body: JSON.stringify({}) })
-                .then(res => res.json())
-                .then(data => {
-                    if (data && data.success && data.download_url) {
-                        const a = document.createElement('a'); a.href = data.download_url; a.download = data.download_url.split('/').pop(); a.style.display='none'; document.body.appendChild(a); a.click(); a.remove();
-                        showNotification('Official List Excel document generated and downloaded successfully!', 'success');
-                    } else { showNotification('Error generating Excel document: ' + (data.message || 'Unknown error.'), 'error'); }
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const contentDisposition = response.headers.get('Content-Disposition');
+                    let fileName = 'PEDERASYON_Official_List.xlsx';
+                    if (contentDisposition) {
+                        const matches = /filename="([^"]+)"/.exec(contentDisposition);
+                        if (matches && matches[1]) { fileName = matches[1]; }
+                    }
+                    return response.blob().then(blob => ({ blob, fileName }));
+                })
+                .then(({ blob, fileName }) => {
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url; link.download = fileName; link.style.display = 'none';
+                    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                    showNotification('Official List Excel document generated and downloaded successfully!', 'success');
                 })
                 .catch(err => { showNotification('Error generating Excel document: ' + err.message, 'error'); })
                 .finally(() => { button.innerHTML = originalHTML; button.disabled = false; });
         }
         
-        // Event listeners for official list
-        document.getElementById('downloadOfficialListBtn').addEventListener('click', openOfficialListModal);
-        $('#officialListModal').on('click', function(e) { if (e.target === this) { closeOfficialListModal(); } });
+        // ==================== EVENT LISTENERS - Initialize after DOM ready ==================== //
+        
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Official List button
+            const officialListBtn = document.getElementById('downloadOfficialListBtn');
+            if (officialListBtn) {
+                officialListBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    openOfficialListModal();
+                });
+            }
+            
+            // Click outside to close modals
+            $('#officialListModal').on('click', function(e) { 
+                if (e.target === this) { 
+                    closeOfficialListModal(); 
+                } 
+            });
+            
+            // Credentials button
+            const credentialsBtn = document.getElementById('downloadCredentialsBtn');
+            if (credentialsBtn) {
+                credentialsBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    openPedCredentialsPreviewModal();
+                });
+            }
+            
+            // Click outside to close credentials modal
+            $('#pedCredentialsPreviewModal').on('click', function(e) { 
+                if (e.target === this) { 
+                    closePedCredentialsPreviewModal(); 
+                } 
+            });
+        });
     </script>
 
+    <!-- Credentials Preview Modal -->
+    <div id="pedCredentialsPreviewModal" class="fixed inset-0 z-50 bg-black bg-opacity-50 items-center justify-center p-4" style="display: none;">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-7xl max-h-[90vh] relative overflow-hidden flex flex-col">
+            <!-- Modal Header -->
+            <div class="bg-white border-b border-gray-200 px-6 py-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900">Pederasyon Officers Credentials</h3>
+                        <p class="text-sm text-gray-600 mt-1">K-NECT System Pederasyon Officers Login Credentials</p>
+                    </div>
+                    <button onclick="closePedCredentialsPreviewModal()" class="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors p-1">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="flex-1 overflow-y-auto p-6">
+                <div id="pedCredentialsLoading" class="text-center py-12">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <p class="mt-3 text-gray-600 font-medium">Loading credentials...</p>
+                </div>
+
+                <div id="pedCredentialsContent" class="hidden">
+                    <!-- Document Header - Hidden in preview, shown in print -->
+                    <div class="bg-white hidden print:block" style="font-family: Arial, sans-serif;">
+                        <!-- Header Section with Logos -->
+                        <div class="text-center mb-6 print:mb-4" style="font-family: Arial, sans-serif;">
+                            <div class="flex items-center justify-center mb-4">
+                                <!-- Pederasyon Logo (Left) -->
+                                <div class="flex-shrink-0 mr-8">
+                                    <div id="ped-credentials-pederasyon-logo" class="w-16 h-16 rounded flex items-center justify-center">
+                                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                
+                                <!-- Center Text -->
+                                <div class="text-center" style="font-family: Arial, sans-serif;">
+                                    <h2 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 0; line-height: 1.2;">REPUBLIC OF THE PHILIPPINES</h2>
+                                    <h3 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 0; line-height: 1.2;">PROVINCE OF CAMARINES SUR</h3>
+                                    <h3 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 0; line-height: 1.2;">CITY OF IRIGA</h3>
+                                    <h4 style="font-family: Arial, sans-serif; font-size: 9pt; font-weight: normal; color: black; margin: 0; line-height: 1.2;">PANLUNGSOD NA PEDERASYON NG MGA</h4>
+                                    <h4 style="font-family: Arial, sans-serif; font-size: 9pt; font-weight: normal; color: black; margin: 0; line-height: 1.2;">SANGGUNIANG KABATAAN NG IRIGA</h4>
+                                </div>
+                                
+                                <!-- Iriga City Logo (Right) -->
+                                <div class="flex-shrink-0 ml-8">
+                                    <div id="ped-credentials-iriga-logo" class="w-16 h-16 rounded flex items-center justify-center">
+                                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr class="border-gray-300 mb-4">
+                            
+                            <h2 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 16px 0 24px 0;">PANLUNGSOD NA PEDERASYON NG MGA KABATAAN</h2>
+                            <h3 style="font-family: Arial, sans-serif; font-size: 10pt; font-weight: bold; color: black; margin: 8px 0 16px 0;">PEDERASYON OFFICERS CREDENTIALS</h3>
+                        </div>
+                    </div>
+
+                    <!-- Credentials Tables Container -->
+                    <div id="pedCredentialsTablesContainer" class="bg-white rounded-xl shadow-sm border border-gray-100">
+                        <!-- Pederasyon Officers Credentials Table -->
+                        <div id="pedCredentialsSection" class="credentials-section p-6">
+                            <div class="mb-4">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                                    </svg>
+                                    <h4 class="text-lg font-semibold text-gray-900">Pederasyon Officers Login Credentials</h4> 
+                                    <span class="text-sm font-medium text-blue-900">
+                                        (<span id="pedCredentialsCount">0</span>)
+                                    </span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-3">Login information for Pederasyon Officers (SK Chairpersons and Pederasyon Officers with positions)</p>
+                                
+                                <!-- Important Notes -->
+                                <div class="mt-3 p-3 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg">
+                                    <p class="text-xs text-blue-800 mb-1"><strong>Password Display Guide:</strong></p>
+                                    <ul class="text-xs text-blue-700 space-y-0.5 ml-4">
+                                        <li>• <strong>Plain text passwords</strong> = Temporary passwords (not yet changed by user)</li>
+                                        <li>• <strong>******** (asterisks)</strong> = Password has been changed by user (hashed for security)</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <div class="border-2 border-gray-400 rounded-lg overflow-hidden">
+                                    <table class="w-full border-collapse border border-gray-300 rounded-lg overflow-hidden">
+                                        <thead>
+                                            <tr class="bg-gray-50">
+                                                <th class="border border-gray-300 text-center font-bold py-3 px-3 text-gray-700 text-xs">User ID</th>
+                                                <th class="border border-gray-300 text-center font-bold py-3 px-3 text-gray-700 text-xs">Full Name</th>
+                                                <th class="border border-gray-300 text-center font-bold py-3 px-3 text-gray-700 text-xs">Barangay</th>
+                                                <th class="border border-gray-300 text-center font-bold py-3 px-3 text-gray-700 text-xs">Position</th>
+                                                <th class="border border-gray-300 text-center font-bold py-3 px-3 text-gray-700 text-xs">Pederasyon Username</th>
+                                                <th class="border border-gray-300 text-center font-bold py-3 px-3 text-gray-700 text-xs">Pederasyon Password</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="pedCredentialsTableBody">
+                                            <!-- Pederasyon credentials data will be populated here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="pedNoCredentials" class="text-center py-12 hidden">
+                        <div class="w-16 h-16 mx-auto mb-4 bg-yellow-100 rounded-full flex items-center justify-center">
+                            <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">No Pederasyon Officers Found</h3>
+                        <p class="text-sm text-gray-600 mb-2">No SK Chairpersons or Pederasyon Officers (Accepted status) found.</p>
+                        <p class="text-xs text-gray-500 mt-3">Required: (user_type=2 OR user_type=3), with status=Accepted</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="bg-gray-50 border-t border-gray-200 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div id="pedCredentialsTotalCount" class="text-sm font-medium text-gray-700"></div>
+                    <div class="flex gap-3">
+                        <button onclick="closePedCredentialsPreviewModal()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200">
+                            Close
+                        </button>
+                        <button onclick="downloadPedCredentialsPDF()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors duration-200 shadow-sm">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            PDF
+                        </button>
+                        <button onclick="downloadPedCredentialsWord()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 shadow-sm">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Word
+                        </button>
+                        <button onclick="downloadPedCredentialsExcel()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 shadow-sm">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Excel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Official List Modal - Unified Design -->
-    <div id="officialListModal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-50 flex items-center justify-center p-4">
+    <div id="officialListModal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-50 items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-7xl max-h-[90vh] relative overflow-hidden flex flex-col">
             <!-- Modal Header -->
             <div class="bg-white border-b border-gray-200 px-6 py-4">
@@ -1869,7 +2668,7 @@
             <div class="bg-gray-50 border-t border-gray-200 px-6 py-4">
                 <div class="flex items-center justify-between">
                     <div id="officialListCount" class="text-sm font-medium text-gray-700"></div>
-                    <div class="flex gap-3">
+                    <div class="flex gap-2">
                         <button onclick="closeOfficialListModal()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200">
                             Close
                         </button>

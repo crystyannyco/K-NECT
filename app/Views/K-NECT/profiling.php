@@ -2743,14 +2743,18 @@ document.addEventListener('DOMContentLoaded',function(){
                         </button>
                     </form>
                     
-                    <form action="<?= base_url('profiling/submit') ?>" method="post" class="w-full sm:w-auto" style="display:inline;">
+                    <form action="<?= base_url('profiling/submit') ?>" method="post" class="w-full sm:w-auto" style="display:inline;" id="finalSubmitForm">
                         <?= csrf_field() ?>
-                        <button type="submit" 
+                        <button type="submit" id="finalSubmitBtn"
                             class="btn-primary text-white font-semibold py-3 px-8 rounded-xl transition-all duration-200 flex items-center space-x-2 hover:shadow-lg transform hover:scale-105 w-full sm:w-auto justify-center">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg id="submitIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
-                            <span>Confirm & Submit Registration</span>
+                            <svg id="submitSpinner" class="animate-spin w-5 h-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span id="submitText">Confirm & Submit Registration</span>
                         </button>
                     </form>
                 </div>
@@ -6837,6 +6841,43 @@ document.addEventListener('DOMContentLoaded',function(){
         } else {
             // DOM already loaded
             initializeTermsAndConditions();
+        }
+        
+        // Initialize final submit button loading functionality
+        function initializeFinalSubmitButton() {
+            const finalSubmitForm = document.getElementById('finalSubmitForm');
+            const finalSubmitBtn = document.getElementById('finalSubmitBtn');
+            const submitIcon = document.getElementById('submitIcon');
+            const submitSpinner = document.getElementById('submitSpinner');
+            const submitText = document.getElementById('submitText');
+            
+            if (!finalSubmitForm || !finalSubmitBtn) return;
+            
+            finalSubmitForm.addEventListener('submit', function(e) {
+                // Show loading state
+                if (finalSubmitBtn) {
+                    finalSubmitBtn.disabled = true;
+                    finalSubmitBtn.classList.remove('hover:scale-105');
+                    finalSubmitBtn.style.cursor = 'not-allowed';
+                }
+                
+                if (submitIcon) submitIcon.classList.add('hidden');
+                if (submitSpinner) submitSpinner.classList.remove('hidden');
+                if (submitText) submitText.textContent = 'Submitting & Sending Notifications...';
+                
+                // Prevent double submission
+                finalSubmitBtn.onclick = function(e) {
+                    e.preventDefault();
+                    return false;
+                };
+            });
+        }
+        
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeFinalSubmitButton);
+        } else {
+            initializeFinalSubmitButton();
         }
     </script>
     <script>

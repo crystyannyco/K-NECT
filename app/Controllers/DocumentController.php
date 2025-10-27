@@ -224,13 +224,14 @@ class DocumentController extends BaseController
             'members' => $processedMembers
         ];
 
-        // In a real implementation, you would generate a PDF here and stream it directly
+        // In a real implementation, you would generate a PDF here
         // For now, return the data structure that would be used for the report
         return $this->response->setJSON([
             'success' => true,
-            'message' => 'KK List Report data prepared successfully',
+            'message' => 'KK List Report generated successfully',
             'data' => $reportData,
-            'format' => 'sk_official'
+            'format' => 'sk_official',
+            'download_url' => base_url('uploads/generated/kk_list_' . $skBarangay . '_' . time() . '.pdf')
         ]);
     }
 

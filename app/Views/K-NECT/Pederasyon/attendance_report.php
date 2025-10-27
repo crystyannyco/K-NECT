@@ -125,11 +125,11 @@
                         </p>
                     </div>
                     <div class="flex items-center space-x-3">
-                        <button onclick="downloadAttendanceExcel()" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 shadow-sm">
+                        <button onclick="downloadAttendancePDF()" class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 shadow-sm">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
                             </svg>
-                            Download Excel
+                            Download PDF
                         </button>
                         <button onclick="downloadAttendanceWord()" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 shadow-sm">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -137,11 +137,11 @@
                             </svg>
                             Download Word
                         </button>
-                        <button onclick="downloadAttendancePDF()" class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 shadow-sm">
+                        <button onclick="downloadAttendanceExcel()" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 shadow-sm">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                             </svg>
-                            Download PDF
+                            Download Excel
                         </button>
                     </div>
                 </div>
@@ -320,24 +320,29 @@ function downloadAttendanceExcel() {
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            // Create a temporary link to download the Excel document
-            const link = document.createElement('a');
-            link.href = data.download_url;
-            link.download = data.download_url.split('/').pop();
-            link.style.display = 'none';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            showNotification('Attendance report Excel document generated and downloaded successfully!', 'success');
-        } else {
-            console.error('Server error:', data);
-            showNotification((data.message || 'Unknown error occurred'), 'error');
+        // Get the filename from Content-Disposition header if available
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let fileName = 'Attendance_Report.xlsx';
+        if (contentDisposition) {
+            const matches = /filename="([^"]+)"/.exec(contentDisposition);
+            if (matches && matches[1]) {
+                fileName = matches[1];
+            }
         }
+        return response.blob().then(blob => ({ blob, fileName }));
+    })
+    .then(({ blob, fileName }) => {
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        showNotification('Attendance report Excel document generated and downloaded successfully!', 'success');
     })
     .catch(error => {
         console.error('Network error:', error);
@@ -380,24 +385,29 @@ function downloadAttendanceWord() {
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            // Create a temporary link to download the Word document
-            const link = document.createElement('a');
-            link.href = data.download_url;
-            link.download = data.download_url.split('/').pop();
-            link.style.display = 'none';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            showNotification('Attendance report Word document generated and downloaded successfully!', 'success');
-        } else {
-            console.error('Server error:', data);
-            showNotification((data.message || 'Unknown error occurred'), 'error');
+        // Get the filename from Content-Disposition header if available
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let fileName = 'Attendance_Report.docx';
+        if (contentDisposition) {
+            const matches = /filename="([^"]+)"/.exec(contentDisposition);
+            if (matches && matches[1]) {
+                fileName = matches[1];
+            }
         }
+        return response.blob().then(blob => ({ blob, fileName }));
+    })
+    .then(({ blob, fileName }) => {
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        showNotification('Attendance report Word document generated and downloaded successfully!', 'success');
     })
     .catch(error => {
         console.error('Network error:', error);
@@ -410,86 +420,80 @@ function downloadAttendanceWord() {
     });
 }
 
-// Download attendance report as PDF
-function downloadAttendancePDF() {
+// Download attendance report as PDF (rewritten using ped-officers.php pattern)
+async function downloadAttendancePDF() {
     const button = event.target.closest('button');
     const originalHTML = button.innerHTML;
     button.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Generating PDF...';
     button.disabled = true;
     
-    // Check if there are attendance records
-    if (!attendanceRecords || attendanceRecords.length === 0) {
-        // Reset button state
+    try {
+        // Check if there are attendance records
+        if (!attendanceRecords || attendanceRecords.length === 0) {
+            showNotification('No attendance data available for PDF generation.', 'warning');
+            button.innerHTML = originalHTML;
+            button.disabled = false;
+            return;
+        }
+        
+        // Fetch logos with proper error handling
+        const logosResp = await fetch('<?= base_url('documents/logos') ?>');
+        const logosJson = (logosResp.ok ? await logosResp.json() : { success: false, data: {} });
+        const logos = (logosJson && logosJson.success && logosJson.data) ? logosJson.data : {};
+
+        const pederasyonLogoPath = (logos.pederasyon?.file_path) || '';
+        const irigaLogoPath = (logos.iriga_city?.file_path) || '';
+        const pederasyonLogoUrl = pederasyonLogoPath ? '<?= base_url() ?>' + pederasyonLogoPath : '';
+        const irigaLogoUrl = irigaLogoPath ? '<?= base_url() ?>' + irigaLogoPath : '';
+
+        // Helper to convert image URL to data URL
+        const imageUrlToDataUrl = (url) => {
+            return new Promise((resolve) => {
+                if (!url) {
+                    resolve(null);
+                    return;
+                }
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = this.naturalWidth;
+                    canvas.height = this.naturalHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(this, 0, 0);
+                    try {
+                        resolve(canvas.toDataURL('image/png'));
+                    } catch (e) {
+                        console.error('Canvas toDataURL failed:', e);
+                        resolve(null);
+                    }
+                };
+                img.onerror = () => resolve(null);
+                img.src = url;
+            });
+        };
+
+        // Load both logos as data URLs
+        const [pederasyonLogoDataUrl, irigaLogoDataUrl] = await Promise.all([
+            imageUrlToDataUrl(pederasyonLogoUrl),
+            imageUrlToDataUrl(irigaLogoUrl)
+        ]);
+
+        // Generate PDF with loaded logos
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('l', 'mm', [330.2, 215.9]); // landscape, custom size: 13 x 8.5 inches
+        
+        generateAttendancePDFWithLogos(doc, pederasyonLogoDataUrl, irigaLogoDataUrl, button, originalHTML);
+        
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        showNotification('Error generating PDF: ' + error.message, 'error');
         button.innerHTML = originalHTML;
         button.disabled = false;
-        // Show notification
-        showNotification('No attendance data available for PDF generation.', 'warning');
-        return;
     }
-    
-    const { jsPDF } = window.jspdf;
-    // Use custom page size: 13 x 8.5 inches -> expressed in mm: 13*25.4 = 330.2, 8.5*25.4 = 215.9
-    const doc = new jsPDF('l', 'mm', [330.2, 215.9]); // landscape, custom size in mm
-    
-    // First fetch logos to include in PDF if available
-    fetch('<?= base_url('documents/logos') ?>')
-        .then(response => response.json())
-        .then(data => {
-            const promises = [];
-            let pederasyonLogo = null;
-            let irigaLogo = null;
-            
-            if (data.success && data.data) {
-                const logos = data.data;
-                
-                // Load Pederasyon logo
-                if (logos.pederasyon) {
-                    const pederasyonPromise = new Promise((resolve) => {
-                        const img = new Image();
-                        img.crossOrigin = 'anonymous';
-                        img.onload = function() {
-                            pederasyonLogo = this;
-                            resolve();
-                        };
-                        img.onerror = function() {
-                            resolve(); // Continue even if logo fails to load
-                        };
-                        img.src = '<?= base_url() ?>' + logos.pederasyon.file_path;
-                    });
-                    promises.push(pederasyonPromise);
-                }
-                
-                // Load Iriga City logo
-                if (logos.iriga_city) {
-                    const irigaPromise = new Promise((resolve) => {
-                        const img = new Image();
-                        img.crossOrigin = 'anonymous';
-                        img.onload = function() {
-                            irigaLogo = this;
-                            resolve();
-                        };
-                        img.onerror = function() {
-                            resolve(); // Continue even if logo fails to load
-                        };
-                        img.src = '<?= base_url() ?>' + logos.iriga_city.file_path;
-                    });
-                    promises.push(irigaPromise);
-                }
-            }
-            
-            // Wait for all logos to load, then generate PDF
-            Promise.all(promises).then(() => {
-                generateAttendancePDFWithLogos(doc, pederasyonLogo, irigaLogo, button, originalHTML);
-            });
-        })
-        .catch(error => {
-            console.error('Error fetching logos for PDF:', error);
-            // Continue with PDF generation without logos
-            generateAttendancePDFWithLogos(doc, null, null, button, originalHTML);
-        });
 }
 
-function generateAttendancePDFWithLogos(doc, pederasyonLogo, irigaLogo, button, originalHTML) {
+function generateAttendancePDFWithLogos(doc, pederasyonLogoDataUrl, irigaLogoDataUrl, button, originalHTML) {
     try {
         let yPosition = 15;
         
@@ -506,11 +510,20 @@ function generateAttendancePDFWithLogos(doc, pederasyonLogo, irigaLogo, button, 
         const leftLogoX = centerX - spaceWidth - logoSize; // Left logo position
         const rightLogoX = centerX + spaceWidth; // Right logo position
         
-        if (pederasyonLogo) {
-            doc.addImage(pederasyonLogo, 'PNG', leftLogoX, yPosition, logoSize, logoSize);
+        // Helper to get image format from data URL
+        const getImgFmt = (dataUrl) => {
+            if (!dataUrl) return 'PNG';
+            if (dataUrl.includes('image/jpeg') || dataUrl.includes('image/jpg')) return 'JPEG';
+            if (dataUrl.includes('image/png')) return 'PNG';
+            return 'PNG';
+        };
+        
+        // Add logos if available
+        if (pederasyonLogoDataUrl) {
+            doc.addImage(pederasyonLogoDataUrl, getImgFmt(pederasyonLogoDataUrl), leftLogoX, yPosition, logoSize, logoSize, undefined, 'FAST');
         }
-        if (irigaLogo) {
-            doc.addImage(irigaLogo, 'PNG', rightLogoX, yPosition, logoSize, logoSize);
+        if (irigaLogoDataUrl) {
+            doc.addImage(irigaLogoDataUrl, getImgFmt(irigaLogoDataUrl), rightLogoX, yPosition, logoSize, logoSize, undefined, 'FAST');
         }
         
         // Header text - centered between logos
@@ -682,7 +695,7 @@ function generateAttendancePDFWithLogos(doc, pederasyonLogo, irigaLogo, button, 
     });
         
         // Save and download
-        const fileName = `Pederasyon_Attendance_Report_${eventData.title.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+        const fileName = `Pederasyon_${eventData.title.replace(/[^a-zA-Z0-9]/g, '_')}_Attendance_${new Date().toISOString().split('T')[0]}.pdf`;
         doc.save(fileName);
         
         showNotification('Attendance report PDF generated and downloaded successfully!', 'success');

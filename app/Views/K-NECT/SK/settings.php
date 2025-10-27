@@ -396,64 +396,78 @@ let currentDeactivateUserId = null;
 let currentDeactivateUserName = '';
 
 // Toast notification function
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `fixed top-4 right-4 z-[100000] p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full`;
-    
-    switch(type) {
-        case 'success':
-            notification.className += ' bg-green-500 text-white';
-            break;
-        case 'error':
-            notification.className += ' bg-red-500 text-white';
-            break;
-        default:
-            notification.className += ' bg-blue-500 text-white';
+function showNotification(message, type = 'info', duration = 5000) {
+    // Stacked toast notifications appended to #toastContainer (no overlap)
+    const container = document.getElementById('toastContainer');
+    if (!container) {
+        // Fallback to alert if container missing
+        alert(message);
+        return;
     }
-    
-    // Get appropriate icon based on type
-    let icon = '';
-    switch(type) {
-        case 'success':
-            icon = '<svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>';
-            break;
-        case 'error':
-            icon = '<svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" /></svg>';
-            break;
-        case 'info':
-        default:
-            icon = '<svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01" /></svg>';
-            break;
+
+    // Create toast
+    const toast = document.createElement('div');
+    toast.className = 'w-full max-w-md rounded-lg shadow-lg overflow-hidden transform transition-all duration-300 translate-x-4 opacity-0';
+
+    // Determine color and icon
+    let colorClass = 'bg-blue-500 text-white';
+    let icon = '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01" /></svg>';
+    if (type === 'success') {
+        colorClass = 'bg-green-500 text-white';
+        icon = '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>';
+    } else if (type === 'error') {
+        colorClass = 'bg-red-500 text-white';
+        icon = '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/></svg>';
     }
-    
-    notification.innerHTML = `
-        <div class="flex items-center">
-            ${icon}
-            <span class="mr-2">${message}</span>
-            <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-white hover:text-gray-200 focus:outline-none">
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                </svg>
+
+    // Toast content (icon on the left, message, close button)
+    toast.innerHTML = `
+        <div class="flex items-start p-3 ${colorClass}">
+            <div class="flex-shrink-0 mr-3">${icon}</div>
+            <div class="flex-1 text-sm text-white break-words">${escapeHtml(message)}</div>
+            <button type="button" class="ml-3 text-white hover:text-gray-200 close-toast" aria-label="Close">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
             </button>
         </div>
     `;
-    
-    document.body.appendChild(notification);
-    
-    // Animate in
-    setTimeout(() => {
-        notification.classList.remove('translate-x-full');
-    }, 100);
-    
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-        notification.classList.add('translate-x-full');
+
+    // Insert toast at top of container (newest on top)
+    container.insertAdjacentElement('afterbegin', toast);
+
+    // Allow animation frame to let transition classes apply
+    requestAnimationFrame(() => {
+        toast.classList.remove('translate-x-4', 'opacity-0');
+        toast.classList.add('translate-x-0', 'opacity-100');
+    });
+
+    // Close handler
+    const removeToast = () => {
+        toast.classList.add('translate-x-4', 'opacity-0');
+        // Wait for transition to finish then remove
         setTimeout(() => {
-            if (notification.parentElement) {
-                notification.remove();
-            }
+            if (toast.parentElement) toast.remove();
         }, 300);
-    }, 5000);
+    };
+
+    // Wire close button
+    const closeBtn = toast.querySelector('.close-toast');
+    if (closeBtn) closeBtn.addEventListener('click', removeToast);
+
+    // Auto dismiss after duration
+    if (duration > 0) {
+        setTimeout(removeToast, duration);
+    }
+}
+
+// Helper: escape HTML to prevent injection in message
+function escapeHtml(unsafe) {
+    if (typeof unsafe !== 'string') return '' + unsafe;
+    return unsafe
+         .replace(/&/g, '&amp;')
+         .replace(/</g, '&lt;')
+         .replace(/>/g, '&gt;')
+         .replace(/"/g, '&quot;')
+         .replace(/'/g, '&#039;');
 }
 
 function openLogoManagerModal() {

@@ -10,11 +10,13 @@
             @apply text-gray-700 hover:text-indigo-600 transition;
         }
         .restricted-row {
-            background-color: #f9fafb !important;
-            opacity: 0.7;
+            /* Removed gray background to keep table columns readable.
+               Maintain full opacity so text remains clear. */
+            background-color: transparent !important;
+            opacity: 1;
         }
         .restricted-row:hover {
-            background-color: #f3f4f6 !important;
+            background-color: transparent !important;
         }
         .restricted-checkbox {
             opacity: 0.5;

@@ -526,3 +526,79 @@ if (!function_exists('send_account_reactivated_notification')) {
         return $result;
     }
 }
+
+if (!function_exists('send_profiling_completed_notification')) {
+    /**
+     * Send profiling completion notification via Email and SMS
+     * 
+     * @param array $user User data array
+     * @param array $address Address data array
+     * @return array ['email' => bool, 'sms' => bool] Success status for each channel
+     */
+    function send_profiling_completed_notification($user, $address = null) {
+        $result = ['email' => false, 'sms' => false];
+        
+        // Prepare user information
+        $userName = trim($user['first_name'] . ' ' . $user['last_name']);
+        $userId = $user['user_id'] ?? '';
+        $username = $user['username'] ?? '';
+        $email = $user['email'] ?? '';
+        $phoneNumber = $user['phone_number'] ?? '';
+        
+        // Get barangay name if available
+        $barangayName = '';
+        if ($address && isset($address['barangay'])) {
+            $barangayHelper = new \App\Libraries\BarangayHelper();
+            $barangayName = $barangayHelper->getBarangayName($address['barangay']);
+        }
+        
+        // Send Email Notification
+        try {
+            $emailService = \Config\Services::email();
+            $emailService->setTo($email);
+            $emailService->setSubject('Profiling Completed - K-NECT Account Pending Approval');
+            
+            $message = view('emails/profiling_completed', [
+                'userName' => $userName,
+                'userId' => $userId,
+                'username' => $username,
+                'barangayName' => $barangayName
+            ]);
+            
+            $emailService->setMessage($message);
+            
+            if ($emailService->send()) {
+                $result['email'] = true;
+                log_message('info', "Profiling completed email sent successfully to {$email}");
+            } else {
+                log_message('error', "Failed to send profiling completed email to {$email}: " . $emailService->printDebugger(['headers']));
+            }
+        } catch (\Exception $e) {
+            log_message('error', "Profiling completed email exception for {$email}: " . $e->getMessage());
+        }
+        
+        // Send SMS Notification
+        if (!empty($phoneNumber)) {
+            try {
+                $smsMessage = "Thank you, {$userName}!\n\n";
+                $smsMessage .= "Your K-NECT profiling has been completed successfully.\n\n";
+                $smsMessage .= "Username: {$username}\n\n";
+                $smsMessage .= "Your account is now pending approval by SK Officials. You will be notified once approved.\n\n";
+                $smsMessage .= "Thank you for registering!";
+
+                $smsResult = send_sms($phoneNumber, $smsMessage);
+
+                if ($smsResult && !isset($smsResult['error'])) {
+                    $result['sms'] = true;
+                    log_message('info', "Profiling completed SMS sent successfully to {$phoneNumber}");
+                } else {
+                    log_message('error', "Failed to send profiling completed SMS to {$phoneNumber}");
+                }
+            } catch (\Exception $e) {
+                log_message('error', "Profiling completed SMS exception for {$phoneNumber}: " . $e->getMessage());
+            }
+        }
+        
+        return $result;
+    }
+}

@@ -661,6 +661,9 @@ class ProfilingController extends BaseController
 
     public function profilingSubmit()
     {
+        // Load helpers for notifications
+        helper(['otp', 'sms']);
+        
         $profile = session('profile_data');
         $demographic = session('demographic_data');
         $account = session('account_data');
@@ -756,6 +759,24 @@ class ProfilingController extends BaseController
                 $extInfoData['user_id'] = $reuploadUserId;
                 $userExtInfoModel->insert($extInfoData);
             }
+            
+            // Send profiling completed notification for re-upload
+            $updatedUser = $userModel->find($reuploadUserId);
+            $updatedAddress = $addressModel->where('user_id', $reuploadUserId)->first();
+            
+            log_message('debug', 'Attempting to send profiling re-upload notification for user ID: ' . $reuploadUserId);
+            
+            if ($updatedUser) {
+                try {
+                    $notificationResult = send_profiling_completed_notification($updatedUser, $updatedAddress);
+                    log_message('info', 'Profiling re-upload completed notification sent for user ' . $reuploadUserId . ': Email=' . ($notificationResult['email'] ? 'success' : 'failed') . ', SMS=' . ($notificationResult['sms'] ? 'success' : 'failed'));
+                } catch (\Exception $e) {
+                    log_message('error', 'Exception sending profiling re-upload notification for user ' . $reuploadUserId . ': ' . $e->getMessage());
+                }
+            } else {
+                log_message('error', 'Could not find user data for ID ' . $reuploadUserId . ' to send re-upload notification');
+            }
+            
             session()->remove('reupload_user_id');
             // Clear all profiling session data completely
             session()->remove('profile_data');
@@ -817,6 +838,24 @@ class ProfilingController extends BaseController
                 'upload_id-back' => $demographic['upload_id-back'] ?? '',
                 'profile_picture' => $account['profile_picture'] ?? '',
             ]);
+            
+            // Send profiling completed notification
+            $newUser = $userModel->find($newId);
+            $newAddress = $addressModel->where('user_id', $newId)->first();
+            
+            log_message('debug', 'Attempting to send profiling notification for new user ID: ' . $newId);
+            
+            if ($newUser) {
+                try {
+                    $notificationResult = send_profiling_completed_notification($newUser, $newAddress);
+                    log_message('info', 'Profiling completed notification sent for user ' . $newId . ': Email=' . ($notificationResult['email'] ? 'success' : 'failed') . ', SMS=' . ($notificationResult['sms'] ? 'success' : 'failed'));
+                } catch (\Exception $e) {
+                    log_message('error', 'Exception sending profiling notification for user ' . $newId . ': ' . $e->getMessage());
+                }
+            } else {
+                log_message('error', 'Could not find user data for ID ' . $newId . ' to send notification');
+            }
+            
             // Clear all profiling session data completely
             session()->remove('profile_data');
             session()->remove('profiling_step');

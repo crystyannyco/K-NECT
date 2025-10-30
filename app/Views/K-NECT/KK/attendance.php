@@ -111,14 +111,9 @@
                                         'description' => $record['event_description'] ?? ''
                                     ]) ?>'
                                 >
-                                    <!-- Event Banner -->
+                                    <!-- Event Banner (removed image) -->
                                         <div class="relative h-32 sm:h-40 bg-gradient-to-br from-blue-50 to-blue-100 flex-shrink-0">
-                                            <img src="<?= !empty($record['event_banner']) ? base_url('uploads/event/' . $record['event_banner']) : base_url('assets/images/default-event-banner.svg') ?>" 
-                                                 alt="<?= esc($record['event_title']) ?>" 
-                                                 class="w-full h-full object-cover"
-                                                 loading="lazy"
-                                                 onerror="this.onerror=null; this.src='<?= base_url('assets/images/default-event-banner.svg') ?>';">
-                                        
+                                            <!-- No banner image - background gradient only -->
                                             <!-- Status Badge - Always Attended since we're filtering -->
                                             <div class="absolute top-3 right-3">
                                                 <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-green-500 text-white text-xs font-semibold shadow-lg">
@@ -256,7 +251,6 @@
         <!-- Modal Header -->
         <div class="relative">
             <div id="modalBanner" class="h-32 sm:h-48 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
-                <img id="modalBannerImg" class="w-full h-full object-cover hidden" alt="">
                 <div id="modalBannerDefault" class="text-center">
                     <svg class="w-20 h-20 text-white opacity-80 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2z"/>
@@ -694,42 +688,10 @@ function openAttendanceModal(cardElement) {
         descContainer.classList.add('hidden');
     }
     
-    // Handle banner image
-    const bannerImg = document.getElementById('modalBannerImg');
+    // Banner: no image, always show default banner content
     const bannerDefault = document.getElementById('modalBannerDefault');
-    if (eventData.banner && eventData.banner.trim() !== '') {
-        // Check if the banner file exists, if not fallback to default
-        const bannerPath = `<?= base_url('uploads/event/') ?>${eventData.banner}`;
-        bannerImg.src = bannerPath;
-        bannerImg.onload = function() {
-            bannerImg.classList.remove('hidden');
-            bannerDefault.classList.add('hidden');
-        };
-        bannerImg.onerror = function() {
-            // If image fails to load, use default banner
-            bannerImg.src = '<?= base_url('assets/images/default-event-banner.svg') ?>';
-            bannerImg.onload = function() {
-                bannerImg.classList.remove('hidden');
-                bannerDefault.classList.add('hidden');
-            };
-            bannerImg.onerror = function() {
-                // If even the default fails, show the default div
-                bannerImg.classList.add('hidden');
-                bannerDefault.classList.remove('hidden');
-            };
-        };
-    } else {
-        // No banner specified, use default image
-        bannerImg.src = '<?= base_url('assets/images/default-event-banner.svg') ?>';
-        bannerImg.onload = function() {
-            bannerImg.classList.remove('hidden');
-            bannerDefault.classList.add('hidden');
-        };
-        bannerImg.onerror = function() {
-            // If default image fails to load, show the default div
-            bannerImg.classList.add('hidden');
-            bannerDefault.classList.remove('hidden');
-        };
+    if (bannerDefault) {
+        bannerDefault.classList.remove('hidden');
     }
     
     // Handle status badge
@@ -912,4 +874,3 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-

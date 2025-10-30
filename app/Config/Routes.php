@@ -162,7 +162,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     });
     $routes->get('pederasyon/profile', 'PederasyonController::profile');
     $routes->get('pederasyon/member', 'PederasyonController::member');
-    $routes->get('pederasyon/youthlist', 'PederasyonController::youthlist');
+    $routes->get('pederasyon/skchairperson', 'PederasyonController::youthlist');
     $routes->get('pederasyon/ped-officers', 'PederasyonController::pedOfficers');
     $routes->get('pederasyon/settings', 'PederasyonController::settings');
     // Pederasyon Account Settings
@@ -194,10 +194,14 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('pederasyon/generate-official-list-word', 'PederasyonController::generateOfficialListWord');
     $routes->post('pederasyon/generate-official-list-excel', 'PederasyonController::generateOfficialListExcel');
     $routes->get('pederasyon/credentials-data', 'PederasyonController::getCredentialsData');
+    $routes->get('pederasyon/ped-officers-credentials-data', 'PederasyonController::getPedOfficersCredentialsData');
     $routes->post('pederasyon/generate-credentials', 'PederasyonController::generateCredentials');
     $routes->post('pederasyon/generate-credentials-pdf', 'PederasyonController::generateCredentialsPDF');
     $routes->post('pederasyon/generate-credentials-word', 'PederasyonController::generateCredentialsWord');
     $routes->post('pederasyon/generate-credentials-excel', 'PederasyonController::generateCredentialsExcel');
+    // Pederasyon Officers specific credentials (from ped-officers.php page)
+    $routes->post('pederasyon/generate-ped-credentials-word', 'PederasyonController::generatePedCredentialsWord');
+    $routes->post('pederasyon/generate-ped-credentials-excel', 'PederasyonController::generatePedCredentialsExcel');
 
     // ============== Module: Member Management ============== //
     $routes->post('getUserInfo', 'MemberController::getUserInfo');
@@ -380,44 +384,6 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('/admin/documents/bulk-download', 'DocumentMainController::bulkDownload');
     // Serve uploaded files through controller
     $routes->get('uploads/(.*)', 'FileController::serve/$1');
-
-    // ============================================================================
-    // ADMIN CATEGORY MANAGEMENT ROUTES
-    // ============================================================================
-    $routes->get('/admin/categories', 'CategoryController::index');
-    $routes->get('/admin/categories/add', 'CategoryController::add');
-    $routes->post('/admin/categories/add', 'CategoryController::add');
-    $routes->get('/admin/categories/edit/(:num)', 'CategoryController::edit/$1');
-    $routes->post('/admin/categories/edit/(:num)', 'CategoryController::edit/$1');
-    $routes->match(['GET', 'POST'], '/admin/categories/delete/(:num)', 'CategoryController::delete/$1');
-
-    // ============================================================================
-    // UNIFIED DOCUMENT ROUTES (ALL ROLES)
-    // ============================================================================
-    $routes->get('/documents', 'DocumentMainController::index');
-    $routes->get('/documents/detail/(:num)', 'DocumentMainController::detail/$1');
-    $routes->get('/documents/api/detail/(:num)', 'DocumentMainController::apiDetail/$1');
-    $routes->get('/documents/download/(:num)', 'DocumentMainController::download/$1');
-    $routes->get('/documents/preview/(:num)', 'DocumentMainController::preview/$1');
-    $routes->get('/documents/shared', 'DocumentMainController::sharedDocuments');
-
-    // ============================================================================
-    // ADMIN DOCUMENT MANAGEMENT ROUTES
-    // ============================================================================
-    $routes->get('/admin/documents', 'DocumentMainController::index');
-    $routes->get('/admin/documents/upload', 'DocumentMainController::upload');
-    $routes->post('/admin/documents/upload', 'DocumentMainController::upload');
-    $routes->get('/admin/documents/download/(:num)', 'DocumentMainController::download/$1');
-    $routes->match(['GET', 'POST'], '/admin/documents/delete/(:num)', 'DocumentMainController::delete/$1');
-    $routes->get('/admin/documents/edit/(:num)', 'DocumentMainController::edit/$1');
-    $routes->post('/admin/documents/edit/(:num)', 'DocumentMainController::edit/$1');
-    $routes->get('/admin/documents/preview/(:num)', 'DocumentMainController::preview/$1');
-    $routes->get('/admin/documents/detail/(:num)', 'DocumentMainController::detail/$1');
-    $routes->get('/admin/documents/audit-log', 'DocumentMainController::auditLog');
-    $routes->get('/admin/documents/version-history/(:num)', 'DocumentMainController::versionHistory/$1');
-    $routes->post('/admin/documents/bulk-delete', 'DocumentMainController::bulkDelete');
-    $routes->post('/admin/documents/bulk-download', 'DocumentMainController::bulkDownload');
-    $routes->get('uploads/(:any)', 'Shared\FileController::serve/$1');
 
     // ============================================================================
     // ADMIN CATEGORY MANAGEMENT ROUTES

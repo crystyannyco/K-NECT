@@ -10,11 +10,13 @@
             @apply text-gray-700 hover:text-indigo-600 transition;
         }
         .restricted-row {
-            background-color: #f9fafb !important;
-            opacity: 0.7;
+            /* Removed gray background to keep table columns readable.
+               Maintain full opacity so text remains clear. */
+            background-color: transparent !important;
+            opacity: 1;
         }
         .restricted-row:hover {
-            background-color: #f3f4f6 !important;
+            background-color: transparent !important;
         }
         .restricted-checkbox {
             opacity: 0.5;
@@ -1312,46 +1314,333 @@
 
         // ==================== CREDENTIALS DOWNLOAD FUNCTIONS ==================== //
 
-        function downloadCredentialsFormat(format) {
-            showNotification(`Generating ${format.toUpperCase()} credentials document...`, 'info');
+        async function downloadCredentialsFormat(format) {
+            const button = event.target;
+            const originalHTML = button.innerHTML;
             
-            $.ajax({
-                url: `<?= base_url('sk/generate-credentials-') ?>${format}`,
-                type: 'POST',
-                data: {
-                    type: 'all',
-                    '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
-                },
-                xhrFields: {
-                    responseType: 'blob'
-                },
-                success: function(data, status, xhr) {
-                    const filename = xhr.getResponseHeader('Content-Disposition')?.match(/filename="(.+)"/)?.[1] || 
-                                   `sk-credentials-all-${new Date().toISOString().split('T')[0]}.${format === 'word' ? 'docx' : format}`;
-                    
-                    const blob = new Blob([data], {
-                        type: format === 'pdf' ? 'application/pdf' : 
-                             format === 'word' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' :
-                             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-                    });
-                    
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.style.display = 'none';
-                    a.href = url;
-                    a.download = filename;
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    document.body.removeChild(a);
-                    
-                    showNotification(`${format.toUpperCase()} credentials downloaded successfully!`, 'success');
-                },
-                error: function(xhr, status, error) {
-                    console.error('Download Error:', status, error);
-                    showNotification(`Error generating ${format.toUpperCase()}: Please try again.`, 'error');
+            if (format === 'pdf') {
+                await downloadCredentialsPDF();
+            } else {
+                // Word and Excel with loading button states
+                const formatLabel = format === 'word' ? 'Word' : 'Excel';
+                button.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Generating ' + formatLabel + '...';
+                button.disabled = true;
+                
+                $.ajax({
+                    url: `<?= base_url('sk/generate-credentials-') ?>${format}`,
+                    type: 'POST',
+                    data: {
+                        type: 'all',
+                        '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
+                    },
+                    xhrFields: {
+                        responseType: 'blob'
+                    },
+                    success: function(data, status, xhr) {
+                        const filename = xhr.getResponseHeader('Content-Disposition')?.match(/filename="(.+)"/)?.[1] || 
+                                       `sk-credentials-all-${new Date().toISOString().split('T')[0]}.${format === 'word' ? 'docx' : format}`;
+                        
+                        const blob = new Blob([data], {
+                            type: format === 'word' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' :
+                                 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                        });
+                        
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                        
+                        showNotification(`${formatLabel} credentials downloaded successfully!`, 'success');
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Download Error:', status, error);
+                        showNotification(`Error generating ${formatLabel}: Please try again.`, 'error');
+                    },
+                    complete: function() {
+                        // Reset button state
+                        button.innerHTML = originalHTML;
+                        button.disabled = false;
+                    }
+                });
+            }
+        }
+
+        // Client-side PDF generation for SK Officials Credentials (matching KK List style)
+        async function downloadCredentialsPDF() {
+            const button = event.target;
+            const originalHTML = button.innerHTML;
+            button.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Generating PDF...';
+            button.disabled = true;
+
+            try {
+                // Ensure jsPDF and autoTable are loaded
+                await ensureJsPDFLoaded();
+
+                // Fetch credentials data
+                const dataResp = await fetch('<?= base_url('sk/credentials-data') ?>', {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                if (!dataResp.ok) throw new Error('Failed to load credentials data');
+                const dataJson = await dataResp.json();
+                if (!dataJson.success) throw new Error(dataJson.error || 'Failed to load data');
+
+                // Combine SK officials and chairpersons
+                let allCredentials = [];
+                if (dataJson.data?.sk_officials && Array.isArray(dataJson.data.sk_officials)) {
+                    allCredentials = allCredentials.concat(dataJson.data.sk_officials);
                 }
+                if (dataJson.data?.chairpersons && Array.isArray(dataJson.data.chairpersons)) {
+                    allCredentials = allCredentials.concat(dataJson.data.chairpersons);
+                }
+
+                // Remove duplicates and exclude KK Members (position 5)
+                const uniqueCredentials = allCredentials.filter((credential, index, self) => 
+                    index === self.findIndex((c) => c.user_id === credential.user_id) &&
+                    credential.position !== 5
+                );
+
+                // Fetch logos
+                const logosResp = await fetch('<?= base_url('documents/logos') ?>');
+                const logosJson = (logosResp.ok ? await logosResp.json() : { success: false, data: {} });
+                const logos = logosJson.success ? logosJson.data : {};
+
+                const barangayLogoPath = (logos.barangay?.file_path) || (logos.sk?.file_path) || '';
+                const irigaLogoPath = (logos.iriga_city?.file_path) || '';
+                const barangayLogoUrl = barangayLogoPath ? '<?= base_url() ?>' + barangayLogoPath : '';
+                const irigaLogoUrl = irigaLogoPath ? '<?= base_url() ?>' + irigaLogoPath : '';
+
+                const [barangayLogoDataUrl, irigaLogoDataUrl] = await Promise.all([
+                    barangayLogoUrl ? imageUrlToDataUrl(barangayLogoUrl) : Promise.resolve(null),
+                    irigaLogoUrl ? imageUrlToDataUrl(irigaLogoUrl) : Promise.resolve(null)
+                ]);
+
+                // Build PDF (legal, landscape)
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('l', 'mm', 'legal');
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const margin = 12.7; // 0.5 inch margins
+                let y = margin + 5;
+
+                // Header with logos
+                const logoSize = 22;
+                const centerX = pageWidth / 2;
+                
+                const getImgFmt = (dataUrl) => {
+                    if (!dataUrl) return 'PNG';
+                    const m = /^data:(image\/(png|jpeg|jpg|webp));/i.exec(dataUrl);
+                    if (!m) return 'PNG';
+                    const ext = m[2].toLowerCase();
+                    if (ext === 'png') return 'PNG';
+                    if (ext === 'jpeg' || ext === 'jpg') return 'JPEG';
+                    if (ext === 'webp') return 'WEBP';
+                    return 'PNG';
+                };
+
+                // Header text
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                doc.text('Republic of the Philippines', centerX, y + 3, { align: 'center' });
+                doc.text('Province of Camarines Sur', centerX, y + 8, { align: 'center' });
+                
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                doc.text('CITY OF IRIGA', centerX, y + 13, { align: 'center' });
+                
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                doc.text('SANGGUNIANG KABATAAN NG', centerX, y + 18, { align: 'center' });
+
+                const barangayName = dataJson.data?.barangay_name || uniqueCredentials[0]?.barangay_name || '<?= esc($barangay_name ?? '') ?>';
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9);
+                doc.text(('BARANGAY ' + barangayName.toUpperCase()).trim(), centerX, y + 23, { align: 'center' });
+
+                // Position logos
+                const pxToMm = (px) => px * 0.264583;
+                const gapMM = pxToMm(50);
+                doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+                const w1 = doc.getTextWidth('Republic of the Philippines');
+                const w2 = doc.getTextWidth('Province of Camarines Sur');
+                doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+                const w3 = doc.getTextWidth('CITY OF IRIGA');
+                doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+                const w4 = doc.getTextWidth('SANGGUNIANG KABATAAN NG');
+                doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+                const w5 = doc.getTextWidth(('BARANGAY ' + barangayName.toUpperCase()).trim());
+                const maxHeaderWidth = Math.max(w1, w2, w3, w4, w5);
+                const headerLeftX = centerX - (maxHeaderWidth / 2);
+                const headerRightX = centerX + (maxHeaderWidth / 2);
+
+                const headerTop = y + 0;
+                const headerBottom = y + 23;
+                const headerMidY = headerTop + (headerBottom - headerTop) / 2 - (logoSize / 2);
+                let leftLogoX = headerLeftX - gapMM - logoSize;
+                let rightLogoX = headerRightX + gapMM;
+                if (leftLogoX < margin) leftLogoX = margin;
+                if (rightLogoX > pageWidth - margin - logoSize) rightLogoX = pageWidth - margin - logoSize;
+
+                // Add logos
+                if (barangayLogoDataUrl) {
+                    doc.addImage(barangayLogoDataUrl, getImgFmt(barangayLogoDataUrl), leftLogoX, headerMidY, logoSize, logoSize, undefined, 'FAST');
+                }
+                if (irigaLogoDataUrl) {
+                    doc.addImage(irigaLogoDataUrl, getImgFmt(irigaLogoDataUrl), rightLogoX, headerMidY, logoSize, logoSize, undefined, 'FAST');
+                }
+
+                // Horizontal line
+                y += 28;
+                doc.setLineWidth(0.2);
+                doc.line(margin, y, pageWidth - margin, y);
+
+                // Title
+                y += 8;
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.text('SK OFFICIALS LOGIN CREDENTIALS', centerX, y, { align: 'center' });
+                y += 8;
+
+                // Table headers - including User ID
+                const headers = ['No.', 'User ID', 'Full Name', 'Barangay', 'Position', 'SK Username', 'SK Password'];
+
+                // Build table body
+                const body = uniqueCredentials.map((credential, index) => {
+                    const fullName = `${credential.first_name || ''} ${credential.middle_name || ''} ${credential.last_name || ''}`.trim();
+                    const positionText = getPositionText(credential.position);
+                    const displayPassword = credential.is_temp_password ? (credential.sk_password || 'Not Set') : '******';
+                    
+                    return [
+                        (index + 1).toString(),
+                        credential.user_id || 'N/A',
+                        fullName,
+                        barangayName,
+                        positionText,
+                        credential.sk_username || 'N/A',
+                        displayPassword
+                    ];
+                });
+
+                // Create table
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(6);
+                doc.autoTable({
+                    head: [headers],
+                    body: body,
+                    startY: y + 2,
+                    margin: { left: margin, right: margin },
+                    tableWidth: 'auto',
+                    styles: { 
+                        fontSize: 6,
+                        cellPadding: 1.2,
+                        halign: 'center',
+                        valign: 'middle',
+                        textColor: [0,0,0],
+                        lineColor: [0,0,0],
+                        lineWidth: 0.2,
+                        overflow: 'linebreak'
+                    },
+                    headStyles: { 
+                        fillColor: [255,255,255],
+                        textColor: [0,0,0],
+                        fontStyle: 'bold',
+                        fontSize: 6,
+                        cellPadding: 1.2,
+                        halign: 'center',
+                        valign: 'middle'
+                    },
+                    bodyStyles: { 
+                        fillColor: [255,255,255],
+                        fontSize: 6,
+                        cellPadding: 1.2
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 15, halign: 'center' },      // No.
+                        1: { cellWidth: 30, halign: 'center' },      // User ID
+                        2: { cellWidth: 'auto', halign: 'left' },    // Full Name
+                        3: { cellWidth: 40, halign: 'center' },      // Barangay
+                        4: { cellWidth: 45, halign: 'center' },      // Position
+                        5: { cellWidth: 40, halign: 'center' },      // SK Username
+                        6: { cellWidth: 40, halign: 'center' }       // SK Password
+                    },
+                    theme: 'grid',
+                    tableLineColor: [0, 0, 0],
+                    tableLineWidth: 0.2
+                });
+
+                // Signatures section
+                const finalY = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? doc.lastAutoTable.finalY + 20 : (y + 50);
+                const leftSigX = margin + 60;
+                const rightSigX = pageWidth - margin - 80;
+                
+                // Set line width for signature lines
+                doc.setLineWidth(0.2);
+                
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                
+                // Left signature (Prepared by)
+                doc.text('Prepared by:', leftSigX, finalY, { align: 'center' });
+                doc.line(leftSigX - 30, finalY + 15, leftSigX + 30, finalY + 15);
+                doc.setFont('helvetica', 'bold');
+                doc.text((dataJson.data?.secretary_name || '________________'), leftSigX, finalY + 20, { align: 'center' });
+                doc.setFont('helvetica', 'normal');
+                doc.text('SK Secretary', leftSigX, finalY + 26, { align: 'center' });
+                
+                // Right signature (Approved by)
+                doc.text('Approved by:', rightSigX, finalY, { align: 'center' });
+                doc.line(rightSigX - 30, finalY + 15, rightSigX + 30, finalY + 15);
+                doc.setFont('helvetica', 'bold');
+                doc.text((dataJson.data?.chairman_name || '________________'), rightSigX, finalY + 20, { align: 'center' });
+                doc.setFont('helvetica', 'normal');
+                doc.text('SK Chairperson', rightSigX, finalY + 26, { align: 'center' });
+
+                // Save
+                const safeBarangay = (barangayName || 'Barangay').replace(/\s+/g, '_');
+                const ts = new Date();
+                const tsStr = `${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,'0')}-${String(ts.getDate()).padStart(2,'0')}_${String(ts.getHours()).padStart(2,'0')}-${String(ts.getMinutes()).padStart(2,'0')}-${String(ts.getSeconds()).padStart(2,'0')}`;
+                doc.save(`SK_Officials_Credentials_${safeBarangay}_${tsStr}.pdf`);
+
+                showNotification('PDF generated and downloaded successfully!', 'success');
+            } catch (err) {
+                console.error(err);
+                showNotification('Error generating PDF: ' + err.message, 'error');
+            } finally {
+                button.innerHTML = originalHTML;
+                button.disabled = false;
+            }
+        }
+
+        // Helper function to ensure jsPDF is loaded
+        function ensureJsPDFLoaded() {
+            if (window.jspdf && window.jspdf.jsPDF && window.jsPDF) return Promise.resolve();
+            const loadScript = (src) => new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = src;
+                s.onload = resolve;
+                s.onerror = reject;
+                document.head.appendChild(s);
             });
+            const libs = [
+                'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js'
+            ];
+            return libs.reduce((p, src) => p.then(() => loadScript(src)), Promise.resolve());
+        }
+
+        // Helper function to convert image URL to data URL
+        function imageUrlToDataUrl(url) {
+            return fetch(url)
+                .then(response => response.blob())
+                .then(blob => new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                }));
         }
 
         function closeCredentialsPreviewModal() {
@@ -1369,35 +1658,11 @@
                         <h2 class="text-2xl font-bold text-gray-900">SK Credentials</h2>
                         <p class="text-sm text-gray-600 mt-1">Download login credentials for SK officials</p>
                     </div>
-                    <div class="flex items-center gap-4">
-                        <!-- Download Format Buttons -->
-                        <div class="flex gap-2">
-                            <button onclick="downloadCredentialsFormat('pdf')" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg shadow transition-colors duration-200 flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                </svg>
-                                PDF
-                            </button>
-                            <button onclick="downloadCredentialsFormat('word')" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow transition-colors duration-200 flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                </svg>
-                                Word
-                            </button>
-                            <button onclick="downloadCredentialsFormat('excel')" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg shadow transition-colors duration-200 flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                </svg>
-                                Excel
-                            </button>
-                        </div>
-                        <!-- Close Button -->
-                        <button onclick="closeCredentialsPreviewModal()" class="text-gray-400 hover:text-gray-600 focus:outline-none">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
-                    </div>
+                    <button onclick="closeCredentialsPreviewModal()" class="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors p-1">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
 
@@ -1405,40 +1670,44 @@
             <div class="flex-1 overflow-y-auto p-6">
                 <!-- Document Header - Hidden in preview, shown in print -->
                 <div class="bg-white hidden print:block" style="font-family: Arial, sans-serif;">
-                    <!-- Header Section with Logos -->
+                    <!-- Header Section with Logos (copied from youth_profile.php) -->
                     <div class="text-center mb-6 print:mb-4" style="font-family: Arial, sans-serif;">
+                        <!-- Document Header with Logos -->
                         <div class="flex items-center justify-center mb-4">
-                            <!-- SK Logo (Left) -->
-                            <div class="flex-shrink-0 mr-8">
-                                <div id="credentials-sk-logo" class="w-16 h-16 rounded flex items-center justify-center">
-                                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                    </svg>
+                            <!-- Center Text with Barangay Logo beside it -->
+                            <div class="flex items-center">
+                                <!-- Barangay Logo (Left) -->
+                                <div class="text-center mr-6">
+                                    <div id="kk-list-barangay-logo" class="rounded flex items-center justify-center" style="width: 50px; height: 50px; min-width: 50px; min-height: 50px; max-width: 50px; max-height: 50px;">
+                                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                        </svg>
+                                    </div>
                                 </div>
-                            </div>
-                            
-                            <!-- Center Text -->
-                            <div class="text-center" style="font-family: Arial, sans-serif;">
-                                <h2 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 0; line-height: 1.2;">REPUBLIC OF THE PHILIPPINES</h2>
-                                <h3 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 0; line-height: 1.2;">PROVINCE OF CAMARINES SUR</h3>
-                                <h3 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 0; line-height: 1.2;">CITY OF IRIGA</h3>
-                                <h4 style="font-family: Arial, sans-serif; font-size: 9pt; font-weight: normal; color: black; margin: 0; line-height: 1.2;">SANGGUNIANG KABATAAN</h4>
-                            </div>
-                            
-                            <!-- Iriga City Logo (Right) -->
-                            <div class="flex-shrink-0 ml-8">
-                                <div id="credentials-iriga-logo" class="w-16 h-16 rounded flex items-center justify-center">
-                                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                    </svg>
+
+                                <!-- Center Text -->
+                                <div class="text-center">
+                                    <h2 style="font-size: 10pt; font-weight: normal; color: black; margin: 0; line-height: 1.2;">Republic of the Philippines</h2>
+                                    <h3 style="font-size: 10pt; font-weight: normal; color: black; margin: 0; line-height: 1.2;">Province of Camarines Sur</h3>
+                                    <h3 style="font-size: 10pt; font-weight: bold; color: black; margin: 0; line-height: 1.2;">CITY OF IRIGA</h3>
+                                    <h4 style="font-size: 10pt; font-weight: bold; color: black; margin: 0; line-height: 1.2;">SANGGUNIANG KABATAAN NG BARANGAY</h4>
+                                    <h4 style="font-size: 10pt; font-weight: bold; color: black; margin: 0; line-height: 1.2;"><?= strtoupper(esc($barangay_name ?? 'SAMPLE BARANGAY')) ?></h4>
+                                </div>
+
+                                <!-- Iriga City Logo (Right) -->
+                                <div class="text-center ml-6">
+                                    <div id="kk-list-iriga-logo" class="rounded flex items-center justify-center" style="width: 50px; height: 50px; min-width: 50px; min-height: 50px; max-width: 50px; max-height: 50px;">
+                                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                        </svg>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <hr class="border-gray-300 mb-4">
-                        
-                        <h2 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 16px 0 24px 0;">SANGGUNIANG KABATAAN OFFICIALS</h2>
-                        <h3 style="font-family: Arial, sans-serif; font-size: 10pt; font-weight: bold; color: black; margin: 8px 0 16px 0;">OFFICIALS CREDENTIALS</h3>
+
+                        <h2 style="font-size: 10pt; font-weight: bold; color: black; margin: 16px 0 24px 0; font-family: Arial, sans-serif;">SANGGUNIANG KABATAAN OFFICIALS</h2>
                     </div>
                 </div>
 
@@ -1478,6 +1747,36 @@
                                 </table>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="bg-gray-50 border-t border-gray-200 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="text-sm font-medium text-gray-700">SK Credentials Export</div>
+                    <div class="flex gap-3">
+                        <button onclick="closeCredentialsPreviewModal()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200">
+                            Close
+                        </button>
+                        <button onclick="downloadCredentialsFormat('pdf')" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors duration-200 shadow-sm">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Download PDF
+                        </button>
+                        <button onclick="downloadCredentialsFormat('word')" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 shadow-sm">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Download Word
+                        </button>
+                        <button onclick="downloadCredentialsFormat('excel')" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 shadow-sm">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path>
+                            </svg>
+                            Download Excel
+                        </button>
                     </div>
                 </div>
             </div>

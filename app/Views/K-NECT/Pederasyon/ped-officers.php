@@ -1158,10 +1158,18 @@
                 
                 const dbId = userRow.find('.rowCheckbox').val();
                 
+                // Handle "NULL" string for SK Pederasyon Member position
+                let pedPositionValue;
+                if (newPosition === 'NULL') {
+                    pedPositionValue = 'NULL';
+                } else {
+                    pedPositionValue = parseInt(newPosition, 10);
+                }
+                
                 $.ajax({
                     url: '<?= base_url('updateOfficerPosition') ?>',
                     method: 'POST',
-                    data: { user_id: dbId || userId, ped_position: parseInt(newPosition, 10) },
+                    data: { user_id: dbId || userId, ped_position: pedPositionValue },
                     dataType: 'json',
                     success: function(response) {
                         if (response.success) {

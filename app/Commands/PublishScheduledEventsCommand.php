@@ -7,6 +7,7 @@ use CodeIgniter\CLI\CLI;
 use App\Models\EventModel;
 use App\Models\UserModel;
 use App\Models\BarangayModel;
+use App\Models\SMSLogModel;
 use App\Controllers\GoogleCalendarController;
 
 class PublishScheduledEventsCommand extends BaseCommand
@@ -140,14 +141,47 @@ class PublishScheduledEventsCommand extends BaseCommand
         }
         
         $message = $this->formatSmsMessage($event);
+        $smsLogModel = new SMSLogModel();
+        $sentBy = $event['created_by'] ?? null; // Use event creator as sender
         
         foreach ($recipients as $recipient) {
             if (!empty($recipient['phone_number'])) {
                 try {
-                    send_sms($recipient['phone_number'], $message);
-                    CLI::write("SMS sent to: {$recipient['phone_number']}", 'green');
+                    $result = send_sms($recipient['phone_number'], $message);
+                    
+                    $status = 'sent';
+                    $response = is_array($result) ? json_encode($result) : $result;
+                    
+                    if (isset($result['error'])) {
+                        $status = 'failed';
+                    }
+                    
+                    // Log to database
+                    $smsLogModel->logEventSMS(
+                        $event['event_id'],
+                        $recipient['phone_number'],
+                        $message,
+                        $status,
+                        $response,
+                        $sentBy
+                    );
+                    
+                    CLI::write("SMS sent to: {$recipient['phone_number']} ({$recipient['first_name']} {$recipient['last_name']})", 'green');
+                    
                 } catch (\Exception $e) {
-                    CLI::error("Failed to send SMS to {$recipient['phone_number']}: " . $e->getMessage());
+                    $errorMessage = $e->getMessage();
+                    
+                    // Log failed attempt
+                    $smsLogModel->logEventSMS(
+                        $event['event_id'],
+                        $recipient['phone_number'],
+                        $message,
+                        'failed',
+                        $errorMessage,
+                        $sentBy
+                    );
+                    
+                    CLI::error("Failed to send SMS to {$recipient['phone_number']}: " . $errorMessage);
                 }
             }
         }

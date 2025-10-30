@@ -339,7 +339,7 @@ class PederasyonController extends BaseController
                 $currentExt = $userExtModel->where('user_id', $dbUserId)->first();
                 $oldPath = $currentExt['profile_picture'] ?? null;
 
-                $targetDir = FCPATH . 'uploads/profile_pictures/';
+                $targetDir = ROOTPATH . 'uploads/profile_pictures/';
                 if (!is_dir($targetDir)) {
                     @mkdir($targetDir, 0775, true);
                 }
@@ -728,7 +728,7 @@ class PederasyonController extends BaseController
             // Left logo cell (Pederasyon)
             $leftCell = $headerTable->addCell(2000, ['valign' => 'center']);
             if (isset($logos['pederasyon'])) {
-                $logoPath = FCPATH . $logos['pederasyon']['file_path'];
+                $logoPath = ROOTPATH . $logos['pederasyon']['file_path'];
                 if (file_exists($logoPath)) {
                     try {
                         $leftCell->addImage($logoPath, [
@@ -757,7 +757,7 @@ class PederasyonController extends BaseController
             // Right logo cell (Iriga City)
             $rightCell = $headerTable->addCell(2000, ['valign' => 'center']);
             if (isset($logos['iriga_city'])) {
-                $logoPath = FCPATH . $logos['iriga_city']['file_path'];
+                $logoPath = ROOTPATH . $logos['iriga_city']['file_path'];
                 if (file_exists($logoPath)) {
                     try {
                         $rightCell->addImage($logoPath, [
@@ -910,13 +910,13 @@ class PederasyonController extends BaseController
             $approvedCell->addText('Pederasyon President', ['name' => 'Arial', 'size' => 8, 'bold' => true], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
             
             // Save the document
-            $outputDir = FCPATH . 'uploads/generated/';
-            if (!is_dir($outputDir)) {
-                mkdir($outputDir, 0755, true);
-            }
+            // $outputDir = FCPATH . 'uploads/generated/';
+            // if (!is_dir($outputDir)) {
+            //     mkdir($outputDir, 0755, true);
+            // }
             
             $fileName = 'PEDERASYON_Official_List_' . date('Y-m-d') . '.docx';
-            $outputPath = $outputDir . $fileName;
+            $outputPath = $fileName;
             
             $objWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
             $objWriter->save($outputPath);
@@ -947,7 +947,7 @@ class PederasyonController extends BaseController
                 log_message('info', 'Pederasyon logo found: ' . $pederasyonLogo['file_path']);
             } else {
                 // Fallback to check direct files
-                $logoFiles = glob(FCPATH . 'uploads/logos/pederasyon_logo_*');
+                $logoFiles = glob(ROOTPATH . 'uploads/logos/pederasyon_logo_*');
                 if (!empty($logoFiles)) {
                     $latestFile = end($logoFiles);
                     $logos['pederasyon'] = ['file_path' => str_replace(FCPATH, '', $latestFile)];
@@ -967,7 +967,7 @@ class PederasyonController extends BaseController
                 log_message('info', 'Iriga City logo found: ' . $irigaLogo['file_path']);
             } else {
                 // Fallback to check direct files
-                $logoFiles = glob(FCPATH . 'uploads/logos/iriga_city_logo_*');
+                $logoFiles = glob(ROOTPATH . 'uploads/logos/iriga_city_logo_*');
                 if (!empty($logoFiles)) {
                     $latestFile = end($logoFiles);
                     $logos['iriga_city'] = ['file_path' => str_replace(FCPATH, '', $latestFile)];
@@ -984,13 +984,13 @@ class PederasyonController extends BaseController
             
             // Emergency fallback - try to find logos directly
             $logos = [];
-            $logoFiles = glob(FCPATH . 'uploads/logos/pederasyon_logo_*');
+            $logoFiles = glob(ROOTPATH . 'uploads/logos/pederasyon_logo_*');
             if (!empty($logoFiles)) {
                 $latestFile = end($logoFiles);
                 $logos['pederasyon'] = ['file_path' => str_replace(FCPATH, '', $latestFile)];
             }
             
-            $logoFiles = glob(FCPATH . 'uploads/logos/iriga_city_logo_*');
+            $logoFiles = glob(ROOTPATH . 'uploads/logos/iriga_city_logo_*');
             if (!empty($logoFiles)) {
                 $latestFile = end($logoFiles);
                 $logos['iriga_city'] = ['file_path' => str_replace(FCPATH, '', $latestFile)];
@@ -1317,14 +1317,14 @@ class PederasyonController extends BaseController
             $sheet->getPageMargins()->setLeft(0.5);
             $sheet->getPageMargins()->setRight(0.5);
 
-            // Save the document
-            $outputDir = FCPATH . 'uploads/generated/';
-            if (!is_dir($outputDir)) {
-                mkdir($outputDir, 0755, true);
-            }
+            // // Save the document
+            // $outputDir = FCPATH . 'uploads/generated/';
+            // if (!is_dir($outputDir)) {
+            //     mkdir($outputDir, 0755, true);
+            // }
             
             $fileName = 'PEDERASYON_Official_List_' . date('Y-m-d') . '.xlsx';
-            $outputPath = $outputDir . $fileName;
+            $outputPath = $fileName;
             
             $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
             $writer->save($outputPath);
@@ -1599,13 +1599,13 @@ class PederasyonController extends BaseController
             $sheet->getPageMargins()->setRight(0.5);
 
             // Save the document
-            $outputDir = FCPATH . 'uploads/generated/';
-            if (!is_dir($outputDir)) {
-                mkdir($outputDir, 0755, true);
-            }
+            // $outputDir = FCPATH . 'uploads/generated/';
+            // if (!is_dir($outputDir)) {
+            //     mkdir($outputDir, 0755, true);
+            // }
             
             $fileName = 'PEDERASYON_Officials_Credentials_' . date('Y-m-d') . '.xlsx';
-            $outputPath = $outputDir . $fileName;
+            $outputPath = $fileName;
             
             $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
             $writer->save($outputPath);
@@ -1865,7 +1865,7 @@ class PederasyonController extends BaseController
             // Left logo (Pederasyon)
             $html .= '<td class="logo-cell">';
             if (isset($logos['pederasyon'])) {
-                $logoPath = FCPATH . $logos['pederasyon']['file_path'];
+                $logoPath = ROOTPATH . $logos['pederasyon']['file_path'];
                 if (file_exists($logoPath)) {
                     $logoData = base64_encode(file_get_contents($logoPath));
                     
@@ -1911,7 +1911,7 @@ class PederasyonController extends BaseController
             // Right logo (Iriga City)
             $html .= '<td class="logo-cell">';
             if (isset($logos['iriga_city'])) {
-                $logoPath = FCPATH . $logos['iriga_city']['file_path'];
+                $logoPath = ROOTPATH . $logos['iriga_city']['file_path'];
                 if (file_exists($logoPath)) {
                     $logoData = base64_encode(file_get_contents($logoPath));
                     
@@ -2068,7 +2068,7 @@ class PederasyonController extends BaseController
             $html .= '</body></html>';
             
             // Use DomPDF to generate PDF from HTML
-            require_once FCPATH . '../vendor/autoload.php';
+            require_once ROOTPATH . '../vendor/autoload.php';
             
             $dompdf = new \Dompdf\Dompdf([
                 'isPhpEnabled' => true
@@ -2084,13 +2084,13 @@ class PederasyonController extends BaseController
             $dompdf->render();
             
             // Save the document
-            $outputDir = FCPATH . 'uploads/generated/';
-            if (!is_dir($outputDir)) {
-                mkdir($outputDir, 0755, true);
-            }
+            // $outputDir = FCPATH . 'uploads/generated/';
+            // if (!is_dir($outputDir)) {
+            //     mkdir($outputDir, 0755, true);
+            // }
             
             $fileName = 'PEDERASYON_Officials_Credentials_' . date('Y-m-d') . '.pdf';
-            $outputPath = $outputDir . $fileName;
+            $outputPath = $fileName;
             
             // Save PDF to file
             file_put_contents($outputPath, $dompdf->output());
@@ -2175,7 +2175,7 @@ class PederasyonController extends BaseController
         try {
             log_message('info', 'Starting Credentials Word document creation...');
             
-            require_once FCPATH . '../vendor/autoload.php';
+            require_once ROOTPATH . '../vendor/autoload.php';
             
             $phpWord = new \PhpOffice\PhpWord\PhpWord();
             log_message('info', 'PHPWord instance created successfully');
@@ -2220,7 +2220,7 @@ class PederasyonController extends BaseController
             // Left logo cell (Pederasyon)
             $leftCell = $headerTable->addCell(2000, ['valign' => 'center']);
             if (isset($logos['pederasyon'])) {
-                $logoPath = FCPATH . $logos['pederasyon']['file_path'];
+                $logoPath = ROOTPATH . $logos['pederasyon']['file_path'];
                 if (file_exists($logoPath)) {
                     try {
                         $leftCell->addImage($logoPath, [
@@ -2249,7 +2249,7 @@ class PederasyonController extends BaseController
             // Right logo cell (Iriga City)
             $rightCell = $headerTable->addCell(2000, ['valign' => 'center']);
             if (isset($logos['iriga_city'])) {
-                $logoPath = FCPATH . $logos['iriga_city']['file_path'];
+                $logoPath = ROOTPATH . $logos['iriga_city']['file_path'];
                 if (file_exists($logoPath)) {
                     try {
                         $rightCell->addImage($logoPath, [
@@ -2396,13 +2396,13 @@ class PederasyonController extends BaseController
             }
 
             // Save the document
-            $outputDir = FCPATH . 'uploads/generated/';
-            if (!is_dir($outputDir)) {
-                mkdir($outputDir, 0755, true);
-            }
+            // $outputDir = FCPATH . 'uploads/generated/';
+            // if (!is_dir($outputDir)) {
+            //     mkdir($outputDir, 0755, true);
+            // }
             
             $fileName = 'PEDERASYON_Officials_Credentials_' . date('Y-m-d') . '.docx';
-            $outputPath = $outputDir . $fileName;
+            $outputPath = $fileName;
             
             $objWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
             $objWriter->save($outputPath);
@@ -2477,7 +2477,7 @@ class PederasyonController extends BaseController
     private function generateCredentialsExcelDocument($officials, $activeTab = 'sk')
     {
         try {
-            require_once FCPATH . '../vendor/autoload.php';
+            require_once ROOTPATH . '../vendor/autoload.php';
 
             $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
             $sheet = $spreadsheet->getActiveSheet();
@@ -2717,14 +2717,14 @@ class PederasyonController extends BaseController
             $sheet->getPageMargins()->setLeft(0.5);
             $sheet->getPageMargins()->setRight(0.5);
 
-            // Save the document
-            $outputDir = FCPATH . 'uploads/generated/';
-            if (!is_dir($outputDir)) {
-                mkdir($outputDir, 0755, true);
-            }
+            // // Save the document
+            // $outputDir = FCPATH . 'uploads/generated/';
+            // if (!is_dir($outputDir)) {
+            //     mkdir($outputDir, 0755, true);
+            // }
             
             $fileName = 'PEDERASYON_Officials_Credentials_' . date('Y-m-d') . '.xlsx';
-            $outputPath = $outputDir . $fileName;
+            $outputPath = $fileName;
             
             $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
             $writer->save($outputPath);
@@ -2967,7 +2967,7 @@ class PederasyonController extends BaseController
                 
                 // Left logo (Pederasyon)
                 if (isset($logos['pederasyon']) && isset($logos['pederasyon']['file_path'])) {
-                    $logoPath = FCPATH . $logos['pederasyon']['file_path'];
+                    $logoPath = ROOTPATH . $logos['pederasyon']['file_path'];
                     if (file_exists($logoPath)) {
                         $drawing1 = new \PhpOffice\PhpSpreadsheet\Worksheet\Drawing();
                         $drawing1->setName('Pederasyon Logo');
@@ -3134,14 +3134,14 @@ class PederasyonController extends BaseController
             $sheet->getPageSetup()->setFitToPage(false);
             
             // Save the document
-            $outputDir = FCPATH . 'uploads/generated/';
-            if (!is_dir($outputDir)) {
-                mkdir($outputDir, 0755, true);
-            }
+            // $outputDir = FCPATH . 'uploads/generated/';
+            // if (!is_dir($outputDir)) {
+            //     mkdir($outputDir, 0755, true);
+            // }
             
             $eventTitle = preg_replace('/[^a-zA-Z0-9_-]/', '_', $event['title']);
             $fileName = $eventTitle . '_Attendance_Report_' . date('Y-m-d') . '.xlsx';
-            $outputPath = $outputDir . $fileName;
+            $outputPath = $fileName;
             
             $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
             $writer->save($outputPath);
@@ -3209,7 +3209,7 @@ class PederasyonController extends BaseController
             // Left logo cell (Pederasyon)
             $leftCell = $headerTable->addCell(2000, ['valign' => 'center']);
             if (isset($logos['pederasyon'])) {
-                $logoPath = FCPATH . $logos['pederasyon']['file_path'];
+                $logoPath = ROOTPATH . $logos['pederasyon']['file_path'];
                 if (file_exists($logoPath)) {
                     try {
                         $leftCell->addImage($logoPath, [
@@ -3238,7 +3238,7 @@ class PederasyonController extends BaseController
             // Right logo cell (Iriga City)
             $rightCell = $headerTable->addCell(2000, ['valign' => 'center']);
             if (isset($logos['iriga_city'])) {
-                $logoPath = FCPATH . $logos['iriga_city']['file_path'];
+                $logoPath = ROOTPATH . $logos['iriga_city']['file_path'];
                 if (file_exists($logoPath)) {
                     try {
                         $rightCell->addImage($logoPath, [
@@ -3377,17 +3377,17 @@ class PederasyonController extends BaseController
             }
             
             // Save the document
-            $outputDir = FCPATH . 'uploads/generated/';
-            if (!is_dir($outputDir)) {
-                if (!mkdir($outputDir, 0755, true)) {
-                    throw new \Exception('Failed to create output directory: ' . $outputDir);
-                }
-                log_message('info', 'Created output directory: ' . $outputDir);
-            }
+            // $outputDir = FCPATH . 'uploads/generated/';
+            // if (!is_dir($outputDir)) {
+            //     if (!mkdir($outputDir, 0755, true)) {
+            //         throw new \Exception('Failed to create output directory: ' . $outputDir);
+            //     }
+            //     log_message('info', 'Created output directory: ' . $outputDir);
+            // }
             
             $eventTitle = preg_replace('/[^a-zA-Z0-9_-]/', '_', $event['title']);
             $fileName = 'Pederasyon_Attendance_Report_' . $eventTitle . '_' . date('Y-m-d') . '.docx';
-            $outputPath = $outputDir . $fileName;
+            $outputPath = $fileName;
             
             log_message('info', 'Attempting to save Word document to: ' . $outputPath);
             

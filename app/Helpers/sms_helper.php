@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
@@ -27,15 +27,30 @@ if (!function_exists('format_phone_number')) {
 
 if (!function_exists('send_sms')) {
     function send_sms($to, $message) {
+        log_message('info', '[SMS] send_sms() called with recipient(s): ' . (is_array($to) ? json_encode($to) : $to));
+        
         if (!SMS_ENABLED) {
-            log_message('debug', 'SMS sending is currently disabled.');
+            log_message('debug', '[SMS] SMS sending is currently disabled (SMS_ENABLED = false).');
             return false;
         }
         
-        //8f9a7412-f462-4db1-bdc7-d1dd29bbd081
-        $apiKey = '8f9a7412-f462-4db1-bdc7-d1dd29bbd0';
-        $deviceId = '68ce78b8d8ae427dc'; // Device ID from TextBee 
-        // 68ce78b8d8ae427dcd5f2ebb
+        // Get API credentials from .env file
+        $apiKey = getenv('TEXTBEE_API_KEY');
+        $deviceId = getenv('TEXTBEE_DEVICE_ID');
+        
+        // Fallback to hardcoded values if not set in .env (for backward compatibility)
+        if (empty($apiKey)) {
+            $apiKey = '8f9a7412-f462-4db1-bdc7-d1dd29bbd081';
+            log_message('warning', '[SMS] TEXTBEE_API_KEY not found in .env, using hardcoded value');
+        }
+        
+        if (empty($deviceId)) {
+            $deviceId = '68d1bf3ab8c77d7feb0ac0a4';
+            log_message('warning', '[SMS] TEXTBEE_DEVICE_ID not found in .env, using hardcoded value');
+        }
+        
+        log_message('info', '[SMS] Using Device ID: ' . $deviceId);
+        
         $url = "https://api.textbee.dev/api/v1/gateway/devices/{$deviceId}/send-sms";
         
         $recipients = is_array($to) ? $to : [$to];
@@ -44,12 +59,16 @@ if (!function_exists('send_sms')) {
         foreach ($recipients as $phoneNumber) {
             $formattedPhone = format_phone_number($phoneNumber);
             
+            log_message('info', '[SMS] Sending to: ' . $formattedPhone . ' (Original: ' . $phoneNumber . ')');
+            
             $payload = [
                 'recipients' => [$formattedPhone],
                 'message' => $message,
                 'simulateDelivery' => false,
                 'prioritize' => false
             ];
+            
+            log_message('debug', '[SMS] Payload: ' . json_encode($payload));
             
             try {
                 $client = new Client();
@@ -67,18 +86,18 @@ if (!function_exists('send_sms')) {
                 $result = json_decode($response->getBody()->getContents(), true);
                 $results[$formattedPhone] = $result;
                 
-                log_message('info', "TextBee SMS sent to {$formattedPhone}: " . json_encode($result));
+                log_message('info', "[SMS] TextBee SMS sent successfully to {$formattedPhone}: " . json_encode($result));
                 log_sms_to_database($formattedPhone, $message, 'sent', json_encode($result), null);
                 
             } catch (RequestException $e) {
                 $errorMessage = $e->getMessage();
                 $results[$formattedPhone] = ['error' => $errorMessage];
                 
-                log_message('error', "TextBee SMS error for {$formattedPhone}: " . $errorMessage);
+                log_message('error', "[SMS] TextBee SMS error for {$formattedPhone}: " . $errorMessage);
                 
                 if ($e->hasResponse()) {
                     $errorResponse = $e->getResponse()->getBody()->getContents();
-                    log_message('error', "TextBee SMS error response: " . $errorResponse);
+                    log_message('error', "[SMS] TextBee SMS error response: " . $errorResponse);
                     $results[$formattedPhone]['response'] = $errorResponse;
                 }
                 

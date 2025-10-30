@@ -1315,7 +1315,7 @@ class AttendanceController extends BaseController
     private function generateAttendanceExcelDocument($event, $attendanceRecords, $barangayName = null)
     {
         try {
-            require_once FCPATH . '../vendor/autoload.php';
+            require_once ROOTPATH . 'vendor/autoload.php';
             
             $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
             $sheet = $spreadsheet->getActiveSheet();
@@ -1509,10 +1509,10 @@ class AttendanceController extends BaseController
             $sheet->getColumnDimension('J')->setWidth(10); // PM Status
             
             // Save the document
-            $outputDir = FCPATH . 'uploads/generated/';
-            if (!is_dir($outputDir)) {
-                mkdir($outputDir, 0755, true);
-            }
+            // $outputDir = FCPATH . 'uploads/generated/';
+            // if (!is_dir($outputDir)) {
+            //     mkdir($outputDir, 0755, true);
+            // }
             
             $eventTitle = preg_replace('/[^a-zA-Z0-9_-]/', '_', $event['title']);
             $fileName = $eventTitle . '_Attendance_Report_' . date('Y-m-d') . '.xlsx';
@@ -1578,7 +1578,7 @@ class AttendanceController extends BaseController
             // Left logo cell (SK)
             $leftCell = $headerTable->addCell(2000, ['valign' => 'center']);
             if (isset($logos['sk'])) {
-                $logoPath = FCPATH . $logos['sk']['file_path'];
+                $logoPath = ROOTPATH . $logos['sk']['file_path'];
                 if (file_exists($logoPath)) {
                     try {
                         $leftCell->addImage($logoPath, [
@@ -1609,7 +1609,7 @@ class AttendanceController extends BaseController
             // Right logo cell (Iriga City)
             $rightCell = $headerTable->addCell(2000, ['valign' => 'center']);
             if (isset($logos['iriga_city'])) {
-                $logoPath = FCPATH . $logos['iriga_city']['file_path'];
+                $logoPath = ROOTPATH . $logos['iriga_city']['file_path'];
                 if (file_exists($logoPath)) {
                     try {
                         $rightCell->addImage($logoPath, [
@@ -1747,11 +1747,11 @@ class AttendanceController extends BaseController
                 $table->addCell($colWidths[9])->addText($pmStatus, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             }
             
-            // Save the document
-            $outputDir = FCPATH . 'uploads/generated/';
-            if (!is_dir($outputDir)) {
-                mkdir($outputDir, 0755, true);
-            }
+            // // Save the document
+            // $outputDir = FCPATH . 'uploads/generated/';
+            // if (!is_dir($outputDir)) {
+            //     mkdir($outputDir, 0755, true);
+            // }
             
             $eventTitle = preg_replace('/[^a-zA-Z0-9_-]/', '_', $event['title']);
             $fileName = $eventTitle . '_Attendance_Report_' . date('Y-m-d') . '.docx';

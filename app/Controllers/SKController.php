@@ -1908,6 +1908,8 @@ class SKController extends BaseController
             'marginTop' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(0.5),
             'marginBottom' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(0.5),
         ]);
+
+        $header = $section->addHeader();
         
         // Header styles
         $headerStyle = ['name' => 'Arial', 'size' => 10, 'bold' => false];
@@ -1916,7 +1918,8 @@ class SKController extends BaseController
         $tableCellStyle = ['name' => 'Arial', 'size' => 6];
         
         // Create header section with logos
-        $headerTable = $section->addTable([
+        // Render the letterhead in the section header so it repeats automatically.
+        $headerTable = $header->addTable([
             'borderSize' => 0,
             'borderColor' => 'FFFFFF',
             'width' => 100 * 50,
@@ -2008,7 +2011,7 @@ class SKController extends BaseController
         $paraCenter = ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER];
         
         // Add table header
-        $table->addRow();
+    $table->addRow(null, ['tblHeader' => true]);
         $table->addCell(600, $cellVAlignCenter)->addText('REGION', $tableHeaderStyle, $paraCenter);
         $table->addCell(800, $cellVAlignCenter)->addText('PROVINCE', $tableHeaderStyle, $paraCenter);
         $table->addCell(1000, $cellVAlignCenter)->addText('CITY', $tableHeaderStyle, $paraCenter);
@@ -2385,55 +2388,65 @@ class SKController extends BaseController
             $options->set('chroot', FCPATH); // Allow access to project files for images
             $dompdf = new \Dompdf\Dompdf($options);
 
+            $buildLogo = function ($logoData, $fallbackText) {
+                if (!empty($logoData) && isset($logoData['file_path'])) {
+                    $path = FCPATH . $logoData['file_path'];
+                    if (file_exists($path)) {
+                        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+                        $mime = ($ext === 'png') ? 'image/png' : (($ext === 'gif') ? 'image/gif' : (($ext === 'webp') ? 'image/webp' : 'image/jpeg'));
+                        $data = base64_encode(file_get_contents($path));
+                        return '<img src="data:' . $mime . ';base64,' . $data . '" class="logo" alt="' . htmlspecialchars($fallbackText) . '" />';
+                    }
+                }
+                return '<div class="logo-placeholder">' . htmlspecialchars($fallbackText) . '</div>';
+            };
+
+            $leftLogoHtml = $buildLogo($logos['sk'] ?? ($logos['barangay'] ?? null), 'SK LOGO');
+            $rightLogoHtml = $buildLogo($logos['iriga_city'] ?? null, 'IRIGA LOGO');
+
             // Build the HTML content
             $html = '<html><head><style>
                 @page { size: legal landscape; margin: 0.5in; }
                 body { font-family: Arial, sans-serif; font-size: 10px; margin: 0; padding: 0; }
-                .header { text-align: center; margin-bottom: 20px; }
-                .logos { display: inline-block; vertical-align: middle; }
-                .logo { width: 60px; height: 60px; margin: 0 10px; }
-                .title { font-size: 16px; font-weight: bold; margin: 10px 0; }
-                .subtitle { font-size: 12px; margin: 5px 0; }
-                table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                table.report-table { width: 100%; border-collapse: collapse; margin-top: 0; }
                 th, td { border: 0.5px solid #000; padding: 3px; text-align: center; font-size: 8px; }
-                th { background-color: #ffffff; font-weight: bold; }
-                .signatures { margin-top: 40px; display: table; width: 100%; }
+                thead tr.header-row th { border: none; padding: 0 0 8px 0; }
+                thead tr.column-row th { background-color: #ffffff; font-weight: bold; }
+                thead { display: table-header-group; }
+                tbody { display: table-row-group; }
+                tr { page-break-inside: avoid; }
+                .header-row-content { display: flex; align-items: center; justify-content: space-between; }
+                .logo-cell { width: 70px; text-align: center; }
+                .logo { width: 60px; height: 60px; object-fit: contain; }
+                .logo-placeholder { width: 60px; height: 60px; border: 0.5px solid #999; display: inline-flex; align-items: center; justify-content: center; font-size: 7px; }
+                .header-text { text-align: center; flex: 1; }
+                .header-text .title { font-size: 16px; font-weight: bold; margin: 6px 0; }
+                .header-text .subtitle { font-size: 12px; margin: 2px 0; }
+                .signatures { margin-top: 40px; display: table; width: 100%; page-break-inside: avoid; }
                 .signature-box { display: table-cell; text-align: center; width: 45%; padding: 0 20px; }
                 .signature-line { border-bottom: 0.5px solid #000; margin-bottom: 5px; padding-bottom: 15px; }
                 </style></head><body>';
 
-            // Header with logos
-            $html .= '<div class="header">';
-            
-            // Add logos if available (embed as data URIs)
-            if (!empty($logos['iriga_city'])) {
-                $path = FCPATH . $logos['iriga_city']['file_path'];
-                if (file_exists($path)) {
-                    $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-                    $mime = ($ext === 'png') ? 'image/png' : (($ext === 'gif') ? 'image/gif' : (($ext === 'webp') ? 'image/webp' : 'image/jpeg'));
-                    $data = base64_encode(file_get_contents($path));
-                    $html .= '<div class="logos"><img src="data:' . $mime . ';base64,' . $data . '" class="logo" /></div>';
-                }
-            }
-            if (!empty($logos['sk'])) {
-                $path = FCPATH . $logos['sk']['file_path'];
-                if (file_exists($path)) {
-                    $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-                    $mime = ($ext === 'png') ? 'image/png' : (($ext === 'gif') ? 'image/gif' : (($ext === 'webp') ? 'image/webp' : 'image/jpeg'));
-                    $data = base64_encode(file_get_contents($path));
-                    $html .= '<div class="logos"><img src="data:' . $mime . ';base64,' . $data . '" class="logo" /></div>';
-                }
-            }
-            
-            $html .= '<div class="title">KATIPUNAN NG KABATAAN YOUTH PROFILE</div>';
-            $html .= '<div class="subtitle">SANGGUNIANG KABATAAN NG</div>';
-            $html .= '<div class="subtitle">BARANGAY ' . htmlspecialchars(strtoupper($barangayName)) . '</div>';
-            $html .= '</div>';
+            $headerHtml = '<div class="header-row-content">
+                    <div class="logo-cell">' . $leftLogoHtml . '</div>
+                    <div class="header-text">
+                        <div class="subtitle">Republic of the Philippines</div>
+                        <div class="subtitle">Province of Camarines Sur</div>
+                        <div class="subtitle">CITY OF IRIGA</div>
+                        <div class="subtitle">SANGGUNIANG KABATAAN NG</div>
+                        <div class="title">BARANGAY ' . htmlspecialchars(strtoupper($barangayName)) . '</div>
+                        <div class="subtitle">KATIPUNAN NG KABATAAN YOUTH PROFILE</div>
+                    </div>
+                    <div class="logo-cell">' . $rightLogoHtml . '</div>
+                </div>';
 
-            // Table
-            $html .= '<table>
+            // Table with repeating header
+            $html .= '<table class="report-table">
                 <thead>
-                    <tr>
+                    <tr class="header-row">
+                        <th colspan="14">' . $headerHtml . '</th>
+                    </tr>
+                    <tr class="column-row">
                         <th style="width: 3%;">No.</th>
                         <th style="width: 12%;">Full Name</th>
                         <th style="width: 4%;">Age</th>
@@ -3037,120 +3050,125 @@ class SKController extends BaseController
     {
         try {
             log_message('info', 'Starting Attendance PDF document creation...');
-            
-            // Create HTML content for PDF (following ped-officers format)
-            $html = '<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; font-size: 12px; }
-        .header-table { width: 100%; margin-bottom: 20px; }
-        .header-table td { vertical-align: middle; text-align: center; }
-        .logo { width: 60px; height: 60px; }
-        .header-text { font-weight: bold; margin: 2px 0; }
-        .subheader-text { margin: 2px 0; }
-        .title { font-size: 16px; font-weight: bold; text-align: center; margin: 20px 0; }
-        .event-info { text-align: center; margin: 10px 0; }
-        .attendance-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        .attendance-table th, .attendance-table td { 
-            border: 1px solid #000; 
-            padding: 8px; 
-            text-align: center; 
-            font-size: 10px; 
-        }
-        .attendance-table th { background-color: #f0f0f0; font-weight: bold; }
-        .signatures { margin-top: 40px; }
-        .signature-section { width: 50%; float: left; text-align: center; }
-        .signature-line { margin: 30px 0 5px 0; }
-    </style>
-</head>
-<body>';
 
-            // Header with logos
-            $html .= '<table class="header-table">
-                <tr>
-                    <td width="20%">';
-            
-            if (isset($logos['sk']) && file_exists(FCPATH . $logos['sk']['file_path'])) {
-                $logoBase64 = base64_encode(file_get_contents(FCPATH . $logos['sk']['file_path']));
-                $logoMimeType = mime_content_type(FCPATH . $logos['sk']['file_path']);
-                $html .= '<img src="data:' . $logoMimeType . ';base64,' . $logoBase64 . '" class="logo">';
-            } else {
-                $html .= '<div style="width: 60px; height: 60px; border: 1px solid #000; display: inline-block;">SK LOGO</div>';
+            if (!class_exists('Dompdf\Dompdf')) {
+                $autoload = FCPATH . '../vendor/autoload.php';
+                if (is_file($autoload)) {
+                    require_once $autoload;
+                }
             }
 
-            $html .= '</td>
-                    <td width="60%">
-                        <div class="header-text">REPUBLIC OF THE PHILIPPINES</div>
-                        <div class="header-text">PROVINCE OF CAMARINES SUR</div>
-                        <div class="header-text">CITY OF IRIGA</div>
-                        <div class="subheader-text">SANGGUNIANG KABATAAN</div>
-                    </td>
-                    <td width="20%">';
+            $options = new \Dompdf\Options();
+            $options->set('isHtml5ParserEnabled', true);
+            $options->set('isPhpEnabled', true);
+            $options->set('fontHeightRatio', 1.1);
+            $options->set('fontSubsetting', false);
+            $options->set('isJavascriptEnabled', false);
+            $options->set('chroot', FCPATH);
 
-            if (isset($logos['iriga_city']) && file_exists(FCPATH . $logos['iriga_city']['file_path'])) {
-                $logoBase64 = base64_encode(file_get_contents(FCPATH . $logos['iriga_city']['file_path']));
-                $logoMimeType = mime_content_type(FCPATH . $logos['iriga_city']['file_path']);
-                $html .= '<img src="data:' . $logoMimeType . ';base64,' . $logoBase64 . '" class="logo">';
-            } else {
-                $html .= '<div style="width: 60px; height: 60px; border: 1px solid #000; display: inline-block;">IRIGA LOGO</div>';
-            }
+            $dompdf = new \Dompdf\Dompdf($options);
 
-            $html .= '</td>
-                </tr>
-            </table>';
+            $buildLogo = function ($logoData, $fallbackText) {
+                if (!empty($logoData) && isset($logoData['file_path'])) {
+                    $path = FCPATH . $logoData['file_path'];
+                    if (file_exists($path)) {
+                        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+                        $mime = ($ext === 'png') ? 'image/png' : (($ext === 'gif') ? 'image/gif' : (($ext === 'webp') ? 'image/webp' : 'image/jpeg'));
+                        $data = base64_encode(file_get_contents($path));
+                        return '<img src="data:' . $mime . ';base64,' . $data . '" class="logo" alt="' . htmlspecialchars($fallbackText, ENT_QUOTES, 'UTF-8') . '" />';
+                    }
+                }
+                return '<div class="logo-placeholder">' . htmlspecialchars($fallbackText, ENT_QUOTES, 'UTF-8') . '</div>';
+            };
 
-            // Title and event info
-            $html .= '<div class="title">ATTENDANCE REPORT</div>';
-            $html .= '<div class="event-info">Event: ' . htmlspecialchars($event['title']) . '</div>';
-            $html .= '<div class="event-info">Date: ' . date('F j, Y', strtotime($event['start_datetime'])) . '</div>';
+            $leftLogoHtml = $buildLogo($logos['sk'] ?? ($logos['barangay'] ?? null), 'SK LOGO');
+            $rightLogoHtml = $buildLogo($logos['iriga_city'] ?? null, 'IRIGA LOGO');
 
-            // Attendance table (simplified 7 columns)
-            $html .= '<table class="attendance-table">
+            $eventTitle = htmlspecialchars($event['title'] ?? '', ENT_QUOTES, 'UTF-8');
+            $eventDate = !empty($event['start_datetime']) ? date('F j, Y', strtotime($event['start_datetime'])) : '';
+
+            $headerHtml = '<div class="header-row-content">
+                    <div class="logo-cell">' . $leftLogoHtml . '</div>
+                    <div class="header-text">
+                        <div class="subtitle">Republic of the Philippines</div>
+                        <div class="subtitle">Province of Camarines Sur</div>
+                        <div class="subtitle">CITY OF IRIGA</div>
+                        <div class="subtitle">SANGGUNIANG KABATAAN</div>
+                        <div class="title">ATTENDANCE REPORT</div>
+                        <div class="info-text">Event: ' . $eventTitle . '</div>
+                        <div class="info-text">Date: ' . htmlspecialchars($eventDate, ENT_QUOTES, 'UTF-8') . '</div>
+                    </div>
+                    <div class="logo-cell">' . $rightLogoHtml . '</div>
+                </div>';
+
+            $html = '<html><head><meta charset="UTF-8"><style>
+                @page { size: legal landscape; margin: 0.5in; }
+                body { font-family: Arial, sans-serif; font-size: 10px; margin: 0; padding: 0; }
+                table.report-table { width: 100%; border-collapse: collapse; }
+                th, td { border: 0.5px solid #000; padding: 5px; text-align: center; font-size: 9px; }
+                thead { display: table-header-group; }
+                tbody { display: table-row-group; }
+                tr { page-break-inside: avoid; }
+                thead tr.header-row th { border: none; padding: 0 0 6px 0; }
+                thead tr.column-row th { font-weight: bold; background-color: #f3f3f3; }
+                .header-row-content { display: flex; align-items: center; justify-content: space-between; }
+                .logo-cell { width: 70px; text-align: center; }
+                .logo { width: 60px; height: 60px; object-fit: contain; }
+                .logo-placeholder { width: 60px; height: 60px; border: 0.5px solid #999; display: inline-flex; align-items: center; justify-content: center; font-size: 7px; }
+                .header-text { text-align: center; flex: 1; }
+                .header-text .title { font-size: 16px; font-weight: bold; margin: 6px 0 4px 0; }
+                .header-text .subtitle { font-size: 12px; margin: 2px 0; text-transform: uppercase; letter-spacing: 0.5px; }
+                .header-text .info-text { font-size: 10px; margin: 1px 0; text-transform: none; }
+                .signatures { margin-top: 40px; display: table; width: 100%; page-break-inside: avoid; }
+                .signature-box { display: table-cell; text-align: center; width: 50%; padding: 0 20px; }
+                .signature-label { font-weight: bold; margin-bottom: 6px; }
+                .signature-line { border-bottom: 0.5px solid #000; margin: 20px auto 8px auto; height: 32px; width: 80%; }
+                .signature-role { font-weight: bold; }
+                </style></head><body>';
+
+            $html .= '<table class="report-table">
                 <thead>
-                    <tr>
-                        <th>No.</th>
-                        <th>KK Number</th>
-                        <th>Name</th>
-                        <th>Zone</th>
-                        <th>Time In</th>
-                        <th>Time Out</th>
-                        <th>Status</th>
+                    <tr class="header-row">
+                        <th colspan="7">' . $headerHtml . '</th>
+                    </tr>
+                    <tr class="column-row">
+                        <th style="width: 6%;">No.</th>
+                        <th style="width: 16%;">KK Number</th>
+                        <th style="width: 32%;">Name</th>
+                        <th style="width: 16%;">Zone</th>
+                        <th style="width: 10%;">Time In</th>
+                        <th style="width: 10%;">Time Out</th>
+                        <th style="width: 10%;">Status</th>
                     </tr>
                 </thead>
                 <tbody>';
 
             $rowNum = 1;
             foreach ($attendanceData as $attendance) {
-                $fullName = trim($attendance['last_name'] . ', ' . $attendance['first_name']);
+                $fullName = trim(($attendance['last_name'] ?? '') . ', ' . ($attendance['first_name'] ?? ''));
                 if (!empty($attendance['middle_name'])) {
                     $fullName .= ' ' . $attendance['middle_name'];
                 }
 
-                // Format status and time fields
                 $timeIn = '-';
                 $timeOut = '-';
                 $status = 'Absent';
-                
-                // Check time-in (prioritize AM, then PM)
+
                 if (!empty($attendance['time-in_am'])) {
                     $timeIn = date('h:i A', strtotime($attendance['time-in_am']));
                 } elseif (!empty($attendance['time-in_pm'])) {
                     $timeIn = date('h:i A', strtotime($attendance['time-in_pm']));
                 }
-                
-                // Check time-out (prioritize PM, then AM)
+
                 if (!empty($attendance['time-out_pm'])) {
                     $timeOut = date('h:i A', strtotime($attendance['time-out_pm']));
                 } elseif (!empty($attendance['time-out_am'])) {
                     $timeOut = date('h:i A', strtotime($attendance['time-out_am']));
                 }
-                
-                // Determine status
+
                 if (!empty($attendance['time-in_am']) || !empty($attendance['time-in_pm'])) {
                     $status = 'Present';
-                    if ((!empty($attendance['time-in_am']) && !empty($attendance['time-out_am'])) || 
+                    if ((!empty($attendance['time-in_am']) && !empty($attendance['time-out_am'])) ||
                         (!empty($attendance['time-in_pm']) && !empty($attendance['time-out_pm']))) {
                         $status = 'Complete';
                     }
@@ -3158,64 +3176,50 @@ class SKController extends BaseController
 
                 $html .= '<tr>
                     <td>' . $rowNum . '</td>
-                    <td>' . htmlspecialchars($attendance['user_id'] ?: '') . '</td>
-                    <td>' . htmlspecialchars($fullName) . '</td>
-                    <td>' . htmlspecialchars(ZoneHelper::getZoneName($attendance['zone_purok']) ?: 'N/A') . '</td>
-                    <td>' . $timeIn . '</td>
-                    <td>' . $timeOut . '</td>
-                    <td>' . $status . '</td>
+                    <td>' . htmlspecialchars($attendance['user_id'] ?? '', ENT_QUOTES, 'UTF-8') . '</td>
+                    <td>' . htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') . '</td>
+                    <td>' . htmlspecialchars(ZoneHelper::getZoneName($attendance['zone_purok'] ?? '') ?: 'N/A', ENT_QUOTES, 'UTF-8') . '</td>
+                    <td>' . htmlspecialchars($timeIn, ENT_QUOTES, 'UTF-8') . '</td>
+                    <td>' . htmlspecialchars($timeOut, ENT_QUOTES, 'UTF-8') . '</td>
+                    <td>' . htmlspecialchars($status, ENT_QUOTES, 'UTF-8') . '</td>
                 </tr>';
                 $rowNum++;
             }
 
             $html .= '</tbody></table>';
 
-            // Signatures section
             $html .= '<div class="signatures">
-                <div class="signature-section">
-                    <div>Prepared by:</div>
-                    <div class="signature-line">________________________</div>
-                    <div><strong>SK Secretary</strong></div>
+                <div class="signature-box">
+                    <div class="signature-label">Prepared by:</div>
+                    <div class="signature-line"></div>
+                    <div class="signature-role">SK Secretary</div>
                 </div>
-                <div class="signature-section">
-                    <div>Approved by:</div>
-                    <div class="signature-line">________________________</div>
-                    <div><strong>SK Chairperson</strong></div>
+                <div class="signature-box">
+                    <div class="signature-label">Approved by:</div>
+                    <div class="signature-line"></div>
+                    <div class="signature-role">SK Chairperson</div>
                 </div>
-                <div style="clear: both;"></div>
             </div>';
 
             $html .= '</body></html>';
 
-            // Use DomPDF to generate PDF
-            require_once FCPATH . '../vendor/autoload.php';
-            
-            $dompdf = new \Dompdf\Dompdf([
-                'enable_font_subsetting' => true,
-                'isRemoteEnabled' => true,
-                'defaultFont' => 'Arial'
-            ]);
-            
             $dompdf->loadHtml($html);
-            // Set custom paper size: 13in x 8.5in -> points (1in = 72pt)
-            // Use a portrait-oriented box and request 'landscape'. This yields a 13" x 8.5" landscape page.
             $dompdf->setPaper([0, 0, 612, 936], 'landscape');
             $dompdf->render();
 
-            // Save PDF file
             $outputDir = WRITEPATH . 'temp/';
             if (!is_dir($outputDir)) {
                 mkdir($outputDir, 0755, true);
             }
-            
+
             $fileName = 'Attendance_Report_' . date('Y-m-d') . '.pdf';
             $outputPath = $outputDir . $fileName;
-            
+
             file_put_contents($outputPath, $dompdf->output());
-            
+
             log_message('info', 'Attendance PDF document saved to: ' . $outputPath);
             return $outputPath;
-            
+
         } catch (\Exception $e) {
             log_message('error', 'Error in generateAttendancePDFDocument: ' . $e->getMessage());
             throw $e;
@@ -3315,6 +3319,8 @@ class SKController extends BaseController
                 'marginTop' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(0.5),
                 'marginBottom' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(0.5)
             ]);
+
+            $header = $section->addHeader();
             
             // Header styles
             $headerStyle = ['name' => 'Arial', 'size' => 12, 'bold' => true];
@@ -3324,7 +3330,7 @@ class SKController extends BaseController
             $tableCellStyle = ['name' => 'Arial', 'size' => 8];
             
             // Create header section with logos (following ped-officers format)
-            $headerTable = $section->addTable([
+            $headerTable = $header->addTable([
                 'borderSize' => 0,
                 'borderColor' => 'FFFFFF',
                 'width' => 100 * 50,
@@ -3389,7 +3395,7 @@ class SKController extends BaseController
             ]);
             
             // Add table header
-            $table->addRow();
+            $table->addRow(null, ['tblHeader' => true]);
             $table->addCell(800)->addText('No.', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             $table->addCell(1500)->addText('KK Number', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             $table->addCell(2500)->addText('Name', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
@@ -3453,7 +3459,7 @@ class SKController extends BaseController
                 'borderColor' => 'FFFFFF',
                 'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER
             ]);
-            $signatureTable->addRow();
+            $signatureTable->addRow(null, ['cantSplit' => true]);
             
             // Prepared by
             $preparedCell = $signatureTable->addCell(4000, ['valign' => 'center']);
@@ -4082,6 +4088,8 @@ class SKController extends BaseController
                 'marginTop' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(0.5),
                 'marginBottom' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(0.5),
             ]);
+
+            $header = $section->addHeader();
             
             // Header styles
             $headerStyle = ['name' => 'Arial', 'size' => 10, 'bold' => false];
@@ -4090,7 +4098,7 @@ class SKController extends BaseController
             $tableCellStyle = ['name' => 'Arial', 'size' => 7];
             
             // Create header section with logos
-            $headerTable = $section->addTable([
+            $headerTable = $header->addTable([
                 'borderSize' => 0,
                 'borderColor' => 'FFFFFF',
                 'width' => 100 * 50,
@@ -4183,7 +4191,7 @@ class SKController extends BaseController
             $paraCenter = ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER];
             
             // Add table header - 7 columns
-            $table->addRow();
+            $table->addRow(null, ['tblHeader' => true]);
             $table->addCell(400, $cellVAlignCenter)->addText('No.', $tableHeaderStyle, $paraCenter);
             $table->addCell(1000, $cellVAlignCenter)->addText('User ID', $tableHeaderStyle, $paraCenter);
             $table->addCell(2000, $cellVAlignCenter)->addText('Full Name', $tableHeaderStyle, $paraCenter);

@@ -37,6 +37,18 @@
             table-layout: auto;
         }
 
+        #myTable th:nth-child(3),
+        #myTable td:nth-child(3),
+        #myTable th:nth-child(4),
+        #myTable td:nth-child(4) {
+            white-space: normal !important;
+        }
+
+        #myTable td:nth-child(3),
+        #myTable td:nth-child(4) {
+            word-break: break-word;
+        }
+
         /* Mobile responsive adjustments */
         @media (max-width: 768px) {
             .status-tab {
@@ -121,11 +133,63 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Position column ellipsis and tooltip styles */
+        .position-cell {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            position: relative;
+            cursor: help;
+        }
+
+        .position-cell:hover::after {
+            content: attr(data-full-text);
+            position: absolute;
+            left: 0;
+            top: 100%;
+            z-index: 1000;
+            background-color: #1f2937;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            white-space: normal;
+            min-width: 200px;
+            max-width: 300px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            margin-top: 4px;
+            word-wrap: break-word;
+        }
+
+        /* Arrow for tooltip */
+        .position-cell:hover::before {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: 100%;
+            z-index: 1001;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-bottom: 6px solid #1f2937;
+        }
+
+        /* Occupied position styling */
+        option.position-occupied {
+            color: #9ca3af !important;
+            background-color: #f3f4f6 !important;
+            font-style: italic;
+        }
+
+        select option.position-occupied {
+            color: #9ca3af;
+        }
     </style>
         
         <!-- ===== MAIN CONTENT AREA ===== -->
         <div class="flex-1 flex flex-col min-h-0 ml-0 lg:ml-64 pt-16">
-            <main class="flex-1 overflow-auto p-4 lg:p-6 bg-gray-50">
+            <main class="flex-1 overflow-auto overflow-x-hidden p-4 lg:p-6 bg-gray-50">
                 <!-- Breadcrumbs -->
                 <nav class="flex mb-6" aria-label="Breadcrumb">
                     <ol class="inline-flex items-center space-x-2">
@@ -170,44 +234,53 @@
                     </div>
                 </div>
                 
-                <!-- Filter Tabs and Barangay Selector -->
+                <!-- Filter Tabs and Dropdowns -->
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
-                    <div class="p-6 border-b border-gray-200">
-                        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                            <!-- Position Filter Tabs -->
-                            <div class="flex flex-wrap gap-2">
-                                <button class="status-tab active px-4 py-2 rounded-lg text-sm font-medium transition-all" data-position="all">
-                                    All (<span id="countAll">0</span>)
-                                </button>
-                                <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all" data-position="president">
-                                    President (<span id="countPresident">0</span>)
-                                </button>
-                                <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all" data-position="vicepresident">
-                                    Vice President (<span id="countVicePresident">0</span>)
-                                </button>
-                                <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all" data-position="secretary">
-                                    Secretary (<span id="countSecretary">0</span>)
-                                </button>
-                                <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all" data-position="treasurer">
-                                    Treasurer (<span id="countTreasurer">0</span>)
-                                </button>
-                                <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all" data-position="others">
-                                    Others (<span id="countOthers">0</span>)
-                                </button>
+                    <div class="p-4">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <!-- Main Category Tabs -->
+                            <button class="status-tab active px-4 py-2 rounded-lg text-sm font-medium transition-all" data-category="all">
+                                All (<span id="countAll">0</span>)
+                            </button>
+                            <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all" data-category="officers">
+                                Officers (<span id="countOfficers">0</span>)
+                            </button>
+                            <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all" data-category="members">
+                                Members (<span id="countMembers">0</span>)
+                            </button>
+                            
+                            <!-- Vertical Divider -->
+                            <div class="hidden lg:block h-8 w-px bg-gray-300"></div>
+                            
+                            <!-- Position Dropdown -->
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm font-medium text-gray-600 whitespace-nowrap">Position:</span>
+                                <select id="positionFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">All Positions</option>
+                                    <option value="president">President</option>
+                                    <option value="vicepresident">Vice President</option>
+                                    <option value="secretary">Secretary</option>
+                                    <option value="treasurer">Treasurer</option>
+                                    <option value="auditor">Auditor</option>
+                                    <option value="pio">Public Information Officer</option>
+                                    <option value="sergeant">Sergeant at Arms</option>
+                                    <option value="member">Member</option>
+                                </select>
                             </div>
+                            
                             <!-- Barangay Filter -->
-                            <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-                                <span class="text-sm font-medium text-gray-600">Barangay:</span>
-                                <div class="flex gap-3">
-                                    <select id="barangayFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                        <option value="">All Barangays</option>
-                                        <!-- Barangay options will be populated dynamically -->
-                                    </select>
-                                    <button id="clearFilters" class="px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors">
-                                        Clear Filters
-                                    </button>
-                                </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm font-medium text-gray-600 whitespace-nowrap">Barangay:</span>
+                                <select id="barangayFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">All Barangays</option>
+                                    <!-- Barangay options will be populated dynamically -->
+                                </select>
                             </div>
+                            
+                            <!-- Clear Filters Button -->
+                            <button id="clearFilters" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors whitespace-nowrap">
+                                Clear Filters
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -241,10 +314,10 @@
                                                     <input type="checkbox" class="rowCheckbox form-checkbox h-4 w-4 text-blue-600" value="<?= esc($officer['id']) ?>">
                                                 </td>
                                                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900"><?= esc($officer['user_id']) ?></td>
-                                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <td class="px-4 py-4 text-sm text-gray-900">
                                                     <?= esc($officer['barangay_name'] ?? ($officer['barangay'] ?? '')) ?>
                                                 </td>
-                                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900"><?= esc($officer['last_name']) ?>, <?= esc($officer['first_name']) ?> <?= esc($officer['middle_name']) ?></td>
+                                                <td class="px-4 py-4 text-sm text-gray-900"><?= esc($officer['last_name']) ?>, <?= esc($officer['first_name']) ?> <?= esc($officer['middle_name']) ?></td>
                                                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900"><?= esc($officer['age']) ?></td>
                                                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900"><?= $officer['sex'] == '1' ? 'Male' : ($officer['sex'] == '2' ? 'Female' : '') ?></td>
                                                 <td class="px-4 py-4 whitespace-nowrap">
@@ -270,39 +343,26 @@
                                                 </td>
                                                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     <?php
-                                                        // Use position_display if set (for SK Chairpersons), otherwise use ped_position
-                                                        if (isset($officer['position_display'])) {
-                                                            echo esc($officer['position_display']);
-                                                        } else {
+                                                        $positionMap = [
+                                                            1 => 'President',
+                                                            2 => 'Vice President',
+                                                            3 => 'Secretary',
+                                                            4 => 'Treasurer',
+                                                            5 => 'Auditor',
+                                                            6 => 'Public Information Officer',
+                                                            7 => 'Sergeant at Arms'
+                                                        ];
+
+                                                        $positionText = trim($officer['position_display'] ?? '');
+                                                        if ($positionText === '') {
                                                             $pedPosition = isset($officer['ped_position']) ? (int)$officer['ped_position'] : 0;
-                                                            switch($pedPosition) {
-                                                                case 1:
-                                                                    echo 'SK Pederasyon President';
-                                                                    break;
-                                                                case 2:
-                                                                    echo 'SK Pederasyon Vice President';
-                                                                    break;
-                                                                case 3:
-                                                                    echo 'SK Pederasyon Secretary';
-                                                                    break;
-                                                                case 4:
-                                                                    echo 'SK Pederasyon Treasurer';
-                                                                    break;
-                                                                case 5:
-                                                                    echo 'SK Pederasyon Auditor';
-                                                                    break;
-                                                                case 6:
-                                                                    echo 'SK Pederasyon Public Information Officer';
-                                                                    break;
-                                                                case 7:
-                                                                    echo 'SK Pederasyon Sergeant at Arms';
-                                                                    break;
-                                                                default:
-                                                                    echo 'SK Pederasyon Member';
-                                                                    break;
-                                                            }
+                                                            $positionText = $positionMap[$pedPosition] ?? 'Member';
                                                         }
+                                                        $displayText = $positionText;
                                                     ?>
+                                                    <span class="position-cell" data-full-text="<?= esc($positionText) ?>">
+                                                        <?= esc($displayText) ?>
+                                                    </span>
                                                 </td>
                                                 <td class="px-4 py-4 whitespace-nowrap">
                                                     <button type="button" 
@@ -325,8 +385,8 @@
                                                     <svg class="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                                     </svg>
-                                                    <h3 class="text-lg font-medium text-gray-900 mb-2">No Pederasyon Officers found</h3>
-                                                    <p class="text-gray-500">There are no Pederasyon Officers in the database yet.</p>
+                                                    <h3 class="text-lg font-medium text-gray-900 mb-2">No Officers Found</h3>
+                                                    <p class="text-gray-500">No SK Chairpersons or Pederasyon Officers have been added yet.</p>
                                                 </div>
                                             </td>
                                         </tr>
@@ -374,7 +434,7 @@
                     <option value="5">Auditor</option>
                     <option value="6">Public Information Officer</option>
                     <option value="7">Sergeant at Arms</option>
-                    <option value="NULL">SK Pederasyon Member</option>
+                    <option value="NULL">Member</option>
                 </select>
             </div>
 
@@ -458,7 +518,7 @@
                             <option value="5">Auditor</option>
                             <option value="6">Public Information Officer</option>
                             <option value="7">Sergeant at Arms</option>
-                            <option value="NULL">SK Pederasyon Member</option>
+                            <option value="NULL">Member</option>
                         </select>
                         <button id="saveOfficerPositionBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm">
                             Update Position
@@ -684,12 +744,130 @@
         // Store original counts globally
         let originalCounts = {
             all: 0,
-            president: 0,
-            vicepresident: 0,
-            secretary: 0,
-            treasurer: 0,
-            others: 0
+            officers: 0,
+            members: 0
         };
+        
+        // Function to mark occupied positions in the dropdown
+        function updateOccupiedPositions(currentUserId) {
+            // Get all occupied positions from the table
+            const occupiedPositions = {};
+            
+            // Scan through all table rows to find occupied positions
+            $('#myTable tbody tr').each(function() {
+                const rowUserId = $(this).find('.rowCheckbox').val();
+                // Get the full position text from data-full-text attribute (handles truncated display)
+                const positionCell = $(this).find('td').eq(7).find('.position-cell');
+                const positionText = positionCell.length > 0 ? positionCell.attr('data-full-text') : $(this).find('td').eq(7).text().trim();
+                
+                // Skip the current user being edited
+                if (rowUserId == currentUserId) {
+                    return;
+                }
+                
+                // Map position text to position values
+                const positionMap = {
+                    'President': '1',
+                    'Vice President': '2',
+                    'Secretary': '3',
+                    'Treasurer': '4',
+                    'Auditor': '5',
+                    'Public Information Officer': '6',
+                    'Sergeant at Arms': '7'
+                };
+                
+                // Check if this row has an occupied position
+                for (const [posName, posValue] of Object.entries(positionMap)) {
+                    if (positionText.includes(posName)) {
+                        occupiedPositions[posValue] = true;
+                        break;
+                    }
+                }
+            });
+            
+            // Update the dropdown options
+            $('#modalOfficerPosition option').each(function() {
+                const optionValue = $(this).val();
+                
+                // Skip the "Member" option (NULL)
+                if (optionValue === 'NULL' || optionValue === '0') {
+                    $(this).removeClass('position-occupied');
+                    return;
+                }
+                
+                // Mark as occupied if position is taken
+                if (occupiedPositions[optionValue]) {
+                    $(this).addClass('position-occupied');
+                    const currentText = $(this).text();
+                    if (!currentText.includes('(Occupied)')) {
+                        $(this).text(currentText + ' (Occupied)');
+                    }
+                } else {
+                    $(this).removeClass('position-occupied');
+                    $(this).text($(this).text().replace(' (Occupied)', ''));
+                }
+            });
+        }
+        
+        // Function to mark occupied positions in bulk modal (excluding selected users)
+        function updateOccupiedPositionsForBulk(excludeUserIds) {
+            const occupiedPositions = {};
+            
+            // Scan through all table rows to find occupied positions
+            $('#myTable tbody tr').each(function() {
+                const rowUserId = $(this).find('.rowCheckbox').val();
+                // Get the full position text from data-full-text attribute (handles truncated display)
+                const positionCell = $(this).find('td').eq(7).find('.position-cell');
+                const positionText = positionCell.length > 0 ? positionCell.attr('data-full-text') : $(this).find('td').eq(7).text().trim();
+                
+                // Skip users that are selected for bulk update
+                if (excludeUserIds.includes(rowUserId)) {
+                    return;
+                }
+                
+                // Map position text to position values
+                const positionMap = {
+                    'President': '1',
+                    'Vice President': '2',
+                    'Secretary': '3',
+                    'Treasurer': '4',
+                    'Auditor': '5',
+                    'Public Information Officer': '6',
+                    'Sergeant at Arms': '7'
+                };
+                
+                // Check if this row has an occupied position
+                for (const [posName, posValue] of Object.entries(positionMap)) {
+                    if (positionText.includes(posName)) {
+                        occupiedPositions[posValue] = true;
+                        break;
+                    }
+                }
+            });
+            
+            // Update the bulk modal dropdown options
+            $('#bulkNewPosition option').each(function() {
+                const optionValue = $(this).val();
+                
+                // Skip the "Member" option (NULL)
+                if (optionValue === 'NULL') {
+                    $(this).removeClass('position-occupied');
+                    return;
+                }
+                
+                // Mark as occupied if position is taken
+                if (occupiedPositions[optionValue]) {
+                    $(this).addClass('position-occupied');
+                    const currentText = $(this).text();
+                    if (!currentText.includes('(Occupied)')) {
+                        $(this).text(currentText + ' (Occupied)');
+                    }
+                } else {
+                    $(this).removeClass('position-occupied');
+                    $(this).text($(this).text().replace(' (Occupied)', ''));
+                }
+            });
+        }
         
         $(document).ready(function () {
             // Clean up placeholder rows to avoid DataTables column mismatch when no data
@@ -771,23 +949,25 @@
 
             // Calculate original counts from all data (not filtered)
             function calculateOriginalCounts() {
-                let allCount = 0, presidentCount = 0, vicePresidentCount = 0, secretaryCount = 0, treasurerCount = 0, othersCount = 0;
+                let allCount = 0, officersCount = 0, membersCount = 0;
                 
                 // Count all rows, not just visible ones
                 $('#myTable tbody tr').each(function() {
                     if ($(this).find('td').length > 1) { // Skip "no data" rows
                         const position = $(this).find('td').eq(7).text().trim();
                         allCount++;
-                        if (position === 'SK Pederasyon President') {
-                            presidentCount++;
-                        } else if (position === 'SK Pederasyon Vice President') {
-                            vicePresidentCount++;
-                        } else if (position === 'SK Pederasyon Secretary') {
-                            secretaryCount++;
-                        } else if (position === 'SK Pederasyon Treasurer') {
-                            treasurerCount++;
+                        
+                        // Officers: President, VP, Secretary, Treasurer, Auditor, PIO, Sergeant
+                        if (position === 'President' || 
+                            position === 'Vice President' ||
+                            position === 'Secretary' ||
+                            position === 'Treasurer' ||
+                            position === 'Auditor' ||
+                            position === 'Public Information Officer' ||
+                            position === 'Sergeant at Arms') {
+                            officersCount++;
                         } else {
-                            othersCount++; // Auditor, Public Information Officer, Sergeant at Arms, Member
+                            membersCount++; // Member
                         }
                     }
                 });
@@ -795,65 +975,80 @@
                 // Store original counts
                 originalCounts = {
                     all: allCount,
-                    president: presidentCount,
-                    vicepresident: vicePresidentCount,
-                    secretary: secretaryCount,
-                    treasurer: treasurerCount,
-                    others: othersCount
+                    officers: officersCount,
+                    members: membersCount
                 };
             }
 
             // Update displayed counts (always show original counts)
             function updateDisplayedCounts() {
                 $('#countAll').text(originalCounts.all);
-                $('#countPresident').text(originalCounts.president);
-                $('#countVicePresident').text(originalCounts.vicepresident);
-                $('#countSecretary').text(originalCounts.secretary);
-                $('#countTreasurer').text(originalCounts.treasurer);
-                $('#countOthers').text(originalCounts.others);
+                $('#countOfficers').text(originalCounts.officers);
+                $('#countMembers').text(originalCounts.members);
             }
 
             // Position tab filtering logic
-            function setActivePositionTab(tab) {
+            function setActiveCategoryTab(tab) {
                 $('.status-tab').removeClass('active bg-blue-500 text-white')
                     .addClass('bg-gray-100');
-                $('.status-tab[data-position="president"]').removeClass('bg-gray-100').addClass('bg-blue-100');
-                $('.status-tab[data-position="vicepresident"]').removeClass('bg-gray-100').addClass('bg-blue-100');
-                $('.status-tab[data-position="secretary"]').removeClass('bg-gray-100').addClass('bg-blue-100');
-                $('.status-tab[data-position="treasurer"]').removeClass('bg-gray-100').addClass('bg-green-100');
-                $('.status-tab[data-position="others"]').removeClass('bg-gray-100').addClass('bg-yellow-100');
                 
-                tab.removeClass('bg-gray-100 bg-blue-100 bg-blue-100 bg-blue-100 bg-green-100 bg-yellow-100')
+                tab.removeClass('bg-gray-100')
                     .addClass('active bg-blue-500 text-white');
             }
 
             // Apply filters with DataTable integration
             function applyFilters() {
-                const positionFilter = $('.status-tab.active').data('position');
+                const categoryFilter = $('.status-tab.active').data('category');
+                const positionFilter = $('#positionFilter').val();
                 const barangayFilter = $('#barangayFilter').val();
                 
                 // Clear existing DataTable search
                 table.search('').columns().search('');
                 
-                // Apply position filter using DataTable column search
-                if (positionFilter !== 'all') {
-                    let searchTerms = [];
+                // Apply category and position filters using DataTable column search
+                let searchTerms = [];
+                
+                if (categoryFilter === 'officers') {
+                    // Show all officers (President, VP, Secretary, Treasurer, Auditor, PIO, Sergeant)
+                    searchTerms = [
+                        'President',
+                        'Vice President',
+                        'Secretary',
+                        'Treasurer',
+                        'Auditor',
+                        'Public Information Officer',
+                        'Sergeant at Arms'
+                    ];
+                } else if (categoryFilter === 'members') {
+                    // Show only members
+                    searchTerms = ['Member'];
+                }
+                
+                // If a specific position is selected in dropdown, override category filter
+                if (positionFilter) {
+                    searchTerms = [];
                     if (positionFilter === 'president') {
-                        searchTerms = ['SK Pederasyon President'];
+                        searchTerms = ['President'];
                     } else if (positionFilter === 'vicepresident') {
-                        searchTerms = ['SK Pederasyon Vice President'];
+                        searchTerms = ['Vice President'];
                     } else if (positionFilter === 'secretary') {
-                        searchTerms = ['SK Pederasyon Secretary'];
+                        searchTerms = ['Secretary'];
                     } else if (positionFilter === 'treasurer') {
-                        searchTerms = ['SK Pederasyon Treasurer'];
-                    } else if (positionFilter === 'others') {
-                        searchTerms = ['SK Pederasyon Auditor', 'SK Pederasyon Public Information Officer', 'SK Pederasyon Sergeant at Arms', 'SK Pederasyon Member'];
+                        searchTerms = ['Treasurer'];
+                    } else if (positionFilter === 'auditor') {
+                        searchTerms = ['Auditor'];
+                    } else if (positionFilter === 'pio') {
+                        searchTerms = ['Public Information Officer'];
+                    } else if (positionFilter === 'sergeant') {
+                        searchTerms = ['Sergeant at Arms'];
+                    } else if (positionFilter === 'member') {
+                        searchTerms = ['Member'];
                     }
-                    
-                    if (searchTerms.length > 0) {
-                        const regex = searchTerms.join('|');
-                        table.column(7).search(regex, true, false);
-                    }
+                }
+                
+                if (searchTerms.length > 0) {
+                    const regex = searchTerms.join('|');
+                    table.column(7).search(regex, true, false);
                 }
                 
                 // Apply barangay filter using DataTable column search
@@ -868,11 +1063,17 @@
                 updateDisplayedCounts();
             }
 
-            // Position tab click handlers
+            // Category tab click handlers
             $('.status-tab').on('click', function() {
-                setActivePositionTab($(this));
+                setActiveCategoryTab($(this));
                 applyFilters();
-                localStorage.setItem('activePositionTab', $(this).data('position'));
+                localStorage.setItem('activeCategoryTab', $(this).data('category'));
+            });
+
+            // Position dropdown change handler
+            $('#positionFilter').on('change', function() {
+                applyFilters();
+                localStorage.setItem('activePositionFilter', $(this).val());
             });
 
             // Barangay filter change handler
@@ -883,10 +1084,12 @@
 
             // Clear filters
             $('#clearFilters').on('click', function() {
-                $('.status-tab[data-position="all"]').trigger('click');
+                $('.status-tab[data-category="all"]').trigger('click');
+                $('#positionFilter').val('');
                 $('#barangayFilter').val('');
                 table.search('').columns().search('').draw();
-                localStorage.removeItem('activePositionTab');
+                localStorage.removeItem('activeCategoryTab');
+                localStorage.removeItem('activePositionFilter');
                 localStorage.removeItem('activeBarangayFilter');
                 updateDisplayedCounts();
                 showNotification('Filters cleared successfully', 'success');
@@ -894,10 +1097,12 @@
 
             // Function to restore saved filters
             function restoreFilters() {
-                const savedPositionTab = localStorage.getItem('activePositionTab') || 'all';
+                const savedCategoryTab = localStorage.getItem('activeCategoryTab') || 'all';
+                const savedPositionFilter = localStorage.getItem('activePositionFilter') || '';
                 const savedBarangayFilter = localStorage.getItem('activeBarangayFilter') || '';
                 
-                $('.status-tab[data-position="' + savedPositionTab + '"]').trigger('click');
+                $('.status-tab[data-category="' + savedCategoryTab + '"]').trigger('click');
+                $('#positionFilter').val(savedPositionFilter);
                 $('#barangayFilter').val(savedBarangayFilter);
                 applyFilters();
             }
@@ -929,6 +1134,10 @@
             
             // Open bulk change modal
             $('#bulkChangeBtn').on('click', function() {
+                // Update occupied positions for bulk modal (excluding selected users)
+                const selectedIds = $('.rowCheckbox:checked').map(function() { return $(this).val(); }).get();
+                updateOccupiedPositionsForBulk(selectedIds);
+                
                 $('#bulkChangeModal').removeClass('hidden').css('display', 'flex');
             });
             
@@ -959,6 +1168,8 @@
                     success: function(response) {
                         if (response.success) {
                             showNotification(response.message || 'Officer positions updated successfully!', 'success');
+                            
+                            // Reload the page to reflect changes and check for officer warning
                             setTimeout(() => {
                                 location.reload();
                             }, 1000);
@@ -1019,9 +1230,15 @@
                             $('#modalUserBarangayDetail').text(barangayStr);
                             
                             $('#modalUserId').text(u.user_id || '');
+                            // Store the database ID for later use in position updates
+                            $('#modalUserId').data('db-id', u.id);
                             $('#modalUserAge').text(u.age + ' years old');
                             $('#modalUserSex').text(u.sex == '1' ? 'Male' : (u.sex == '2' ? 'Female' : ''));
                             $('#modalOfficerPosition').val(String(u.ped_position || 0));
+                            
+                            // Mark occupied positions in grey
+                            updateOccupiedPositions(u.id);
+                            
                             $('#modalUserEmail').text(u.email || '');
                             
                             if (u.birthdate) {
@@ -1157,11 +1374,12 @@
             });
 
             // Save officer position functionality
-            let pendingPositionChange = { userId: null, newPosition: null };
+            let pendingPositionChange = { userId: null, dbId: null, newPosition: null };
             
             $('#saveOfficerPositionBtn').on('click', function() {
-                // Store the intended change
+                // Store the intended change with both user_id and database id
                 pendingPositionChange.userId = $('#modalUserId').text();
+                pendingPositionChange.dbId = $('#modalUserId').data('db-id');
                 pendingPositionChange.newPosition = $('#modalOfficerPosition').val();
                 
                 // Show confirmation modal
@@ -1171,20 +1389,21 @@
 
             // Confirm position change
             $('#confirmRoleChangeBtn').on('click', function() {
-                const userId = pendingPositionChange.userId;
+                const dbId = pendingPositionChange.dbId;
                 const newPosition = pendingPositionChange.newPosition;
+                
+                // Validate that we have a database ID
+                if (!dbId) {
+                    showNotification('Error: Unable to identify user. Please try again.', 'error');
+                    $('#roleChangeModal').addClass('hidden').css('display', 'none');
+                    $('#userDetailModal').addClass('hidden');
+                    return;
+                }
                 
                 // Show loading state
                 $(this).prop('disabled', true).text('Updating...');
                 
-                // Find the user row to get the database ID
-                const userRow = $(`tr[data-ped_username]`).filter(function() {
-                    return $(this).find('td').eq(1).text().trim() === userId;
-                });
-                
-                const dbId = userRow.find('.rowCheckbox').val();
-                
-                // Handle "NULL" string for SK Pederasyon Member position
+                // Handle "NULL" string for Member position
                 let pedPositionValue;
                 if (newPosition === 'NULL') {
                     pedPositionValue = 'NULL';
@@ -1195,7 +1414,7 @@
                 $.ajax({
                     url: '<?= base_url('updateOfficerPosition') ?>',
                     method: 'POST',
-                    data: { user_id: dbId || userId, ped_position: pedPositionValue },
+                    data: { user_id: dbId, ped_position: pedPositionValue },
                     dataType: 'json',
                     success: function(response) {
                         if (response.success) {
@@ -1220,6 +1439,21 @@
                         // Close both modals
                         $('#roleChangeModal').addClass('hidden').css('display', 'none');
                         $('#userDetailModal').addClass('hidden');
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            showNotification(response.message, 'success');
+                            
+                            // Reload the page to reflect changes and check for officer warning
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1000);
+                        } else {
+                            showNotification(response.message || 'Failed to update position', 'error');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        showNotification('Error: ' + error, 'error');
                     }
                 });
             });
@@ -1235,6 +1469,55 @@
                 e.stopPropagation();
             });
         });
+        
+        // ==================== OFFICER WARNING MODAL ==================== //
+        
+        // Show officer warning modal when no officers with credentials remain
+        function showOfficerWarningModal(officers) {
+            const modal = document.getElementById('officerWarningModal');
+            const currentOfficersSection = document.getElementById('currentOfficersSection');
+            const currentOfficersTableBody = document.getElementById('currentOfficersTableBody');
+            
+            if (!modal) return;
+            
+            // If there are officers, show the section and populate the table
+            if (officers && officers.length > 0) {
+                currentOfficersSection.classList.remove('hidden');
+                currentOfficersTableBody.innerHTML = '';
+                
+                officers.forEach(officer => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50';
+                    row.innerHTML = `
+                        <td class="px-4 py-2 text-gray-900">${officer.name}</td>
+                        <td class="px-4 py-2 text-gray-700">${officer.position}</td>
+                        <td class="px-4 py-2 text-gray-700 font-mono text-xs">${officer.username}</td>
+                    `;
+                    currentOfficersTableBody.appendChild(row);
+                });
+            } else {
+                currentOfficersSection.classList.add('hidden');
+            }
+            
+            // Show modal
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';
+        }
+        
+        // Close officer warning modal
+        function closeOfficerWarningModal() {
+            const modal = document.getElementById('officerWarningModal');
+            if (!modal) return;
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+        }
+        
+        // Download credentials from warning modal
+        function downloadCredentialsFromWarning() {
+            closeOfficerWarningModal();
+            // Open the credentials modal
+            openPedCredentialsPreviewModal();
+        }
     </script>
 
     <script>
@@ -1558,7 +1841,7 @@
                         6: 'PIO',
                         7: 'Sergeant at Arms'
                     };
-                    const position = positionMap[parseInt(official.ped_position)] || 'SK Pederasyon Member';
+                    const position = positionMap[parseInt(official.ped_position)] || 'Member';
                     const pedPassword = (official.ped_password && official.ped_password.length > 20) ? '********' : (official.ped_password || 'N/A');
                     
                     return [
@@ -1833,94 +2116,109 @@
             let presidentName = '';
 
             try {
-                // Build a quick lookup for user info by user_id
                 <?php if (!empty($ped_officers)): ?>
                 const pedOfficersRaw = <?= json_encode($ped_officers) ?>;
                 <?php else: ?>
                 const pedOfficersRaw = [];
                 <?php endif; ?>
-                
-                // Ensure we have a valid array - handle both array and object cases
+
                 let pedOfficersList = [];
                 if (Array.isArray(pedOfficersRaw)) {
                     pedOfficersList = pedOfficersRaw;
                 } else if (pedOfficersRaw && typeof pedOfficersRaw === 'object') {
-                    // Convert object to array if needed
                     pedOfficersList = Object.values(pedOfficersRaw);
                 }
-                
-                const byId = Object.create(null);
-                if (pedOfficersList.length > 0) {
-                    pedOfficersList.forEach(u => { 
-                        if (u && u.user_id != null) {
-                            byId[String(u.user_id)] = u; 
-                        }
-                    });
-                }
 
-                // Prefer DataTables API if initialized to ensure we iterate all rows reliably
-                // Simple and reliable approach: always use DOM iteration
-                $('#myTable tbody tr:visible').each(function () {
-                    try {
-                        const $row = $(this);
-                        const $cells = $row.find('td');
-                        if ($cells.length < 8) return; // Skip rows with insufficient columns
+                const positionLabels = {
+                    1: 'President',
+                    2: 'Vice President',
+                    3: 'Secretary',
+                    4: 'Treasurer',
+                    5: 'Auditor',
+                    6: 'Public Information Officer',
+                    7: 'Sergeant at Arms'
+                };
 
-                        // Extract cell values safely
-                        const statusSpan = $cells.eq(6).find('span');
-                        const statusText = statusSpan.length > 0 ? statusSpan.text().trim() : $cells.eq(6).text().trim();
-                        
-                        // Only include accepted officers
-                        if (statusText.toLowerCase() !== 'accepted') return;
+                const formatBirthday = (value) => {
+                    if (!value) return 'N/A';
+                    const date = new Date(value);
+                    if (Number.isNaN(date.getTime()) || date.getFullYear() < 1900) return 'N/A';
+                    return date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+                };
 
-                        const displayUserId = $cells.eq(1).text().trim();
-                        const barangay = $cells.eq(2).text().trim();
-                        const name = $cells.eq(3).text().trim();
-                        const age = $cells.eq(4).text().trim();
-                        const sex = $cells.eq(5).text().trim();
-                        const positionText = $cells.eq(7).text().trim();
+                const resolveSex = (value) => {
+                    const normalized = String(value ?? '').trim().toLowerCase();
+                    if (normalized === '1' || normalized === 'male') return 'Male';
+                    if (normalized === '2' || normalized === 'female') return 'Female';
+                    return '';
+                };
 
-                        // Skip if essential data is missing
-                        if (!displayUserId || !name) return;
+                const formatDisplayName = (user) => {
+                    const last = (user.last_name ?? '').toString().trim();
+                    const first = (user.first_name ?? '').toString().trim();
+                    const middle = (user.middle_name ?? '').toString().trim();
+                    let composed = '';
+                    if (last) composed += last;
+                    if (first) composed += (composed ? ', ' : '') + first;
+                    if (middle) composed += ' ' + middle;
+                    return composed || formatFullNameFromUser(user);
+                };
 
-                        const userData = byId[String(displayUserId)];
-                        let birthday = 'N/A';
-                        let position = 'SK Pederasyon Member';
-                        
-                        if (userData) {
-                            if (userData.birthdate) {
-                                const birthDate = new Date(userData.birthdate);
-                                if (!isNaN(birthDate) && birthDate.getFullYear() > 1900) {
-                                    birthday = birthDate.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
-                                }
+                pedOfficersList.forEach((user) => {
+                    if (!user) return;
+                    const status = parseInt(user.status ?? 0, 10);
+                    if (status !== 2) return; // only accepted officials
+
+                    const pedPos = parseInt(user.ped_position ?? 0, 10);
+                    if (Number.isNaN(pedPos) || pedPos < 1 || pedPos > 7) {
+                        return; // only official positions 1-7
+                    }
+
+                    const position = positionLabels[pedPos] ?? 'Member';
+                    if (pedPos === 1) {
+                        presidentName = formatFullNameFromUser(user);
+                    } else if (pedPos === 3) {
+                        secretaryName = formatFullNameFromUser(user);
+                    }
+
+                    const officialRecord = {
+                        userId: (user.user_id ?? '').toString().trim(),
+                        barangay: (user.barangay_name ?? user.barangay ?? '').toString().trim(),
+                        name: formatDisplayName(user),
+                        age: user.age !== undefined && user.age !== null ? String(user.age) : '',
+                        birthday: formatBirthday(user.birthdate ?? user.birth_date ?? null),
+                        sex: resolveSex(user.sex),
+                        position
+                    };
+
+                    if (!officialRecord.age) {
+                        const rawBirth = user.birthdate ?? user.birth_date ?? null;
+                        const birthDate = rawBirth ? new Date(rawBirth) : null;
+                        if (birthDate && !Number.isNaN(birthDate.getTime())) {
+                            const today = new Date();
+                            let computedAge = today.getFullYear() - birthDate.getFullYear();
+                            const monthDiff = today.getMonth() - birthDate.getMonth();
+                            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                                computedAge--;
                             }
-                            
-                            // Determine position based on ped_position
-                            const pedPos = parseInt(userData.ped_position) || 0;
-                            switch(pedPos) {
-                                case 1: position = 'SK Perasyon President'; presidentName = formatFullNameFromUser(userData); break;
-                                case 2: position = 'SK Perasyon Vice President'; break;
-                                case 3: position = 'SK Perasyon Secretary'; secretaryName = formatFullNameFromUser(userData); break;
-                                case 4: position = 'SK Perasyon Treasurer'; break;
-                                case 5: position = 'SK Perasyon Auditor'; break;
-                                case 6: position = 'SK Perasyon Public Information Officer'; break;
-                                case 7: position = 'SK Perasyon Sergeant at Arms'; break;
-                                default: position = 'SK Pederasyon Member'; break;
+                            if (computedAge >= 0 && computedAge <= 120) {
+                                officialRecord.age = String(computedAge);
                             }
                         }
+                    }
 
-                        officials.push({ 
-                            userId: displayUserId, 
-                            barangay, 
-                            name, 
-                            age, 
-                            birthday, 
-                            sex, 
-                            position 
-                        });
-                    } catch (rowError) {
-                        console.warn('Error processing row:', rowError);
-                        // Continue processing other rows
+                    if (!officialRecord.sex) {
+                        officialRecord.sex = 'N/A';
+                    }
+                    if (!officialRecord.barangay) {
+                        officialRecord.barangay = 'N/A';
+                    }
+                    if (!officialRecord.age) {
+                        officialRecord.age = 'N/A';
+                    }
+
+                    if (officialRecord.userId) {
+                        officials.push(officialRecord);
                     }
                 });
 
@@ -1946,6 +2244,7 @@
                 // Update UI
                 const noOfficialsEl = document.getElementById('noOfficials');
                 const signatureEl = document.getElementById('signatureSection');
+                const countEl = document.getElementById('officialListCount');
                 if (officials.length > 0) {
                     displayOfficialList(officials);
                     if (noOfficialsEl) noOfficialsEl.classList.add('hidden');
@@ -1955,7 +2254,7 @@
                     if (signatureEl) signatureEl.classList.add('hidden');
                     document.getElementById('officialListTableBody').innerHTML = '';
                 }
-                document.getElementById('officialListCount').textContent = `Total Officials: ${officials.length}`;
+                if (countEl) countEl.textContent = `Total Officials: ${officials.length}`;
             } catch (err) {
                 console.error('Failed to load official list:', err);
                 console.error('Error details:', {
@@ -1971,7 +2270,8 @@
                 if (noOfficialsEl) noOfficialsEl.classList.remove('hidden');
                 const signatureEl = document.getElementById('signatureSection');
                 if (signatureEl) signatureEl.classList.add('hidden');
-                document.getElementById('officialListCount').textContent = 'Total Officials: 0';
+                const countEl = document.getElementById('officialListCount');
+                if (countEl) countEl.textContent = 'Total Officials: 0';
             } finally {
                 // Always reveal content and hide loader
                 if (loading) loading.classList.add('hidden');
@@ -1983,17 +2283,22 @@
         function displayOfficialList(officials) {
             const tbody = document.getElementById('officialListTableBody');
             tbody.innerHTML = '';
+            const formatCell = (value) => {
+                if (value === undefined || value === null) return 'N/A';
+                const trimmed = value.toString().trim();
+                return trimmed !== '' ? trimmed : 'N/A';
+            };
             officials.forEach((official, index) => {
                 const row = document.createElement('tr');
                 row.className = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
                 row.innerHTML = `
-                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${official.userId}</td>
-                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${official.barangay}</td>
-                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${official.name}</td>
-                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${official.age}</td>
-                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${official.birthday}</td>
-                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${official.sex}</td>
-                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${official.position}</td>`;
+                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${formatCell(official.userId)}</td>
+                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${formatCell(official.barangay)}</td>
+                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${formatCell(official.name)}</td>
+                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${formatCell(official.age)}</td>
+                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${formatCell(official.birthday)}</td>
+                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${formatCell(official.sex)}</td>
+                    <td class="border border-gray-300 text-center px-2 py-2 text-gray-900 text-xs">${formatCell(official.position)}</td>`;
                 tbody.appendChild(row);
             });
             loadBarangayLogo();
@@ -2115,14 +2420,17 @@
                     imageUrlToDataUrl(irigaLogoUrl)
                 ]);
 
-                // Generate PDF with loaded logos
                 const { jsPDF } = window.jspdf;
-                const doc = new jsPDF('l', 'mm', 'a4'); // landscape orientation
+                const doc = new jsPDF('l', 'mm', 'a4');
                 const pageWidth = doc.internal.pageSize.getWidth();
+                const pageHeight = doc.internal.pageSize.getHeight();
                 const pageCenter = pageWidth / 2;
-                let headerY = 20;
+                const headerTop = 20;
+                const tableWidth = 225;
+                const contentTop = headerTop + 48;
+                const bottomMargin = 25;
+                const horizontalMargin = (pageWidth - tableWidth) / 2;
 
-                // Helper to get image format from data URL
                 const getImgFmt = (dataUrl) => {
                     if (!dataUrl) return 'PNG';
                     if (dataUrl.includes('image/jpeg') || dataUrl.includes('image/jpg')) return 'JPEG';
@@ -2130,43 +2438,39 @@
                     return 'PNG';
                 };
 
-                // Calculate positioning to match the layout
-                const logoSize = 15;
-                const textBlockWidth = 100;
+                const drawHeader = () => {
+                    const logoSize = 20;
+                    const leftLogoX = 35;
+                    const rightLogoX = pageWidth - 35 - logoSize;
+                    if (pederasyonLogoDataUrl) {
+                        doc.addImage(pederasyonLogoDataUrl, getImgFmt(pederasyonLogoDataUrl), leftLogoX, headerTop, logoSize, logoSize, undefined, 'FAST');
+                    }
+                    if (irigaLogoDataUrl) {
+                        doc.addImage(irigaLogoDataUrl, getImgFmt(irigaLogoDataUrl), rightLogoX, headerTop, logoSize, logoSize, undefined, 'FAST');
+                    }
 
-                // Add logos if available - positioned directly beside the text block
-                if (pederasyonLogoDataUrl) {
-                    doc.addImage(pederasyonLogoDataUrl, getImgFmt(pederasyonLogoDataUrl), pageCenter - (textBlockWidth/2) - logoSize - 5, headerY + 8, logoSize, logoSize, undefined, 'FAST');
-                }
-                if (irigaLogoDataUrl) {
-                    doc.addImage(irigaLogoDataUrl, getImgFmt(irigaLogoDataUrl), pageCenter + (textBlockWidth/2) + 5, headerY + 8, logoSize, logoSize, undefined, 'FAST');
-                }
+                    doc.setFontSize(14);
+                    doc.setFont(undefined, 'bold');
+                    doc.text('REPUBLIC OF THE PHILIPPINES', pageCenter, headerTop + 6, { align: 'center' });
+                    doc.text('PROVINCE OF CAMARINES SUR', pageCenter, headerTop + 12, { align: 'center' });
+                    doc.text('CITY OF IRIGA', pageCenter, headerTop + 18, { align: 'center' });
+                    doc.setFontSize(10);
+                    doc.setFont(undefined, 'normal');
+                    doc.text('PANLUNGSOD NA PEDERASYON NG MGA', pageCenter, headerTop + 23, { align: 'center' });
+                    doc.text('SANGGUNIANG KABATAAN NG IRIGA', pageCenter, headerTop + 28, { align: 'center' });
 
-                // Header text (centered) - positioned between the logos
-                doc.setFontSize(14);
-                doc.setFont(undefined, 'bold');
-                doc.text('REPUBLIC OF THE PHILIPPINES', pageCenter, headerY + 8, { align: 'center' });
-                doc.text('PROVINCE OF CAMARINES SUR', pageCenter, headerY + 16, { align: 'center' });
-                doc.text('CITY OF IRIGA', pageCenter, headerY + 24, { align: 'center' });
-                doc.setFontSize(10);
-                doc.setFont(undefined, 'normal');
-                doc.text('PANLUNGSOD NA PEDERASYON NG MGA', pageCenter, headerY + 28, { align: 'center' });
-                doc.text('SANGGUNIANG KABATAAN NG IRIGA', pageCenter, headerY + 34, { align: 'center' });
+                    doc.setLineWidth(0.3);
+                    doc.line(30, headerTop + 32, pageWidth - 30, headerTop + 32);
 
-                // Line
-                doc.line(30, headerY + 40, pageWidth - 30, headerY + 40);
+                    doc.setFontSize(12);
+                    doc.setFont(undefined, 'bold');
+                    doc.text('PANLUNGSOD NA PEDERASYON NG MGA KABATAAN', pageCenter, headerTop + 40, { align: 'center' });
+                    doc.setFontSize(10);
+                    doc.text('OFFICIAL LIST', pageCenter, headerTop + 45, { align: 'center' });
+                };
 
-                // Title
-                doc.setFontSize(12);
-                doc.setFont(undefined, 'bold');
-                doc.text('PANLUNGSOD NA PEDERASYON NG MGA KABATAAN', pageCenter, headerY + 50, { align: 'center' });
-                doc.setFontSize(10);
-                doc.text('OFFICIAL LIST', pageCenter, headerY + 58, { align: 'center' });
-
-                // Table data
-                const tableData = [];
                 const headers = ['User ID', 'Barangay', 'Name', 'Age', 'Birthday', 'Sex', 'Position'];
-
+                const tableData = [];
                 $('#officialListTableBody tr').each(function() {
                     const row = [];
                     $(this).find('td').each(function() {
@@ -2177,15 +2481,11 @@
                     }
                 });
 
-                // Add centered table with proper margins
-                const tableWidth = 225;
-                const startX = (pageWidth - tableWidth) / 2;
-
                 doc.autoTable({
                     head: [headers],
                     body: tableData,
-                    startY: headerY + 65,
-                    margin: { left: startX },
+                    startY: contentTop,
+                    margin: { left: horizontalMargin, top: contentTop, right: horizontalMargin, bottom: bottomMargin },
                     styles: {
                         fontSize: 8,
                         cellPadding: 1,
@@ -2209,20 +2509,32 @@
                         fillColor: [255, 255, 255]
                     },
                     columnStyles: {
-                        0: { cellWidth: 25 }, // User ID
-                        1: { cellWidth: 35 }, // Barangay
-                        2: { cellWidth: 60 }, // Name
-                        3: { cellWidth: 20 }, // Age
-                        4: { cellWidth: 25 }, // Birthday
-                        5: { cellWidth: 20 }, // Sex
-                        6: { cellWidth: 40 }  // Position
+                        0: { cellWidth: 25 },
+                        1: { cellWidth: 35 },
+                        2: { cellWidth: 60 },
+                        3: { cellWidth: 20 },
+                        4: { cellWidth: 25 },
+                        5: { cellWidth: 20 },
+                        6: { cellWidth: 40 }
                     },
-                    tableWidth: 'wrap',
-                    theme: 'grid'
+                    tableWidth: tableWidth,
+                    theme: 'grid',
+                    didDrawPage: () => {
+                        drawHeader();
+                    }
                 });
 
-                // Signature section - centered and aligned
-                const finalY = doc.lastAutoTable.finalY + 20;
+                const totalPages = doc.internal.getNumberOfPages();
+                doc.setPage(totalPages);
+
+                let finalY = doc.lastAutoTable && doc.lastAutoTable.finalY ? doc.lastAutoTable.finalY + 20 : contentTop;
+                const signatureHeight = 40;
+                if (finalY + signatureHeight > pageHeight - bottomMargin) {
+                    doc.addPage();
+                    drawHeader();
+                    finalY = contentTop;
+                }
+
                 const signatureSpacing = 80;
                 const leftSignatureX = pageCenter - signatureSpacing;
                 const rightSignatureX = pageCenter + signatureSpacing - 40;
@@ -2230,20 +2542,18 @@
                 doc.setFont(undefined, 'normal');
                 doc.setFontSize(10);
 
-                // Left signature (Prepared by)
+                const secretaryName = window.pederasyonSecretary || '________________';
                 doc.text('Prepared by:', leftSignatureX, finalY, { align: 'center' });
                 doc.text('________________', leftSignatureX, finalY + 20, { align: 'center' });
                 doc.setFont(undefined, 'bold');
-                const secretaryName = window.pederasyonSecretary || '________________';
                 doc.text(secretaryName, leftSignatureX, finalY + 25, { align: 'center' });
                 doc.setFont(undefined, 'normal');
                 doc.text('Pederasyon Secretary', leftSignatureX, finalY + 30, { align: 'center' });
 
-                // Right signature (Approved by)
+                const presidentName = window.pederasyonPresident || '________________';
                 doc.text('Approved by:', rightSignatureX, finalY, { align: 'center' });
                 doc.text('________________', rightSignatureX, finalY + 20, { align: 'center' });
                 doc.setFont(undefined, 'bold');
-                const presidentName = window.pederasyonPresident || '________________';
                 doc.text(presidentName, rightSignatureX, finalY + 25, { align: 'center' });
                 doc.setFont(undefined, 'normal');
                 doc.text('Pederasyon President', rightSignatureX, finalY + 30, { align: 'center' });
@@ -2344,6 +2654,15 @@
         
         // Wait for DOM to be fully loaded
         document.addEventListener('DOMContentLoaded', function() {
+            // Check on page load if there are no officers with credentials
+            <?php if (isset($has_officers_with_credentials) && !$has_officers_with_credentials): ?>
+                // No officers with credentials - show warning modal after page loads
+                setTimeout(function() {
+                    const officers = <?= json_encode($officers_with_credentials ?? []) ?>;
+                    showOfficerWarningModal(officers);
+                }, 500); // Small delay to ensure page is fully loaded
+            <?php endif; ?>
+            
             // Official List button
             const officialListBtn = document.getElementById('downloadOfficialListBtn');
             if (officialListBtn) {
@@ -2500,8 +2819,7 @@
                             </svg>
                         </div>
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">No Pederasyon Officers Found</h3>
-                        <p class="text-sm text-gray-600 mb-2">No SK Chairpersons or Pederasyon Officers (Accepted status) found.</p>
-                        <p class="text-xs text-gray-500 mt-3">Required: (user_type=2 OR user_type=3), with status=Accepted</p>
+                        <p class="text-sm text-gray-600 mb-2">No SK Chairpersons or Pederasyon Officers found.</p>
                     </div>
                 </div>
             </div>
@@ -2533,6 +2851,136 @@
                             Excel
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Officer Warning Modal - No Officers with Credentials -->
+    <div id="officerWarningModal" class="fixed inset-0 z-[99999] hidden items-center justify-center p-4" style="background-color: rgba(0, 0, 0, 0.5);">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl relative overflow-hidden flex flex-col">
+            <!-- Modal Header -->
+            <div class="bg-red-50 border-b border-red-200 px-6 py-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-xl font-bold text-red-900">System Management Warning</h3>
+                        <p class="text-sm text-red-700 mt-1">Action Required: No Officers with Login Credentials</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="px-6 py-6 overflow-y-auto max-h-[60vh]">
+                <div class="space-y-6">
+                    <!-- Warning Message -->
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <p class="text-red-800 text-sm leading-relaxed">
+                            <strong class="font-semibold">⚠️ Critical Notice:</strong> There are currently no Pederasyon officers assigned to key positions with login credentials. 
+                            At least one officer must be assigned to one of the following positions to manage the system:
+                        </p>
+                    </div>
+
+                    <!-- Required Positions List -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h4 class="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Positions with Login Credentials:
+                        </h4>
+                        <ul class="space-y-2 text-sm text-blue-800">
+                            <li class="flex items-center gap-2">
+                                <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                                President
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                                Vice President
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                                Secretary
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                                Treasurer
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                                Auditor
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                                Public Information Officer
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                                Sergeant at Arms
+                            </li>
+                        </ul>
+                        <p class="text-xs text-blue-700 mt-3 italic">
+                            Note: Members do not have login credentials.
+                        </p>
+                    </div>
+
+                    <!-- Current Officers Section (conditionally shown) -->
+                    <div id="currentOfficersSection" class="hidden">
+                        <h4 class="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                            Current Officers with Credentials:
+                        </h4>
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
+                            <table class="w-full text-sm">
+                                <thead class="bg-gray-100 border-b border-gray-200">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left font-semibold text-gray-700">Name</th>
+                                        <th class="px-4 py-2 text-left font-semibold text-gray-700">Position</th>
+                                        <th class="px-4 py-2 text-left font-semibold text-gray-700">Username</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="currentOfficersTableBody" class="divide-y divide-gray-200">
+                                    <!-- Officers will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Action Required -->
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <h4 class="font-semibold text-yellow-900 mb-2 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            What You Need to Do:
+                        </h4>
+                        <ol class="list-decimal list-inside space-y-1 text-sm text-yellow-800">
+                            <li>Assign at least one officer to a key position (listed above)</li>
+                            <li>Download the official credentials for the assigned officer(s)</li>
+                            <li>Provide the credentials to the officer(s) so they can log in and manage the system</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="bg-gray-50 border-t border-gray-200 px-6 py-4">
+                <div class="flex flex-col sm:flex-row justify-end gap-3">
+                    <button onclick="downloadCredentialsFromWarning()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        Download Credentials
+                    </button>
+                    <button onclick="closeOfficerWarningModal()" class="px-4 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-medium rounded-lg transition-colors">
+                        I Understand
+                    </button>
                 </div>
             </div>
         </div>

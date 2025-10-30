@@ -236,7 +236,7 @@
                                 <svg class="w-3 h-3 text-gray-400 mx-2" fill="none" viewBox="0 0 6 10">
                                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
                                 </svg>
-                                <span class="text-sm font-medium text-gray-600">Youth Lists</span>
+                                <span class="text-sm font-medium text-gray-600">SK Chairman</span>
                             </div>
                         </li>
                     </ol>
@@ -245,7 +245,7 @@
                 <!-- Header Section -->
                 <div class="mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                     <div>
-                        <h3 class="text-2xl font-bold text-gray-900">Youth Lists</h3>
+                        <h3 class="text-2xl font-bold text-gray-900">SK Chairman</h3>
                         <p class="text-sm text-gray-600 mt-1">Manage user types and credentials</p>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-3">
@@ -270,10 +270,10 @@
                         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                             <!-- Role Status Tabs -->
                             <div class="flex flex-wrap gap-2">
-                                <button class="status-tab active bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="all">
+                                <button class="status-tab bg-gray-100 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="all">
                                     All (<span id="countAll">0</span>)
                                 </button>
-                                <button class="status-tab bg-yellow-100 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="sk">
+                                <button class="status-tab active bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="sk">
                                     SK Chairperson (<span id="countSK">0</span>)
                                 </button>
                                 <button class="status-tab bg-red-100 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="kk">
@@ -1002,10 +1002,9 @@
 
             // Clear filters
             $('#clearFilters').on('click', function() {
-                $('.status-tab[data-role="all"]').trigger('click');
+                $('.status-tab[data-role="sk"]').trigger('click'); // Changed from 'all' to 'sk'
                 $('#statusFilter').val('all');
                 $('#barangayFilter').val('');
-                table.search('').columns().search('').draw();
                 localStorage.removeItem('activeRoleTab');
                 localStorage.removeItem('activeStatusFilter');
                 localStorage.removeItem('activeBarangayFilter');
@@ -1015,7 +1014,7 @@
 
             // Function to restore saved filters
             function restoreFilters() {
-                const savedRoleTab = localStorage.getItem('activeRoleTab') || 'all';
+                const savedRoleTab = localStorage.getItem('activeRoleTab') || 'sk'; // Default to 'sk' instead of 'all'
                 const savedStatusFilter = localStorage.getItem('activeStatusFilter') || 'all';
                 const savedBarangayFilter = localStorage.getItem('activeBarangayFilter') || '';
                 
@@ -1842,10 +1841,14 @@
         
         function generatePDFWithLogos(doc, pederasyonLogoData, irigaLogoData, button, originalHTML) {
             const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
             const centerX = pageWidth / 2;
-            let y = 20;
+            const tableWidth = 190;
+            const headerTop = 18;
+            const contentTop = 70;
+            const bottomMargin = 25;
+            const horizontalMargin = (pageWidth - tableWidth) / 2;
 
-            // Helper to get image format from data URL
             const getImgFmt = (dataUrl) => {
                 if (!dataUrl) return 'PNG';
                 if (dataUrl.includes('image/jpeg') || dataUrl.includes('image/jpg')) return 'JPEG';
@@ -1853,35 +1856,34 @@
                 return 'PNG';
             };
 
-            // Add logos if available (same as credentials)
-            const logoSize = 25;
-            if (pederasyonLogoData) {
-                doc.addImage(pederasyonLogoData, getImgFmt(pederasyonLogoData), 40, 15, logoSize, logoSize, undefined, 'FAST');
-            }
-            if (irigaLogoData) {
-                doc.addImage(irigaLogoData, getImgFmt(irigaLogoData), 232, 15, logoSize, logoSize, undefined, 'FAST');
-            }
-            
-            // Header text (centered) - same as credentials
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(12);
-            doc.text("REPUBLIC OF THE PHILIPPINES", centerX, 20, { align: 'center' });
-            doc.text("PROVINCE OF CAMARINES SUR", centerX, 25, { align: 'center' });
-            doc.text("CITY OF IRIGA", centerX, 30, { align: 'center' });
-            
-            doc.setFont("helvetica", "normal");
-            doc.setFontSize(10);
-            doc.text("PANLUNGSOD NA PEDERASYON NG MGA", centerX, 35, { align: 'center' });
-            doc.text("SANGGUNIANG KABATAAN", centerX, 39, { align: 'center' });
-            
-            // Title
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(12);
-            doc.text("SANGGUNIANG KABATAAN", centerX, 55, { align: 'center' });
-            doc.text("OFFICIAL LIST", centerX, 60, { align: 'center' });
-            y = 68;
-            
-            // Table data - get from modal table
+            const drawHeader = () => {
+                const logoSize = 25;
+                const leftLogoX = 40;
+                const rightLogoX = pageWidth - 40 - logoSize;
+                if (pederasyonLogoData) {
+                    doc.addImage(pederasyonLogoData, getImgFmt(pederasyonLogoData), leftLogoX, headerTop, logoSize, logoSize, undefined, 'FAST');
+                }
+                if (irigaLogoData) {
+                    doc.addImage(irigaLogoData, getImgFmt(irigaLogoData), rightLogoX, headerTop, logoSize, logoSize, undefined, 'FAST');
+                }
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(12);
+                doc.text('REPUBLIC OF THE PHILIPPINES', centerX, headerTop, { align: 'center' });
+                doc.text('PROVINCE OF CAMARINES SUR', centerX, headerTop + 5, { align: 'center' });
+                doc.text('CITY OF IRIGA', centerX, headerTop + 10, { align: 'center' });
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                doc.text('PANLUNGSOD NA PEDERASYON NG MGA', centerX, headerTop + 16, { align: 'center' });
+                doc.text('SANGGUNIANG KABATAAN', centerX, headerTop + 20, { align: 'center' });
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(12);
+                doc.text('SANGGUNIANG KABATAAN', centerX, headerTop + 35, { align: 'center' });
+                doc.text('OFFICIAL LIST', centerX, headerTop + 40, { align: 'center' });
+            };
+
             const tableData = [];
             $('#officialListTableBody tr').each(function() {
                 const row = [];
@@ -1892,12 +1894,11 @@
                     tableData.push(row);
                 }
             });
-            
-            // Add table with same styling as credentials
+
             doc.autoTable({
                 head: [['User ID', 'Full Name', 'Barangay', 'Gender', 'Age', 'Birthdate', 'Position']],
                 body: tableData,
-                startY: y,
+                startY: contentTop,
                 styles: { 
                     fontSize: 7,
                     cellPadding: 1.5,
@@ -1926,14 +1927,20 @@
                     5: { cellWidth: 25, halign: 'center' }, // Birthdate
                     6: { cellWidth: 35, halign: 'center' }  // Position
                 },
-                tableWidth: 190,
-                margin: { left: (287 - 190) / 2 }, // Center table on A4 landscape (297mm width)
+                tableWidth: tableWidth,
+                margin: { left: horizontalMargin, top: contentTop, bottom: bottomMargin, right: horizontalMargin },
                 theme: 'striped',
                 alternateRowStyles: {
                     fillColor: [245, 245, 245]
+                },
+                didDrawPage: () => {
+                    drawHeader();
                 }
             });
-            
+
+            const totalPages = doc.internal.getNumberOfPages();
+            doc.setPage(totalPages);
+
             // Get Pederasyon President and Secretary names from PHP data
             let presidentName = '';
             let secretaryName = '';
@@ -1956,16 +1963,22 @@
                     }
                 }
             });
-            
-            // Signature section - same positioning as credentials
-            const finalY = doc.lastAutoTable.finalY + 15;
+
+            let finalY = doc.lastAutoTable && doc.lastAutoTable.finalY ? doc.lastAutoTable.finalY + 15 : contentTop;
+            const signatureHeight = 35;
+            if (finalY + signatureHeight > pageHeight - bottomMargin) {
+                doc.addPage();
+                drawHeader();
+                finalY = contentTop;
+            }
+
             const signatureSpacing = 60;
             const leftSignatureX = centerX - signatureSpacing;
             const rightSignatureX = centerX + signatureSpacing;
-            
+
             doc.setFont("helvetica", "normal");
             doc.setFontSize(9);
-            
+
             // Left signature (Prepared by - Secretary)
             doc.text('Prepared by:', leftSignatureX, finalY, { align: 'center' });
             doc.text('_________________________', leftSignatureX, finalY + 18, { align: 'center' });
@@ -1973,7 +1986,7 @@
             doc.text(secretaryName || '_________________________', leftSignatureX, finalY + 18, { align: 'center' });
             doc.setFont("helvetica", "normal");
             doc.text('Secretary', leftSignatureX, finalY + 23, { align: 'center' });
-            
+
             // Right signature (Approved by - President)
             doc.text('Approved by:', rightSignatureX, finalY, { align: 'center' });
             doc.text('_________________________', rightSignatureX, finalY + 18, { align: 'center' });
@@ -3078,21 +3091,26 @@
             <!-- Content Wrapper (takes remaining vertical space) -->
             <div class="flex-1 flex overflow-hidden">
                 <!-- Left: User Info -->
-                <div class="w-[40%] bg-gray-50 p-6 flex flex-col items-center justify-start overflow-y-auto">
+                <div class="w-[40%] bg-gray-50 p-6 flex flex-col items-center justify-start relative overflow-hidden">
                     <!-- Hidden fields for role-change checks -->
                     <input type="hidden" id="pedModalUserBarangayId" value="">
                     <input type="hidden" id="pedModalUserStatusValue" value="">
                     <input type="hidden" id="pedModalUserType" value="">
                     <input type="hidden" id="pedModalDbId" value="">
                     <input type="hidden" id="pedModalDisplayUserId" value="">
-                    <div class="w-40 h-40 bg-gray-300 mb-4 overflow-hidden shadow-md border-4 border-white flex items-center justify-center relative" style="min-width:220px; min-height:220px; max-width:220px; max-height:220px;">
-                        <img id="pedModalUserPhoto" src="" alt="User Profile" class="w-full h-full object-cover" style="aspect-ratio:1/1; min-width:220px; min-height:220px; max-width:220px; max-height:220px; border-radius:0;">
-                    </div>
-                    <h4 id="pedModalUserFullName" class="text-lg font-semibold text-gray-900 text-center mb-1"></h4>
-                    <p id="pedModalUserBarangay" class="text-sm text-gray-500 text-center mb-4"></p>
-                    <!-- User Info Sections -->
-                    <div class="w-full space-y-6">
-                        <!-- Basic Information -->
+
+                    <div id="pedModalInfoScroll" class="w-full flex-1 overflow-y-auto pr-2 pb-6">
+                        <div class="flex flex-col items-center">
+                            <div class="w-40 h-40 bg-gray-300 mb-4 overflow-hidden shadow-md border-4 border-white flex items-center justify-center relative" style="min-width:220px; min-height:220px; max-width:220px; max-height:220px;">
+                                <img id="pedModalUserPhoto" src="" alt="User Profile" class="w-full h-full object-cover" style="aspect-ratio:1/1; min-width:220px; min-height:220px; max-width:220px; max-height:220px; border-radius:0;">
+                            </div>
+                            <h4 id="pedModalUserFullName" class="text-lg font-semibold text-gray-900 text-center mb-1"></h4>
+                            <p id="pedModalUserBarangay" class="text-sm text-gray-500 text-center mb-4"></p>
+                        </div>
+
+                        <!-- User Info Sections -->
+                        <div class="w-full space-y-6">
+                            <!-- Basic Information -->
                         <div>
                             <h5 class="text-sm font-medium text-gray-900 mb-3 pb-1 border-b border-gray-200">Basic Information</h5>
                             <div class="grid grid-cols-2 gap-4">
@@ -3143,9 +3161,10 @@
                                 <div id="pedAssemblyReasonContainer" class="hidden"><label class="block text-sm font-medium text-gray-500 mb-1">If No, Why?</label><p id="pedModalUserAssemblyReason" class="text-sm text-gray-900"></p></div>
                             </div>
                         </div>
+                        </div>
                     </div>
 
-                    <!-- Officer Position Card (bottom area) -->
+                    <!-- Officer Position Card (fixed footer) -->
                     <div id="pedRoleCard" class="w-full mt-4 bg-white rounded-xl p-4 shadow-sm border border-gray-100">
                         <div class="flex items-center gap-2 mb-2">
                             <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3282,8 +3301,7 @@
                             </svg>
                         </div>
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">No SK Chairpersons Found</h3>
-                        <p class="text-sm text-gray-600 mb-2">No SK Chairpersons or Pederasyon Officers (Accepted status) found.</p>
-                        <p class="text-xs text-gray-500 mt-3">Required: (user_type=2 AND sk_position=1) OR user_type=3, with status=Accepted</p>
+                        <p class="text-sm text-gray-600 mb-2">No SK Chairpersons or Pederasyon Officers found.</p>
                     </div>
                 </div>
             </div>

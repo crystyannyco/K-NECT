@@ -211,12 +211,13 @@ class PederasyonController extends BaseController
             $user['barangay_name'] = $barangayId !== null && isset($barangayMap[$barangayId])
                 ? $barangayMap[$barangayId]
                 : ($barangayId ?? '');
-            
-            // For SK Chairpersons (user_type = 2), override position display to "SK Pederasyon Member"
-            if (isset($user['user_type']) && (int)$user['user_type'] === 2) {
-                $user['position_display'] = 'SK Pederasyon Member';
+
+            $pedPosition = isset($user['ped_position']) ? (int)$user['ped_position'] : null;
+            $user['position_display'] = $this->getPedPositionLabel($pedPosition);
+            if (isset($user['user_type']) && (int)$user['user_type'] === 2 && $pedPosition === null) {
+                $user['position_display'] = 'Member';
             }
-            
+
             return $user;
         }, $pedOfficers);
 
@@ -225,6 +226,12 @@ class PederasyonController extends BaseController
         $data['field_mappings'] = DemographicsHelper::allMapsForJs();
         // Explicitly provide barangay_map to avoid helper calls in the view
         $data['barangay_map'] = $barangayMap;
+        
+        // Check if there are officers with credentials and pass to view
+        $officersCheck = $this->checkPederasyonOfficersWithCredentials();
+        $data['has_officers_with_credentials'] = $officersCheck['hasOfficers'];
+        $data['officers_with_credentials'] = $officersCheck['officers'];
+        
         return 
             $this->loadView('K-NECT/Pederasyon/template/header') .
             $this->loadView('K-NECT/Pederasyon/template/sidebar') .
@@ -509,23 +516,14 @@ class PederasyonController extends BaseController
             return $this->response->setJSON(['success' => false, 'message' => 'User not found']);
         }
         
-        // Check position limits - ensure only 1 person per position (except null - SK Pederasyon Member)
+        // Check position limits - ensure only 1 person per position (except null - Member)
         if ($pedPosition !== null) {
             $existingUserWithPosition = $userModel->where('ped_position', $pedPosition)
                                                    ->where('id !=', $userId)
                                                    ->first();
             
             if ($existingUserWithPosition) {
-                $positionNames = [
-                    1 => 'SK Pederasyon President',
-                    2 => 'SK Pederasyon Vice President',
-                    3 => 'SK Pederasyon Secretary',
-                    4 => 'SK Pederasyon Treasurer',
-                    5 => 'SK Pederasyon Auditor',
-                    6 => 'SK Pederasyon Public Information Officer',
-                    7 => 'SK Pederasyon Sergeant at Arms'
-                ];
-                
+                $positionNames = $this->getPedPositionMap();
                 $positionName = $positionNames[$pedPosition] ?? 'Unknown Position';
                 $currentHolderName = $existingUserWithPosition['first_name'] . ' ' . $existingUserWithPosition['last_name'];
                 
@@ -593,6 +591,17 @@ class PederasyonController extends BaseController
                 $response['showCredentialsModal'] = true;
             }
             
+            // Check if there are any Pederasyon officers with credentials remaining
+            $officersCheck = $this->checkPederasyonOfficersWithCredentials();
+            if (!$officersCheck['hasOfficers']) {
+                $response['warning'] = true;
+                $response['warningMessage'] = 'No Pederasyon officers with login credentials remain. At least one officer is required to manage the system.';
+                $response['showOfficerWarning'] = true;
+                $response['remainingOfficers'] = [];
+            } else {
+                $response['remainingOfficers'] = $officersCheck['officers'];
+            }
+            
             return $this->response->setJSON($response);
         } else {
             return $this->response->setJSON(['success' => false, 'message' => 'Failed to update officer position']);
@@ -623,23 +632,14 @@ class PederasyonController extends BaseController
 
         $userModel = new UserModel();
         
-        // Check position limits - ensure only 1 person per position (except null - SK Pederasyon Member)
+        // Check position limits - ensure only 1 person per position (except null - Member)
         if ($pedPosition !== null) {
             $existingUserWithPosition = $userModel->where('ped_position', $pedPosition)
                                                    ->whereNotIn('id', $officerIds)
                                                    ->first();
             
             if ($existingUserWithPosition) {
-                $positionNames = [
-                    1 => 'SK Pederasyon President',
-                    2 => 'SK Pederasyon Vice President',
-                    3 => 'SK Pederasyon Secretary',
-                    4 => 'SK Pederasyon Treasurer',
-                    5 => 'SK Pederasyon Auditor',
-                    6 => 'SK Pederasyon Public Information Officer',
-                    7 => 'SK Pederasyon Sergeant at Arms'
-                ];
-                
+                $positionNames = $this->getPedPositionMap();
                 $positionName = $positionNames[$pedPosition] ?? 'Unknown Position';
                 $currentHolderName = $existingUserWithPosition['first_name'] . ' ' . $existingUserWithPosition['last_name'];
                 
@@ -651,16 +651,7 @@ class PederasyonController extends BaseController
             
             // Also check if more than 1 user is selected for positions 1-7
             if (count($officerIds) > 1) {
-                $positionNames = [
-                    1 => 'SK Pederasyon President',
-                    2 => 'SK Pederasyon Vice President',
-                    3 => 'SK Pederasyon Secretary',
-                    4 => 'SK Pederasyon Treasurer',
-                    5 => 'SK Pederasyon Auditor',
-                    6 => 'SK Pederasyon Public Information Officer',
-                    7 => 'SK Pederasyon Sergeant at Arms'
-                ];
-                
+                $positionNames = $this->getPedPositionMap();
                 $positionName = $positionNames[$pedPosition] ?? 'Unknown Position';
                 
                 return $this->response->setJSON([
@@ -738,6 +729,17 @@ class PederasyonController extends BaseController
                 $response['showCredentialsModal'] = true;
             }
             
+            // Check if there are any Pederasyon officers with credentials remaining
+            $officersCheck = $this->checkPederasyonOfficersWithCredentials();
+            if (!$officersCheck['hasOfficers']) {
+                $response['warning'] = true;
+                $response['warningMessage'] = 'No Pederasyon officers with login credentials remain. At least one officer is required to manage the system.';
+                $response['showOfficerWarning'] = true;
+                $response['remainingOfficers'] = [];
+            } else {
+                $response['remainingOfficers'] = $officersCheck['officers'];
+            }
+            
             return $this->response->setJSON($response);
         } else {
             return $this->response->setJSON(['success' => false, 'message' => 'Failed to update officer positions']);
@@ -761,13 +763,17 @@ class PederasyonController extends BaseController
             $profileController = new ProfileController();
             $users = $profileController->getAllUsersWithExtendedInfo();
             $users = $profileController->processUsersForMemberListing($users, 'pederasyon');
-            
-            // Filter only officials (SK Chairperson and Pederasyon Officers with Accepted status)
-            $officials = array_filter($users, function($user) {
-                $userType = isset($user['user_type']) ? (int)$user['user_type'] : 1;
-                $status = isset($user['status']) ? (int)$user['status'] : 1;
-                return ($userType === 2 || $userType === 3) && $status === 2; // SK Chairperson or Pederasyon Officer, Accepted
-            });
+
+            $positionMap = $this->getPedPositionMap();
+
+            // Limit to accepted Pederasyon officers with defined positions (1-7)
+            $officials = array_values(array_filter($users, function($user) use ($positionMap) {
+                $userType = isset($user['user_type']) ? (int)$user['user_type'] : 0;
+                $status = isset($user['status']) ? (int)$user['status'] : 0;
+                $pedPosition = isset($user['ped_position']) ? (int)$user['ped_position'] : 0;
+
+                return $userType === 3 && $status === 2 && isset($positionMap[$pedPosition]);
+            }));
 
             if (empty($officials)) {
                 return $this->response->setJSON(['success' => false, 'message' => 'No officials found for the official list']);
@@ -817,6 +823,8 @@ class PederasyonController extends BaseController
             
             $phpWord = new \PhpOffice\PhpWord\PhpWord();
             log_message('info', 'PHPWord instance created successfully');
+
+            $positionMap = $this->getPedPositionMap();
         
             // Set document properties
             $properties = $phpWord->getDocInfo();
@@ -843,15 +851,17 @@ class PederasyonController extends BaseController
             $tableHeaderStyle = ['name' => 'Arial', 'size' => 8, 'bold' => true];
             $tableCellStyle = ['name' => 'Arial', 'size' => 8];
             
-            // Create header section with logos
-            $headerTable = $section->addTable([
+            // Use a repeating section header so it appears on every page
+            $header = $section->addHeader();
+
+            $headerTable = $header->addTable([
                 'borderSize' => 0,
                 'borderColor' => 'FFFFFF',
                 'width' => 100 * 50,
                 'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER
             ]);
             $headerTable->addRow();
-            
+
             // Left logo cell (Pederasyon)
             $leftCell = $headerTable->addCell(2000, ['valign' => 'center']);
             if (isset($logos['pederasyon'])) {
@@ -872,7 +882,7 @@ class PederasyonController extends BaseController
             } else {
                 $leftCell->addText('PEDERASYON LOGO', $subHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
             }
-            
+
             // Center text cell
             $centerCell = $headerTable->addCell(6000, ['valign' => 'center']);
             $centerCell->addText('REPUBLIC OF THE PHILIPPINES', $headerStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
@@ -880,7 +890,7 @@ class PederasyonController extends BaseController
             $centerCell->addText('CITY OF IRIGA', $headerStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             $centerCell->addText('PANLUNGSOD NA PEDERASYON NG MGA', $subHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             $centerCell->addText('SANGGUNIANG KABATAAN NG IRIGA', $subHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-            
+
             // Right logo cell (Iriga City)
             $rightCell = $headerTable->addCell(2000, ['valign' => 'center']);
             if (isset($logos['iriga_city'])) {
@@ -901,12 +911,13 @@ class PederasyonController extends BaseController
             } else {
                 $rightCell->addText('IRIGA LOGO', $subHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
             }
-            
-            // Add horizontal line and title
-            $section->addTextBreak();
-            $section->addText('PANLUNGSOD NA PEDERASYON NG MGA SANGGUNIANG KABATAAN', $titleStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-            $section->addText('OFFICIAL LIST', $titleStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-            $section->addTextBreak();
+
+            $header->addTextBreak();
+            $header->addText('PANLUNGSOD NA PEDERASYON NG MGA SANGGUNIANG KABATAAN', $titleStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $header->addText('OFFICIAL LIST', $titleStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+
+            // Provide spacing between the header and table content
+            $section->addTextBreak(2);
             
             // Create data table
             $table = $section->addTable([
@@ -918,7 +929,7 @@ class PederasyonController extends BaseController
             ]);
             
             // Add table header
-            $table->addRow();
+            $table->addRow(null, ['tblHeader' => true]);
             $table->addCell(1200)->addText('User ID', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             $table->addCell(2500)->addText('Full Name', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             $table->addCell(1800)->addText('Barangay', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
@@ -929,49 +940,37 @@ class PederasyonController extends BaseController
             
             // Process officials and add to table
             foreach ($officials as $official) {
-                $userType = isset($official['user_type']) ? (int)$official['user_type'] : 1;
-                $status = isset($official['status']) ? (int)$official['status'] : 1;
-                
-                if (($userType === 2 || $userType === 3) && $status === 2) {
-                    // Format data
-                    $userId = $official['user_id'] ?: '';
-                    $barangay = BarangayHelper::getBarangayName($official['barangay']);
-                    
-                    $fullName = esc($official['last_name']);
-                    if (!empty($official['first_name'])) {
-                        $fullName .= ', ' . esc($official['first_name']);
-                    }
-                    if (!empty($official['middle_name'])) {
-                        $fullName .= ' ' . esc($official['middle_name']);
-                    }
-                    
-                    $age = $official['age'] ?: '';
-                    $birthday = $official['birthdate'] ? date('m/d/Y', strtotime($official['birthdate'])) : '';
-                    $sex = $official['sex'] == '1' ? 'Male' : ($official['sex'] == '2' ? 'Female' : '');
-                    
-                    // Determine position based on ped_position
-                    $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : 0;
-                    $position = 'SK Pederasyon Member';
-                    switch($pedPosition) {
-                        case 1: $position = 'President'; break;
-                        case 2: $position = 'Vice President'; break;
-                        case 3: $position = 'Secretary'; break;
-                        case 4: $position = 'Treasurer'; break;
-                        case 5: $position = 'Auditor'; break;
-                        case 6: $position = 'Public Information Officer'; break;
-                        case 7: $position = 'Sergeant at Arms'; break;
-                    }
-                    
-                    // Add row to table
-                    $table->addRow();
-                    $table->addCell()->addText($userId, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-                    $table->addCell()->addText($fullName, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-                    $table->addCell()->addText($barangay, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-                    $table->addCell()->addText($sex, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-                    $table->addCell()->addText($age, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-                    $table->addCell()->addText($birthday, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-                    $table->addCell()->addText($position, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : 0;
+                if (!isset($positionMap[$pedPosition])) {
+                    continue;
                 }
+
+                $userId = $official['user_id'] ?? '';
+                $barangay = BarangayHelper::getBarangayName($official['barangay'] ?? '');
+
+                $fullName = esc($official['last_name'] ?? '');
+                if (!empty($official['first_name'])) {
+                    $fullName .= ', ' . esc($official['first_name']);
+                }
+                if (!empty($official['middle_name'])) {
+                    $fullName .= ' ' . esc($official['middle_name']);
+                }
+
+                $age = $official['age'] ?? '';
+                $birthday = !empty($official['birthdate']) ? date('m/d/Y', strtotime($official['birthdate'])) : '';
+                $sexValue = $official['sex'] ?? null;
+                $sex = $sexValue == '1' ? 'Male' : ($sexValue == '2' ? 'Female' : '');
+
+                $position = $positionMap[$pedPosition];
+
+                $table->addRow();
+                $table->addCell()->addText($userId, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $table->addCell()->addText($fullName, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $table->addCell()->addText($barangay, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $table->addCell()->addText($sex, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $table->addCell()->addText($age, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $table->addCell()->addText($birthday, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $table->addCell()->addText($position, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             }
             
             // Add signature section
@@ -1121,13 +1120,17 @@ class PederasyonController extends BaseController
             $profileController = new ProfileController();
             $users = $profileController->getAllUsersWithExtendedInfo();
             $users = $profileController->processUsersForMemberListing($users, 'pederasyon');
-            
-            // Filter only officials (SK Chairperson and Pederasyon Officers with Accepted status)
-            $officials = array_filter($users, function($user) {
-                $userType = isset($user['user_type']) ? (int)$user['user_type'] : 1;
-                $status = isset($user['status']) ? (int)$user['status'] : 1;
-                return ($userType === 2 || $userType === 3) && $status === 2; // SK Chairperson or Pederasyon Officer, Accepted
-            });
+
+            $positionMap = $this->getPedPositionMap();
+
+            // Limit to accepted Pederasyon officers with defined positions (1-7)
+            $officials = array_values(array_filter($users, function($user) use ($positionMap) {
+                $userType = isset($user['user_type']) ? (int)$user['user_type'] : 0;
+                $status = isset($user['status']) ? (int)$user['status'] : 0;
+                $pedPosition = isset($user['ped_position']) ? (int)$user['ped_position'] : 0;
+
+                return $userType === 3 && $status === 2 && isset($positionMap[$pedPosition]);
+            }));
 
             if (empty($officials)) {
                 return $this->response->setJSON(['success' => false, 'message' => 'No officials found for the official list']);
@@ -1176,6 +1179,8 @@ class PederasyonController extends BaseController
 
             $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
             $sheet = $spreadsheet->getActiveSheet();
+
+            $positionMap = $this->getPedPositionMap();
 
             // Set page orientation to landscape
             $sheet->getPageSetup()->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE);
@@ -1269,62 +1274,48 @@ class PederasyonController extends BaseController
             // Add data rows with proper formatting
             $dataStartRow = $currentRow;
             foreach ($officials as $official) {
-                $userType = isset($official['user_type']) ? (int)$official['user_type'] : 1;
-                $status = isset($official['status']) ? (int)$official['status'] : 1;
-                
-                if (($userType === 2 || $userType === 3) && $status === 2) {
-                    // Format data
-                    $userId = $official['user_id'] ?: '';
-                    $barangay = BarangayHelper::getBarangayName($official['barangay']);
-                    
-                    $fullName = esc($official['last_name']);
-                    if (!empty($official['first_name'])) {
-                        $fullName .= ', ' . esc($official['first_name']);
-                    }
-                    if (!empty($official['middle_name'])) {
-                        $fullName .= ' ' . esc($official['middle_name']);
-                    }
-                    
-                    $age = $official['age'] ?: '';
-                    $birthday = $official['birthdate'] ? date('m/d/Y', strtotime($official['birthdate'])) : '';
-                    $sex = $official['sex'] == '1' ? 'Male' : ($official['sex'] == '2' ? 'Female' : '');
-                    
-                    // Determine position based on ped_position
-                    $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : 0;
-                    $position = 'SK Pederasyon Member';
-                    switch($pedPosition) {
-                        case 1: $position = 'President'; break;
-                        case 2: $position = 'Vice President'; break;
-                        case 3: $position = 'Secretary'; break;
-                        case 4: $position = 'Treasurer'; break;
-                        case 5: $position = 'Auditor'; break;
-                        case 6: $position = 'Public Information Officer'; break;
-                        case 7: $position = 'Sergeant at Arms'; break;
-                    }
-                    
-                    // Add data to Excel with proper formatting
-                    $sheet->setCellValue('A' . $currentRow, $userId);
-                    $sheet->setCellValue('B' . $currentRow, $fullName);
-                    $sheet->setCellValue('C' . $currentRow, $barangay);
-                    $sheet->setCellValue('D' . $currentRow, $sex);
-                    $sheet->setCellValue('E' . $currentRow, $age);
-                    $sheet->setCellValue('F' . $currentRow, $birthday);
-                    $sheet->setCellValue('G' . $currentRow, $position);
-                    
-                    // Style data cells
-                    foreach (['A', 'B', 'C', 'D', 'E', 'F', 'G'] as $col) {
-                        $sheet->getStyle($col . $currentRow)->getFont()->setSize(9);
-                        $sheet->getStyle($col . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-                        $sheet->getStyle($col . $currentRow)->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
-                        $sheet->getStyle($col . $currentRow)->getAlignment()->setWrapText(true);
-                        $sheet->getStyle($col . $currentRow)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-                    }
-                    
-                    // Set row height for better readability
-                    $sheet->getRowDimension($currentRow)->setRowHeight(20);
-                    
-                    $currentRow++;
+                $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : 0;
+                if (!isset($positionMap[$pedPosition])) {
+                    continue;
                 }
+
+                $userId = $official['user_id'] ?? '';
+                $barangay = BarangayHelper::getBarangayName($official['barangay'] ?? '');
+
+                $fullName = esc($official['last_name'] ?? '');
+                if (!empty($official['first_name'])) {
+                    $fullName .= ', ' . esc($official['first_name']);
+                }
+                if (!empty($official['middle_name'])) {
+                    $fullName .= ' ' . esc($official['middle_name']);
+                }
+
+                $age = $official['age'] ?? '';
+                $birthday = !empty($official['birthdate']) ? date('m/d/Y', strtotime($official['birthdate'])) : '';
+                $sexValue = $official['sex'] ?? null;
+                $sex = $sexValue == '1' ? 'Male' : ($sexValue == '2' ? 'Female' : '');
+
+                $position = $positionMap[$pedPosition];
+
+                $sheet->setCellValue('A' . $currentRow, $userId);
+                $sheet->setCellValue('B' . $currentRow, $fullName);
+                $sheet->setCellValue('C' . $currentRow, $barangay);
+                $sheet->setCellValue('D' . $currentRow, $sex);
+                $sheet->setCellValue('E' . $currentRow, $age);
+                $sheet->setCellValue('F' . $currentRow, $birthday);
+                $sheet->setCellValue('G' . $currentRow, $position);
+
+                foreach (['A', 'B', 'C', 'D', 'E', 'F', 'G'] as $col) {
+                    $sheet->getStyle($col . $currentRow)->getFont()->setSize(9);
+                    $sheet->getStyle($col . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle($col . $currentRow)->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+                    $sheet->getStyle($col . $currentRow)->getAlignment()->setWrapText(true);
+                    $sheet->getStyle($col . $currentRow)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+                }
+
+                $sheet->getRowDimension($currentRow)->setRowHeight(20);
+
+                $currentRow++;
             }
 
             // Add spacing before signatures
@@ -1615,23 +1606,10 @@ class PederasyonController extends BaseController
                     $phone = isset($official['phone_number']) ? $official['phone_number'] : 'N/A';
                     $dateAppointed = isset($official['created_at']) ? date('m/d/Y', strtotime($official['created_at'])) : 'N/A';
                     
-                    // Determine specific position
-                    $position = '';
-                    if ($userType === 3) { // Pederasyon Officer
-                        $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : 0;
-                        switch($pedPosition) {
-                            case 1: $position = 'SK Pederasyon President'; break;
-                            case 2: $position = 'SK Pederasyon Vice President'; break;
-                            case 3: $position = 'SK Pederasyon Secretary'; break;
-                            case 4: $position = 'SK Pederasyon Treasurer'; break;
-                            case 5: $position = 'SK Pederasyon Auditor'; break;
-                            case 6: $position = 'SK Pederasyon Public Information Officer'; break;
-                            case 7: $position = 'SK Pederasyon Sergeant at Arms'; break;
-                            default: $position = 'SK Pederasyon Member'; break;
-                        }
-                    } else if ($userType === 2) { // SK Chairperson - show as SK Pederasyon Member
-                        $position = 'SK Pederasyon Member';
-                    }
+                    $pedPosition = ($userType === 3)
+                        ? (isset($official['ped_position']) ? (int)$official['ped_position'] : null)
+                        : null;
+                    $position = $this->getPedPositionLabel($pedPosition);
                     
                     // Add data to Excel with proper formatting
                     $sheet->setCellValue('A' . $currentRow, $userId);
@@ -1831,16 +1809,7 @@ class PederasyonController extends BaseController
 
             $pedCredentials = [];
 
-            // Map ped_position to labels
-            $pedPositionMap = [
-                1 => 'President',
-                2 => 'Vice President',
-                3 => 'Secretary',
-                4 => 'Treasurer',
-                5 => 'Auditor',
-                6 => 'PIO',
-                7 => 'Sergeant at Arms'
-            ];
+            $pedPositionMap = $this->getPedPositionMap();
 
             foreach ($users as $u) {
                 $status = isset($u['status']) ? (int)$u['status'] : 0;
@@ -1869,20 +1838,11 @@ class PederasyonController extends BaseController
                     // Determine position label and code
                     $positionLabel = '';
                     $pedPositionCode = null;
-                    if ($userType === 2) {
-                        // SK Chairperson
-                        $positionLabel = 'SK Pederasyon Member';
-                        $pedPositionCode = null; // No specific position
-                    } else {
-                        // Pederasyon Officer (user_type = 3)
-                        $pedPosCode = isset($u['ped_position']) ? (int)$u['ped_position'] : 0;
-                        $pedPositionCode = $pedPosCode > 0 ? $pedPosCode : null;
-                        if ($pedPosCode > 0 && isset($pedPositionMap[$pedPosCode])) {
-                            $positionLabel = 'Pederasyon ' . $pedPositionMap[$pedPosCode];
-                        } else {
-                            $positionLabel = 'SK Pederasyon Member';
-                        }
-                    }
+                    $pedPosCode = isset($u['ped_position']) ? (int)$u['ped_position'] : 0;
+                    $pedPositionCode = ($userType === 3 && $pedPosCode > 0) ? $pedPosCode : null;
+                    $positionLabel = $pedPositionCode !== null && isset($pedPositionMap[$pedPositionCode])
+                        ? $pedPositionMap[$pedPositionCode]
+                        : 'Member';
                     
                     if ($pedUsername && $pedPassword) {
                         $pedCredentials[] = [
@@ -1984,6 +1944,9 @@ class PederasyonController extends BaseController
                         margin: 0; 
                         padding: 20px;
                     }
+                    p {
+                        margin: 0;
+                    }
                     .header-section {
                         text-align: center;
                         margin-bottom: 30px;
@@ -2014,7 +1977,7 @@ class PederasyonController extends BaseController
                     .title-text {
                         font-size: 12px;
                         font-weight: bold;
-                        margin: 10px 0;
+                        margin: 0;
                     }
                     .section-title {
                         font-size: 11px;
@@ -2222,17 +2185,8 @@ class PederasyonController extends BaseController
                     $fullName = trim(($official['first_name'] ?? '') . ' ' . ($official['middle_name'] ?? '') . ' ' . ($official['last_name'] ?? ''));
                     $barangay = BarangayHelper::getBarangayName($official['barangay']);
                     
-                    $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : 0;
-                    $position = 'SK Pederasyon Member';
-                    switch($pedPosition) {
-                        case 1: $position = 'SK Pederasyon President'; break;
-                        case 2: $position = 'SK Pederasyon Vice President'; break;
-                        case 3: $position = 'SK Pederasyon Secretary'; break;
-                        case 4: $position = 'SK Pederasyon Treasurer'; break;
-                        case 5: $position = 'SK Pederasyon Auditor'; break;
-                        case 6: $position = 'SK Pederasyon Public Information Officer'; break;
-                        case 7: $position = 'SK Pederasyon Sergeant at Arms'; break;
-                    }
+                    $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : null;
+                    $position = $this->getPedPositionLabel($pedPosition);
                     
                     // Check if password is hashed and mask it
                     $pedPassword = $official['ped_password'] ?? 'N/A';
@@ -2388,16 +2342,18 @@ class PederasyonController extends BaseController
             
             // Get logos for the Word document
             $logos = $this->getLogosForDocument();
-            
-            // Create header section with logos
-            $headerTable = $section->addTable([
+
+            // Move the logo banner into a repeating section header
+            $header = $section->addHeader();
+
+            $headerTable = $header->addTable([
                 'borderSize' => 0,
                 'borderColor' => 'FFFFFF',
                 'width' => 100 * 50,
                 'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER
             ]);
             $headerTable->addRow();
-            
+
             // Left logo cell (Pederasyon)
             $leftCell = $headerTable->addCell(2000, ['valign' => 'center']);
             if (isset($logos['pederasyon'])) {
@@ -2418,7 +2374,7 @@ class PederasyonController extends BaseController
             } else {
                 $leftCell->addText('PEDERASYON LOGO', $subHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             }
-            
+
             // Center text cell
             $centerCell = $headerTable->addCell(6000, ['valign' => 'center']);
             $centerCell->addText('REPUBLIC OF THE PHILIPPINES', $headerStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
@@ -2426,7 +2382,7 @@ class PederasyonController extends BaseController
             $centerCell->addText('CITY OF IRIGA', $headerStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             $centerCell->addText('PANLUNGSOD NA PEDERASYON NG MGA', $subHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             $centerCell->addText('SANGGUNIANG KABATAAN NG IRIGA', $subHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-            
+
             // Right logo cell (Iriga City)
             $rightCell = $headerTable->addCell(2000, ['valign' => 'center']);
             if (isset($logos['iriga_city'])) {
@@ -2447,9 +2403,12 @@ class PederasyonController extends BaseController
             } else {
                 $rightCell->addText('IRIGA LOGO', $subHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             }
-            
-            // Add horizontal line and title
-            $section->addTextBreak();
+
+            $header->addTextBreak();
+            $header->addText('PANLUNGSOD NA PEDERASYON NG MGA KABATAAN', $titleStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $header->addText('OFFICIALS LOGIN CREDENTIALS', $titleStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+
+            $section->addTextBreak(2);
 
             // Separate SK and Pederasyon officials (3 appears in both lists)
             $skOfficials = [];
@@ -2480,7 +2439,7 @@ class PederasyonController extends BaseController
                 ]);
                 
                 // Add SK table header
-                $skTable->addRow();
+                $skTable->addRow(null, ['tblHeader' => true]);
                 $skTable->addCell(1000)->addText('User ID', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
                 $skTable->addCell(2200)->addText('Full Name', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
                 $skTable->addCell(1500)->addText('Barangay', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
@@ -2530,7 +2489,7 @@ class PederasyonController extends BaseController
                 ]);
                 
                 // Add Pederasyon table header
-                $pedTable->addRow();
+                $pedTable->addRow(null, ['tblHeader' => true]);
                 $pedTable->addCell(1000)->addText('User ID', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
                 $pedTable->addCell(2000)->addText('Full Name', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
                 $pedTable->addCell(1200)->addText('Barangay', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
@@ -2542,17 +2501,8 @@ class PederasyonController extends BaseController
                     $fullName = trim(($official['first_name'] ?? '') . ' ' . ($official['middle_name'] ?? '') . ' ' . ($official['last_name'] ?? ''));
                     $barangay = BarangayHelper::getBarangayName($official['barangay']);
                     
-                    $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : 0;
-                    $position = 'SK Pederasyon Member';
-                    switch($pedPosition) {
-                        case 1: $position = 'SK Pederasyon President'; break;
-                        case 2: $position = 'SK Pederasyon Vice President'; break;
-                        case 3: $position = 'SK Pederasyon Secretary'; break;
-                        case 4: $position = 'SK Pederasyon Treasurer'; break;
-                        case 5: $position = 'SK Pederasyon Auditor'; break;
-                        case 6: $position = 'SK Pederasyon Public Information Officer'; break;
-                        case 7: $position = 'SK Pederasyon Sergeant at Arms'; break;
-                    }
+                    $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : null;
+                    $position = $this->getPedPositionLabel($pedPosition);
                     
                     // Check if password is hashed and mask it
                     $pedPassword = $official['ped_password'] ?? 'N/A';
@@ -2821,17 +2771,8 @@ class PederasyonController extends BaseController
                     $fullName = trim(($official['first_name'] ?? '') . ' ' . ($official['middle_name'] ?? '') . ' ' . ($official['last_name'] ?? ''));
                     $barangay = BarangayHelper::getBarangayName($official['barangay']);
                     
-                    $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : 0;
-                    $position = 'SK Pederasyon Member';
-                    switch($pedPosition) {
-                        case 1: $position = 'SK Pederasyon President'; break;
-                        case 2: $position = 'SK Pederasyon Vice President'; break;
-                        case 3: $position = 'SK Pederasyon Secretary'; break;
-                        case 4: $position = 'SK Pederasyon Treasurer'; break;
-                        case 5: $position = 'SK Pederasyon Auditor'; break;
-                        case 6: $position = 'SK Pederasyon Public Information Officer'; break;
-                        case 7: $position = 'SK Pederasyon Sergeant at Arms'; break;
-                    }
+                    $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : null;
+                    $position = $this->getPedPositionLabel($pedPosition);
                     
                     // Check if password is hashed and mask it
                     $pedPassword = $official['ped_password'] ?? 'N/A';
@@ -3544,7 +3485,7 @@ class PederasyonController extends BaseController
             }
 
             $userModel = new UserModel();
-            $userExtInfoModel = new UserExtInfoModel();
+            $addressModel = new AddressModel();
             $db = \Config\Database::connect();
             
             $db->transStart();
@@ -3569,6 +3510,11 @@ class PederasyonController extends BaseController
                         continue;
                     }
 
+                    // Initialize update data for this user
+                    $updateData = [
+                        'user_type' => $newUserType
+                    ];
+
                     // Guard: If converting a Pederasyon to a non-Pederasyon and that would remove the last one, block
                     $currentType = (int)($user['user_type'] ?? 1);
                     if ($currentType === 3 && $newUserType !== 3) {
@@ -3581,7 +3527,6 @@ class PederasyonController extends BaseController
                     // Additional validation for SK Chairperson (user_type = 2)
                     if ($newUserType === 2) {
                         // Get user's barangay
-                        $addressModel = new AddressModel();
                         $userAddress = $addressModel->where('user_id', $userId)->first();
                         
                         if ($userAddress) {
@@ -3626,6 +3571,10 @@ class PederasyonController extends BaseController
                             $updateData['sk_username'] = UserHelper::generateSKUsername($user['first_name'], $user['last_name']);
                             $updateData['sk_password'] = UserHelper::generatePassword(8);
                         }
+                        
+                        // Set sk_position to 1 (SK Chairperson position)
+                        $updateData['sk_position'] = 1;
+                        
                     } elseif ($newUserType === 3 && (int)($user['status'] ?? 0) === 1) {
                         // Auto-verify for Pederasyon promotions
                         $updateData['status'] = 2;
@@ -3647,21 +3596,19 @@ class PederasyonController extends BaseController
                         }
                     }
 
-                    // Generate credentials based on user type
+                    // Handle credential generation based on user type
                     if ($newUserType === 2) { // SK Chairperson
-                        // Only generate SK credentials if missing
-                        if (empty($user['sk_username']) || empty($user['sk_password'])) {
-                            $updateData['sk_username'] = UserHelper::generateSKUsername($user['first_name'], $user['last_name']);
-                            $updateData['sk_password'] = UserHelper::generatePassword(8);
-                        }
-                        // Position is handled by position transition rules above
+                        // SK credentials already handled above
+                        
                         // If downgrading from PED -> SK, clear PED credentials
-                        if (isset($user['user_type']) && (int)$user['user_type'] === 3) {
+                        if ($currentType === 3) {
                             $updateData['ped_username'] = null;
                             $updateData['ped_password'] = null;
+                            $updateData['ped_position'] = null;
                         }
+                        
                     } elseif ($newUserType === 3) { // Pederasyon Officer
-                        $wasSK = isset($user['user_type']) && (int)$user['user_type'] === 2;
+                        $wasSK = ($currentType === 2);
 
                         // Ensure PED credentials exist
                         if (empty($user['ped_username']) || empty($user['ped_password'])) {
@@ -3669,28 +3616,34 @@ class PederasyonController extends BaseController
                             $updateData['ped_password'] = UserHelper::generatePassword(8);
                         }
 
-                        // If the user was not SK before, ensure SK credentials and set position = 1 (Chairperson)
+                        // If the user was SK before, keep SK credentials; otherwise generate them
                         if (!$wasSK) {
                             if (empty($user['sk_username']) || empty($user['sk_password'])) {
                                 $updateData['sk_username'] = UserHelper::generateSKUsername($user['first_name'], $user['last_name']);
                                 $updateData['sk_password'] = UserHelper::generatePassword(8);
                             }
-                            // Position is handled by position transition rules above
+                            // Set sk_position to 1 (SK Chairperson) when promoting to Pederasyon
+                            $updateData['sk_position'] = 1;
                         }
-                    }
-
-                    // If downgrading to KK, clear credentials accordingly
-                    if ($newUserType === 1) {
-                        if (isset($user['user_type'])) {
-                            if ((int)$user['user_type'] === 3) { // PED -> KK
-                                $updateData['ped_username'] = null;
-                                $updateData['ped_password'] = null;
-                                $updateData['sk_username'] = null;
-                                $updateData['sk_password'] = null;
-                            } elseif ((int)$user['user_type'] === 2) { // SK -> KK
-                                $updateData['sk_username'] = null;
-                                $updateData['sk_password'] = null;
-                            }
+                        
+                        // Set ped_position to null by default (Member)
+                        if (!isset($updateData['ped_position'])) {
+                            $updateData['ped_position'] = null;
+                        }
+                        
+                    } elseif ($newUserType === 1) { // KK Member
+                        // If downgrading to KK, clear credentials accordingly
+                        if ($currentType === 3) { // PED -> KK
+                            $updateData['ped_username'] = null;
+                            $updateData['ped_password'] = null;
+                            $updateData['ped_position'] = null;
+                            $updateData['sk_username'] = null;
+                            $updateData['sk_password'] = null;
+                            $updateData['sk_position'] = null;
+                        } elseif ($currentType === 2) { // SK -> KK
+                            $updateData['sk_username'] = null;
+                            $updateData['sk_password'] = null;
+                            $updateData['sk_position'] = null;
                         }
                     }
 
@@ -3703,23 +3656,6 @@ class PederasyonController extends BaseController
 
                     if ($currentType === 3 && $newUserType !== 3) {
                         $remainingPed = max(0, $remainingPed - 1);
-                    }
-
-                    // Handle user_ext_info position updates based on transition rules
-                    if (isset($updateData['position'])) {
-                        $extInfoData = ['position' => $updateData['position']];
-                        
-                        // Check if user_ext_info record exists
-                        $existingExtInfo = $userExtInfoModel->where('user_id', $userId)->first();
-                        if ($existingExtInfo) {
-                            $userExtInfoModel->update($userId, $extInfoData);
-                        } else {
-                            $extInfoData['user_id'] = $userId;
-                            $userExtInfoModel->insert($extInfoData);
-                        }
-                    } elseif ($updateData['position'] === null) {
-                        // If position should be null, remove from user_ext_info
-                        $userExtInfoModel->where('user_id', $userId)->delete();
                     }
 
                     $successCount++;
@@ -3803,6 +3739,43 @@ class PederasyonController extends BaseController
     }
 
     /**
+     * Check if there is at least one Pederasyon officer with login credentials
+    * Positions 1-7 have credentials, NULL (Member) does not
+     * Returns array with 'hasOfficers' boolean and 'officers' array
+     */
+    private function checkPederasyonOfficersWithCredentials()
+    {
+        $userModel = new UserModel();
+        
+        // Get all users with Pederasyon positions (1-7)
+        $officers = $userModel->whereIn('ped_position', [1, 2, 3, 4, 5, 6, 7])
+                              ->where('user_type', 3) // Pederasyon Officers
+                              ->findAll();
+        
+        $hasOfficers = !empty($officers);
+        
+        // Format officers data for response
+        $officersData = [];
+        if ($hasOfficers) {
+            $positionNames = $this->getPedPositionMap();
+            
+            foreach ($officers as $officer) {
+                $officersData[] = [
+                    'name' => trim(($officer['first_name'] ?? '') . ' ' . ($officer['middle_name'] ?? '') . ' ' . ($officer['last_name'] ?? '')),
+                    'position' => $positionNames[$officer['ped_position']] ?? 'Unknown Position',
+                    'username' => $officer['ped_username'] ?? 'N/A'
+                ];
+            }
+        }
+        
+        return [
+            'hasOfficers' => $hasOfficers,
+            'officers' => $officersData,
+            'count' => count($officers)
+        ];
+    }
+
+    /**
      * Generate a temporary password (8 characters: uppercase, lowercase, and numbers)
      * This password will be stored as plain text so it can be shown to the user once
      * User should change it on first login
@@ -3827,6 +3800,31 @@ class PederasyonController extends BaseController
         
         // Shuffle the password
         return str_shuffle($password);
+    }
+
+    /**
+     * Provide a consistent label map for Pederasyon officer positions.
+     */
+    private function getPedPositionMap(): array
+    {
+        return [
+            1 => 'President',
+            2 => 'Vice President',
+            3 => 'Secretary',
+            4 => 'Treasurer',
+            5 => 'Auditor',
+            6 => 'Public Information Officer',
+            7 => 'Sergeant at Arms',
+        ];
+    }
+
+    /**
+     * Resolve a ped_position value into a display label.
+     */
+    private function getPedPositionLabel(?int $pedPosition): string
+    {
+        $map = $this->getPedPositionMap();
+        return $map[$pedPosition] ?? 'Member';
     }
 
     /**
@@ -4010,16 +4008,12 @@ class PederasyonController extends BaseController
                 $fullName = trim(($official['first_name'] ?? '') . ' ' . ($official['middle_name'] ?? '') . ' ' . ($official['last_name'] ?? ''));
                 $barangay = BarangayHelper::getBarangayName($official['barangay']);
                 
-                $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : 0;
-                $position = 'SK Pederasyon Member';
-                switch($pedPosition) {
-                    case 1: $position = 'SK Pederasyon President'; $presidentName = $fullName; break;
-                    case 2: $position = 'SK Pederasyon Vice President'; break;
-                    case 3: $position = 'SK Pederasyon Secretary'; $secretaryName = $fullName; break;
-                    case 4: $position = 'SK Pederasyon Treasurer'; break;
-                    case 5: $position = 'SK Pederasyon Auditor'; break;
-                    case 6: $position = 'SK Pederasyon Public Information Officer'; break;
-                    case 7: $position = 'SK Pederasyon Sergeant at Arms'; break;
+                $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : null;
+                $position = $this->getPedPositionLabel($pedPosition);
+                if ($pedPosition === 1) {
+                    $presidentName = $fullName;
+                } elseif ($pedPosition === 3) {
+                    $secretaryName = $fullName;
                 }
                 
                 // Check if password is hashed and mask it
@@ -4235,16 +4229,12 @@ class PederasyonController extends BaseController
                 $fullName = trim(($official['first_name'] ?? '') . ' ' . ($official['middle_name'] ?? '') . ' ' . ($official['last_name'] ?? ''));
                 $barangay = BarangayHelper::getBarangayName($official['barangay']);
                 
-                $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : 0;
-                $position = 'SK Pederasyon Member';
-                switch($pedPosition) {
-                    case 1: $position = 'SK Pederasyon President'; $presidentName = $fullName; break;
-                    case 2: $position = 'SK Pederasyon Vice President'; break;
-                    case 3: $position = 'SK Pederasyon Secretary'; $secretaryName = $fullName; break;
-                    case 4: $position = 'SK Pederasyon Treasurer'; break;
-                    case 5: $position = 'SK Pederasyon Auditor'; break;
-                    case 6: $position = 'SK Pederasyon Public Information Officer'; break;
-                    case 7: $position = 'SK Pederasyon Sergeant at Arms'; break;
+                $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : null;
+                $position = $this->getPedPositionLabel($pedPosition);
+                if ($pedPosition === 1) {
+                    $presidentName = $fullName;
+                } elseif ($pedPosition === 3) {
+                    $secretaryName = $fullName;
                 }
                 
                 // Check if password is hashed and mask it

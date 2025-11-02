@@ -1403,7 +1403,14 @@
                 // Show loading state
                 $(this).prop('disabled', true).text('Updating...');
                 
-                // Handle "NULL" string for Member position
+                // Find the user row to get the database ID
+                const userRow = $(`tr[data-ped_username]`).filter(function() {
+                    return $(this).find('td').eq(1).text().trim() === userId;
+                });
+                
+                const dbId = userRow.find('.rowCheckbox').val();
+                
+                // Handle "NULL" string for SK Pederasyon Member position
                 let pedPositionValue;
                 if (newPosition === 'NULL') {
                     pedPositionValue = 'NULL';
@@ -1414,7 +1421,7 @@
                 $.ajax({
                     url: '<?= base_url('updateOfficerPosition') ?>',
                     method: 'POST',
-                    data: { user_id: dbId, ped_position: pedPositionValue },
+                    data: { user_id: dbId || userId, ped_position: pedPositionValue },
                     dataType: 'json',
                     success: function(response) {
                         if (response.success) {

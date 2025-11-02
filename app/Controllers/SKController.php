@@ -128,7 +128,7 @@ class SKController extends BaseController
                 $currentExt = $userExtModel->where('user_id', $dbUserId)->first();
                 $oldPath = $currentExt['profile_picture'] ?? null;
 
-                $targetDir = FCPATH . 'uploads/profile_pictures/';
+                $targetDir = ROOTPATH . 'uploads/profile_pictures/';
                 if (!is_dir($targetDir)) {
                     @mkdir($targetDir, 0775, true);
                 }
@@ -145,8 +145,8 @@ class SKController extends BaseController
                     if (strpos($oldPath, '/') !== false) {
                         $candidates[] = ROOTPATH . 'public/' . ltrim($oldPath, '/');
                     } else {
-                        $candidates[] = FCPATH . 'uploads/profile_pictures/' . $oldPath;
-                        $candidates[] = FCPATH . 'uploads/profile/' . $oldPath;
+                        $candidates[] = ROOTPATH . 'uploads/profile_pictures/' . $oldPath;
+                        $candidates[] = ROOTPATH . 'uploads/profile/' . $oldPath;
                     }
                     foreach ($candidates as $abs) {
                         if (is_file($abs)) {
@@ -1536,7 +1536,7 @@ class SKController extends BaseController
             return null;
         }
         
-        $fullPath = FCPATH . $logoPath;
+        $fullPath = ROOTPATH . $logoPath;
         if (!file_exists($fullPath)) {
             return null;
         }
@@ -1882,7 +1882,7 @@ class SKController extends BaseController
             
             // Ensure Composer autoloader is available (mirrors Excel/PDF methods)
             if (!class_exists('PhpOffice\\PhpWord\\PhpWord')) {
-                $autoload = FCPATH . '../vendor/autoload.php';
+                $autoload = ROOTPATH . '../vendor/autoload.php';
                 if (is_file($autoload)) {
                     require_once $autoload;
                 }
@@ -1946,7 +1946,7 @@ class SKController extends BaseController
         if (isset($logos['barangay']) || isset($logos['sk'])) {
             $logoData = $logos['barangay'] ?? $logos['sk'];
             $logoType = isset($logos['barangay']) ? 'barangay' : 'sk';
-            $logoPath = FCPATH . $logoData['file_path'];
+            $logoPath = ROOTPATH . $logoData['file_path'];
             log_message('info', "Attempting to add {$logoType} logo: {$logoPath}");
             
             if (file_exists($logoPath)) {
@@ -1981,7 +1981,7 @@ class SKController extends BaseController
         // Right logo cell
         $rightCell = $headerTable->addCell(2000, ['valign' => 'center']);
         if (isset($logos['iriga_city'])) {
-            $logoPath = FCPATH . $logos['iriga_city']['file_path'];
+            $logoPath = ROOTPATH . $logos['iriga_city']['file_path'];
             log_message('info', "Attempting to add Iriga City logo: {$logoPath}");
             
             if (file_exists($logoPath)) {
@@ -2164,8 +2164,14 @@ class SKController extends BaseController
         $cell1->addText('SK Secretary', ['size' => 8], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
         $cell2->addText('SK Chairperson', ['size' => 8], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
 
-        // Save to temporary file
-        $tempFile = tempnam(sys_get_temp_dir(), 'KK_List_') . '.docx';
+        // Save the document
+        // $outputDir = FCPATH . 'uploads/generated/';
+        // if (!is_dir($outputDir)) {
+        //     mkdir($outputDir, 0777, true);
+        // }
+        
+        $fileName = 'KK_List_' . str_replace(' ', '_', $barangayName) . '_' . date('Y_m_d_H_i_s') . '.docx';
+        $outputFile = $outputDir . $fileName;
         
         $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
         $writer->save($tempFile);
@@ -2184,7 +2190,7 @@ class SKController extends BaseController
         try {
             // Ensure Composer autoloader is available for PhpSpreadsheet
             if (!class_exists('PhpOffice\\PhpSpreadsheet\\Spreadsheet')) {
-                $autoload = FCPATH . '../vendor/autoload.php';
+                $autoload = ROOTPATH . '../vendor/autoload.php';
                 if (is_file($autoload)) {
                     require_once $autoload;
                 }
@@ -2437,8 +2443,15 @@ class SKController extends BaseController
             $sheet->setCellValue('M' . $currentRow, 'SK Chairperson');
             $sheet->getStyle('M' . $currentRow)->getFont()->setBold(true);
 
-            // Save to temporary file
-            $tempFile = tempnam(sys_get_temp_dir(), 'KK_List_') . '.xlsx';
+            // Generate filename and save
+            $filename = 'KK_List_' . str_replace(' ', '_', $barangayName) . '_' . date('Y-m-d') . '.xlsx';
+            // $outputPath = FCPATH . 'uploads/generated/' . $filename;
+
+            // Ensure the directory exists
+            $dir = dirname($outputPath);
+            if (!is_dir($dir)) {
+                mkdir($dir, 0755, true);
+            }
 
             $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
             $writer->save($tempFile);
@@ -2457,7 +2470,7 @@ class SKController extends BaseController
         try {
             // Ensure Composer autoloader is available for Dompdf
             if (!class_exists('Dompdf\\Dompdf')) {
-                $autoload = FCPATH . '../vendor/autoload.php';
+                $autoload = ROOTPATH . '../vendor/autoload.php';
                 if (is_file($autoload)) {
                     require_once $autoload;
                 }
@@ -2470,7 +2483,7 @@ class SKController extends BaseController
             $options->set('fontHeightRatio', 1.1);
             $options->set('fontSubsetting', false);
             $options->set('isJavascriptEnabled', false);
-            $options->set('chroot', FCPATH); // Allow access to project files for images
+            $options->set('chroot', ROOTPATH); // Allow access to project files for images
             $dompdf = new \Dompdf\Dompdf($options);
 
             $buildLogo = function ($logoData, $fallbackText) {
@@ -2513,18 +2526,33 @@ class SKController extends BaseController
                 .signature-line { border-bottom: 0.5px solid #000; margin-bottom: 5px; padding-bottom: 15px; }
                 </style></head><body>';
 
-            $headerHtml = '<div class="header-row-content">
-                    <div class="logo-cell">' . $leftLogoHtml . '</div>
-                    <div class="header-text">
-                        <div class="subtitle">Republic of the Philippines</div>
-                        <div class="subtitle">Province of Camarines Sur</div>
-                        <div class="subtitle">CITY OF IRIGA</div>
-                        <div class="subtitle">SANGGUNIANG KABATAAN NG</div>
-                        <div class="title">BARANGAY ' . htmlspecialchars(strtoupper($barangayName)) . '</div>
-                        <div class="subtitle">KATIPUNAN NG KABATAAN YOUTH PROFILE</div>
-                    </div>
-                    <div class="logo-cell">' . $rightLogoHtml . '</div>
-                </div>';
+            // Header with logos
+            $html .= '<div class="header">';
+            
+            // Add logos if available (embed as data URIs)
+            if (!empty($logos['iriga_city'])) {
+                $path = ROOTPATH . $logos['iriga_city']['file_path'];
+                if (file_exists($path)) {
+                    $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+                    $mime = ($ext === 'png') ? 'image/png' : (($ext === 'gif') ? 'image/gif' : (($ext === 'webp') ? 'image/webp' : 'image/jpeg'));
+                    $data = base64_encode(file_get_contents($path));
+                    $html .= '<div class="logos"><img src="data:' . $mime . ';base64,' . $data . '" class="logo" /></div>';
+                }
+            }
+            if (!empty($logos['sk'])) {
+                $path = ROOTPATH . $logos['sk']['file_path'];
+                if (file_exists($path)) {
+                    $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+                    $mime = ($ext === 'png') ? 'image/png' : (($ext === 'gif') ? 'image/gif' : (($ext === 'webp') ? 'image/webp' : 'image/jpeg'));
+                    $data = base64_encode(file_get_contents($path));
+                    $html .= '<div class="logos"><img src="data:' . $mime . ';base64,' . $data . '" class="logo" /></div>';
+                }
+            }
+            
+            $html .= '<div class="title">KATIPUNAN NG KABATAAN YOUTH PROFILE</div>';
+            $html .= '<div class="subtitle">SANGGUNIANG KABATAAN NG</div>';
+            $html .= '<div class="subtitle">BARANGAY ' . htmlspecialchars(strtoupper($barangayName)) . '</div>';
+            $html .= '</div>';
 
             // Table with repeating header
             $html .= '<table class="report-table">
@@ -2633,10 +2661,16 @@ class SKController extends BaseController
             $dompdf->setPaper([0, 0, 612, 936], 'landscape');
             $dompdf->render();
 
-            // Save to temporary file
-            $tempFile = tempnam(sys_get_temp_dir(), 'KK_List_') . '.pdf';
+            // Save the document
+            // $outputDir = FCPATH . 'uploads/generated/';
+            // if (!is_dir($outputDir)) {
+            //     mkdir($outputDir, 0777, true);
+            // }
             
-            file_put_contents($tempFile, $dompdf->output());
+            $fileName = 'KK_List_' . str_replace(' ', '_', $barangayName) . '_' . date('Y_m_d_H_i_s') . '.pdf';
+            $outputFile = $outputDir . $fileName;
+            
+            file_put_contents($outputFile, $dompdf->output());
             
             log_message('info', 'PDF document generated successfully');
             return $tempFile;
@@ -2912,7 +2946,7 @@ class SKController extends BaseController
     private function generateAttendanceExcelDocument($event, $attendanceData)
     {
         try {
-            require_once FCPATH . '../vendor/autoload.php';
+            require_once ROOTPATH . '../vendor/autoload.php';
 
             $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
             $sheet = $spreadsheet->getActiveSheet();
@@ -3337,6 +3371,15 @@ class SKController extends BaseController
 
             $html .= '</body></html>';
 
+            // Use DomPDF to generate PDF
+            require_once ROOTPATH . '../vendor/autoload.php';
+            
+            $dompdf = new \Dompdf\Dompdf([
+                'enable_font_subsetting' => true,
+                'isRemoteEnabled' => true,
+                'defaultFont' => 'Arial'
+            ]);
+            
             $dompdf->loadHtml($html);
             $dompdf->setPaper([0, 0, 612, 936], 'landscape');
             $dompdf->render();
@@ -3429,7 +3472,7 @@ class SKController extends BaseController
         try {
             log_message('info', 'Starting Attendance Word document creation...');
             
-            require_once FCPATH . '../vendor/autoload.php';
+            require_once ROOTPATH . '../vendor/autoload.php';
             
             $phpWord = new \PhpOffice\PhpWord\PhpWord();
             log_message('info', 'PHPWord instance created successfully');
@@ -3474,9 +3517,9 @@ class SKController extends BaseController
             
             // Left logo cell (SK)
             $leftCell = $headerTable->addCell(2000, ['valign' => 'center']);
-            if (isset($logos['sk']) && file_exists(FCPATH . $logos['sk']['file_path'])) {
+            if (isset($logos['sk']) && file_exists(ROOTPATH . $logos['sk']['file_path'])) {
                 try {
-                    $leftCell->addImage(FCPATH . $logos['sk']['file_path'], [
+                    $leftCell->addImage(ROOTPATH . $logos['sk']['file_path'], [
                         'width' => 50.4,
                         'height' => 50.4,
                         'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER
@@ -3497,9 +3540,9 @@ class SKController extends BaseController
             
             // Right logo cell (Iriga City)
             $rightCell = $headerTable->addCell(2000, ['valign' => 'center']);
-            if (isset($logos['iriga_city']) && file_exists(FCPATH . $logos['iriga_city']['file_path'])) {
+            if (isset($logos['iriga_city']) && file_exists(ROOTPATH . $logos['iriga_city']['file_path'])) {
                 try {
-                    $rightCell->addImage(FCPATH . $logos['iriga_city']['file_path'], [
+                    $rightCell->addImage(ROOTPATH . $logos['iriga_city']['file_path'], [
                         'width' => 50.4,
                         'height' => 50.4,
                         'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER
@@ -3664,7 +3707,7 @@ class SKController extends BaseController
                 }
             }
             
-            if ($skLogo && file_exists(FCPATH . $skLogo['file_path'])) {
+            if ($skLogo && file_exists(ROOTPATH . $skLogo['file_path'])) {
                 $logos['sk'] = $skLogo;
                 log_message('info', 'SK logo added: ' . $skLogo['file_path']);
             } else {
@@ -3690,7 +3733,7 @@ class SKController extends BaseController
                                                ->first();
             }
             
-            if ($barangayLogo && file_exists(FCPATH . $barangayLogo['file_path'])) {
+            if ($barangayLogo && file_exists(ROOTPATH . $barangayLogo['file_path'])) {
                 $logos['barangay'] = $barangayLogo;
                 log_message('info', 'Barangay logo added: ' . $barangayLogo['file_path']);
             } else {
@@ -3702,7 +3745,7 @@ class SKController extends BaseController
                                         ->where('is_active', true)
                                         ->orderBy('created_at', 'DESC')
                                         ->first();
-            if ($irigaLogo && file_exists(FCPATH . $irigaLogo['file_path'])) {
+            if ($irigaLogo && file_exists(ROOTPATH . $irigaLogo['file_path'])) {
                 $logos['iriga_city'] = $irigaLogo;
                 log_message('info', 'Iriga City logo added: ' . $irigaLogo['file_path']);
             } else {
@@ -3991,38 +4034,40 @@ class SKController extends BaseController
             // Header with three-column layout (matching KK List exactly)
             $html .= '<table class="header-table">
                 <tr>
-                    <td style="width: 15%;">';
-            
-            // Left logo (Iriga City)
-            if (!empty($logos['iriga_city'])) {
-                $path = FCPATH . $logos['iriga_city']['file_path'];
-                if (file_exists($path)) {
-                    $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-                    $mime = ($ext === 'png') ? 'image/png' : (($ext === 'gif') ? 'image/gif' : (($ext === 'webp') ? 'image/webp' : 'image/jpeg'));
-                    $data = base64_encode(file_get_contents($path));
-                    $html .= '<img src="data:' . $mime . ';base64,' . $data . '" style="width: 80px; height: 80px;" />';
-                }
+                    <td width="15%" style="text-align: left; vertical-align: middle;">';
+
+            if (isset($logos['sk']) && file_exists(ROOTPATH . $logos['sk']['file_path'])) {
+                $logoMimeType = mime_content_type(ROOTPATH . $logos['sk']['file_path']);
+                $logoBase64 = base64_encode(file_get_contents(ROOTPATH . $logos['sk']['file_path']));
+                $html .= '<img src="data:' . $logoMimeType . ';base64,' . $logoBase64 . '" class="logo">';
+            } else {
+                $html .= '<div style="width: 60px; height: 60px;"></div>';
+            }
+
+            $html .= '</td>
+                    <td width="70%" class="header-text">
+                        <div class="line1">REPUBLIC OF THE PHILIPPINES</div>
+                        <div class="line2">PROVINCE OF CAMARINES SUR</div>
+                        <div class="line3">CITY OF IRIGA</div>
+                        <div class="line4">SANGGUNIANG KABATAAN</div>';
+
+            // Add barangay name if available
+            $session = session();
+            $skBarangay = $session->get('sk_barangay');
+            $barangayName = \App\Libraries\BarangayHelper::getBarangayName($skBarangay);
+            if ($barangayName) {
+                $html .= '<div class="line4">NG BARANGAY ' . strtoupper(esc($barangayName)) . '</div>';
             }
             
             $html .= '</td>
-                    <td style="width: 70%;">
-                        <div class="gov-text">Republic of the Philippines</div>
-                        <div class="gov-text">Province of Camarines Sur</div>
-                        <div class="gov-text-bold">CITY OF IRIGA</div>
-                        <div class="gov-text-bold">SANGGUNIANG KABATAAN NG</div>
-                        <div class="gov-text-bold">BARANGAY ' . htmlspecialchars(strtoupper($barangayName)) . '</div>
-                    </td>
-                    <td style="width: 15%;">';
-            
-            // Right logo (SK/Barangay)
-            if (!empty($logos['sk'])) {
-                $path = FCPATH . $logos['sk']['file_path'];
-                if (file_exists($path)) {
-                    $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-                    $mime = ($ext === 'png') ? 'image/png' : (($ext === 'gif') ? 'image/gif' : (($ext === 'webp') ? 'image/webp' : 'image/jpeg'));
-                    $data = base64_encode(file_get_contents($path));
-                    $html .= '<img src="data:' . $mime . ';base64,' . $data . '" style="width: 80px; height: 80px;" />';
-                }
+                    <td width="15%" style="text-align: right; vertical-align: middle;">';
+
+            if (isset($logos['iriga_city']) && file_exists(ROOTPATH . $logos['iriga_city']['file_path'])) {
+                $logoMimeType = mime_content_type(ROOTPATH . $logos['iriga_city']['file_path']);
+                $logoBase64 = base64_encode(file_get_contents(ROOTPATH . $logos['iriga_city']['file_path']));
+                $html .= '<img src="data:' . $logoMimeType . ';base64,' . $logoBase64 . '" class="logo">';
+            } else {
+                $html .= '<div style="width: 60px; height: 60px;"></div>';
             }
             
             $html .= '</td>
@@ -4099,12 +4144,12 @@ class SKController extends BaseController
 
             $html .= '</body></html>';
 
-            // Use DomPDF with KK List page setup
-            require_once FCPATH . '../vendor/autoload.php';
+            // Use DomPDF with attendance report page setup
+            require_once ROOTPATH . '../vendor/autoload.php';
             
             $dompdf = new \Dompdf\Dompdf([
                 'isRemoteEnabled' => true,
-                'chroot' => FCPATH,
+                'chroot' => ROOTPATH,
                 'defaultFont' => 'Arial'
             ]);
             
@@ -4114,8 +4159,14 @@ class SKController extends BaseController
             $dompdf->setPaper([0, 0, 612, 936], 'landscape');
             $dompdf->render();
 
-            // Save to temporary file
-            $tempFile = tempnam(sys_get_temp_dir(), 'SK_Credentials_') . '.pdf';
+            // Save PDF file
+            // $outputDir = FCPATH . 'uploads/generated/';
+            // if (!is_dir($outputDir)) {
+            //     mkdir($outputDir, 0755, true);
+            // }
+            
+            $fileName = 'SK_Officials_Credentials_' . date('Y-m-d') . '.pdf';
+            $outputPath = $outputDir . $fileName;
             
             file_put_contents($tempFile, $dompdf->output());
             
@@ -4279,34 +4330,15 @@ class SKController extends BaseController
             
             // Left logo cell
             $leftCell = $headerTable->addCell(2000, ['valign' => 'center']);
-            if (isset($logos['barangay']) || isset($logos['sk'])) {
-                $logoData = $logos['barangay'] ?? $logos['sk'];
-                $logoType = isset($logos['barangay']) ? 'barangay' : 'sk';
-                $logoPath = FCPATH . $logoData['file_path'];
-                log_message('info', "Attempting to add {$logoType} logo: {$logoPath}");
-                
-                if (file_exists($logoPath)) {
-                    try {
-                        $leftCell->addImage($logoPath, [
-                            'width' => 50.4,  // 0.70 inches = 50.4 points
-                            'height' => 50.4,
-                            'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER
-                        ]);
-                        log_message('info', "Successfully added {$logoType} logo to Word document");
-                    } catch (\Exception $e) {
-                        log_message('error', "Failed to add {$logoType} logo to Word document: " . $e->getMessage());
-                        $leftCell->addText('BRGY LOGO', $headerStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
-                    }
-                } else {
-                    log_message('warning', "Logo file does not exist: {$logoPath}");
-                    $leftCell->addText('BRGY LOGO', $headerStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
-                }
-            } else {
-                log_message('info', 'No barangay or SK logo available, using placeholder');
-                $leftCell->addText('BRGY LOGO', $headerStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
+            if (!empty($logos['sk']) && file_exists(ROOTPATH . $logos['sk']['file_path'])) {
+                $leftCell->addImage(ROOTPATH . $logos['sk']['file_path'], [
+                    'width' => 60,
+                    'height' => 60,
+                    'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER,
+                ]);
             }
-            
-            // Center text cell
+
+            // Center content (matching attendance report format exactly)
             $centerCell = $headerTable->addCell(6000, ['valign' => 'center']);
             $centerCell->addText('Republic of the Philippines', $headerStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             $centerCell->addText('Province of Camarines Sur', $headerStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
@@ -4316,32 +4348,15 @@ class SKController extends BaseController
             
             // Right logo cell
             $rightCell = $headerTable->addCell(2000, ['valign' => 'center']);
-            if (isset($logos['iriga_city'])) {
-                $logoPath = FCPATH . $logos['iriga_city']['file_path'];
-                log_message('info', "Attempting to add Iriga City logo: {$logoPath}");
-                
-                if (file_exists($logoPath)) {
-                    try {
-                        $rightCell->addImage($logoPath, [
-                            'width' => 50.4,  // 0.70 inches = 50.4 points
-                            'height' => 50.4,
-                            'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER
-                        ]);
-                        log_message('info', "Successfully added Iriga City logo to Word document");
-                    } catch (\Exception $e) {
-                        log_message('error', "Failed to add Iriga City logo to Word document: " . $e->getMessage());
-                        $rightCell->addText('IRIGA LOGO', $headerStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
-                    }
-                } else {
-                    log_message('warning', "Iriga City logo file does not exist: {$logoPath}");
-                    $rightCell->addText('IRIGA LOGO', $headerStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
-                }
-            } else {
-                log_message('info', 'No Iriga City logo available, using placeholder');
-                $rightCell->addText('IRIGA LOGO', $headerStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
+            if (!empty($logos['iriga_city']) && file_exists(ROOTPATH . $logos['iriga_city']['file_path'])) {
+                $rightCell->addImage(ROOTPATH . $logos['iriga_city']['file_path'], [
+                    'width' => 60,
+                    'height' => 60,
+                    'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER,
+                ]);
             }
-            
-            // Add horizontal line
+
+            // Add title (matching attendance report)
             $section->addTextBreak();
             
             // Add title

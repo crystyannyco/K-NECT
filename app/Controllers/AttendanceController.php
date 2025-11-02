@@ -1321,7 +1321,7 @@ class AttendanceController extends BaseController
     private function generateAttendanceExcelDocument($event, $attendanceRecords, $barangayName = null)
     {
         try {
-            require_once FCPATH . '../vendor/autoload.php';
+            require_once ROOTPATH . 'vendor/autoload.php';
             
             $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
             $sheet = $spreadsheet->getActiveSheet();
@@ -1629,7 +1629,7 @@ class AttendanceController extends BaseController
             // Left logo cell (SK)
             $leftCell = $headerTable->addCell(1800, $headerCellStyle);
             if (isset($logos['sk'])) {
-                $logoPath = FCPATH . $logos['sk']['file_path'];
+                $logoPath = ROOTPATH . $logos['sk']['file_path'];
                 if (file_exists($logoPath)) {
                     try {
                         $leftCell->addImage($logoPath, [
@@ -1658,7 +1658,7 @@ class AttendanceController extends BaseController
 
             $rightCell = $headerTable->addCell(1800, $headerCellStyle);
             if (isset($logos['iriga_city'])) {
-                $logoPath = FCPATH . $logos['iriga_city']['file_path'];
+                $logoPath = ROOTPATH . $logos['iriga_city']['file_path'];
                 if (file_exists($logoPath)) {
                     try {
                         $rightCell->addImage($logoPath, [

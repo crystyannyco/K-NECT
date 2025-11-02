@@ -73,7 +73,8 @@ class MemberController extends BaseController
             }
         }
 
-        $updateData = ['user_type' => (int)$userType];
+    $updateData = ['user_type' => (int)$userType];
+    $generatedSkCredentials = null;
 
         // Position handling rules based on user type transitions
         $oldType = (int) ($user['user_type'] ?? 1);
@@ -143,8 +144,14 @@ class MemberController extends BaseController
             
             // Generate SK credentials if missing
             if (empty($user['sk_username']) || empty($user['sk_password'])) {
-                $updateData['sk_username'] = UserHelper::generateSKUsername($user['first_name'], $user['last_name']);
-                $updateData['sk_password'] = UserHelper::generatePassword(8);
+                $newSkUsername = UserHelper::generateSKUsername($user['first_name'], $user['last_name']);
+                $newSkPassword = UserHelper::generatePassword(8);
+                $updateData['sk_username'] = $newSkUsername;
+                $updateData['sk_password'] = $newSkPassword;
+                $generatedSkCredentials = [
+                    'username' => $newSkUsername,
+                    'password' => $newSkPassword,
+                ];
             }
             
             // If downgrading from PED -> SK, clear PED credentials
@@ -204,7 +211,30 @@ class MemberController extends BaseController
 
         $result = $userModel->update($userId, $updateData);
         if ($result) {
-            return $this->response->setJSON(['success' => true, 'message' => 'User type updated successfully']);
+            $updatedUser = $userModel->find($userId) ?: $user;
+
+            $response = [
+                'success' => true,
+                'message' => 'User type updated successfully',
+                'user' => [
+                    'id' => $updatedUser['id'] ?? null,
+                    'user_id' => $updatedUser['user_id'] ?? null,
+                    'user_type' => isset($updatedUser['user_type']) ? (int)$updatedUser['user_type'] : null,
+                    'status' => isset($updatedUser['status']) ? (int)$updatedUser['status'] : null,
+                    'position' => $updatedUser['position'] ?? null,
+                    'ped_position' => $updatedUser['ped_position'] ?? null,
+                    'sk_username' => $updatedUser['sk_username'] ?? null,
+                    'sk_password' => $updatedUser['sk_password'] ?? null,
+                    'ped_username' => $updatedUser['ped_username'] ?? null,
+                    'ped_password' => $updatedUser['ped_password'] ?? null,
+                ],
+            ];
+
+            if ($generatedSkCredentials) {
+                $response['generated_credentials']['sk'] = $generatedSkCredentials;
+            }
+
+            return $this->response->setJSON($response);
         } else {
             $errors = method_exists($userModel, 'errors') ? $userModel->errors() : [];
             $msg = 'Failed to update user type';

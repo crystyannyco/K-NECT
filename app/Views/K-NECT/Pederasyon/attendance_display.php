@@ -361,8 +361,8 @@
                                 <tr>
                                     <th class="px-3 py-2 font-semibold text-gray-700 uppercase text-[0.7rem] tracking-wider text-left w-2/5">Name</th>
                                     <th class="px-3 py-2 font-semibold text-gray-700 uppercase text-[0.7rem] tracking-wider text-left w-1/5">Status</th>
-                                    <th class="px-3 py-2 font-semibold text-gray-700 uppercase text-[0.7rem] tracking-wider text-left w-1/5">Time</th>
-                                    <th class="px-3 py-2 font-semibold text-gray-700 uppercase text-[0.7rem] tracking-wider text-left w-1/5">Action</th>
+                                    <th class="px-3 py-2 font-semibold text-gray-700 uppercase text-[0.7rem] tracking-wider text-left w-1/5">Time In</th>
+                                    <th class="px-3 py-2 font-semibold text-gray-700 uppercase text-[0.7rem] tracking-wider text-left w-1/5">Time Out</th>
                                 </tr>
                             </thead>
                             <tbody id="attendanceLogsList" class="bg-white">
@@ -379,7 +379,7 @@
         // Configuration and Global Variables
         const eventId = <?= $event['event_id'] ?>;
         const eventData = <?= json_encode($event ?? []) ?>;
-        const attendanceSettings = <?= json_encode($attendance_settings ?? []) ?>;
+    let attendanceSettings = <?= json_encode($attendance_settings ?? []) ?>;
         const existingAttendanceRecords = <?= json_encode($attendance_records ?? []) ?>;
         
         // Interval and timer management
@@ -415,6 +415,59 @@
             manualEntryActive: false,
             rfidAutoFocusPausedUntil: 0
         };
+
+                function captureManualEntryState(targetInput) {
+                    const input = targetInput || document.getElementById('userIdInput');
+                    if (!input) return null;
+
+                    return {
+                        inputId: input.id,
+                        value: input.value,
+                        selectionStart: typeof input.selectionStart === 'number' ? input.selectionStart : null,
+                        selectionEnd: typeof input.selectionEnd === 'number' ? input.selectionEnd : null,
+                        selectionDirection: input.selectionDirection || 'none',
+                        isFocused: document.activeElement === input,
+                        manualActive: !!AppState.manualEntryActive
+                    };
+                }
+
+                function restoreManualEntryState(state) {
+                    if (!state) return;
+
+                    const input = document.getElementById(state.inputId || 'userIdInput');
+                    if (!input) return;
+
+                    const valuesMatch = state.value === input.value;
+                    const shouldRefocus = (state.isFocused || state.manualActive) && document.activeElement !== input;
+
+                    if (shouldRefocus) {
+                        requestAnimationFrame(() => {
+                            input.focus({ preventScroll: true });
+                            if (valuesMatch && typeof state.selectionStart === 'number' && typeof state.selectionEnd === 'number') {
+                                try {
+                                    input.setSelectionRange(state.selectionStart, state.selectionEnd, state.selectionDirection || 'none');
+                                } catch (err) {
+                                    input.setSelectionRange(state.selectionStart, state.selectionEnd);
+                                }
+                            }
+                        });
+                        return;
+                    }
+
+                    if (!valuesMatch) {
+                        return;
+                    }
+
+                    if (document.activeElement === input && typeof state.selectionStart === 'number' && typeof state.selectionEnd === 'number') {
+                        requestAnimationFrame(() => {
+                            try {
+                                input.setSelectionRange(state.selectionStart, state.selectionEnd, state.selectionDirection || 'none');
+                            } catch (err) {
+                                input.setSelectionRange(state.selectionStart, state.selectionEnd);
+                            }
+                        });
+                    }
+                }
 
         // Toast registry to prevent repeated toasts
         const ToastRegistry = new Map(); // key -> timestamp
@@ -1312,11 +1365,8 @@
 
         // Check attendance status and update display
         async function checkAttendanceStatus() {
-            // Preserve manual entry state during update
-            const userIdInput = document.getElementById('userIdInput');
-            const preservedValue = userIdInput ? userIdInput.value : '';
-            const preservedFocus = document.activeElement === userIdInput;
-            
+            const manualEntryState = captureManualEntryState();
+
             try {
                 const response = await fetch(`<?= base_url('pederasyon/getAttendanceStatus/') ?>${eventId}`, {
                     method: 'GET',
@@ -1372,18 +1422,7 @@
             } catch (error) {
                 console.error('Error checking attendance status:', error);
             } finally {
-                // Restore manual entry state after update
-                if (userIdInput) {
-                    userIdInput.value = preservedValue;
-                    if (preservedFocus && preservedValue.length > 0) {
-                        // Only restore focus if user was typing
-                        setTimeout(() => {
-                            userIdInput.focus();
-                            // Restore cursor position to end
-                            userIdInput.setSelectionRange(preservedValue.length, preservedValue.length);
-                        }, 50);
-                    }
-                }
+                restoreManualEntryState(manualEntryState);
             }
         }
 
@@ -1576,6 +1615,273 @@
 
         // ==================== ATTENDANCE LOG MANAGEMENT ====================
         
+        const attendanceRowRegistry = new Map();
+
+        function pickFirstValue(source, keys) {
+            if (!source) return undefined;
+            for (const key of keys) {
+                if (Object.prototype.hasOwnProperty.call(source, key)) {
+                    const value = source[key];
+                    if (value !== undefined && value !== null && value !== '') {
+                        return value;
+                    }
+                }
+            }
+            return undefined;
+        }
+
+        function getAttendanceRowKey(user) {
+            const userId = user && (user.user_id || user.id || user.uid || 'unknown');
+            const sessionRaw = user && (user.session || user.session_name || user.sessionName || 'none');
+            const session = typeof sessionRaw === 'string' ? sessionRaw.toLowerCase() : sessionRaw;
+            return `${userId}-${session}`;
+        }
+
+        function deriveDisplayNameMeta(user) {
+            const candidates = [
+                typeof user?.name === 'string' ? user.name : null,
+                typeof user?.full_name === 'string' ? user.full_name : null,
+                typeof user?.fullname === 'string' ? user.fullname : null,
+                typeof user?.display_name === 'string' ? user.display_name : null,
+                (typeof user?.first_name === 'string' && typeof user?.last_name === 'string')
+                    ? `${user.first_name} ${user.last_name}`
+                    : null
+            ].filter(Boolean);
+
+            let displayName = '';
+            for (const candidate of candidates) {
+                const trimmed = candidate.trim();
+                if (trimmed) {
+                    displayName = trimmed;
+                    break;
+                }
+            }
+
+            if (!displayName) {
+                const fallbackId = user && (user.user_id || user.id || user.uid);
+                displayName = fallbackId ? `Member ${fallbackId}` : 'Unknown Member';
+            }
+
+            const nameInitial = displayName.length ? displayName.charAt(0).toUpperCase() : '?';
+            return { displayName, nameInitial };
+        }
+
+        function resolveProfilePictureUrl(picValue) {
+            if (!picValue || typeof picValue !== 'string') return '';
+            const trimmed = picValue.trim();
+            if (!trimmed) return '';
+
+            if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:')) {
+                return trimmed;
+            }
+
+            if (trimmed.includes('/')) {
+                return '<?= base_url() ?>/' + trimmed.replace(/^\/+/, '');
+            }
+
+            return '<?= base_url("uploads/profile_pictures/") ?>' + trimmed;
+        }
+
+        function deriveTimeMetadata(rawValue, displayValue) {
+            let isoTime = '';
+            let resolvedDisplay = typeof displayValue === 'string' ? displayValue.trim() : '';
+
+            const rawExists = rawValue !== undefined && rawValue !== null && rawValue !== '';
+
+            if (rawExists) {
+                try {
+                    if (typeof rawValue === 'string') {
+                        const trimmed = rawValue.trim();
+                        if (trimmed) {
+                            if (/(AM|PM)/i.test(trimmed) && !trimmed.includes('T')) {
+                                const today = new Date();
+                                const normalized = trimmed.replace(/\s?(AM|PM)/i, ' $1');
+                                const tempDate = new Date(`${today.toDateString()} ${normalized}`);
+                                if (!isNaN(tempDate)) {
+                                    isoTime = tempDate.toISOString();
+                                    if (!resolvedDisplay) {
+                                        resolvedDisplay = tempDate.toLocaleTimeString('en-US', {
+                                            hour: 'numeric',
+                                            minute: '2-digit',
+                                            second: '2-digit',
+                                            hour12: true
+                                        });
+                                    }
+                                }
+                            } else {
+                                const tempDate = new Date(trimmed);
+                                if (!isNaN(tempDate)) {
+                                    isoTime = tempDate.toISOString();
+                                    if (!resolvedDisplay) {
+                                        resolvedDisplay = formatTimeDisplay(tempDate.toISOString());
+                                    }
+                                }
+                            }
+                        }
+                    } else if (rawValue instanceof Date) {
+                        isoTime = rawValue.toISOString();
+                        if (!resolvedDisplay) {
+                            resolvedDisplay = formatTimeDisplay(isoTime);
+                        }
+                    }
+                } catch (error) {
+                    console.warn('Error parsing time metadata:', rawValue, error);
+                }
+            }
+
+            if (!isoTime && resolvedDisplay) {
+                try {
+                    const today = new Date();
+                    const normalized = resolvedDisplay.replace(/\s?(AM|PM)/i, ' $1');
+                    const tempDate = new Date(`${today.toDateString()} ${normalized}`);
+                    if (!isNaN(tempDate)) {
+                        isoTime = tempDate.toISOString();
+                    }
+                } catch (error) {
+                    // ignore parsing failures for display strings
+                }
+            }
+
+            if (!resolvedDisplay && isoTime) {
+                resolvedDisplay = formatTimeDisplay(isoTime) || '';
+            }
+
+            return {
+                isoTime: isoTime || '',
+                displayTime: resolvedDisplay || ''
+            };
+        }
+
+        function expandAttendanceRecord(sourceRecord, options = {}) {
+            const entries = [];
+            if (!sourceRecord || typeof sourceRecord !== 'object') {
+                return entries;
+            }
+
+            const fallbackIsExisting = options.isExisting;
+            const sessionDescriptors = [
+                { session: 'morning', suffix: 'am', timeInKey: 'time-in_am', timeOutKey: 'time-out_am', statusKey: 'status_am' },
+                { session: 'afternoon', suffix: 'pm', timeInKey: 'time-in_pm', timeOutKey: 'time-out_pm', statusKey: 'status_pm' }
+            ];
+
+            const basePayload = {
+                user_id: sourceRecord.user_id || sourceRecord.id || sourceRecord.uid || null,
+                name: sourceRecord.user_name || sourceRecord.name || getFullName(sourceRecord),
+                full_name: sourceRecord.full_name || sourceRecord.fullname || '',
+                first_name: sourceRecord.first_name || '',
+                last_name: sourceRecord.last_name || '',
+                middle_name: sourceRecord.middle_name || '',
+                barangay: sourceRecord.barangay || sourceRecord.barangay_name || '',
+                zone_purok: sourceRecord.zone_purok || sourceRecord.zone || '',
+                profile_picture: sourceRecord.profile_picture || sourceRecord.profilePicture || '',
+                rfid_code: sourceRecord.rfid_code || sourceRecord.rfid || '',
+                attendance_id: sourceRecord.attendance_id || sourceRecord.attendanceId || null,
+                type: sourceRecord.member_type || sourceRecord.type || '',
+                age: sourceRecord.age || '',
+                sex: sourceRecord.sex || sourceRecord.gender || '',
+                barangay_position: sourceRecord.barangay_position || '',
+                member_type: sourceRecord.member_type || sourceRecord.type || ''
+            };
+
+            sessionDescriptors.forEach(descriptor => {
+                const timeInRaw = pickFirstValue(sourceRecord, [
+                    descriptor.timeInKey,
+                    descriptor.timeInKey.replace(/-/g, '_'),
+                    `time_in_${descriptor.suffix}`,
+                    `timeIn_${descriptor.suffix}`,
+                    `time_in_${descriptor.session}`,
+                    `timeIn${descriptor.session.charAt(0).toUpperCase()}${descriptor.session.slice(1)}`
+                ]);
+
+                const timeOutRaw = pickFirstValue(sourceRecord, [
+                    descriptor.timeOutKey,
+                    descriptor.timeOutKey.replace(/-/g, '_'),
+                    `time_out_${descriptor.suffix}`,
+                    `timeOut_${descriptor.suffix}`,
+                    `time_out_${descriptor.session}`,
+                    `timeOut${descriptor.session.charAt(0).toUpperCase()}${descriptor.session.slice(1)}`
+                ]);
+
+                const sessionStatus = pickFirstValue(sourceRecord, [
+                    descriptor.statusKey,
+                    descriptor.statusKey.replace(/-/g, '_'),
+                    `status_${descriptor.suffix}`,
+                    `status${descriptor.suffix.toUpperCase()}`,
+                    'attendanceStatus',
+                    'status'
+                ]) || 'Present';
+
+                if (!timeInRaw && !timeOutRaw) {
+                    return;
+                }
+
+                const { isoTime: timeInISO, displayTime: timeInDisplay } = deriveTimeMetadata(timeInRaw, pickFirstValue(sourceRecord, [
+                    'time_in_display',
+                    `time_in_display_${descriptor.suffix}`,
+                    `timeInDisplay_${descriptor.suffix}`,
+                    `time_in_label_${descriptor.suffix}`
+                ]));
+
+                const { isoTime: timeOutISO, displayTime: timeOutDisplay } = deriveTimeMetadata(timeOutRaw, pickFirstValue(sourceRecord, [
+                    'time_out_display',
+                    `time_out_display_${descriptor.suffix}`,
+                    `timeOutDisplay_${descriptor.suffix}`,
+                    `time_out_label_${descriptor.suffix}`
+                ]));
+
+                const lastAction = timeOutISO || timeOutRaw ? 'time_out' : 'time_in';
+
+                entries.push({
+                    ...basePayload,
+                    session: descriptor.session,
+                    attendanceStatus: sessionStatus,
+                    time_in_raw: timeInRaw,
+                    time_in_iso: timeInISO,
+                    time_in_display: timeInDisplay,
+                    time_out_raw: timeOutRaw,
+                    time_out_iso: timeOutISO,
+                    time_out_display: timeOutDisplay,
+                    last_action: lastAction,
+                    isExisting: sourceRecord.isExisting !== undefined ? sourceRecord.isExisting : fallbackIsExisting ?? true
+                });
+            });
+
+            return entries;
+        }
+
+        function normalizeAttendanceRecord(record, options = {}) {
+            if (!record || typeof record !== 'object') {
+                return [];
+            }
+
+            const alreadyNormalized = !!(record.session || record.session_name || record.sessionName);
+            if (alreadyNormalized) {
+                const normalizedEntry = { ...record };
+                if (options.isExisting !== undefined && normalizedEntry.isExisting === undefined) {
+                    normalizedEntry.isExisting = options.isExisting;
+                }
+                return [normalizedEntry];
+            }
+
+            return expandAttendanceRecord(record, options);
+        }
+
+        function normalizeAttendanceDataset(records, options = {}) {
+            if (!Array.isArray(records)) {
+                return [];
+            }
+
+            const normalized = [];
+            records.forEach(record => {
+                const entries = normalizeAttendanceRecord(record, options);
+                if (entries.length) {
+                    normalized.push(...entries);
+                }
+            });
+
+            return normalized;
+        }
+
         function updateAttendanceRecords(newRecords) {
             const logsList = document.getElementById('attendanceLogsList');
             
@@ -1587,13 +1893,23 @@
                 // Clear any existing "no records" message
                 clearNoRecordsMessage();
                 
-                // Add or update records
-                newRecords.forEach(record => {
-                    addAttendanceLogEntry(record);
-                });
-                updateAttendanceCounts();
-                // Ensure records are sorted newest-first after batch update
-                sortAttendanceByDatetimeDesc();
+                const normalizedEntries = normalizeAttendanceDataset(newRecords, { isExisting: true });
+
+                if (normalizedEntries.length === 0) {
+                    updateAttendanceCounts();
+                    const existingRows = logsList.querySelectorAll('tr[data-user-id]');
+                    if (existingRows.length === 0) {
+                        showAttendanceMessage('No attendance records for this event yet.');
+                    }
+                } else {
+                    // Add or update records
+                    normalizedEntries.forEach(record => {
+                        addAttendanceLogEntry(record);
+                    });
+                    updateAttendanceCounts();
+                    // Ensure records are sorted newest-first after batch update
+                    sortAttendanceByDatetimeDesc();
+                }
             } else {
                 // Check if there are any existing records
                 const existingRows = logsList.querySelectorAll('tr[data-existing-record], tr.permanent-visible');
@@ -1640,101 +1956,27 @@
             const logsList = document.getElementById('attendanceLogsList');
             
             if (existingAttendanceRecords && existingAttendanceRecords.length > 0) {
-                // console.log('Loading existing attendance records:', existingAttendanceRecords.length);
-                
+                console.log('Loading existing attendance records:', existingAttendanceRecords.length);
+
                 // Remove loading state and any placeholder rows
                 const placeholderRows = logsList.querySelectorAll('tr.loading-records, tr.no-records-row, tr.text-center, tr.no-records');
                 placeholderRows.forEach(row => row.remove());
-                
-                // Add each existing record using the unified addAttendanceLogEntry function
-                existingAttendanceRecords.forEach(record => {
-                    // Process AM session - create separate entries for time-in and time-out
-                    if (record['time-in_am']) {
-                        // Add time-in entry for AM session
-                        addAttendanceLogEntry({
-                            user_id: record.user_id,
-                            name: record.user_name || getFullName(record),
-                            session: 'morning',
-                            time: formatTimeDisplay(record['time-in_am']),
-                            time_raw: record['time-in_am'],  // Pass raw datetime for proper sorting
-                            status: record.status_am || 'Present',
-                            action: 'time_in',
-                            rfid_code: record.rfid_code,
-                            zone_purok: record.zone_purok || '',
-                            barangay: record.barangay || '',
-                            profile_picture: record.profile_picture || '',
-                            attendanceStatus: record.status_am || 'Present',
-                            attendance_id: record.attendance_id,  // Include for deduplication
-                            isExisting: true  // Mark as existing record for always visible display
-                        });
-                        
-                        // Add time-out entry for AM session if it exists
-                        if (record['time-out_am']) {
-                            addAttendanceLogEntry({
-                                user_id: record.user_id,
-                                name: record.user_name || getFullName(record),
-                                session: 'morning',
-                                time: formatTimeDisplay(record['time-out_am']),
-                                time_raw: record['time-out_am'],  // Pass raw datetime for proper sorting
-                                status: record.status_am || 'Present',
-                                action: 'time_out',
-                                rfid_code: record.rfid_code,
-                                zone_purok: record.zone_purok || '',
-                                barangay: record.barangay || '',
-                                profile_picture: record.profile_picture || '',
-                                attendanceStatus: record.status_am || 'Present',
-                                attendance_id: record.attendance_id,  // Include for deduplication
-                                isExisting: true  // Mark as existing record for always visible display
-                            });
-                        }
-                    }
-                    
-                    // Process PM session - create separate entries for time-in and time-out
-                    if (record['time-in_pm']) {
-                        // Add time-in entry for PM session
-                        addAttendanceLogEntry({
-                            user_id: record.user_id,
-                            name: record.user_name || getFullName(record),
-                            session: 'afternoon',
-                            time: formatTimeDisplay(record['time-in_pm']),
-                            time_raw: record['time-in_pm'],  // Pass raw datetime for proper sorting
-                            status: record.status_pm || 'Present',
-                            action: 'time_in',
-                            rfid_code: record.rfid_code,
-                            zone_purok: record.zone_purok || '',
-                            barangay: record.barangay || '',
-                            profile_picture: record.profile_picture || '',
-                            attendanceStatus: record.status_pm || 'Present',
-                            attendance_id: record.attendance_id,  // Include for deduplication
-                            isExisting: true  // Mark as existing record for always visible display
-                        });
-                        
-                        // Add time-out entry for PM session if it exists
-                        if (record['time-out_pm']) {
-                            addAttendanceLogEntry({
-                                user_id: record.user_id,
-                                name: record.user_name || getFullName(record),
-                                session: 'afternoon',
-                                time: formatTimeDisplay(record['time-out_pm']),
-                                time_raw: record['time-out_pm'],  // Pass raw datetime for proper sorting
-                                status: record.status_pm || 'Present',
-                                action: 'time_out',
-                                rfid_code: record.rfid_code,
-                                zone_purok: record.zone_purok || '',
-                                barangay: record.barangay || '',
-                                profile_picture: record.profile_picture || '',
-                                attendanceStatus: record.status_pm || 'Present',
-                                attendance_id: record.attendance_id,  // Include for deduplication
-                                isExisting: true  // Mark as existing record for always visible display
-                            });
-                        }
-                    }
-                });
-                
-                // Update counts
-                updateAttendanceCounts();
-                // Ensure existing records are sorted newest-first after load
-                sortAttendanceByDatetimeDesc();
+
+                const normalizedEntries = normalizeAttendanceDataset(existingAttendanceRecords, { isExisting: true });
+
+                if (normalizedEntries.length === 0) {
+                    showAttendanceMessage('No attendance records for this event yet.');
+                    updateAttendanceCounts();
+                } else {
+                    normalizedEntries.forEach(entry => {
+                        addAttendanceLogEntry(entry);
+                    });
+
+                    // Update counts
+                    updateAttendanceCounts();
+                    // Ensure existing records are sorted newest-first after load
+                    sortAttendanceByDatetimeDesc();
+                }
             } else {
                 // No existing records, remove loading state and show appropriate message
                 const placeholderRows = logsList.querySelectorAll('tr.loading-records');
@@ -1862,11 +2104,9 @@
 
         // Update session display based on server data
         function updateSessionDisplay(activeSessionInfo, morningStatus, afternoonStatus) {
-            // Preserve manual entry state
             const userIdInput = document.getElementById('userIdInput');
-            const preservedValue = userIdInput ? userIdInput.value : '';
-            const preservedFocus = document.activeElement === userIdInput;
-            
+            const manualEntryState = captureManualEntryState(userIdInput);
+
             const sessionIndicator = document.getElementById('sessionIndicator');
             const sessionStatus = document.getElementById('sessionStatus');
             const currentSessionDisplay = document.getElementById('currentSessionDisplay');
@@ -1891,6 +2131,7 @@
                 if (rfidInput) rfidInput.disabled = true;
                 if (userIdInput) userIdInput.disabled = true;
                 showAllAttendanceLogs();
+                restoreManualEntryState(manualEntryState);
                 return;
             }
 
@@ -1911,6 +2152,7 @@
                 if (rfidInput) rfidInput.disabled = true;
                 if (userIdInput) userIdInput.disabled = true;
                 showAllAttendanceLogs();
+                restoreManualEntryState(manualEntryState);
                 return;
             }
 
@@ -1927,6 +2169,7 @@
                 if (rfidInput) rfidInput.disabled = true;
                 if (userIdInput) userIdInput.disabled = true;
                 showAllAttendanceLogs();
+                restoreManualEntryState(manualEntryState);
                 return;
             }
 
@@ -1943,7 +2186,6 @@
                 document.getElementById('rfidInput').disabled = false;
                 if (userIdInput) {
                     userIdInput.disabled = false;
-                    userIdInput.value = preservedValue; // Restore value
                 }
                 
                 // Filter attendance log by active session
@@ -1972,7 +2214,6 @@
                     document.getElementById('rfidInput').disabled = true;
                     if (userIdInput) {
                         userIdInput.disabled = false;
-                        userIdInput.value = preservedValue; // Restore value
                     }
                     
                 } else {
@@ -1987,7 +2228,6 @@
                     document.getElementById('rfidInput').disabled = true;
                     if (userIdInput) {
                         userIdInput.disabled = false;
-                        userIdInput.value = preservedValue; // Restore value
                     }
                     
                     // Show all attendance logs when no session is active
@@ -1996,14 +2236,8 @@
             }
             
             // ...existing code... (manual entry UI updated later in the file)
-            
-            // Restore focus if user was typing
-            if (preservedFocus && preservedValue.length > 0 && userIdInput) {
-                setTimeout(() => {
-                    userIdInput.focus();
-                    userIdInput.setSelectionRange(preservedValue.length, preservedValue.length);
-                }, 50);
-            }
+
+            restoreManualEntryState(manualEntryState);
         }
 
         // Enhanced time comparison function with proper accuracy
@@ -2821,277 +3055,204 @@
         }
 
         // Add attendance log entry (unified function for new and existing records)
-        function addAttendanceLogEntry(user) {
+        function addAttendanceLogEntry(entry) {
+            if (!entry) return;
+
             const logsList = document.getElementById('attendanceLogsList');
+            if (!logsList) return;
 
-            // Remove "no records" and "session ended" messages when actual attendance is recorded
-            // include both legacy 'no-records' and standardized 'no-records-row'
-            const placeholderRows = logsList.querySelectorAll('tr.text-center, tr.no-records, tr.no-records-row, tr.session-ended-message');
-            placeholderRows.forEach(row => row.remove());
+            const placeholders = logsList.querySelectorAll('tr.text-center, tr.no-records, tr.no-records-row, tr.session-ended-message');
+            placeholders.forEach(row => row.remove());
 
-            const status = user.attendanceStatus || user.status || 'Present';
-            const statusColor = status === 'Late' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800';
-            const actionLabel = user.action === 'time_out' ? 'Time-Out' : 'Time-In';
+            const sessionRaw = entry.session || entry.session_name || entry.sessionName || 'none';
+            const session = typeof sessionRaw === 'string' ? sessionRaw.toLowerCase() : sessionRaw;
+            const key = getAttendanceRowKey({ ...entry, session });
+            const existingState = attendanceRowRegistry.get(key) || {};
 
-            const baseTimeValue = user.time_raw || user.timeOriginal || user.time_original || user.timeISO || user.timestamp || user.time;
-            let isoTime = '';
-            try {
-                if (baseTimeValue) {
-                    if (typeof baseTimeValue === 'string' && /(AM|PM)/i.test(baseTimeValue)) {
-                        const today = new Date();
-                        const timeStr = baseTimeValue.replace(/\s?(AM|PM)/i, ' $1');
-                        const tempDate = new Date(`${today.toDateString()} ${timeStr}`);
-                        if (!isNaN(tempDate)) {
-                            isoTime = tempDate.toISOString();
-                        }
-                    } else {
-                        const tempDate = new Date(baseTimeValue);
-                        if (!isNaN(tempDate)) {
-                            isoTime = tempDate.toISOString();
-                        }
-                    }
-                }
-            } catch (error) {
-                console.warn('Error parsing time for filtering:', baseTimeValue, error);
-            }
-            if (!isoTime) {
-                isoTime = new Date().toISOString();
+            const { displayName, nameInitial } = deriveDisplayNameMeta(entry);
+            const profilePicUrl = resolveProfilePictureUrl(entry.profile_picture || entry.profilePicture || existingState.profilePicUrl || '');
+            const status = entry.attendanceStatus || entry.status || existingState.status || 'Present';
+
+            const userId = entry.user_id || entry.id || entry.uid || existingState.userId || 'unknown';
+            const zonePurok = entry.zone_purok || entry.zone || existingState.zonePurok || '';
+            const barangay = entry.barangay || entry.barangay_name || existingState.barangay || '';
+            const stableId = entry.attendance_id || entry.attendanceId || existingState.attendanceId || null;
+
+            let timeInISO = existingState.timeInISO || '';
+            let timeInDisplay = existingState.timeInDisplay || '';
+            let timeOutISO = existingState.timeOutISO || '';
+            let timeOutDisplay = existingState.timeOutDisplay || '';
+
+            const directTimeInRaw = pickFirstValue(entry, ['time_in_raw', 'time_in', 'timeIn', 'timeInRaw', 'time_in_value', 'time_in_am', 'time_in_pm', 'time_in_iso']);
+            const directTimeInDisplay = pickFirstValue(entry, ['time_in_display', 'time_in_formatted', 'timeInDisplay', 'timeInFormatted', 'time_in_label']);
+            if (directTimeInRaw || directTimeInDisplay) {
+                const { isoTime, displayTime } = deriveTimeMetadata(directTimeInRaw, directTimeInDisplay);
+                if (isoTime) timeInISO = isoTime;
+                if (displayTime) timeInDisplay = displayTime;
             }
 
-            let displayTime = '';
-            if (user.time_display) {
-                displayTime = user.time_display;
-            } else if (baseTimeValue) {
-                const formattedFromBase = formatTimeDisplay(baseTimeValue);
-                if (formattedFromBase) {
-                    displayTime = formattedFromBase;
-                }
+            const directTimeOutRaw = pickFirstValue(entry, ['time_out_raw', 'time_out', 'timeOut', 'timeOutRaw', 'time_out_value', 'time_out_am', 'time_out_pm', 'time_out_iso']);
+            const directTimeOutDisplay = pickFirstValue(entry, ['time_out_display', 'time_out_formatted', 'timeOutDisplay', 'timeOutFormatted', 'time_out_label']);
+            if (directTimeOutRaw || directTimeOutDisplay) {
+                const { isoTime, displayTime } = deriveTimeMetadata(directTimeOutRaw, directTimeOutDisplay);
+                if (isoTime) timeOutISO = isoTime;
+                if (displayTime) timeOutDisplay = displayTime;
             }
 
-            if (!displayTime && user.time) {
-                const formattedFromTime = formatTimeDisplay(user.time);
-                displayTime = formattedFromTime || user.time;
+            const action = (entry.action || entry.last_action || '').toLowerCase();
+            if (action.includes('time_in')) {
+                const rawSource = pickFirstValue(entry, ['time_raw', 'timeOriginal', 'time_original', 'timeISO', 'timestamp', 'time']);
+                const displaySource = pickFirstValue(entry, ['time_display', 'timeFormatted', 'display_time']);
+                const { isoTime, displayTime } = deriveTimeMetadata(rawSource, displaySource);
+                if (isoTime) timeInISO = isoTime;
+                if (displayTime) timeInDisplay = displayTime;
+            } else if (action.includes('time_out')) {
+                const rawSource = pickFirstValue(entry, ['time_raw', 'timeOriginal', 'time_original', 'timeISO', 'timestamp', 'time']);
+                const displaySource = pickFirstValue(entry, ['time_display', 'timeFormatted', 'display_time']);
+                const { isoTime, displayTime } = deriveTimeMetadata(rawSource, displaySource);
+                if (isoTime) timeOutISO = isoTime;
+                if (displayTime) timeOutDisplay = displayTime;
             }
 
-            // Prefer server-provided attendance_id for stable deduplication if available
-            const stableId = user.attendance_id || user.attendanceId || null;
-            const fallbackId = `${user.user_id || user.id}-${user.session}-${user.action}-${isoTime}`;
-            const entryId = stableId
-                ? `aid-${stableId}-${user.session || 'none'}-${user.action || 'unknown'}`
-                : fallbackId;
+            const timeInLabel = timeInDisplay || '--';
+            const timeOutLabel = timeOutDisplay || '--';
 
-            // Check if this entry already exists so we can update instead of duplicate
-            const existingEntry = Array.from(logsList.querySelectorAll('tr[data-entry-id]'))
-                .find(row => row.getAttribute('data-entry-id') === entryId);
-            if (existingEntry) {
-                existingEntry.setAttribute('data-time', isoTime);
-                existingEntry.setAttribute('data-session', user.session);
-                existingEntry.setAttribute('data-action', user.action);
-                if (user.isExisting) {
-                    existingEntry.setAttribute('data-existing-record', 'true');
-                }
+            const statusColor = status === 'Late'
+                ? 'bg-yellow-100 text-yellow-800'
+                : status === 'Timed Out'
+                    ? 'bg-red-100 text-red-700'
+                    : 'bg-green-100 text-green-800';
 
-                // Build updated cell markup and replace contents
-                let profilePicUrlTable = '';
-                if (user.profile_picture) {
-                    const picValue = user.profile_picture.trim();
-                    if (picValue.startsWith('http://') || picValue.startsWith('https://') || picValue.startsWith('data:')) {
-                        profilePicUrlTable = picValue;
-                    } else if (picValue.includes('/')) {
-                        profilePicUrlTable = '<?= base_url() ?>/' + picValue.replace(/^\/+/, '');
-                    } else {
-                        profilePicUrlTable = '<?= base_url("uploads/profile_pictures/") ?>' + picValue;
-                    }
-                }
+            const locationLabel = zonePurok || barangay
+                ? `<div class="text-xs text-gray-500">${zonePurok ? `Zone ${zonePurok}` : ''}${zonePurok && barangay ? ' • ' : ''}${barangay || ''}</div>`
+                : '';
 
-                const updatedRowHtml = `
-                    <td class="px-3 py-2">
-                        <div class="flex items-center gap-2">
-                            <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden border border-gray-200 bg-white">
-                                ${profilePicUrlTable ?
-                                    `<img src="${profilePicUrlTable}" alt="${user.name}" class="w-full h-full object-cover" onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\\'text-blue-600 text-xs font-semibold\\'>${user.name.charAt(0).toUpperCase()}</span>';">` :
-                                    `<span class="text-blue-600 text-xs font-semibold">${user.name.charAt(0).toUpperCase()}</span>`
-                                }
-                            </div>
-                            <div class="min-w-0 flex-1">
-                                <div class="text-sm font-medium text-gray-900 truncate">${user.name}</div>
-                                ${(user.zone_purok || user.barangay) ? `
-                                    <div class="text-xs text-gray-500">
-                                        ${user.zone_purok ? `Zone ${user.zone_purok}` : ''}${user.zone_purok && user.barangay ? ' • ' : ''}${user.barangay ? `${user.barangay}` : ''}
-                                    </div>
-                                ` : ''}
-                            </div>
-                        </div>
-                    </td>
-                    <td class="px-3 py-2 text-center">
-                        <span class="inline-flex px-2 py-1 text-xs font-medium rounded-md ${statusColor}">
-                            ${status}
-                        </span>
-                    </td>
-                    <td class="px-3 py-2 text-center">
-                        <div class="text-sm font-medium text-gray-700">${displayTime || '--'}</div>
-                    </td>
-                    <td class="px-3 py-2 text-center">
-                        <span class="inline-flex px-2 py-1 text-xs font-medium rounded-md ${user.action === 'time_out' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">
-                            ${actionLabel}
-                        </span>
-                    </td>
-                `;
+            const row = existingState.row || document.createElement('tr');
+            row.className = 'hover:bg-gray-50 permanent-visible';
+            row.setAttribute('data-session', session);
+            row.setAttribute('data-user-id', userId);
 
-                existingEntry.innerHTML = updatedRowHtml;
-                sortAttendanceByDatetimeDesc();
-                return;
-            }
-
-            const logRow = document.createElement('tr');
-            logRow.className = 'hover:bg-gray-50 permanent-visible';
-            logRow.setAttribute('data-session', user.session);
-            logRow.setAttribute('data-time', isoTime);
-            logRow.setAttribute('data-entry-id', entryId);
-            logRow.setAttribute('data-user-id', user.user_id || user.id);
-            logRow.setAttribute('data-action', user.action);
-
-            // Attach attendance id if present
             if (stableId) {
-                logRow.setAttribute('data-attendance-id', stableId);
+                row.setAttribute('data-attendance-id', stableId);
+            } else {
+                row.removeAttribute('data-attendance-id');
             }
 
-            // Mark existing records so they are always visible
-            if (user.isExisting) {
-                logRow.setAttribute('data-existing-record', 'true');
+            if (entry.isExisting || existingState.isExisting) {
+                row.setAttribute('data-existing-record', 'true');
+            } else {
+                row.removeAttribute('data-existing-record');
             }
 
-            // Apply session highlighting based on current active session
-            if (currentActiveSession === user.session) {
-                logRow.classList.add('highlight-active-session');
-            } else if (currentActiveSession !== null) {
-                logRow.classList.add('dim-inactive-session');
+            if (timeInISO) {
+                row.setAttribute('data-time-in', timeInISO);
+            } else {
+                row.removeAttribute('data-time-in');
             }
 
-            // Build proper profile picture URL for table
-            let profilePicUrlTable = '';
-            if (user.profile_picture) {
-                const picValue = user.profile_picture.trim();
-                if (picValue.startsWith('http://') || picValue.startsWith('https://') || picValue.startsWith('data:')) {
-                    profilePicUrlTable = picValue;
-                } else if (picValue.includes('/')) {
-                    profilePicUrlTable = '<?= base_url() ?>/' + picValue.replace(/^\/+/, '');
-                } else {
-                    profilePicUrlTable = '<?= base_url("uploads/profile_pictures/") ?>' + picValue;
-                }
+            if (timeOutISO) {
+                row.setAttribute('data-time-out', timeOutISO);
+            } else {
+                row.removeAttribute('data-time-out');
             }
 
-            logRow.innerHTML = `
+            const latestIsoCandidate = [timeOutISO, timeInISO]
+                .map(value => ({ value, epoch: value ? new Date(value).getTime() : 0 }))
+                .sort((a, b) => b.epoch - a.epoch)[0];
+            if (latestIsoCandidate && latestIsoCandidate.epoch > 0) {
+                row.setAttribute('data-last-activity', latestIsoCandidate.value);
+            } else {
+                row.removeAttribute('data-last-activity');
+            }
+
+            row.innerHTML = `
                 <td class="px-3 py-2">
                     <div class="flex items-center gap-2">
                         <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden border border-gray-200 bg-white">
-                            ${profilePicUrlTable ? 
-                                `<img src="${profilePicUrlTable}" alt="${user.name}" class="w-full h-full object-cover" onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\\'text-blue-600 text-xs font-semibold\\'>${user.name.charAt(0).toUpperCase()}</span>';">` :
-                                `<span class="text-blue-600 text-xs font-semibold">${user.name.charAt(0).toUpperCase()}</span>`
+                            ${profilePicUrl
+                                ? `<img src="${profilePicUrl}" alt="${displayName}" class="w-full h-full object-cover" onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\\'text-blue-600 text-xs font-semibold\\'>${nameInitial}</span>';">`
+                                : `<span class="text-blue-600 text-xs font-semibold">${nameInitial}</span>`
                             }
                         </div>
                         <div class="min-w-0 flex-1">
-                            <div class="text-sm font-medium text-gray-900 truncate">${user.name}</div>
-                            ${(user.zone_purok || user.barangay) ? `
-                                <div class="text-xs text-gray-500">
-                                    ${user.zone_purok ? `Zone ${user.zone_purok}` : ''}${user.zone_purok && user.barangay ? ' • ' : ''}${user.barangay ? `${user.barangay}` : ''}
-                                </div>
-                            ` : ''}
+                            <div class="text-sm font-medium text-gray-900 truncate">${displayName}</div>
+                            ${locationLabel}
                         </div>
                     </div>
                 </td>
                 <td class="px-3 py-2 text-center">
-                    <span class="inline-flex px-2 py-1 text-xs font-medium rounded-md ${statusColor}">
-                        ${status}
-                    </span>
+                    <span class="inline-flex px-2 py-1 text-xs font-medium rounded-md ${statusColor}">${status}</span>
                 </td>
-                <td class="px-3 py-2 text-center">
-                    <div class="text-sm font-medium text-gray-700">${displayTime || '--'}</div>
+                <td class="px-3 py-2 text-center time-indicator time-in-cell">
+                    <div class="text-sm font-medium text-gray-700">${timeInLabel}</div>
                 </td>
-                <td class="px-3 py-2 text-center">
-                    <span class="inline-flex px-2 py-1 text-xs font-medium rounded-md ${user.action === 'time_out' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">
-                        ${actionLabel}
-                    </span>
+                <td class="px-3 py-2 text-center time-indicator time-out-cell">
+                    <div class="text-sm font-medium text-gray-700">${timeOutLabel}</div>
                 </td>
             `;
 
-            // Insert entry in chronological order based on time
-            insertEntryByTime(logsList, logRow, isoTime);
-
-            // Ensure recent taps are visible at the top: scroll container to top and add transient highlight
-            try {
-                // The wrapper div that scrolls is the parent of the table
-                const wrapper = logsList.closest('div[style*="max-height"]');
-                if (wrapper) {
-                    // Scroll to top so newest entries (top) are visible
-                    wrapper.scrollTop = 0;
-                }
-                // Add transient highlight class
-                logRow.classList.add('recent-tap');
-                setTimeout(() => {
-                    logRow.classList.remove('recent-tap');
-                }, 2500);
-            } catch (err) {
-                console.warn('Could not apply recent tap highlight or scroll:', err);
+            const tbody = logsList.querySelector('tbody') || logsList;
+            if (!row.parentNode) {
+                tbody.appendChild(row);
+                row.classList.add('recent-tap');
+                setTimeout(() => row.classList.remove('recent-tap'), 2000);
             }
 
-            // Update total attendee count after adding a new log entry
-            try {
-                updateAttendanceCounts();
-            } catch (err) {
-                console.warn('Error updating attendance counts after adding entry:', err);
-            }
-        }
-
-        // Insert entry so the newest tap is always at the top of the attendance log
-        function insertEntryByTime(logsList, newRow, newTime) {
-            try {
-                const tbody = logsList.querySelector('tbody') || logsList;
-
-                // Prepend the new row so recent taps appear first
-                if (tbody.firstChild) {
-                    tbody.insertBefore(newRow, tbody.firstChild);
+            row.classList.remove('highlight-active-session', 'dim-inactive-session');
+            if (currentActiveSession) {
+                if (currentActiveSession === session) {
+                    row.classList.add('highlight-active-session');
                 } else {
-                    tbody.appendChild(newRow);
-                }
-                // After inserting, sort all rows by data-time descending (newest first)
-                try {
-                    const rows = Array.from(tbody.querySelectorAll('tr[data-time]'));
-                    rows.sort((a, b) => {
-                        const ta = new Date(a.getAttribute('data-time')).getTime() || 0;
-                        const tb = new Date(b.getAttribute('data-time')).getTime() || 0;
-                        return tb - ta; // descending
-                    });
-
-                    // Re-append rows in sorted order
-                    rows.forEach(r => tbody.appendChild(r));
-                } catch (sortErr) {
-                    console.warn('Could not sort attendance rows:', sortErr);
-                }
-            } catch (err) {
-                // Fallback to append when DOM operations fail for any reason
-                try {
-                    logsList.insertBefore(newRow, logsList.firstChild);
-                } catch (e) {
-                    logsList.appendChild(newRow);
+                    row.classList.add('dim-inactive-session');
                 }
             }
+
+            attendanceRowRegistry.set(key, {
+                row,
+                displayName,
+                nameInitial,
+                profilePicUrl,
+                status,
+                session,
+                userId,
+                zonePurok,
+                barangay,
+                attendanceId: stableId,
+                isExisting: entry.isExisting || existingState.isExisting || false,
+                timeInISO,
+                timeInDisplay,
+                timeOutISO,
+                timeOutDisplay
+            });
+
+            updateAttendanceCounts();
+            sortAttendanceByDatetimeDesc();
+
+            return row;
         }
 
-        // Sort entire attendance table body by data-time (datetime) descending
+        // Sort entire attendance table body by activity timestamp descending
         function sortAttendanceByDatetimeDesc() {
             try {
                 const logsList = document.getElementById('attendanceLogsList');
+                if (!logsList) return;
+
                 const tbody = logsList.querySelector('tbody') || logsList;
-                const rows = Array.from(tbody.querySelectorAll('tr[data-time]'));
+                const rows = Array.from(tbody.querySelectorAll('tr[data-user-id]'));
 
                 rows.sort((a, b) => {
-                    const ta = new Date(a.getAttribute('data-time')).getTime() || 0;
-                    const tb = new Date(b.getAttribute('data-time')).getTime() || 0;
-                    return tb - ta; // newest first
+                    const getTime = (row) => {
+                        const last = row.getAttribute('data-last-activity');
+                        const timeout = row.getAttribute('data-time-out');
+                        const timein = row.getAttribute('data-time-in');
+                        const candidate = last || timeout || timein;
+                        return candidate ? new Date(candidate).getTime() || 0 : 0;
+                    };
+
+                    return getTime(b) - getTime(a);
                 });
 
-                rows.forEach(r => tbody.appendChild(r));
+                rows.forEach(row => tbody.appendChild(row));
             } catch (err) {
                 console.warn('Could not sort attendance table:', err);
             }
@@ -3112,8 +3273,6 @@
             
             // Filter entries based on active session if session is active
             filterAttendanceLogBySession();
-            // Keep log sorted by datetime (newest-first)
-            sortAttendanceByDatetimeDesc();
         }
 
         // Filter attendance log by active session
@@ -3131,56 +3290,71 @@
                 attendanceSettings.end_attendance_am : 
                 attendanceSettings.end_attendance_pm;
             
+            const createSessionBoundary = (timeValue) => {
+                if (!timeValue || typeof timeValue !== 'string') return null;
+                const parts = timeValue.split(':').map(n => parseInt(n, 10));
+                if (parts.length < 2 || parts.some(isNaN)) return null;
+                const boundary = new Date();
+                boundary.setHours(parts[0], parts[1], 0, 0);
+                return boundary;
+            };
+
+            const sessionStartTime = createSessionBoundary(sessionStart);
+            const sessionEndTime = createSessionBoundary(sessionEnd);
+
+            const isWithinSessionWindow = (isoString) => {
+                if (!isoString) return false;
+                const timeValue = new Date(isoString);
+                if (isNaN(timeValue.getTime())) return false;
+                if (!sessionStartTime || !sessionEndTime) {
+                    return true;
+                }
+                return timeValue >= sessionStartTime && timeValue <= sessionEndTime;
+            };
+
             rows.forEach(row => {
                 const rowSession = row.getAttribute('data-session');
-                const rowTimeStr = row.getAttribute('data-time');
+                const lastActivity = row.getAttribute('data-last-activity');
+                const rowTimeIn = row.getAttribute('data-time-in');
+                const rowTimeOut = row.getAttribute('data-time-out');
                 // Always keep rows visible; use classes to indicate state
                 row.classList.add('permanent-visible');
                 row.classList.remove('highlight-active-session', 'dim-inactive-session');
 
-                // Time cell indicator (if present)
-                const timeCell = row.querySelector('.time-indicator');
+                // Time cell indicators (if present)
+                const timeCells = row.querySelectorAll('.time-indicator');
+                timeCells.forEach(cell => cell.classList.remove('active-session-indicator', 'inactive-session-indicator'));
 
                 // If there's no active session, keep all rows in neutral state
                 if (!currentActiveSession) {
-                    if (timeCell) {
-                        timeCell.classList.remove('active-session-indicator', 'inactive-session-indicator');
-                    }
                     return;
                 }
 
-                // Compute session start/end Date objects for comparison
-                const [startHour, startMin] = sessionStart.split(':').map(n => parseInt(n, 10));
-                const [endHour, endMin] = sessionEnd.split(':').map(n => parseInt(n, 10));
-                const sessionStartTime = new Date();
-                const sessionEndTime = new Date();
-                sessionStartTime.setHours(startHour, startMin, 0, 0);
-                sessionEndTime.setHours(endHour, endMin, 0, 0);
-
                 // If row belongs to the active session and has a timestamp, highlight it when within timeframe
-                if (rowSession === currentActiveSession && rowTimeStr) {
-                    const rowTime = new Date(rowTimeStr);
-                    if (rowTime >= sessionStartTime && rowTime <= sessionEndTime) {
+                if (rowSession === currentActiveSession) {
+                    const timeMatchesWindow = [lastActivity, rowTimeOut, rowTimeIn].some(isWithinSessionWindow);
+
+                    if (timeMatchesWindow) {
                         row.classList.add('highlight-active-session');
-                        if (timeCell) {
-                            timeCell.classList.add('active-session-indicator');
-                            timeCell.classList.remove('inactive-session-indicator');
-                        }
+                        timeCells.forEach(cell => {
+                            cell.classList.add('active-session-indicator');
+                            cell.classList.remove('inactive-session-indicator');
+                        });
                     } else {
                         // Same session but outside timeframe -> dim but keep visible
                         row.classList.add('dim-inactive-session');
-                        if (timeCell) {
-                            timeCell.classList.add('inactive-session-indicator');
-                            timeCell.classList.remove('active-session-indicator');
-                        }
+                        timeCells.forEach(cell => {
+                            cell.classList.add('inactive-session-indicator');
+                            cell.classList.remove('active-session-indicator');
+                        });
                     }
                 } else {
                     // Rows from other sessions are dimmed but still visible
                     row.classList.add('dim-inactive-session');
-                    if (timeCell) {
-                        timeCell.classList.add('inactive-session-indicator');
-                        timeCell.classList.remove('active-session-indicator');
-                    }
+                    timeCells.forEach(cell => {
+                        cell.classList.add('inactive-session-indicator');
+                        cell.classList.remove('active-session-indicator');
+                    });
                 }
             });
         }
@@ -3469,7 +3643,8 @@
                     'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: new URLSearchParams({
-                    event_id: eventId
+                    event_id: eventId,
+                    '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
                 })
             })
             .then(response => response.json())

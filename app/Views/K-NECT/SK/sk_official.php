@@ -118,10 +118,10 @@
                         <div class="flex flex-wrap items-center justify-between gap-4">
                             <!-- Status Tabs -->
                             <div class="flex flex-wrap gap-2">
-                                <button class="status-tab active px-4 py-2 rounded-lg text-sm font-medium transition-all" data-status="all">
+                                <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all" data-status="all">
                                     All
                                 </button>
-                                <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all" data-status="officials">
+                                <button class="status-tab active px-4 py-2 rounded-lg text-sm font-medium transition-all" data-status="officials">
                                     All SK Officials
                                 </button>
                                 <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all" data-status="chairperson">
@@ -172,7 +172,7 @@
                                             <input type="checkbox" id="selectAllRows" class="form-checkbox h-4 w-4 text-indigo-600">
                                         </th>
                                         <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Barangay</th>
+                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">User ID</th>
                                         <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Zone</th>
                                         <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Name</th>
                                         <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Age</th>
@@ -209,7 +209,7 @@
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= esc($user['id']) ?></td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    <?= esc(BarangayHelper::getBarangayName($user['barangay'])) ?>
+                                                    <?= esc($user['user_id'] ?? '') ?>
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= esc($user['zone_purok'] ?? '') ?></td>
                                                 <td class="px-6 py-4 text-sm text-gray-900 name-cell"><?= esc($user['last_name']) ?>, <?= esc($user['first_name']) ?> <?= esc($user['middle_name']) ?></td>
@@ -553,8 +553,9 @@
         // Barangay mapping from PHP
         const barangayMap = <?= json_encode(BarangayHelper::getBarangayMap()) ?>;
         
-        // Current user data for restrictions
-        const currentUserId = <?= json_encode($current_user_id ?? null) ?>;
+    // Current user data for restrictions
+    const currentUserId = <?= json_encode($current_user_id ?? null) ?>;
+    const memberTabStorageKey = 'skMemberTab';
         
         // Helper function to get barangay name
         function getBarangayName(barangayId) {
@@ -661,7 +662,7 @@
                     populateZoneFilter();
                     
                     // Initialize "All" tab as active by default
-                    $('.status-tab[data-status="all"]').trigger('click');
+                    $('.status-tab[data-status="officials"]').trigger('click');
                 }
             });
 
@@ -731,7 +732,7 @@
 
                 const status = $(this).data('status');
                 applyStatusFilter(status);
-                localStorage.setItem('memberTab', status);
+                localStorage.setItem(memberTabStorageKey, status);
             });
             
             // Function to populate zone filter dropdown
@@ -780,14 +781,14 @@
                 // Show all rows
                 applyStatusFilter('all');
                 
-                localStorage.setItem('memberTab', 'all');
+                localStorage.setItem(memberTabStorageKey, 'all');
                 
                 // Show notification
                 showNotification('Filters cleared successfully', 'success');
             });
             
             // On page load, restore last selected tab
-            var savedTab = localStorage.getItem('memberTab') || 'all';
+            var savedTab = localStorage.getItem(memberTabStorageKey) || 'officials';
             $('.status-tab[data-status="' + savedTab + '"]').trigger('click');
 
             // Populate zone filter options after table is loaded
@@ -1264,17 +1265,40 @@
                 allCredentials = allCredentials.concat(data.chairpersons);
             }
 
-            // Remove duplicates based on user ID and exclude KK Members (position 5)
-            const uniqueCredentials = allCredentials.filter((credential, index, self) => 
-                index === self.findIndex((c) => c.user_id === credential.user_id) &&
-                credential.position !== 5 // Exclude KK Members
-            );
+            const uniqueCredentials = [];
+            const seenIds = new Set();
+            allCredentials.forEach((credential) => {
+                if (!credential || credential.position === 5) {
+                    return;
+                }
+                const key = credential.user_id || credential.id;
+                if (!key) {
+                    return;
+                }
+                if (!seenIds.has(key)) {
+                    seenIds.add(key);
+                    uniqueCredentials.push(credential);
+                }
+            });
+
+            uniqueCredentials.sort((a, b) => {
+                const posA = parseInt(a.position, 10) || 0;
+                const posB = parseInt(b.position, 10) || 0;
+                if (posA !== posB) {
+                    return posA - posB;
+                }
+                const nameA = (a.full_name || '').toLowerCase();
+                const nameB = (b.full_name || '').toLowerCase();
+                if (nameA < nameB) return -1;
+                if (nameA > nameB) return 1;
+                return 0;
+            });
 
             if (!uniqueCredentials || uniqueCredentials.length === 0) {
                 tableBody.append(`
                     <tr>
                         <td colspan="6" class="border border-gray-300 px-4 py-8 text-center text-gray-500">
-                            No SK officials with credentials found
+                            No SK officials found for this barangay
                         </td>
                     </tr>
                 `);
@@ -1282,11 +1306,15 @@
             }
 
             uniqueCredentials.forEach(function(credential) {
-                const barangayName = getBarangayName(credential.barangay_id);
+                const barangayName = credential.barangay_name || getBarangayName(credential.barangay_id);
                 const positionText = getPositionText(credential.position);
                 
-                // Mask password if it's not temporary (i.e., if it's hashed)
-                const displayPassword = credential.is_temp_password ? credential.sk_password : '******';
+                const hasPassword = credential.has_password;
+                const isTemporary = credential.is_temp_password;
+                let displayPassword = 'Not Set';
+                if (hasPassword) {
+                    displayPassword = isTemporary ? credential.sk_password : '******';
+                }
                 
                 tableBody.append(`
                     <tr class="hover:bg-gray-50">
@@ -1294,7 +1322,7 @@
                         <td class="border border-gray-300 px-3 py-2 text-center text-xs text-gray-900">${credential.full_name}</td>
                         <td class="border border-gray-300 px-3 py-2 text-center text-xs text-gray-700">${barangayName}</td>
                         <td class="border border-gray-300 px-3 py-2 text-center text-xs text-gray-700">${positionText}</td>
-                        <td class="border border-gray-300 px-3 py-2 text-center text-xs font-mono text-gray-900 bg-gray-50">${credential.sk_username}</td>
+                        <td class="border border-gray-300 px-3 py-2 text-center text-xs font-mono text-gray-900 bg-gray-50">${credential.sk_username || 'N/A'}</td>
                         <td class="border border-gray-300 px-3 py-2 text-center text-xs font-mono text-gray-900 bg-gray-50">${displayPassword}</td>
                     </tr>
                 `);
@@ -1398,11 +1426,21 @@
                     allCredentials = allCredentials.concat(dataJson.data.chairpersons);
                 }
 
-                // Remove duplicates and exclude KK Members (position 5)
-                const uniqueCredentials = allCredentials.filter((credential, index, self) => 
-                    index === self.findIndex((c) => c.user_id === credential.user_id) &&
-                    credential.position !== 5
-                );
+                const uniqueCredentials = [];
+                const seenIds = new Set();
+                allCredentials.forEach((credential) => {
+                    if (!credential || credential.position === 5) {
+                        return;
+                    }
+                    const key = credential.user_id || credential.id;
+                    if (!key) {
+                        return;
+                    }
+                    if (!seenIds.has(key)) {
+                        seenIds.add(key);
+                        uniqueCredentials.push(credential);
+                    }
+                });
 
                 // Fetch logos
                 const logosResp = await fetch('<?= base_url('documents/logos') ?>');
@@ -1419,11 +1457,15 @@
                     irigaLogoUrl ? imageUrlToDataUrl(irigaLogoUrl) : Promise.resolve(null)
                 ]);
 
+                if (uniqueCredentials.length === 0) {
+                    throw new Error('No SK officials available for credentials export');
+                }
+
                 // Build PDF (legal, landscape)
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF('l', 'mm', 'legal');
                 const pageWidth = doc.internal.pageSize.getWidth();
-                const margin = 12.7; // 0.5 inch margins
+                const margin = 25.4; // 1 inch margins
                 let y = margin + 5;
 
                 // Header with logos
@@ -1508,10 +1550,28 @@
                 const headers = ['No.', 'User ID', 'Full Name', 'Barangay', 'Position', 'SK Username', 'SK Password'];
 
                 // Build table body
+                uniqueCredentials.sort((a, b) => {
+                    const posA = parseInt(a.position, 10) || 0;
+                    const posB = parseInt(b.position, 10) || 0;
+                    if (posA !== posB) {
+                        return posA - posB;
+                    }
+                    const nameA = (a.full_name || '').toLowerCase();
+                    const nameB = (b.full_name || '').toLowerCase();
+                    if (nameA < nameB) return -1;
+                    if (nameA > nameB) return 1;
+                    return 0;
+                });
+
                 const body = uniqueCredentials.map((credential, index) => {
                     const fullName = `${credential.first_name || ''} ${credential.middle_name || ''} ${credential.last_name || ''}`.trim();
                     const positionText = getPositionText(credential.position);
-                    const displayPassword = credential.is_temp_password ? (credential.sk_password || 'Not Set') : '******';
+                    const hasPassword = credential.has_password;
+                    const isTemporary = credential.is_temp_password;
+                    let displayPassword = 'Not Set';
+                    if (hasPassword) {
+                        displayPassword = isTemporary ? (credential.sk_password || 'Not Set') : '******';
+                    }
                     
                     return [
                         (index + 1).toString(),
@@ -1524,6 +1584,11 @@
                     ];
                 });
 
+                const tablePadding = 12; // extra spacing inside margins
+                const tableMarginLeft = Math.max(margin + tablePadding, margin);
+                const tableMarginRight = tableMarginLeft;
+                const tableWidth = Math.max(pageWidth - (tableMarginLeft + tableMarginRight), 120);
+
                 // Create table
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(6);
@@ -1531,8 +1596,8 @@
                     head: [headers],
                     body: body,
                     startY: y + 2,
-                    margin: { left: margin, right: margin },
-                    tableWidth: 'auto',
+                    margin: { left: tableMarginLeft, right: tableMarginRight },
+                    tableWidth: tableWidth,
                     styles: { 
                         fontSize: 6,
                         cellPadding: 1.2,

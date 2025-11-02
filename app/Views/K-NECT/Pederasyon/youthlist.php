@@ -781,6 +781,83 @@
             });
         }
 
+        function isHashedSkPassword(password) {
+            if (!password) return false;
+            const value = String(password);
+            return value.startsWith('$2y$') || value.startsWith('$2b$') || value.startsWith('$argon2') || value.length > 40;
+        }
+
+        function formatSkPasswordForDisplay(password) {
+            if (!password) return 'Not generated';
+            return isHashedSkPassword(password) ? '********' : String(password);
+        }
+
+        function pedSanitizePasswordForDataAttr(password) {
+            if (!password) return '';
+            return isHashedSkPassword(password) ? '******' : String(password);
+        }
+
+        function pedComputeStatusBadge(status) {
+            const resolved = parseInt(status, 10);
+            if (resolved === 2) {
+                return { text: 'Approved', className: 'bg-green-100 text-green-800' };
+            }
+            if (resolved === 3) {
+                return { text: 'Rejected', className: 'bg-red-100 text-red-800' };
+            }
+            return { text: 'Pending', className: 'bg-yellow-100 text-yellow-800' };
+        }
+
+        function pedRenderStatusCellHtml(status) {
+            const meta = pedComputeStatusBadge(status);
+            return `<span class="px-2 py-1 rounded-full text-sm font-medium ${meta.className}">${meta.text}</span>`;
+        }
+
+        function pedResolveUserTypeLabel(userType) {
+            const resolved = parseInt(userType, 10);
+            if (resolved === 2 || resolved === 3) return 'SK Chairperson';
+            if (resolved === 1) return 'KK Member';
+            return 'Unknown';
+        }
+
+        function pedRenderSkCredentials(username, password) {
+            const $card = $('#pedSkCredentialsCard');
+            if (!$card.length) return;
+
+            const cleanUsername = (username || '').trim();
+            const displayPassword = formatSkPasswordForDisplay(password || '');
+            const hashed = isHashedSkPassword(password || '');
+
+            const $usernameEl = $('#pedSkUsernameValue');
+            const $passwordEl = $('#pedSkPasswordValue');
+            const $hintEl = $('#pedSkPasswordHint');
+
+            if (cleanUsername) {
+                $card.removeClass('hidden');
+                $usernameEl.text(cleanUsername);
+                $passwordEl.text(displayPassword);
+                if (hashed) {
+                    $hintEl.removeClass('hidden');
+                } else {
+                    $hintEl.addClass('hidden');
+                }
+            } else {
+                $usernameEl.text('Not generated');
+                $passwordEl.text('Not generated');
+                $hintEl.addClass('hidden');
+                $card.addClass('hidden');
+            }
+        }
+
+        function pedPulseSkCredentialsCard() {
+            const $card = $('#pedSkCredentialsCard');
+            if (!$card.length) return;
+            $card.removeClass('hidden').addClass('ring-2 ring-blue-300 ring-offset-2');
+            setTimeout(() => {
+                $card.removeClass('ring-2 ring-blue-300 ring-offset-2');
+            }, 1500);
+        }
+
         // Store original counts globally
         let originalCounts = {
             all: 0,
@@ -1339,6 +1416,8 @@
                         const uploadIdBackFile = u['upload_id-back'] || '';
                         const docHtml = buildDocPreviewHtml(birthCertFile, uploadIdFile, uploadIdBackFile);
                         document.getElementById('pedModalDocPreview').innerHTML = docHtml;
+
+                        pedRenderSkCredentials(u.sk_username || '', u.sk_password || '');
 
                         // Show modal
                         $('#pedPreviewModal').removeClass('hidden');
@@ -2895,15 +2974,59 @@
                         success: function(resp) {
                             if (resp && resp.success) {
                                 showNotification('User type updated successfully!', 'success');
-                                // Close preview and confirm modals before reload
-                                try {
-                                    $('#pedRoleChangeModal').addClass('hidden').css('display', 'none');
-                                    const $pedModal = $('#pedPreviewModal');
-                                    if ($pedModal && $pedModal.length) { $pedModal.addClass('hidden'); }
-                                } catch (e) {}
-                                // Set flag and reload to refresh table then show prompt
-                                try { if (window.localStorage) localStorage.setItem('knect_show_credentials_prompt', '1'); } catch (e) {}
-                                setTimeout(() => { location.reload(); }, 400);
+
+                                const updatedUser = resp.user || {};
+                                const resolvedType = parseInt(updatedUser.user_type != null ? updatedUser.user_type : newType, 10);
+                                const resolvedStatus = parseInt(updatedUser.status != null ? updatedUser.status : $('#pedModalUserStatusValue').val() || '0', 10);
+                                const resolvedUserId = updatedUser.user_id || $('#pedModalDisplayUserId').val() || '';
+
+                                $('#pedModalUserType').val(resolvedType);
+                                $('#pedRoleSelect').val(String(resolvedType));
+                                $('#pedModalDisplayUserId').val(resolvedUserId);
+                                $('#pedModalUserId').text(resolvedUserId || '-');
+
+                                pedRenderSkCredentials(updatedUser.sk_username || '', updatedUser.sk_password || '');
+
+                                const statusMeta = pedComputeStatusBadge(resolvedStatus);
+                                $('#pedModalUserStatus')
+                                    .text(statusMeta.text)
+                                    .removeClass()
+                                    .addClass('inline-flex px-2 py-1 rounded-full text-sm font-medium ' + statusMeta.className);
+                                $('#pedModalUserStatusValue').val(resolvedStatus);
+
+                                pedApplyPerUserRoleRules('#pedRoleSelect', barangayId, dbId || displayUserId, resolvedType, '#pedSkChairmanNote');
+
+                                const $row = $('#myTable tbody tr').filter(function() {
+                                    const $tr = $(this);
+                                    const rowDbId = String($tr.data('user-id') || '');
+                                    const rowDisplayId = String($tr.data('display-user-id') || '');
+                                    return (updatedUser.id && rowDbId === String(updatedUser.id)) || (resolvedUserId && rowDisplayId === String(resolvedUserId));
+                                }).first();
+
+                                if ($row.length) {
+                                    $row.attr('data-user-type', resolvedType);
+                                    $row.attr('data-status', resolvedStatus);
+                                    $row.attr('data-display-user-id', resolvedUserId);
+                                    $row.attr('data-sk_username', updatedUser.sk_username || '');
+                                    $row.attr('data-sk_password', pedSanitizePasswordForDataAttr(updatedUser.sk_password || ''));
+
+                                    $row.find('td').eq(1).text(resolvedUserId || '');
+                                    $row.find('td').eq(6).html(pedRenderStatusCellHtml(resolvedStatus));
+                                    $row.find('td').eq(7).text(pedResolveUserTypeLabel(resolvedType));
+
+                                    table.row($row).invalidate('dom').draw(false);
+                                }
+
+                                calculateOriginalCounts();
+                                updateDisplayedCounts();
+                                applyFilters();
+                                loadCredentialsData();
+
+                                if (resp.generated_credentials && resp.generated_credentials.sk) {
+                                    pedRenderSkCredentials(resp.generated_credentials.sk.username || updatedUser.sk_username || '', resp.generated_credentials.sk.password || updatedUser.sk_password || '');
+                                    pedPulseSkCredentialsCard();
+                                    showNotification('Fresh SK credentials generated. Copy them from the credentials card.', 'info');
+                                }
                             } else {
                                 showNotification((resp && resp.message) || 'Failed to update user type.', 'error');
                             }
@@ -3091,26 +3214,21 @@
             <!-- Content Wrapper (takes remaining vertical space) -->
             <div class="flex-1 flex overflow-hidden">
                 <!-- Left: User Info -->
-                <div class="w-[40%] bg-gray-50 p-6 flex flex-col items-center justify-start relative overflow-hidden">
+                <div class="w-[40%] bg-gray-50 p-6 flex flex-col items-center justify-start overflow-y-auto">
                     <!-- Hidden fields for role-change checks -->
                     <input type="hidden" id="pedModalUserBarangayId" value="">
                     <input type="hidden" id="pedModalUserStatusValue" value="">
                     <input type="hidden" id="pedModalUserType" value="">
                     <input type="hidden" id="pedModalDbId" value="">
                     <input type="hidden" id="pedModalDisplayUserId" value="">
-
-                    <div id="pedModalInfoScroll" class="w-full flex-1 overflow-y-auto pr-2 pb-6">
-                        <div class="flex flex-col items-center">
-                            <div class="w-40 h-40 bg-gray-300 mb-4 overflow-hidden shadow-md border-4 border-white flex items-center justify-center relative" style="min-width:220px; min-height:220px; max-width:220px; max-height:220px;">
-                                <img id="pedModalUserPhoto" src="" alt="User Profile" class="w-full h-full object-cover" style="aspect-ratio:1/1; min-width:220px; min-height:220px; max-width:220px; max-height:220px; border-radius:0;">
-                            </div>
-                            <h4 id="pedModalUserFullName" class="text-lg font-semibold text-gray-900 text-center mb-1"></h4>
-                            <p id="pedModalUserBarangay" class="text-sm text-gray-500 text-center mb-4"></p>
-                        </div>
-
-                        <!-- User Info Sections -->
-                        <div class="w-full space-y-6">
-                            <!-- Basic Information -->
+                    <div class="w-40 h-40 bg-gray-300 mb-4 overflow-hidden shadow-md border-4 border-white flex items-center justify-center relative" style="min-width:220px; min-height:220px; max-width:220px; max-height:220px;">
+                        <img id="pedModalUserPhoto" src="" alt="User Profile" class="w-full h-full object-cover" style="aspect-ratio:1/1; min-width:220px; min-height:220px; max-width:220px; max-height:220px; border-radius:0;">
+                    </div>
+                    <h4 id="pedModalUserFullName" class="text-lg font-semibold text-gray-900 text-center mb-1"></h4>
+                    <p id="pedModalUserBarangay" class="text-sm text-gray-500 text-center mb-4"></p>
+                    <!-- User Info Sections -->
+                    <div class="w-full space-y-6">
+                        <!-- Basic Information -->
                         <div>
                             <h5 class="text-sm font-medium text-gray-900 mb-3 pb-1 border-b border-gray-200">Basic Information</h5>
                             <div class="grid grid-cols-2 gap-4">
@@ -3161,10 +3279,9 @@
                                 <div id="pedAssemblyReasonContainer" class="hidden"><label class="block text-sm font-medium text-gray-500 mb-1">If No, Why?</label><p id="pedModalUserAssemblyReason" class="text-sm text-gray-900"></p></div>
                             </div>
                         </div>
-                        </div>
                     </div>
 
-                    <!-- Officer Position Card (fixed footer) -->
+                    <!-- Officer Position Card (bottom area) -->
                     <div id="pedRoleCard" class="w-full mt-4 bg-white rounded-xl p-4 shadow-sm border border-gray-100">
                         <div class="flex items-center gap-2 mb-2">
                             <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3180,6 +3297,31 @@
                         <button id="pedRoleUpdateBtn" class="w-full mt-3 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm">
                             Update Position
                         </button>
+                    </div>
+
+                    <div id="pedSkCredentialsCard" class="w-full mt-4 bg-white rounded-xl p-4 shadow-sm border border-blue-100 hidden">
+                        <div class="flex items-start gap-2 mb-3">
+                            <div class="flex-shrink-0">
+                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3zm0 2c-2.761 0-5 2.239-5 5v2a1 1 0 001 1h8a1 1 0 001-1v-2c0-2.761-2.239-5-5-5z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold text-gray-700">SK Login Credentials</p>
+                                <p class="text-xs text-gray-500">Generated automatically when the user becomes an SK Chairperson.</p>
+                            </div>
+                        </div>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-600">Username</span>
+                                <span id="pedSkUsernameValue" class="font-mono text-gray-900">Not generated</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-600">Password</span>
+                                <span id="pedSkPasswordValue" class="font-mono text-gray-900">Not generated</span>
+                            </div>
+                            <p id="pedSkPasswordHint" class="text-xs text-orange-600 bg-orange-50 border border-orange-200 rounded-md px-2 py-1 hidden">Password is already secured on the system and cannot be displayed.</p>
+                        </div>
                     </div>
                 </div>
                 <!-- Right: Document Preview -->
@@ -3216,46 +3358,6 @@
                 </div>
 
                 <div id="credentialsContent" class="hidden">
-                    <!-- Document Header - Hidden in preview, shown in print -->
-                    <div class="bg-white hidden print:block" style="font-family: Arial, sans-serif;">
-                        <!-- Header Section with Logos -->
-                        <div class="text-center mb-6 print:mb-4" style="font-family: Arial, sans-serif;">
-                            <div class="flex items-center justify-center mb-4">
-                                <!-- Pederasyon Logo (Left) -->
-                                <div class="flex-shrink-0 mr-8">
-                                    <div id="credentials-pederasyon-logo" class="w-16 h-16 rounded flex items-center justify-center">
-                                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                        </svg>
-                                    </div>
-                                </div>
-                                
-                                <!-- Center Text -->
-                                <div class="text-center" style="font-family: Arial, sans-serif;">
-                                    <h2 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 0; line-height: 1.2;">REPUBLIC OF THE PHILIPPINES</h2>
-                                    <h3 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 0; line-height: 1.2;">PROVINCE OF CAMARINES SUR</h3>
-                                    <h3 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 0; line-height: 1.2;">CITY OF IRIGA</h3>
-                                    <h4 style="font-family: Arial, sans-serif; font-size: 9pt; font-weight: normal; color: black; margin: 0; line-height: 1.2;">PANLUNGSOD NA PEDERASYON NG MGA</h4>
-                                    <h4 style="font-family: Arial, sans-serif; font-size: 9pt; font-weight: normal; color: black; margin: 0; line-height: 1.2;">SANGGUNIANG KABATAAN NG IRIGA</h4>
-                                </div>
-                                
-                                <!-- Iriga City Logo (Right) -->
-                                <div class="flex-shrink-0 ml-8">
-                                    <div id="credentials-iriga-logo" class="w-16 h-16 rounded flex items-center justify-center">
-                                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                        </svg>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <hr class="border-gray-300 mb-4">
-                            
-                            <h2 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 16px 0 24px 0;">PANLUNGSOD NA PEDERASYON NG MGA KABATAAN</h2>
-                            <h3 style="font-family: Arial, sans-serif; font-size: 10pt; font-weight: bold; color: black; margin: 8px 0 16px 0;">SK CHAIRPERSON CREDENTIALS</h3>
-                        </div>
-                    </div>
-
                     <!-- Credentials Tables Container -->
                     <div id="credentialsTablesContainer" class="bg-white rounded-xl shadow-sm border border-gray-100">
                         <!-- SK Credentials Table -->
@@ -3271,6 +3373,14 @@
                                     </span>
                                 </div>
                                 <p class="text-sm text-gray-600">Login information for SK Chairperson positions across all barangays</p>
+                                <!-- Important Notes -->
+                                <div class="mt-3 p-3 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg">
+                                    <p class="text-xs text-blue-800 mb-1"><strong>Password Display Guide:</strong></p>
+                                    <ul class="text-xs text-blue-700 space-y-0.5 ml-4">
+                                        <li>• <strong>Plain text passwords</strong> = Temporary passwords (not yet changed by user)</li>
+                                        <li>• <strong>******** (asterisks)</strong> = Password has been changed by user (hashed for security)</li>
+                                    </ul>
+                                </div>
                             </div>
                             <div class="overflow-x-auto">
                                 <div class="border-2 border-gray-400 rounded-lg overflow-hidden">
@@ -3364,45 +3474,6 @@
                 </div>
 
                 <div id="officialListContent" class="hidden">
-                    <!-- Document Header - Hidden in preview, shown in print -->
-                    <div id="downloadOfficialContent" class="bg-white hidden print:block" style="font-family: Arial, sans-serif;">
-                        <!-- Header Section with Logos -->
-                        <div class="text-center mb-6 print:mb-4" style="font-family: Arial, sans-serif;">
-                            <div class="flex items-center justify-center mb-4">
-                                <!-- Pederasyon Logo (Left) -->
-                                <div class="flex-shrink-0 mr-8">
-                                    <div id="barangay-logo" class="w-16 h-16 rounded flex items-center justify-center">
-                                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                        </svg>
-                                    </div>
-                                </div>
-                                
-                                <!-- Center Text -->
-                                <div class="text-center" style="font-family: Arial, sans-serif;">
-                                    <h2 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 0; line-height: 1.2;">REPUBLIC OF THE PHILIPPINES</h2>
-                                    <h3 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 0; line-height: 1.2;">PROVINCE OF CAMARINES SUR</h3>
-                                    <h3 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 0; line-height: 1.2;">CITY OF IRIGA</h3>
-                                    <h4 style="font-family: Arial, sans-serif; font-size: 9pt; font-weight: normal; color: black; margin: 0; line-height: 1.2;">PANLUNGSOD NA PEDERASYON NG MGA</h4>
-                                    <h4 style="font-family: Arial, sans-serif; font-size: 9pt; font-weight: normal; color: black; margin: 0; line-height: 1.2;">SANGGUNIANG KABATAAN NG IRIGA</h4>
-                                </div>
-                                
-                                <!-- Iriga City Logo (Right) -->
-                                <div class="flex-shrink-0 ml-8">
-                                    <div id="sk-logo" class="w-16 h-16 rounded flex items-center justify-center">
-                                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                        </svg>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <hr class="border-gray-300 mb-4">
-                            
-                            <h2 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 16px 0 8px 0;">SANGGUNIANG KABATAAN</h2>
-                            <h3 style="font-family: Arial, sans-serif; font-size: 10pt; font-weight: bold; color: black; margin: 8px 0 16px 0;">OFFICIAL LIST</h3>
-                        </div>
-                    </div>
 
                     <!-- Officials List Table -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100">
@@ -3415,6 +3486,7 @@
                                     <h4 class="text-lg font-semibold text-gray-900">SK Officials List</h4>
                                 </div>
                                 <p class="text-sm text-gray-600">Complete list of accepted SK Chairpersons and Pederasyon Officers across all barangays</p>
+                                
                             </div>
                             <div class="overflow-x-auto">
                                 <div class="border border-gray-200 rounded-lg overflow-hidden shadow-sm">

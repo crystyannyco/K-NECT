@@ -546,10 +546,10 @@
 
             <!-- KK ID Design Preview Modal -->
             <div id="kkIdModal" class="fixed inset-0 z-[9999] hidden bg-black bg-opacity-50 flex items-center justify-center p-4">
-                <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 relative">
+                <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 relative">
                     <!-- Modal Header -->
                     <div class="p-4 border-b border-gray-200">
-                        <h3 class="text-lg font-semibold text-gray-900">KK ID Preview</h3>
+                        <h3 class="text-lg font-semibold text-gray-900">Katipunan ng Kabataan (KK) ID Card</h3>
                         <button onclick="closeKKIdModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -559,52 +559,137 @@
                     
                     <!-- Modal Body -->
                     <div class="p-6">
-                        <!-- KK ID Card Design -->
-                        <div class="bg-gradient-to-br from-blue-600 to-purple-700 rounded-lg p-4 text-white shadow-lg max-w-sm mx-auto">
-                            <!-- Header -->
-                            <div class="text-center mb-3">
-                                <h4 class="text-xs font-bold mb-1">KATAASTAASANG KAGALANG ASSOCIATION</h4>
-                                <p class="text-xs opacity-90">OFFICIAL MEMBERSHIP ID</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- FRONT OF ID -->
+                            <div class="flex flex-col items-center">
+                                <h4 class="text-sm font-semibold text-gray-700 mb-3">FRONT</h4>
+                                <!-- ID Card scaled up 2x for preview (actual size: 8.6cm x 5.4cm = 86mm x 54mm) -->
+                                <div class="w-full bg-white rounded-xl border border-gray-300 p-4 relative overflow-hidden" style="width: 430px; height: 270px;">
+                                    
+                                    <!-- Header with Logos - Centered Design -->
+                                    <div class="relative flex items-center justify-center mb-3">
+                                        <div class="flex items-center gap-3">
+                                            <!-- Pederasyon Logo (Left) -->
+                                            <div class="w-8 h-8 flex items-center justify-center flex-shrink-0">
+                                                <div id="idCardLogoLeft" class="w-full h-full rounded-full bg-gray-100 flex items-center justify-center text-[8px] text-gray-400 overflow-hidden">
+                                                    <span>Logo</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Center Text -->
+                                            <div class="text-center">
+                                                <p class="text-[8px] font-bold text-blue-800 leading-none mb-0.5">Republic of the Philippines</p>
+                                                <p class="text-[8px] text-blue-600 font-semibold leading-none mb-0.5">Province of Camarines Sur</p>
+                                                <p class="text-[8px] text-gray-500 leading-none">City of Iriga</p>
+                                            </div>
+                                            
+                                            <!-- City Logo (Right) -->
+                                            <div class="w-8 h-8 flex items-center justify-center flex-shrink-0">
+                                                <div id="idCardLogoRight" class="w-full h-full rounded-full bg-gray-100 flex items-center justify-center text-[8px] text-gray-400 overflow-hidden">
+                                                    <span>Logo</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Member Photo and Info -->
+                                    <div class="relative p-2 mb-2">
+                                        <div class="flex items-start gap-2.5">
+                                            <!-- Photo -->
+                                            <div class="w-20 h-20 bg-gray-100 rounded-md overflow-hidden flex-shrink-0 border-2 border-blue-200 mr-2">
+                                                <img id="idCardPhoto" src="" alt="Member" class="w-full h-full object-cover">
+                                            </div>
+                                            
+                                            <!-- Info -->
+                                            <div class="flex-1 min-w-0">
+                                                <div class="mb-1.5">
+                                                    <p class="text-[10px] text-gray-600 font-semibold uppercase leading-none mb-0.5">ID Number</p>
+                                                    <p class="text-[10px] font-bold text-blue-900 leading-tight tracking-wide" id="idCardNumber">00-0000-00</p>
+                                                </div>
+                                                <div class="mb-1.5">
+                                                    <p class="text-[10px] text-gray-600 font-semibold uppercase leading-none mb-0.5">Full Name</p>
+                                                    <p class="text-[10px] font-bold text-gray-900 leading-tight" id="idCardName">NAME</p>
+                                                </div>
+                                                <div>
+                                                    <p class="text-[10px] text-gray-600 font-semibold uppercase leading-none mb-0.5">Date of Birth</p>
+                                                    <p class="text-[10px] font-bold text-gray-900 leading-tight" id="idCardBirthdate">Jan 01, 2000</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Barangay Info -->
+                                    <div class="relative p-2 mb-2">
+                                        <p class="text-[10px] text-gray-700 font-semibold leading-none mb-0.5">Barangay</p>
+                                        <p class="text-[10px] font-bold text-blue-900 leading-tight" id="idCardBarangay">BARANGAY NAME</p>
+                                    </div>
+                                    
+                                    <!-- Signature Section for User -->
+                                    <div class="relative border-t-2 border-gray-200 pt-1.5 mt-auto">
+                                        <div class="text-center">
+                                            <div class="h-6 flex items-end justify-center border-b border-gray-300 mb-0.5"></div>
+                                            <p class="text-[10px] text-gray-600 font-semibold uppercase leading-none">Signature</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             
-                            <!-- Profile Section -->
-                            <div class="flex items-center mb-3">
-                                <div class="w-16 h-16 bg-white rounded mr-3 flex items-center justify-center overflow-hidden">
-                                    <img id="idCardPhoto" src="" alt="Profile" class="w-full h-full object-cover">
+                            <!-- BACK OF ID -->
+                            <div class="flex flex-col items-center">
+                                <h4 class="text-sm font-semibold text-gray-700 mb-3">BACK</h4>
+                                <!-- ID Card scaled up 2x for preview (actual size: 8.6cm x 5.4cm = 86mm x 54mm) -->
+                                <div class="w-full bg-white rounded-xl border border-gray-300 p-4 relative overflow-hidden" style="width: 430px; height: 270px;">
+                                    
+                                    <!-- Header -->
+                                    <div class="text-center mb-3 pb-2 border-b-2 border-blue-300">
+                                        <p class="text-[10px] font-bold text-blue-800 leading-none uppercase tracking-wide">Personal Information</p>
+                                    </div>
+                                    
+                                    <!-- Personal Details -->
+                                    <div class="space-y-2">
+                                        <div class="p-2">
+                                            <div class="grid grid-cols-2 gap-x-3 gap-y-1.5">
+                                                <div>
+                                                    <p class="text-[10px] text-gray-600 font-semibold uppercase leading-none mb-0.5">Sex</p>
+                                                    <p class="text-[10px] font-bold text-gray-900 leading-tight" id="idCardSex">Male</p>
+                                                </div>
+                                                <div class="col-span-2">
+                                                    <p class="text-[10px] text-gray-600 font-semibold uppercase leading-none mb-0.5">Civil Status</p>
+                                                    <p class="text-[10px] font-bold text-gray-900 leading-tight" id="idCardCivilStatus">Single</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="p-2">
+                                            <p class="text-[10px] text-gray-600 font-semibold uppercase leading-none mb-0.5">Contact Number</p>
+                                            <p class="text-[10px] font-bold text-gray-900 leading-tight" id="idCardContact">+63 900 000 0000</p>
+                                        </div>
+                                        
+                                        <div class="p-2">
+                                            <p class="text-[10px] text-gray-600 font-semibold uppercase leading-none mb-0.5">Complete Address</p>
+                                            <p class="text-[10px] font-semibold text-gray-900 leading-tight" id="idCardAddress">Zone, Barangay, City, Province</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Footer -->
+                                    <div class="absolute bottom-4 left-4 right-4">
+                                        <div class="bg-gradient-to-r from-blue-900 to-blue-800 text-white text-center py-2 rounded-lg border border-blue-700">
+                                            <p class="text-[8px] font-semibold leading-tight uppercase tracking-wide">In Case of Emergency, Please Contact:</p>
+                                            <p class="text-[8px] font-bold leading-tight mt-0.5">SK Office - Barangay Hall</p>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="flex-1">
-                                    <p class="text-sm font-semibold mb-1" id="idCardName">SAMPLE NAME</p>
-                                    <p class="text-xs opacity-90" id="idCardBarangay">Barangay Sample</p>
-                                </div>
-                            </div>
-                            
-                            <!-- Details -->
-                            <div class="text-xs space-y-1">
-                                <div class="flex justify-between">
-                                    <span class="opacity-90">ID No:</span>
-                                    <span class="font-medium" id="idCardNumber">KK-2025-001</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="opacity-90">Valid Until:</span>
-                                    <span class="font-medium" id="idCardExpiry">Dec 2025</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="opacity-90">Zone:</span>
-                                    <span class="font-medium" id="idCardZone">Zone 1</span>
-                                </div>
-                            </div>
-                            
-                            <!-- Footer -->
-                            <div class="text-center mt-3 pt-2 border-t border-white border-opacity-30">
-                                <p class="text-xs opacity-80">This card is property of KK Association</p>
                             </div>
                         </div>
                         
-                        <div class="mt-4 text-center">
-                            <p class="text-sm text-gray-600 mb-4">This is a temporary design preview</p>
-                            <div class="flex gap-3">
-                                <button onclick="closeKKIdModal()" class="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded font-medium transition-colors">
+                        <div class="mt-6 text-center">
+                            <p class="text-sm text-gray-600 mb-4">Official Katipunan ng Kabataan Identification Card</p>
+                            <div class="flex gap-3 justify-center">
+                                <button onclick="closeKKIdModal()" class="px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg font-medium transition-colors">
                                     Close
+                                </button>
+                                <button onclick="downloadKKIdCard()" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
+                                    Download ID
                                 </button>
                             </div>
                         </div>
@@ -783,12 +868,6 @@
                     <div class="flex gap-3">
                         <button onclick="closeDownloadModal()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200">
                             Close
-                        </button>
-                        <button onclick="printKKList()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 shadow-sm">
-                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
-                            </svg>
-                            Print
                         </button>
                         <button onclick="downloadKKListPDF()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors duration-200 shadow-sm">
                             <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2077,6 +2156,11 @@
         const userZone = document.getElementById('modalUserZone').textContent;
         const userPhoto = document.getElementById('modalUserPhoto').src;
         const existingId = document.getElementById('modalUserId').textContent.trim();
+        const userBirthday = document.getElementById('modalUserBirthday').textContent;
+        const userSex = document.getElementById('modalUserSex').textContent;
+        const userCivilStatus = document.getElementById('modalUserCivilStatus').textContent;
+        const userEmail = document.getElementById('modalUserEmail').textContent;
+        const userAddress = document.getElementById('modalUserAddress').textContent;
         
         // Prefer the assigned KK ID if already accepted
         let idNumber = existingId && existingId !== '-' ? existingId : '';
@@ -2090,19 +2174,27 @@
             idNumber = `${yy}-${mm}${dd}-${seq}`; // New preview format YY-MMDD-NN
         }
         
-        // Generate expiry date (1 year from now)
-        const expiryDate = new Date();
-        expiryDate.setFullYear(expiryDate.getFullYear() + 1);
-        const expiryMonth = expiryDate.toLocaleString('default', { month: 'short' });
-        const expiryYear = expiryDate.getFullYear();
-        
-        // Populate the ID card preview
+        // Populate the ID card preview - FRONT
         document.getElementById('idCardName').textContent = userName.toUpperCase();
-        document.getElementById('idCardBarangay').textContent = userBarangay;
-        document.getElementById('idCardZone').textContent = userZone;
-    document.getElementById('idCardNumber').textContent = idNumber;
-        document.getElementById('idCardExpiry').textContent = `${expiryMonth} ${expiryYear}`;
+        document.getElementById('idCardBarangay').textContent = userBarangay.toUpperCase();
+        document.getElementById('idCardNumber').textContent = idNumber;
         document.getElementById('idCardPhoto').src = userPhoto;
+        
+        // Populate the ID card preview - BACK
+        document.getElementById('idCardBirthdate').textContent = userBirthday || 'N/A';
+        document.getElementById('idCardSex').textContent = userSex || 'N/A';
+        document.getElementById('idCardCivilStatus').textContent = userCivilStatus || 'N/A';
+        document.getElementById('idCardContact').textContent = userEmail || 'N/A';
+        
+        // Format complete address with zone
+        let fullAddress = '';
+        if (userZone) fullAddress += userZone + ', ';
+        if (userBarangay) fullAddress += userBarangay + ', ';
+        fullAddress += 'City of Iriga, Camarines Sur';
+        document.getElementById('idCardAddress').textContent = fullAddress;
+        
+        // Load logos
+        loadKKIdLogos();
         
         // Show the KK ID modal
         document.getElementById('kkIdModal').classList.remove('hidden');
@@ -2110,6 +2202,40 @@
     
     function closeKKIdModal() {
         document.getElementById('kkIdModal').classList.add('hidden');
+    }
+    
+    // Load logos for KK ID card
+    function loadKKIdLogos() {
+        fetch('<?= base_url('documents/logos') ?>')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.data) {
+                    const logos = data.data;
+                    
+                    // Left logo (Iriga City)
+                    const leftLogo = logos.iriga_city;
+                    const leftLogoElement = document.getElementById('idCardLogoLeft');
+                    if (leftLogo && leftLogoElement) {
+                        leftLogoElement.innerHTML = `<img src="<?= base_url() ?>${leftLogo.file_path}" class="w-full h-full object-cover rounded-full">`;
+                    }
+                    
+                    // Right logo (Pederasyon - organization logo)
+                    const rightLogo = logos.pederasyon;
+                    const rightLogoElement = document.getElementById('idCardLogoRight');
+                    if (rightLogo && rightLogoElement) {
+                        rightLogoElement.innerHTML = `<img src="<?= base_url() ?>${rightLogo.file_path}" class="w-full h-full object-cover rounded-full">`;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error loading logos for KK ID:', error);
+            });
+    }
+    
+    // Download KK ID Card (placeholder for future implementation)
+    function downloadKKIdCard() {
+        showNotification('ID Card download feature coming soon!', 'info');
+        // Future: Generate PDF/PNG of the ID card for download
     }
     
     // Function to add Generate ID button to action containers
@@ -2121,7 +2247,7 @@
                 const generateIdButton = document.createElement('button');
                 generateIdButton.id = 'generateIdButton';
                 generateIdButton.onclick = generateKKId;
-                generateIdButton.className = 'w-full py-3 px-4 bg-purple-600 text-white rounded-lg shadow hover:bg-purple-700 font-semibold transition-all duration-200 flex items-center justify-center gap-2';
+                generateIdButton.className = 'w-full py-3 px-4 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 font-semibold transition-all duration-200 flex items-center justify-center gap-2';
                 generateIdButton.style.display = 'none'; // Hidden by default
                 generateIdButton.innerHTML = `
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -2287,76 +2413,6 @@
         return address.trim();
     }
 
-    function printKKList() {
-        const printContent = document.getElementById('downloadContent').cloneNode(true);
-        const printWindow = window.open('', '_blank');
-        
-        printWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>KK List - ${<?= json_encode($barangay_name ?? '') ?>}</title>
-                <style>
-                    @page {
-                        size: 13in 8.5in; /* Landscape: width x height */
-                        margin: 0.5in;
-                        -webkit-print-color-adjust: exact;
-                        color-adjust: exact;
-                    }
-                    
-                    body { 
-                        font-family: Arial, sans-serif !important; 
-                        margin: 0; 
-                        color: black !important;
-                        -webkit-print-color-adjust: exact;
-                    }
-                    table { border-collapse: collapse; width: 100%; }
-                    th, td { 
-                        border: 1px solid black !important; 
-                        padding: 1px !important; 
-                        text-align: center; 
-                        font-size: 6px !important;
-                        color: black !important;
-                        font-family: Arial, sans-serif !important;
-                    }
-                    th { background-color: #f0f0f0; font-weight: bold; }
-                    .text-left { text-align: left; }
-                    .flex { display: flex; }
-                    .items-center { align-items: center; }
-                    .justify-center { justify-content: center; }
-                    .justify-between { justify-content: space-between; }
-                    .text-center { text-align: center; }
-                    .mb-4 { margin-bottom: 1rem; }
-                    .mx-4 { margin-left: 1rem; margin-right: 1rem; }
-                    .mr-6 { margin-right: 1.5rem; }
-                    .ml-6 { margin-left: 1.5rem; }
-                    .flex-1 { flex: 1; }
-                    .bg-gray-100 { background-color: #f3f4f6; }
-                    .font-bold { font-weight: bold; }
-                    .font-semibold { font-weight: 600; }
-                    .font-medium { font-weight: 500; }
-                    hr { border: 1px solid #d1d5db; margin: 1rem 0; }
-                    
-                    /* Header specific styles */
-                    h2, h3, h4 {
-                        font-family: Arial, sans-serif !important;
-                        color: black !important;
-                        margin: 0;
-                        line-height: 1.2;
-                    }
-                </style>
-            </head>
-            <body>
-                ${printContent.innerHTML}
-            </body>
-            </html>
-        `);
-        
-        printWindow.document.close();
-        printWindow.focus();
-        printWindow.print();
-    }
-
     async function downloadKKListPDF() {
         const button = event.target;
         const originalHTML = button.innerHTML;
@@ -2394,6 +2450,8 @@
             const pageWidth = doc.internal.pageSize.getWidth();
             const pageHeight = doc.internal.pageSize.getHeight();
             const margin = 12.7; // 0.5 inch margins
+            const bottomMargin = 12.7; // Consistent bottom padding
+            const headerOffset = 40; // Space reserved for repeating header block
             let y = margin + 5;
 
             // Header with logos beside the center header text
@@ -2587,14 +2645,88 @@
             const finalHeaders = headers.slice(0);
             const finalBody = body.map(r => r.slice(0, finalHeaders.length));
 
-            // Create table with formal styling matching the image
+            // Helper function to draw page header (logos + government header)
+            const drawPageHeader = (data) => {
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const margin = 12.7;
+                let y = margin + 5;
+                const centerX = pageWidth / 2;
+                
+                // Header text - formal government format
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                doc.text('Republic of the Philippines', centerX, y + 3, { align: 'center' });
+                doc.text('Province of Camarines Sur', centerX, y + 8, { align: 'center' });
+                
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                doc.text('CITY OF IRIGA', centerX, y + 13, { align: 'center' });
+                
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                doc.text('SANGGUNIANG KABATAAN NG', centerX, y + 18, { align: 'center' });
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9);
+                const barangayNameUpper = (barangayName || '').toString().toUpperCase();
+                doc.text(('BARANGAY ' + barangayNameUpper).trim(), centerX, y + 23, { align: 'center' });
+
+                // Compute header block width to place logos
+                const pxToMm = (px) => px * 0.264583;
+                const gapMM = pxToMm(50);
+                doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+                const w1 = doc.getTextWidth('Republic of the Philippines');
+                const w2 = doc.getTextWidth('Province of Camarines Sur');
+                doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+                const w3 = doc.getTextWidth('CITY OF IRIGA');
+                doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+                const w4 = doc.getTextWidth('SANGGUNIANG KABATAAN NG');
+                doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+                const w5 = doc.getTextWidth(('BARANGAY ' + barangayNameUpper).trim());
+                const maxHeaderWidth = Math.max(w1, w2, w3, w4, w5);
+                const headerLeftX = centerX - (maxHeaderWidth / 2);
+                const headerRightX = centerX + (maxHeaderWidth / 2);
+
+                // Position logos vertically centered beside header block
+                const logoSize = 22;
+                const headerTop = y + 0;
+                const headerBottom = y + 23;
+                const headerMidY = headerTop + (headerBottom - headerTop) / 2 - (logoSize / 2);
+                let leftLogoX = headerLeftX - gapMM - logoSize;
+                let rightLogoX = headerRightX + gapMM;
+                if (leftLogoX < margin) leftLogoX = margin;
+                if (rightLogoX > pageWidth - margin - logoSize) rightLogoX = pageWidth - margin - logoSize;
+                
+                // Left logo (Barangay/SK)
+                if (barangayLogoDataUrl) {
+                    doc.addImage(barangayLogoDataUrl, getImgFmt(barangayLogoDataUrl), leftLogoX, headerMidY, logoSize, logoSize, undefined, 'FAST');
+                } else {
+                    doc.setLineWidth(0.2);
+                    doc.rect(leftLogoX, headerMidY, logoSize, logoSize);
+                    doc.setFontSize(8);
+                    doc.text('BRGY LOGO', leftLogoX + logoSize/2, headerMidY + logoSize/2, { align: 'center' });
+                }
+                // Right logo (Iriga City)
+                if (irigaLogoDataUrl) {
+                    doc.addImage(irigaLogoDataUrl, getImgFmt(irigaLogoDataUrl), rightLogoX, headerMidY, logoSize, logoSize, undefined, 'FAST');
+                } else {
+                    doc.setLineWidth(0.2);
+                    doc.rect(rightLogoX, headerMidY, logoSize, logoSize);
+                    doc.setFontSize(8);
+                    doc.text('IRIGA LOGO', rightLogoX + logoSize/2, headerMidY + logoSize/2, { align: 'center' });
+                }
+            };
+
+            // Create table with formal styling and page break handling
             doc.setFont('helvetica', 'normal');
-        doc.setFontSize(6); // Smaller font for table content
+            doc.setFontSize(6);
+            const tableStartY = Math.max(y + 2, margin + headerOffset);
+
             doc.autoTable({
                 head: [finalHeaders],
                 body: finalBody,
-                startY: y + 2,
-                margin: { left: margin, right: margin },
+                startY: tableStartY,
+                margin: { top: margin + headerOffset, left: margin, right: margin, bottom: bottomMargin },
                 tableWidth: 'wrap',
                 styles: { 
             fontSize: 6,
@@ -2645,34 +2777,98 @@
                 },
                 theme: 'grid',
                 tableLineColor: [0, 0, 0],
-                tableLineWidth: 0
+                tableLineWidth: 0,
+                // Add page break handling with header repetition
+                didDrawPage: function(data) {
+                    // Draw header on every page
+                    if (data.pageNumber > 1) {
+                        drawPageHeader(data);
+                        
+                        // Draw horizontal line under header
+                        const pageWidth = doc.internal.pageSize.getWidth();
+                        const margin = 12.7;
+                        const headerY = margin + 33;
+                        doc.setLineWidth(0.2);
+                        doc.line(margin, headerY, pageWidth - margin, headerY);
+                        
+                        // Draw title
+                        doc.setFont('helvetica', 'bold');
+                        doc.setFontSize(11);
+                        doc.text('KATIPUNAN NG KABATAAN YOUTH PROFILE', pageWidth / 2, headerY + 8, { align: 'center' });
+                    }
+                },
+                showHead: 'everyPage' // Ensure table headers repeat on each page
             });
 
-            // Signatures section - formal layout matching the image
-            const finalY = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? doc.lastAutoTable.finalY + 20 : (y + 50);
-            const leftSigX = margin + 60;
-            const rightSigX = pageWidth - margin - 80;
+            // Signatures section - formal layout matching the image, always on the final page
+            doc.setPage(doc.internal.getNumberOfPages());
+
+            const finalY = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? doc.lastAutoTable.finalY + 20 : (tableStartY + 30);
+            const signatureHeight = 30; // Space needed for signatures
             
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(9);
-            
-            // Left signature block (Prepared by)
-            doc.text('Prepared by:', leftSigX, finalY, { align: 'center' });
-            doc.line(leftSigX - 30, finalY + 15, leftSigX + 30, finalY + 15); // Signature line
-            doc.setFont('helvetica', 'bold');
-            doc.text((dataJson.secretary_name || '________________'), leftSigX, finalY + 20, { align: 'center' });
-            doc.setFont('helvetica', 'normal');
-            doc.text('SK Secretary', leftSigX, finalY + 26, { align: 'center' });
-            
-            // Ensure thin lines for signatures as well
-            doc.setLineWidth(0.2);
-            // Right signature block (Approved by)
-            doc.text('Approved by:', rightSigX, finalY, { align: 'center' });
-            doc.line(rightSigX - 30, finalY + 15, rightSigX + 30, finalY + 15); // Signature line
-            doc.setFont('helvetica', 'bold');
-            doc.text((dataJson.chairman_name || '________________'), rightSigX, finalY + 20, { align: 'center' });
-            doc.setFont('helvetica', 'normal');
-            doc.text('SK Chairperson', rightSigX, finalY + 26, { align: 'center' });
+            // Check if signature will fit on current page, if not add new page
+            if (finalY + signatureHeight > pageHeight - bottomMargin) {
+                doc.addPage();
+                // Draw header on new page for signatures
+                drawPageHeader();
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const margin = 12.7;
+                const headerY = margin + 33;
+                doc.setLineWidth(0.2);
+                doc.line(margin, headerY, pageWidth - margin, headerY);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.text('KATIPUNAN NG KABATAAN YOUTH PROFILE', pageWidth / 2, headerY + 8, { align: 'center' });
+                
+                // Position signatures at top of new page
+                const newPageY = headerY + 20;
+                const leftSigX = margin + 60;
+                const rightSigX = pageWidth - margin - 80;
+                
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                
+                // Left signature block (Prepared by)
+                doc.text('Prepared by:', leftSigX, newPageY, { align: 'center' });
+                doc.setLineWidth(0.2);
+                doc.line(leftSigX - 30, newPageY + 15, leftSigX + 30, newPageY + 15);
+                doc.setFont('helvetica', 'bold');
+                doc.text((dataJson.secretary_name || '________________'), leftSigX, newPageY + 20, { align: 'center' });
+                doc.setFont('helvetica', 'normal');
+                doc.text('SK Secretary', leftSigX, newPageY + 26, { align: 'center' });
+                
+                // Right signature block (Approved by)
+                doc.text('Approved by:', rightSigX, newPageY, { align: 'center' });
+                doc.line(rightSigX - 30, newPageY + 15, rightSigX + 30, newPageY + 15);
+                doc.setFont('helvetica', 'bold');
+                doc.text((dataJson.chairman_name || '________________'), rightSigX, newPageY + 20, { align: 'center' });
+                doc.setFont('helvetica', 'normal');
+                doc.text('SK Chairperson', rightSigX, newPageY + 26, { align: 'center' });
+            } else {
+                // Signature fits on current page
+                const leftSigX = margin + 60;
+                const rightSigX = pageWidth - margin - 80;
+                
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                
+                // Left signature block (Prepared by)
+                doc.text('Prepared by:', leftSigX, finalY, { align: 'center' });
+                doc.setLineWidth(0.2);
+                doc.line(leftSigX - 30, finalY + 15, leftSigX + 30, finalY + 15); // Signature line
+                doc.setFont('helvetica', 'bold');
+                doc.text((dataJson.secretary_name || '________________'), leftSigX, finalY + 20, { align: 'center' });
+                doc.setFont('helvetica', 'normal');
+                doc.text('SK Secretary', leftSigX, finalY + 26, { align: 'center' });
+                
+                // Right signature block (Approved by)
+                doc.text('Approved by:', rightSigX, finalY, { align: 'center' });
+                doc.line(rightSigX - 30, finalY + 15, rightSigX + 30, finalY + 15); // Signature line
+                doc.setFont('helvetica', 'bold');
+                doc.text((dataJson.chairman_name || '________________'), rightSigX, finalY + 20, { align: 'center' });
+                doc.setFont('helvetica', 'normal');
+                doc.text('SK Chairperson', rightSigX, finalY + 26, { align: 'center' });
+            }
 
             // Save
             const safeBarangay = (barangayName || 'Barangay').replace(/\s+/g, '_');

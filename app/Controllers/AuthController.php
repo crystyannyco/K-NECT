@@ -465,6 +465,7 @@ class AuthController extends BaseController
         $this->response->setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         $this->response->setHeader('Pragma', 'no-cache');
         $this->response->setHeader('Expires', '0');
+        $this->response->setHeader('Clear-Site-Data', '"cache", "storage"');
 
         // Redirect to login with success message
         return redirect()->to('login')->with('success', 'You have been logged out successfully.');

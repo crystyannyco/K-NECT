@@ -19,7 +19,7 @@ $barangayNameText = $barangayName ? strtoupper($barangayName) : '[BARANGAY NAME]
         <!-- Settings Cards Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             <!-- Account Settings Card -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200 h-full flex flex-col">
+            <!-- <div class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200 h-full flex flex-col">
                 <div class="p-6 flex flex-col h-full">
                     <div class="flex items-center justify-between mb-4">
                         <div class="flex items-center space-x-3">
@@ -43,7 +43,7 @@ $barangayNameText = $barangayName ? strtoupper($barangayName) : '[BARANGAY NAME]
                         </a>
                     </div>
                 </div>
-            </div>
+            </div> -->
             <!-- User Management Card -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200 h-full flex flex-col">
                 <div class="p-6 flex flex-col h-full">

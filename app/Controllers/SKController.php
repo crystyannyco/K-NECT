@@ -761,7 +761,7 @@ class SKController extends BaseController
 
         $query = $userModel
             ->select('
-                user.id, user.status, user.last_name, user.first_name, user.middle_name, user.suffix, user.email, user.sex, user.birthdate, user.user_type, user.position, user.sk_username, user.sk_password, user.ped_username, user.ped_password, address.barangay, address.municipality, address.province, address.region, address.zone_purok, user_ext_info.civil_status, user_ext_info.youth_classification, user_ext_info.age_group, user_ext_info.work_status, user_ext_info.educational_background, user_ext_info.sk_voter, user_ext_info.sk_election, user_ext_info.national_voter, user_ext_info.kk_assembly, user_ext_info.how_many_times, user_ext_info.no_why, user_ext_info.birth_certificate, user_ext_info.upload_id
+                user.id, user.user_id, user.status, user.last_name, user.first_name, user.middle_name, user.suffix, user.email, user.sex, user.birthdate, user.user_type, user.position, user.sk_username, user.sk_password, user.ped_username, user.ped_password, address.barangay, address.municipality, address.province, address.region, address.zone_purok, user_ext_info.civil_status, user_ext_info.youth_classification, user_ext_info.age_group, user_ext_info.work_status, user_ext_info.educational_background, user_ext_info.sk_voter, user_ext_info.sk_election, user_ext_info.national_voter, user_ext_info.kk_assembly, user_ext_info.how_many_times, user_ext_info.no_why, user_ext_info.birth_certificate, user_ext_info.upload_id
             ')
             ->join('address', 'address.user_id = user.id', 'left')
             ->join('user_ext_info', 'user_ext_info.user_id = user.id', 'left')
@@ -1420,16 +1420,20 @@ class SKController extends BaseController
             $outputWordFile = $this->generateKKListWordDocument($users, $barangayName, $logos);
             
             if ($outputWordFile && file_exists($outputWordFile)) {
-                // Stream the file directly
+                // Stream the file directly using CI's download helper for clean binary output
                 $fileName = 'KK_List_' . str_replace(' ', '_', $barangayName) . '_' . date('Y_m_d_H_i_s') . '.docx';
                 log_message('info', 'KK List Word document ready for download: ' . $fileName);
-                
-                return $this->response
-                    ->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-                    ->setHeader('Content-Disposition', 'attachment; filename="' . $fileName . '"')
-                    ->setHeader('Cache-Control', 'max-age=0')
-                    ->setBody(file_get_contents($outputWordFile))
-                    ->send();
+
+                $response = $this->response->download($outputWordFile, null)->setFileName($fileName);
+                $response->setHeader('Cache-Control', 'max-age=0');
+
+                register_shutdown_function(static function () use ($outputWordFile) {
+                    if (is_file($outputWordFile)) {
+                        @unlink($outputWordFile);
+                    }
+                });
+
+                return $response;
             } else {
                 log_message('error', 'Word document file not created or does not exist');
                 return $this->response->setJSON([
@@ -1496,16 +1500,19 @@ class SKController extends BaseController
             $outputExcelFile = $this->generateKKListExcelDocument($users, $barangayName);
             
             if ($outputExcelFile && file_exists($outputExcelFile)) {
-                // Stream the file directly
                 $fileName = 'KK_List_' . str_replace(' ', '_', $barangayName) . '_' . date('Y-m-d') . '.xlsx';
                 log_message('info', 'KK List Excel document ready for download: ' . $fileName);
-                
-                return $this->response
-                    ->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-                    ->setHeader('Content-Disposition', 'attachment; filename="' . $fileName . '"')
-                    ->setHeader('Cache-Control', 'max-age=0')
-                    ->setBody(file_get_contents($outputExcelFile))
-                    ->send();
+
+                $response = $this->response->download($outputExcelFile, null)->setFileName($fileName);
+                $response->setHeader('Cache-Control', 'max-age=0');
+
+                register_shutdown_function(static function () use ($outputExcelFile) {
+                    if (is_file($outputExcelFile)) {
+                        @unlink($outputExcelFile);
+                    }
+                });
+
+                return $response;
             } else {
                 log_message('error', 'Excel document file not created or does not exist');
                 return $this->response->setJSON([
@@ -1888,11 +1895,18 @@ class SKController extends BaseController
                 'spaceAfter' => 0,
                 'spacing' => 0,
             ]);
+            $safeBarangayName = $this->sanitizeForWord($barangayName);
+            $barangayNameUpper = $safeBarangayName;
+            if ($safeBarangayName !== '') {
+                $barangayNameUpper = function_exists('mb_strtoupper')
+                    ? mb_strtoupper($safeBarangayName, 'UTF-8')
+                    : strtoupper($safeBarangayName);
+            }
         
         // Set document properties
         $properties = $phpWord->getDocInfo();
         $properties->setCreator('K-NECT System');
-        $properties->setCompany('Sangguniang Kabataan ng ' . $barangayName);
+        $properties->setCompany('Sangguniang Kabataan ng ' . $safeBarangayName);
         $properties->setTitle('Katipunan ng Kabataan Youth Profile');
         $properties->setDescription('Youth profile list generated from K-NECT System');
         $properties->setCategory('Government Document');
@@ -1962,7 +1976,7 @@ class SKController extends BaseController
         $centerCell->addText('Province of Camarines Sur', $headerStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
         $centerCell->addText('CITY OF IRIGA', ['name' => 'Arial', 'size' => 10, 'bold' => true], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
         $centerCell->addText('SANGGUNIANG KABATAAN NG', ['name' => 'Arial', 'size' => 10, 'bold' => true], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-        $centerCell->addText('BARANGAY ' . strtoupper($barangayName), ['name' => 'Arial', 'size' => 10, 'bold' => true], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+        $centerCell->addText('BARANGAY ' . $barangayNameUpper, ['name' => 'Arial', 'size' => 10, 'bold' => true], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
         
         // Right logo cell
         $rightCell = $headerTable->addCell(2000, ['valign' => 'center']);
@@ -2011,7 +2025,7 @@ class SKController extends BaseController
         $paraCenter = ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER];
         
         // Add table header
-    $table->addRow(null, ['tblHeader' => true]);
+        $table->addRow(null, ['tblHeader' => true]);
         $table->addCell(600, $cellVAlignCenter)->addText('REGION', $tableHeaderStyle, $paraCenter);
         $table->addCell(800, $cellVAlignCenter)->addText('PROVINCE', $tableHeaderStyle, $paraCenter);
         $table->addCell(1000, $cellVAlignCenter)->addText('CITY', $tableHeaderStyle, $paraCenter);
@@ -2040,53 +2054,69 @@ class SKController extends BaseController
             $birthday = $user['birthdate'] ? date('M d, Y', strtotime($user['birthdate'])) : '';
             $sex = $user['sex'] == '1' ? 'Male' : ($user['sex'] == '2' ? 'Female' : '');
             
-            $fullName = esc($user['last_name']);
-            if (!empty($user['first_name'])) {
-                $fullName .= ', ' . esc($user['first_name']);
+            $lastName = $this->sanitizeForWord($user['last_name'] ?? '');
+            $firstName = $this->sanitizeForWord($user['first_name'] ?? '');
+            $middleName = $this->sanitizeForWord($user['middle_name'] ?? '');
+            $suffix = $this->sanitizeForWord($user['suffix'] ?? '');
+
+            $fullName = $lastName;
+            if ($firstName !== '') {
+                $fullName .= ($fullName !== '' ? ', ' : '') . $firstName;
             }
-            if (!empty($user['middle_name'])) {
-                $fullName .= ' ' . esc($user['middle_name']);
+            if ($middleName !== '') {
+                $fullName .= ' ' . $middleName;
             }
-            
-            $civilStatus = $this->formatCivilStatus($user['civil_status']);
-            $youthClassification = $this->formatYouthClassification($user['youth_classification']);
-            $ageGroup = $this->formatYouthAgeGroup($user['age_group']);
-            $workStatus = $this->formatWorkStatus($user['work_status']);
-            $education = $this->formatEducation($user['educational_background']);
-            $skVoter = $user['sk_voter'] == '1' ? 'Yes' : 'No';
-            $skElection = $user['sk_election'] == '1' ? 'Yes' : 'No';
-            $kkAssembly = $user['kk_assembly'] == '1' ? 'Yes' : 'No';
-            $howManyTimes = $user['kk_assembly'] == '1' ? $this->formatHowManyTimes($user['how_many_times'] ?? null) : '';
+            if ($suffix !== '') {
+                $fullName .= ($fullName !== '' ? ', ' : '') . $suffix;
+            }
+            $fullName = trim($fullName);
+
+            $civilStatus = $this->sanitizeForWord($this->formatCivilStatus($user['civil_status']));
+            $youthClassification = $this->sanitizeForWord($this->formatYouthClassification($user['youth_classification']));
+            $ageGroup = $this->sanitizeForWord($this->formatYouthAgeGroup($user['age_group']));
+            $workStatus = $this->sanitizeForWord($this->formatWorkStatus($user['work_status']));
+            $education = $this->sanitizeForWord($this->formatEducation($user['educational_background']));
+            $skVoter = $this->sanitizeForWord($user['sk_voter'] == '1' ? 'Yes' : 'No');
+            $skElection = $this->sanitizeForWord($user['sk_election'] == '1' ? 'Yes' : 'No');
+            $kkAssembly = $this->sanitizeForWord($user['kk_assembly'] == '1' ? 'Yes' : 'No');
+            $howManyTimes = $this->sanitizeForWord($user['kk_assembly'] == '1' ? $this->formatHowManyTimes($user['how_many_times'] ?? null) : '');
             
             $homeAddress = '';
             if (!empty($user['house_number'] ?? '')) {
-                $homeAddress .= esc($user['house_number']) . ' ';
+                $homeAddress .= $this->sanitizeForWord($user['house_number']) . ' ';
             }
             if (!empty($user['street'] ?? '')) {
-                $homeAddress .= esc($user['street']) . ' ';
+                $homeAddress .= $this->sanitizeForWord($user['street']) . ' ';
             }
             if (!empty($user['subdivision'] ?? '')) {
-                $homeAddress .= esc($user['subdivision']) . ' ';
+                $homeAddress .= $this->sanitizeForWord($user['subdivision']) . ' ';
             }
             if (!empty($user['zone_purok'])) {
-                $homeAddress .= esc($user['zone_purok']);
+                $homeAddress .= $this->sanitizeForWord($user['zone_purok']);
             }
             $homeAddress = trim($homeAddress);
+            $homeAddress = $this->sanitizeForWord($homeAddress);
+
+            $email = $this->sanitizeForWord($user['email'] ?? '');
+            $phoneNumber = $this->sanitizeForWord($user['phone_number'] ?? '');
+            $ageText = $age !== '' ? (string) $age : '';
+            $birthdayText = $this->sanitizeForWord($birthday);
+            $sexText = $this->sanitizeForWord($sex);
             
             $table->addRow();
             $table->addCell(600, $cellVAlignCenter)->addText('V', $tableCellStyle, $paraCenter);
             $table->addCell(800, $cellVAlignCenter)->addText('Camarines Sur', $tableCellStyle, $paraCenter);
             $table->addCell(1000, $cellVAlignCenter)->addText('Iriga City', $tableCellStyle, $paraCenter);
-            $table->addCell(800, $cellVAlignCenter)->addText($barangayName, $tableCellStyle, $paraCenter);
+            $table->addCell(800, $cellVAlignCenter)->addText($safeBarangayName, $tableCellStyle, $paraCenter);
             $table->addCell(1500, $cellVAlignCenter)->addText($fullName, $tableCellStyle, $paraCenter);
-            $table->addCell(400, $cellVAlignCenter)->addText($age, $tableCellStyle, $paraCenter);
-            $table->addCell(800, $cellVAlignCenter)->addText($birthday, $tableCellStyle, $paraCenter);
-            $table->addCell(400, $cellVAlignCenter)->addText($sex, $tableCellStyle, $paraCenter);
+            $table->addCell(400, $cellVAlignCenter)->addText($ageText, $tableCellStyle, $paraCenter);
+            $table->addCell(800, $cellVAlignCenter)->addText($birthdayText, $tableCellStyle, $paraCenter);
+            $table->addCell(400, $cellVAlignCenter)->addText($sexText, $tableCellStyle, $paraCenter);
             $table->addCell(800, $cellVAlignCenter)->addText($civilStatus, $tableCellStyle, $paraCenter);
             $table->addCell(1000, $cellVAlignCenter)->addText($youthClassification, $tableCellStyle, $paraCenter);
             $table->addCell(800, $cellVAlignCenter)->addText($ageGroup, $tableCellStyle, $paraCenter);
-            $table->addCell(1200, $cellVAlignCenter)->addText($user['email'] ?? '', $tableCellStyle, $paraCenter);
-            $table->addCell(800, $cellVAlignCenter)->addText($user['phone_number'] ?? '', $tableCellStyle, $paraCenter);
+            $table->addCell(1200, $cellVAlignCenter)->addText($email, $tableCellStyle, $paraCenter);
+            $table->addCell(800, $cellVAlignCenter)->addText($phoneNumber, $tableCellStyle, $paraCenter);
             $table->addCell(1200, $cellVAlignCenter)->addText($homeAddress, $tableCellStyle, $paraCenter);
             $table->addCell(800, $cellVAlignCenter)->addText($workStatus, $tableCellStyle, $paraCenter);
             $table->addCell(1000, $cellVAlignCenter)->addText($education, $tableCellStyle, $paraCenter);
@@ -2096,27 +2126,30 @@ class SKController extends BaseController
             $table->addCell(800, $cellVAlignCenter)->addText($howManyTimes, $tableCellStyle, $paraCenter);
         }
         
-        // Add signature section
+        // Add signature section with page break protection
         $secretaryName = '';
         $chairpersonName = '';
         foreach ($users as $user) {
             if (isset($user['position']) && (int)$user['position'] === 2) {
-                $secretaryName = $user['first_name'] . ' ' . $user['middle_name'] . ' ' . $user['last_name'];
+                $secretaryName = $this->sanitizeForWord(trim(($user['first_name'] ?? '') . ' ' . ($user['middle_name'] ?? '') . ' ' . ($user['last_name'] ?? '')));
             }
             if (isset($user['position']) && (int)$user['position'] === 1) {
-                $chairpersonName = $user['first_name'] . ' ' . $user['middle_name'] . ' ' . $user['last_name'];
+                $chairpersonName = $this->sanitizeForWord(trim(($user['first_name'] ?? '') . ' ' . ($user['middle_name'] ?? '') . ' ' . ($user['last_name'] ?? '')));
             }
         }
+
+        $secretaryName = $secretaryName ?: '________________';
+        $chairpersonName = $chairpersonName ?: '________________';
         $section->addTextBreak(2);
-        // Add a table for signatures with no border and extra space between cells
+        // Add a table for signatures with no border, extra space, and page break protection
         $table = $section->addTable([
             'borderSize' => 0,
             'borderColor' => 'FFFFFF',
             'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER,
             'cellMargin' => 80, // add more margin for spacing
         ]);
-        // Increase the gap between the two signature boxes by adding an empty cell in between
-        $table->addRow(null, ['tblHeader' => false, 'cantSplit' => true, 'height' => 800]);
+        // Ensure signature section stays together on one page
+        $table->addRow(null, ['tblHeader' => false, 'cantSplit' => true, 'exactHeight' => true, 'height' => 800]);
         $cell1 = $table->addCell(4000, ['borderSize' => 0, 'borderColor' => 'FFFFFF', 'valign' => 'top', 'marginRight' => 400]);
         $table->addCell(1000, ['borderSize' => 0, 'borderColor' => 'FFFFFF']); // Spacer cell for more space between
         $cell2 = $table->addCell(4000, ['borderSize' => 0, 'borderColor' => 'FFFFFF', 'valign' => 'top', 'marginLeft' => 400]);
@@ -2124,10 +2157,10 @@ class SKController extends BaseController
         $cell1->addText('', [], ['space' => array('after' => 200)]); // Extra space after label
         $cell2->addText('Approved by:', ['bold' => true, 'size' => 8], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
         $cell2->addText('', [], ['space' => array('after' => 200)]); // Extra space after label
-        $cell1->addText('_________________________', ['size' => 8], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-        $cell2->addText('_________________________', ['size' => 8], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-        $cell1->addText($secretaryName ?: '________________', ['bold' => true, 'size' => 8], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-        $cell2->addText($chairpersonName ?: '________________', ['bold' => true, 'size' => 8], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+    $cell1->addText('_________________________', ['size' => 8], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+    $cell2->addText('_________________________', ['size' => 8], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+    $cell1->addText($secretaryName, ['bold' => true, 'size' => 8], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+    $cell2->addText($chairpersonName, ['bold' => true, 'size' => 8], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
         $cell1->addText('SK Secretary', ['size' => 8], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
         $cell2->addText('SK Chairperson', ['size' => 8], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
 
@@ -2170,6 +2203,14 @@ class SKController extends BaseController
             $margins->setRight(0.5);
 
             // Keep Legal landscape as configured above; no override here
+
+            $safeBarangayName = $this->sanitizeForSpreadsheet($barangayName);
+            $barangayNameUpper = $safeBarangayName;
+            if ($barangayNameUpper !== '') {
+                $barangayNameUpper = function_exists('mb_strtoupper')
+                    ? mb_strtoupper($barangayNameUpper, 'UTF-8')
+                    : strtoupper($barangayNameUpper);
+            }
 
             // Add logos if available
             $currentRow = 1;
@@ -2217,7 +2258,11 @@ class SKController extends BaseController
             $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
             $currentRow++;
 
-            $sheet->setCellValue('A' . $currentRow, "BARANGAY $barangayName");
+            $barangayTitle = 'BARANGAY';
+            if ($barangayNameUpper !== '') {
+                $barangayTitle .= ' ' . $barangayNameUpper;
+            }
+            $sheet->setCellValue('A' . $currentRow, $barangayTitle);
             $sheet->mergeCells('A' . $currentRow . ':T' . $currentRow);
             $sheet->getStyle('A' . $currentRow)->getFont()->setBold(true)->setSize(14);
             $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
@@ -2261,41 +2306,79 @@ class SKController extends BaseController
 
             // Add user data
             foreach ($users as $user) {
-                // Set static values for region, province, city
                 $region = 'V';
                 $province = 'Camarines Sur';
                 $city = 'Iriga City';
-                $barangay = $barangayName;
-                $fullName = trim($user['last_name'] . ', ' . $user['first_name'] . ' '
-                    . ($user['middle_name'] ? strtoupper(substr($user['middle_name'], 0, 1)) . '.' : '')
-                    . ($user['suffix'] ? ' ' . $user['suffix'] : ''));
-                $age = $user['birthdate'] ? (int)((time() - strtotime($user['birthdate'])) / (365.25 * 24 * 3600)) : '';
-                $birthday = $user['birthdate'] ? date('m/d/Y', strtotime($user['birthdate'])) : '';
-                $sex = $user['sex'] == '1' ? 'M' : ($user['sex'] == '2' ? 'F' : '');
-                $civilStatus = $this->formatCivilStatus($user['civil_status']);
-                $youthClassification = $this->formatYouthClassification($user['youth_classification']);
-                $youthAgeGroup = $this->formatYouthAgeGroup($user['age_group']);
-                $email = isset($user['email']) ? $user['email'] : '';
-                $contactNumber = isset($user['phone_number']) ? $user['phone_number'] : '';
-                $address = trim((($user['house_number'] ?? '') ?: '') . ' '
-                    . (($user['street'] ?? '') ?: '') . ' '
-                    . (($user['subdivision'] ?? '') ?: '') . ', '
-                    . ($user['zone_purok'] ?: 'Zone/Purok not specified'));
-                $education = $this->formatEducation($user['educational_background']);
-                $workStatus = $this->formatWorkStatus($user['work_status']);
-                $skVoter = $user['sk_voter'] == '1' ? 'Yes' : 'No';
-                $skElection = $user['sk_election'] == '1' ? 'Yes' : 'No';
-                $assemblyAttendance = $user['kk_assembly'] == '1' ? 'Y' : 'N';
-                $assemblyTimes = $user['kk_assembly'] == '1' ? $this->formatHowManyTimes($user['how_many_times'] ?? null) : '';
+
+                $lastName = $this->sanitizeForSpreadsheet($user['last_name'] ?? '');
+                $firstName = $this->sanitizeForSpreadsheet($user['first_name'] ?? '');
+                $middleName = $this->sanitizeForSpreadsheet($user['middle_name'] ?? '');
+                $suffix = $this->sanitizeForSpreadsheet($user['suffix'] ?? '');
+
+                $fullName = $lastName;
+                if ($firstName !== '') {
+                    $fullName .= ($fullName !== '' ? ', ' : '') . $firstName;
+                }
+                if ($middleName !== '') {
+                    $fullName .= ' ' . $middleName;
+                }
+                if ($suffix !== '') {
+                    $fullName .= ($fullName !== '' ? ', ' : '') . $suffix;
+                }
+                $fullName = trim($fullName);
+
+                $age = $user['birthdate'] ? (int)((time() - strtotime($user['birthdate'])) / (365.25 * 24 * 3600)) : null;
+
+                $birthdayText = '';
+                if (!empty($user['birthdate'])) {
+                    $birthdayText = date('m/d/Y', strtotime($user['birthdate']));
+                }
+                $birthdayText = $this->sanitizeForSpreadsheet($birthdayText);
+
+                $sexText = '';
+                if (isset($user['sex'])) {
+                    if ((string)$user['sex'] === '1') {
+                        $sexText = 'M';
+                    } elseif ((string)$user['sex'] === '2') {
+                        $sexText = 'F';
+                    }
+                }
+                $sexText = $this->sanitizeForSpreadsheet($sexText);
+
+                $civilStatus = $this->sanitizeForSpreadsheet($this->formatCivilStatus($user['civil_status'] ?? null));
+                $youthClassification = $this->sanitizeForSpreadsheet($this->formatYouthClassification($user['youth_classification'] ?? null));
+                $youthAgeGroup = $this->sanitizeForSpreadsheet($this->formatYouthAgeGroup($user['age_group'] ?? null));
+                $education = $this->sanitizeForSpreadsheet($this->formatEducation($user['educational_background'] ?? null));
+                $workStatus = $this->sanitizeForSpreadsheet($this->formatWorkStatus($user['work_status'] ?? null));
+                $skVoter = $this->sanitizeForSpreadsheet(!empty($user['sk_voter']) && (string)$user['sk_voter'] === '1' ? 'Yes' : 'No');
+                $skElection = $this->sanitizeForSpreadsheet(!empty($user['sk_election']) && (string)$user['sk_election'] === '1' ? 'Yes' : 'No');
+                $assemblyAttendance = $this->sanitizeForSpreadsheet(!empty($user['kk_assembly']) && (string)$user['kk_assembly'] === '1' ? 'Y' : 'N');
+                $assemblyTimes = $this->sanitizeForSpreadsheet(!empty($user['kk_assembly']) && (string)$user['kk_assembly'] === '1'
+                    ? $this->formatHowManyTimes($user['how_many_times'] ?? null)
+                    : '');
+
+                $email = $this->sanitizeForSpreadsheet($user['email'] ?? '');
+                $contactNumber = $this->sanitizeForSpreadsheet($user['phone_number'] ?? '');
+
+                $house = $this->sanitizeForSpreadsheet($user['house_number'] ?? '');
+                $street = $this->sanitizeForSpreadsheet($user['street'] ?? '');
+                $subdivision = $this->sanitizeForSpreadsheet($user['subdivision'] ?? '');
+                $zonePurok = $this->sanitizeForSpreadsheet($user['zone_purok'] ?? '');
+                $addressParts = [];
+                if ($house !== '') { $addressParts[] = $house; }
+                if ($street !== '') { $addressParts[] = $street; }
+                if ($subdivision !== '') { $addressParts[] = $subdivision; }
+                if ($zonePurok !== '') { $addressParts[] = $zonePurok; }
+                $address = trim(implode(' ', $addressParts));
 
                 $sheet->setCellValue('A' . $currentRow, $region);
                 $sheet->setCellValue('B' . $currentRow, $province);
                 $sheet->setCellValue('C' . $currentRow, $city);
-                $sheet->setCellValue('D' . $currentRow, $barangay);
+                $sheet->setCellValue('D' . $currentRow, $safeBarangayName);
                 $sheet->setCellValue('E' . $currentRow, $fullName);
-                $sheet->setCellValue('F' . $currentRow, $age);
-                $sheet->setCellValue('G' . $currentRow, $birthday);
-                $sheet->setCellValue('H' . $currentRow, $sex);
+                $sheet->setCellValue('F' . $currentRow, $age !== null ? $age : '');
+                $sheet->setCellValue('G' . $currentRow, $birthdayText);
+                $sheet->setCellValue('H' . $currentRow, $sexText);
                 $sheet->setCellValue('I' . $currentRow, $civilStatus);
                 $sheet->setCellValue('J' . $currentRow, $youthClassification);
                 $sheet->setCellValue('K' . $currentRow, $youthAgeGroup);
@@ -2309,7 +2392,6 @@ class SKController extends BaseController
                 $sheet->setCellValue('S' . $currentRow, $assemblyAttendance);
                 $sheet->setCellValue('T' . $currentRow, $assemblyTimes);
 
-                // Add borders to data rows
                 $sheet->getStyle('A' . $currentRow . ':T' . $currentRow)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
 
                 $currentRow++;
@@ -2327,17 +2409,20 @@ class SKController extends BaseController
             $chairpersonName = '';
             foreach ($users as $user) {
                 if (isset($user['position']) && (int)$user['position'] === 2) {
-                    $secretaryName = $user['first_name'] . ' ' . $user['middle_name'] . ' ' . $user['last_name'];
+                    $secretaryName = $this->sanitizeForSpreadsheet(trim(($user['first_name'] ?? '') . ' ' . ($user['middle_name'] ?? '') . ' ' . ($user['last_name'] ?? '')));
                 }
                 if (isset($user['position']) && (int)$user['position'] === 1) {
-                    $chairpersonName = $user['first_name'] . ' ' . $user['middle_name'] . ' ' . $user['last_name'];
+                    $chairpersonName = $this->sanitizeForSpreadsheet(trim(($user['first_name'] ?? '') . ' ' . ($user['middle_name'] ?? '') . ' ' . ($user['last_name'] ?? '')));
                 }
             }
+
+            $secretaryDisplay = $secretaryName !== '' ? $secretaryName : '_______________________';
+            $chairpersonDisplay = $chairpersonName !== '' ? $chairpersonName : '_______________________';
 
             // Secretary signature at K14, Chairman at M (currentRow)
             $sheet->setCellValue('K14', 'Prepared by:');
             $sheet->getStyle('K14')->getFont()->setBold(true);
-            $sheet->setCellValue('K15', $secretaryName ?: '_______________________');
+            $sheet->setCellValue('K15', $secretaryDisplay);
             $sheet->getStyle('K15')->getFont()->setBold(true);
             $sheet->setCellValue('K16', 'SK Secretary');
             $sheet->getStyle('K16')->getFont()->setBold(true);
@@ -2346,7 +2431,7 @@ class SKController extends BaseController
             $sheet->setCellValue('M' . $currentRow, 'Noted by:');
             $sheet->getStyle('M' . $currentRow)->getFont()->setBold(true);
             $currentRow++;
-            $sheet->setCellValue('M' . $currentRow, $chairpersonName ?: '_______________________');
+            $sheet->setCellValue('M' . $currentRow, $chairpersonDisplay);
             $sheet->getStyle('M' . $currentRow)->getFont()->setBold(true);
             $currentRow++;
             $sheet->setCellValue('M' . $currentRow, 'SK Chairperson');
@@ -2404,7 +2489,7 @@ class SKController extends BaseController
             $leftLogoHtml = $buildLogo($logos['sk'] ?? ($logos['barangay'] ?? null), 'SK LOGO');
             $rightLogoHtml = $buildLogo($logos['iriga_city'] ?? null, 'IRIGA LOGO');
 
-            // Build the HTML content
+            // Build the HTML content with page break support
             $html = '<html><head><style>
                 @page { size: legal landscape; margin: 0.5in; }
                 body { font-family: Arial, sans-serif; font-size: 10px; margin: 0; padding: 0; }
@@ -2414,6 +2499,7 @@ class SKController extends BaseController
                 thead tr.column-row th { background-color: #ffffff; font-weight: bold; }
                 thead { display: table-header-group; }
                 tbody { display: table-row-group; }
+                tfoot { display: table-footer-group; }
                 tr { page-break-inside: avoid; }
                 .header-row-content { display: flex; align-items: center; justify-content: space-between; }
                 .logo-cell { width: 70px; text-align: center; }
@@ -2422,7 +2508,7 @@ class SKController extends BaseController
                 .header-text { text-align: center; flex: 1; }
                 .header-text .title { font-size: 16px; font-weight: bold; margin: 6px 0; }
                 .header-text .subtitle { font-size: 12px; margin: 2px 0; }
-                .signatures { margin-top: 40px; display: table; width: 100%; page-break-inside: avoid; }
+                .signatures { margin-top: 40px; display: table; width: 100%; page-break-before: auto; page-break-inside: avoid; }
                 .signature-box { display: table-cell; text-align: center; width: 45%; padding: 0 20px; }
                 .signature-line { border-bottom: 0.5px solid #000; margin-bottom: 5px; padding-bottom: 15px; }
                 </style></head><body>';
@@ -2718,6 +2804,53 @@ class SKController extends BaseController
         }
         $key = (string)$value;
         return $map[$key] ?? '';
+    }
+
+    private function sanitizeForWord($value)
+    {
+        if ($value === null) {
+            return '';
+        }
+
+        if (!is_scalar($value)) {
+            $value = (string) $value;
+        }
+
+        $value = trim((string) $value);
+
+        if ($value === '') {
+            return '';
+        }
+
+        if (function_exists('mb_detect_encoding') && function_exists('mb_convert_encoding')) {
+            if (!mb_detect_encoding($value, 'UTF-8', true)) {
+                $value = mb_convert_encoding($value, 'UTF-8', 'UTF-8, ISO-8859-1, Windows-1252');
+            }
+        }
+
+        // Strip control characters Word cannot handle (except tab, newline, carriage return)
+        $value = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $value);
+
+        return $value;
+    }
+
+    private function sanitizeForSpreadsheet($value)
+    {
+        $value = $this->sanitizeForWord($value);
+
+        if ($value === '') {
+            return '';
+        }
+
+        $firstChar = function_exists('mb_substr')
+            ? mb_substr($value, 0, 1, 'UTF-8')
+            : substr($value, 0, 1);
+
+        if ($firstChar !== false && in_array($firstChar, ['=', '+', '-', '@'], true)) {
+            $value = "'" . $value;
+        }
+
+        return $value;
     }
 
     // Attendance Report Generation Methods (following ped-officers format)
@@ -3108,6 +3241,7 @@ class SKController extends BaseController
                 th, td { border: 0.5px solid #000; padding: 5px; text-align: center; font-size: 9px; }
                 thead { display: table-header-group; }
                 tbody { display: table-row-group; }
+                tfoot { display: table-footer-group; }
                 tr { page-break-inside: avoid; }
                 thead tr.header-row th { border: none; padding: 0 0 6px 0; }
                 thead tr.column-row th { font-weight: bold; background-color: #f3f3f3; }
@@ -3119,7 +3253,7 @@ class SKController extends BaseController
                 .header-text .title { font-size: 16px; font-weight: bold; margin: 6px 0 4px 0; }
                 .header-text .subtitle { font-size: 12px; margin: 2px 0; text-transform: uppercase; letter-spacing: 0.5px; }
                 .header-text .info-text { font-size: 10px; margin: 1px 0; text-transform: none; }
-                .signatures { margin-top: 40px; display: table; width: 100%; page-break-inside: avoid; }
+                .signatures { margin-top: 40px; display: table; width: 100%; page-break-before: auto; page-break-inside: avoid; }
                 .signature-box { display: table-cell; text-align: center; width: 50%; padding: 0 20px; }
                 .signature-label { font-weight: bold; margin-bottom: 6px; }
                 .signature-line { border-bottom: 0.5px solid #000; margin: 20px auto 8px auto; height: 32px; width: 80%; }
@@ -3606,24 +3740,20 @@ class SKController extends BaseController
             $barangay = $barangayModel->find($barangayId);
             $barangayName = $barangay ? $barangay['name'] : '';
 
-            // Get all users in this barangay who have SK credentials (exclude KK members - position 5)
+            // Get all SK officials in this barangay (exclude KK members - position 5)
             $skOfficials = $userModel->select('user.id, user.user_id, user.first_name, user.middle_name, user.last_name, user.suffix, user.position, user.sk_username, user.sk_password')
                 ->join('address', 'address.user_id = user.id', 'inner')
                 ->where('address.barangay', $barangayId)
                 ->where('user.status', 2) // Approved
                 ->where('user.position !=', 5) // Exclude KK Members
-                ->where('user.sk_username IS NOT NULL')
-                ->where('user.sk_password IS NOT NULL')
                 ->findAll();
 
-            // Get only chairpersons in this barangay with credentials (position = 1) - include regardless of user_type
+            // Get only chairpersons in this barangay (position = 1) - include regardless of user_type
             $chairpersons = $userModel->select('user.id, user.user_id, user.first_name, user.middle_name, user.last_name, user.suffix, user.position, user.sk_username, user.sk_password')
                 ->join('address', 'address.user_id = user.id', 'inner')
                 ->where('address.barangay', $barangayId)
                 ->where('user.position', 1) // Chairperson
                 ->where('user.status', 2) // Approved
-                ->where('user.sk_username IS NOT NULL')
-                ->where('user.sk_password IS NOT NULL')
                 ->findAll();
 
             // Process the data
@@ -3687,6 +3817,7 @@ class SKController extends BaseController
     private function processCredentialsData($users, $barangayId)
     {
         $processed = [];
+        $barangayName = BarangayHelper::getBarangayName($barangayId);
         foreach ($users as $user) {
             // Build full name
             $nameParts = [$user['first_name']];
@@ -3699,8 +3830,13 @@ class SKController extends BaseController
             }
             $fullName = implode(' ', $nameParts);
 
-            // Check if password is temporary (not a bcrypt hash)
-            $isTemporary = !password_get_info($user['sk_password'])['algo'];
+            $rawPassword = $user['sk_password'] ?? null;
+            $hasPassword = !empty($rawPassword);
+            $isTemporary = false;
+            if ($hasPassword) {
+                $passwordInfo = password_get_info($rawPassword);
+                $isTemporary = empty($passwordInfo['algo']);
+            }
             
             $processed[] = [
                 'id' => $user['id'],
@@ -3712,9 +3848,11 @@ class SKController extends BaseController
                 'suffix' => $user['suffix'] ?? '',
                 'position' => $user['position'],
                 'barangay_id' => $barangayId,
-                'sk_username' => $user['sk_username'],
-                'sk_password' => $user['sk_password'],
-                'is_temp_password' => $isTemporary
+                'barangay_name' => $barangayName,
+                'sk_username' => $user['sk_username'] ?? '',
+                'sk_password' => $hasPassword ? (string) $rawPassword : '',
+                'is_temp_password' => $isTemporary,
+                'has_password' => $hasPassword
             ];
         }
         return $processed;
@@ -3740,8 +3878,12 @@ class SKController extends BaseController
             $seen = [];
             $officials = [];
             foreach ($combined as $credential) {
-                if (!isset($seen[$credential['user_id']])) {
-                    $seen[$credential['user_id']] = true;
+                $key = $credential['user_id'] ?? $credential['id'];
+                if (!$key) {
+                    continue;
+                }
+                if (!isset($seen[$key])) {
+                    $seen[$key] = true;
                     $officials[] = $credential;
                 }
             }
@@ -3812,7 +3954,19 @@ class SKController extends BaseController
             $skBarangay = $session->get('sk_barangay');
             $barangayName = \App\Libraries\BarangayHelper::getBarangayName($skBarangay);
             
-            // Create HTML content matching KK List format exactly
+            // Ensure consistent ordering by position then name
+            usort($officials, function ($a, $b) {
+                $posA = isset($a['position']) ? (int)$a['position'] : 0;
+                $posB = isset($b['position']) ? (int)$b['position'] : 0;
+                if ($posA !== $posB) {
+                    return $posA <=> $posB;
+                }
+                $nameA = strtolower(trim(($a['full_name'] ?? '') ?: (($a['last_name'] ?? '') . ' ' . ($a['first_name'] ?? ''))));
+                $nameB = strtolower(trim(($b['full_name'] ?? '') ?: (($b['last_name'] ?? '') . ' ' . ($b['first_name'] ?? ''))));
+                return $nameA <=> $nameB;
+            });
+
+            // Create HTML content matching KK List format exactly with proper page break support
             $html = '<html><head><style>
                 @page { size: legal landscape; margin: 0.5in; }
                 body { font-family: Arial, sans-serif; font-size: 10px; margin: 0; padding: 0; }
@@ -3825,7 +3979,11 @@ class SKController extends BaseController
                 table { width: 100%; border-collapse: collapse; margin-top: 10px; }
                 th, td { border: 0.5px solid #000; padding: 3px; text-align: center; font-size: 8px; }
                 th { background-color: #ffffff; font-weight: bold; }
-                .signatures { margin-top: 40px; display: table; width: 100%; }
+                thead { display: table-header-group; }
+                tbody { display: table-row-group; }
+                tfoot { display: table-footer-group; }
+                tr { page-break-inside: avoid; }
+                .signatures { margin-top: 40px; display: table; width: 100%; page-break-before: auto; page-break-inside: avoid; }
                 .signature-box { display: table-cell; text-align: center; width: 45%; padding: 0 20px; }
                 .signature-line { border-bottom: 0.5px solid #000; margin-bottom: 5px; padding-bottom: 15px; }
                 </style></head><body>';
@@ -3889,14 +4047,23 @@ class SKController extends BaseController
             foreach ($officials as $index => $official) {
                 $fullName = trim(($official['first_name'] ?? '') . ' ' . ($official['middle_name'] ?? '') . ' ' . ($official['last_name'] ?? ''));
                 $positionText = $this->getPositionText($official['position']);
-                $displayPassword = ($official['is_temp_password'] ?? false) ? 
-                    esc($official['sk_password'] ?? 'Not Set') : '******';
+                $hasPassword = $official['has_password'] ?? !empty($official['sk_password']);
+                $isTemp = $official['is_temp_password'] ?? false;
+                $displayPassword = 'Not Set';
+                if ($hasPassword) {
+                    $displayPassword = $isTemp ? esc($official['sk_password'] ?? 'Not Set') : '******';
+                }
+
+                $usernameDisplay = trim((string)($official['sk_username'] ?? ''));
+                if ($usernameDisplay === '') {
+                    $usernameDisplay = 'N/A';
+                }
 
                 $html .= '<tr>
                     <td>' . ($index + 1) . '</td>
                     <td>' . esc($fullName) . '</td>
                     <td>' . esc($positionText) . '</td>
-                    <td>' . esc($official['sk_username'] ?? 'N/A') . '</td>
+                    <td>' . esc($usernameDisplay) . '</td>
                     <td>' . $displayPassword . '</td>
                 </tr>';
             }
@@ -3982,8 +4149,12 @@ class SKController extends BaseController
             $seen = [];
             $officials = [];
             foreach ($combined as $credential) {
-                if (!isset($seen[$credential['user_id']])) {
-                    $seen[$credential['user_id']] = true;
+                $key = $credential['user_id'] ?? $credential['id'];
+                if (!$key) {
+                    continue;
+                }
+                if (!isset($seen[$key])) {
+                    $seen[$key] = true;
                     $officials[] = $credential;
                 }
             }
@@ -4083,10 +4254,10 @@ class SKController extends BaseController
                 'orientation' => 'landscape',
                 'pageSizeW' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(13.0),
                 'pageSizeH' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(8.5),
-                'marginLeft' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(0.5),
-                'marginRight' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(0.5),
-                'marginTop' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(0.5),
-                'marginBottom' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(0.5),
+                'marginLeft' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(1.0),
+                'marginRight' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(1.0),
+                'marginTop' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(1.0),
+                'marginBottom' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(1.0),
             ]);
 
             $header = $section->addHeader();
@@ -4177,12 +4348,24 @@ class SKController extends BaseController
             $section->addText('SK OFFICIALS LOGIN CREDENTIALS', $titleStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             $section->addTextBreak();
             
+            // Ensure consistent ordering by position then name
+            usort($officials, function ($a, $b) {
+                $posA = isset($a['position']) ? (int)$a['position'] : 0;
+                $posB = isset($b['position']) ? (int)$b['position'] : 0;
+                if ($posA !== $posB) {
+                    return $posA <=> $posB;
+                }
+                $nameA = strtolower(trim(($a['full_name'] ?? '') ?: (($a['last_name'] ?? '') . ' ' . ($a['first_name'] ?? ''))));
+                $nameB = strtolower(trim(($b['full_name'] ?? '') ?: (($b['last_name'] ?? '') . ' ' . ($b['first_name'] ?? ''))));
+                return $nameA <=> $nameB;
+            });
+
             // Create data table with center alignment
             $table = $section->addTable([
                 'borderSize' => 6,
                 'borderColor' => '000000',
-                'cellMargin' => 20,
-                'width' => 100 * 50,
+                'cellMargin' => 80,
+                'width' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(10.8),
                 'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER
             ]);
             
@@ -4192,28 +4375,38 @@ class SKController extends BaseController
             
             // Add table header - 7 columns
             $table->addRow(null, ['tblHeader' => true]);
-            $table->addCell(400, $cellVAlignCenter)->addText('No.', $tableHeaderStyle, $paraCenter);
-            $table->addCell(1000, $cellVAlignCenter)->addText('User ID', $tableHeaderStyle, $paraCenter);
-            $table->addCell(2000, $cellVAlignCenter)->addText('Full Name', $tableHeaderStyle, $paraCenter);
-            $table->addCell(1200, $cellVAlignCenter)->addText('Barangay', $tableHeaderStyle, $paraCenter);
-            $table->addCell(1200, $cellVAlignCenter)->addText('Position', $tableHeaderStyle, $paraCenter);
-            $table->addCell(1200, $cellVAlignCenter)->addText('SK Username', $tableHeaderStyle, $paraCenter);
-            $table->addCell(1200, $cellVAlignCenter)->addText('SK Password', $tableHeaderStyle, $paraCenter);
+            $table->addCell(800, $cellVAlignCenter)->addText('No.', $tableHeaderStyle, $paraCenter);
+            $table->addCell(1800, $cellVAlignCenter)->addText('User ID', $tableHeaderStyle, $paraCenter);
+            $table->addCell(5200, $cellVAlignCenter)->addText('Full Name', $tableHeaderStyle, $paraCenter);
+            $table->addCell(1400, $cellVAlignCenter)->addText('Barangay', $tableHeaderStyle, $paraCenter);
+            $table->addCell(1400, $cellVAlignCenter)->addText('Position', $tableHeaderStyle, $paraCenter);
+            $table->addCell(1800, $cellVAlignCenter)->addText('SK Username', $tableHeaderStyle, $paraCenter);
+            $table->addCell(1800, $cellVAlignCenter)->addText('SK Password', $tableHeaderStyle, $paraCenter);
             
             // Add data rows
             foreach ($officials as $index => $official) {
                 $fullName = trim(($official['first_name'] ?? '') . ' ' . ($official['middle_name'] ?? '') . ' ' . ($official['last_name'] ?? ''));
                 $positionText = $this->getPositionText($official['position']);
-                $displayPassword = ($official['is_temp_password'] ?? false) ? $official['sk_password'] : '******';
+                $hasPassword = $official['has_password'] ?? !empty($official['sk_password']);
+                $isTemp = $official['is_temp_password'] ?? false;
+                $displayPassword = 'Not Set';
+                if ($hasPassword) {
+                    $displayPassword = $isTemp ? ($official['sk_password'] ?? 'Not Set') : '******';
+                }
                 
                 $table->addRow();
-                $table->addCell(400, $cellVAlignCenter)->addText($index + 1, $tableCellStyle, $paraCenter);
-                $table->addCell(1000, $cellVAlignCenter)->addText($official['user_id'] ?? 'N/A', $tableCellStyle, $paraCenter);
-                $table->addCell(2000, $cellVAlignCenter)->addText($fullName, $tableCellStyle, $paraCenter);
-                $table->addCell(1200, $cellVAlignCenter)->addText($barangayName, $tableCellStyle, $paraCenter);
-                $table->addCell(1200, $cellVAlignCenter)->addText($positionText, $tableCellStyle, $paraCenter);
-                $table->addCell(1200, $cellVAlignCenter)->addText($official['sk_username'] ?? 'N/A', $tableCellStyle, $paraCenter);
-                $table->addCell(1200, $cellVAlignCenter)->addText($displayPassword, $tableCellStyle, $paraCenter);
+                $table->addCell(800, $cellVAlignCenter)->addText($index + 1, $tableCellStyle, $paraCenter);
+                $table->addCell(1800, $cellVAlignCenter)->addText($official['user_id'] ?? 'N/A', $tableCellStyle, $paraCenter);
+                $table->addCell(5200, $cellVAlignCenter)->addText($fullName, $tableCellStyle, $paraCenter);
+                $table->addCell(1400, $cellVAlignCenter)->addText($barangayName, $tableCellStyle, $paraCenter);
+                $usernameDisplay = trim((string)($official['sk_username'] ?? ''));
+                if ($usernameDisplay === '') {
+                    $usernameDisplay = 'N/A';
+                }
+
+                $table->addCell(1400, $cellVAlignCenter)->addText($positionText, $tableCellStyle, $paraCenter);
+                $table->addCell(1800, $cellVAlignCenter)->addText($usernameDisplay, $tableCellStyle, $paraCenter);
+                $table->addCell(1800, $cellVAlignCenter)->addText($displayPassword, $tableCellStyle, $paraCenter);
             }
             
             // Add signature section
@@ -4294,8 +4487,12 @@ class SKController extends BaseController
             $seen = [];
             $officials = [];
             foreach ($combined as $credential) {
-                if (!isset($seen[$credential['user_id']])) {
-                    $seen[$credential['user_id']] = true;
+                $key = $credential['user_id'] ?? $credential['id'];
+                if (!$key) {
+                    continue;
+                }
+                if (!isset($seen[$key])) {
+                    $seen[$key] = true;
                     $officials[] = $credential;
                 }
             }
@@ -4432,6 +4629,18 @@ class SKController extends BaseController
 
             $currentRow++; // Empty row
 
+            // Ensure consistent ordering by position then name
+            usort($officials, function ($a, $b) {
+                $posA = isset($a['position']) ? (int)$a['position'] : 0;
+                $posB = isset($b['position']) ? (int)$b['position'] : 0;
+                if ($posA !== $posB) {
+                    return $posA <=> $posB;
+                }
+                $nameA = strtolower(trim(($a['full_name'] ?? '') ?: (($a['last_name'] ?? '') . ' ' . ($a['first_name'] ?? ''))));
+                $nameB = strtolower(trim(($b['full_name'] ?? '') ?: (($b['last_name'] ?? '') . ' ' . ($b['first_name'] ?? ''))));
+                return $nameA <=> $nameB;
+            });
+
             // Table headers - 7 columns
             $headers = [
                 'A' => 'No.',
@@ -4457,14 +4666,23 @@ class SKController extends BaseController
             foreach ($officials as $index => $official) {
                 $fullName = trim(($official['first_name'] ?? '') . ' ' . ($official['middle_name'] ?? '') . ' ' . ($official['last_name'] ?? ''));
                 $positionText = $this->getPositionText($official['position']);
-                $displayPassword = ($official['is_temp_password'] ?? false) ? $official['sk_password'] : '******';
+                $hasPassword = $official['has_password'] ?? !empty($official['sk_password']);
+                $isTemp = $official['is_temp_password'] ?? false;
+                $displayPassword = 'Not Set';
+                if ($hasPassword) {
+                    $displayPassword = $isTemp ? ($official['sk_password'] ?? 'Not Set') : '******';
+                }
 
                 $sheet->setCellValue('A' . $currentRow, $index + 1);
                 $sheet->setCellValue('B' . $currentRow, $official['user_id'] ?? 'N/A');
                 $sheet->setCellValue('C' . $currentRow, $fullName);
                 $sheet->setCellValue('D' . $currentRow, $barangayName);
                 $sheet->setCellValue('E' . $currentRow, $positionText);
-                $sheet->setCellValue('F' . $currentRow, $official['sk_username'] ?? 'N/A');
+                $usernameDisplay = trim((string)($official['sk_username'] ?? ''));
+                if ($usernameDisplay === '') {
+                    $usernameDisplay = 'N/A';
+                }
+                $sheet->setCellValue('F' . $currentRow, $usernameDisplay);
                 $sheet->setCellValue('G' . $currentRow, $displayPassword);
 
                 // Add borders to data rows
@@ -4539,24 +4757,20 @@ class SKController extends BaseController
         try {
             $userModel = new UserModel();
 
-            // Get all users in this barangay who have SK credentials (exclude KK members - position 5)
+            // Get all SK officials in this barangay (exclude KK members - position 5)
             $skOfficials = $userModel->select('user.id, user.user_id, user.first_name, user.middle_name, user.last_name, user.suffix, user.position, user.sk_username, user.sk_password')
                 ->join('address', 'address.user_id = user.id', 'inner')
                 ->where('address.barangay', $barangayId)
                 ->where('user.status', 2) // Approved
-                ->where('user.position !=', 5) // Exclude KK Members
-                ->where('user.sk_username IS NOT NULL')
-                ->where('user.sk_password IS NOT NULL')
+                ->where('user.position !=', 5)
                 ->findAll();
 
-            // Get only chairpersons in this barangay with credentials (position = 1) - include regardless of user_type
+            // Get only chairpersons in this barangay (position = 1) - include regardless of user_type
             $chairpersons = $userModel->select('user.id, user.user_id, user.first_name, user.middle_name, user.last_name, user.suffix, user.position, user.sk_username, user.sk_password')
                 ->join('address', 'address.user_id = user.id', 'inner')
                 ->where('address.barangay', $barangayId)
                 ->where('user.position', 1) // Chairperson
                 ->where('user.status', 2) // Approved
-                ->where('user.sk_username IS NOT NULL')
-                ->where('user.sk_password IS NOT NULL')
                 ->findAll();
 
             // Process the data
@@ -4612,12 +4826,33 @@ class SKController extends BaseController
                 </thead>
                 <tbody>';
 
+        usort($data, function ($a, $b) {
+            $posA = isset($a['position']) ? (int)$a['position'] : 0;
+            $posB = isset($b['position']) ? (int)$b['position'] : 0;
+            if ($posA !== $posB) {
+                return $posA <=> $posB;
+            }
+            $nameA = strtolower(trim(($a['full_name'] ?? '') ?: (($a['last_name'] ?? '') . ' ' . ($a['first_name'] ?? ''))));
+            $nameB = strtolower(trim(($b['full_name'] ?? '') ?: (($b['last_name'] ?? '') . ' ' . ($b['first_name'] ?? ''))));
+            return $nameA <=> $nameB;
+        });
+
         foreach ($data as $credential) {
             $barangayName = BarangayHelper::getBarangayName($credential['barangay_id']);
             $positionText = $this->getPositionText($credential['position']);
             
             // Mask password if not temporary
-            $displayPassword = ($credential['is_temp_password'] ?? false) ? $credential['sk_password'] : '******';
+            $hasPassword = $credential['has_password'] ?? !empty($credential['sk_password']);
+            $isTemp = $credential['is_temp_password'] ?? false;
+            $displayPassword = 'Not Set';
+            if ($hasPassword) {
+                $displayPassword = $isTemp ? ($credential['sk_password'] ?? 'Not Set') : '******';
+            }
+
+            $usernameDisplay = trim((string)($credential['sk_username'] ?? ''));
+            if ($usernameDisplay === '') {
+                $usernameDisplay = 'N/A';
+            }
             
             $html .= '
                     <tr>
@@ -4625,7 +4860,7 @@ class SKController extends BaseController
                         <td>' . htmlspecialchars($credential['full_name']) . '</td>
                         <td>' . htmlspecialchars($positionText) . '</td>
                         <td>' . htmlspecialchars($barangayName) . '</td>
-                        <td>' . htmlspecialchars($credential['sk_username']) . '</td>
+                        <td>' . htmlspecialchars($usernameDisplay) . '</td>
                         <td>' . htmlspecialchars($displayPassword) . '</td>
                     </tr>';
         }

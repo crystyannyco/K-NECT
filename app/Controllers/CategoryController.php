@@ -63,29 +63,65 @@ class CategoryController extends BaseController
     public function index()
     {
         $model = new DocumentModel();
-        $data['categories'] = $model->getCategories();
         $userRole = session('role');
-        if (in_array($userRole, ['super_admin', 'admin'])) {
-            return $this->renderWithTemplate('K-NECT/Pederasyon/Categories/list', $data);
+        $userType = session('user_type');
+        
+        // Get user's barangay ID for SK users
+        $userBarangayId = null;
+        if ($userRole === 'admin' || $userType === 'sk') {
+            $userBarangayId = session('barangay_id');
         }
-        return redirect()->to(base_url('admin/documents'))->with('error', 'Access denied. Only Super Admin and SK can manage categories.');
+        
+        // Get categories based on user type
+        if ($userRole === 'super_admin' || $userType === 'pederasyon') {
+            // Pederasyon sees only city-wide categories
+            $data['categories'] = $model->getCategoriesWithDocumentCount(null, false);
+            $data['barangayId'] = null;
+            return $this->renderWithTemplate('K-NECT/Pederasyon/Categories/list', $data);
+        } elseif ($userRole === 'admin' || $userType === 'sk') {
+            // SK sees their barangay categories + city-wide categories
+            $data['categories'] = $model->getCategoriesWithDocumentCount($userBarangayId, true);
+            $data['barangayId'] = $userBarangayId;
+            return $this->renderWithTemplate('K-NECT/SK/Categories/list', $data);
+        }
+        
+        return redirect()->to(base_url('admin/documents'))->with('error', 'Access denied.');
     }
 
     public function add()
     {
         helper(['form']);
         $model = new DocumentModel();
+        $userRole = session('role');
+        $userType = session('user_type');
+        
+        // Get user's barangay ID
+        $userBarangayId = null;
+        if ($userRole === 'admin' || $userType === 'sk') {
+            $userBarangayId = session('barangay_id');
+        }
 
         if ($this->request->isAJAX()) {
             $name = $this->request->getPost('name');
             if (!$name || trim($name) === '') {
                 return $this->response->setJSON(['success' => false, 'message' => 'Category name is required.']);
             }
-            $existing = $model->db->table('categories')->where('name', trim($name))->get()->getRowArray();
-            if ($existing) {
-                return $this->response->setJSON(['success' => false, 'message' => 'Category already exists.']);
+            
+            // Check for duplicate in same scope (barangay or city-wide)
+            $existing = $model->db->table('categories')
+                ->where('name', trim($name));
+            
+            if ($userBarangayId) {
+                $existing->where('barangay_id', $userBarangayId);
+            } else {
+                $existing->where('barangay_id', null);
             }
-            $ok = $model->createCategory(trim($name));
+            
+            if ($existing->get()->getRowArray()) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Category already exists in this scope.']);
+            }
+            
+            $ok = $model->createCategory(trim($name), $userBarangayId);
             return $this->response->setJSON([
                 'success' => (bool) $ok,
                 'message' => $ok ? 'Category added successfully.' : 'Failed to add category.'
@@ -98,33 +134,59 @@ class CategoryController extends BaseController
             $rules = [
                 'name' => [
                     'label' => 'Category Name',
-                    'rules' => 'required|max_length[100]|is_unique[categories.name]'
+                    'rules' => 'required|max_length[100]'
                 ]
             ];
             $oldName = $this->request->getPost('name');
             if (!$this->validate($rules)) {
                 $errorMsg = implode(' ', $this->validator->getErrors());
             } else {
-                $ok = $model->createCategory($oldName);
-                if ($ok) {
-                    return redirect()->to(base_url('admin/categories'))->with('success', 'Category added.');
+                // Check for duplicate
+                $existing = $model->db->table('categories')
+                    ->where('name', trim($oldName));
+                
+                if ($userBarangayId) {
+                    $existing->where('barangay_id', $userBarangayId);
+                } else {
+                    $existing->where('barangay_id', null);
                 }
-                $errorMsg = 'Save failed.';
+                
+                if ($existing->get()->getRowArray()) {
+                    $errorMsg = 'Category already exists in this scope.';
+                } else {
+                    $ok = $model->createCategory($oldName, $userBarangayId);
+                    if ($ok) {
+                        return redirect()->to(base_url('admin/categories'))->with('success', 'Category added.');
+                    }
+                    $errorMsg = 'Save failed.';
+                }
             }
         }
 
-        $userRole = session('role');
-        $viewData = ['errorMsg' => $errorMsg, 'oldName' => $oldName];
-        if (in_array($userRole, ['super_admin', 'admin'])) {
+        $viewData = ['errorMsg' => $errorMsg, 'oldName' => $oldName, 'barangayId' => $userBarangayId];
+        
+        if ($userRole === 'super_admin' || $userType === 'pederasyon') {
             return $this->renderWithTemplate('K-NECT/Pederasyon/Categories/add', $viewData);
+        } elseif ($userRole === 'admin' || $userType === 'sk') {
+            return $this->renderWithTemplate('K-NECT/SK/Categories/add', $viewData);
         }
-        return redirect()->to(base_url('admin/documents'))->with('error', 'Access denied. Only Super Admin and SK can add categories.');
+        
+        return redirect()->to(base_url('admin/documents'))->with('error', 'Access denied.');
     }
 
     public function edit($id)
     {
         helper(['form']);
         $model = new DocumentModel();
+        $userRole = session('role');
+        $userType = session('user_type');
+        
+        // Get user's barangay ID
+        $userBarangayId = null;
+        if ($userRole === 'admin' || $userType === 'sk') {
+            $userBarangayId = session('barangay_id');
+        }
+        
         $category = $model->db->table('categories')->where('id', $id)->get()->getRowArray();
 
         if (!$category) {
@@ -133,19 +195,36 @@ class CategoryController extends BaseController
             }
             throw new \CodeIgniter\Exceptions\PageNotFoundException('Category not found');
         }
+        
+        // Check if user can manage this category
+        if (!$model->canManageCategory($id, $userBarangayId, $userType)) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['success' => false, 'message' => 'You do not have permission to edit this category.']);
+            }
+            return redirect()->to(base_url('admin/categories'))->with('error', 'You do not have permission to edit this category.');
+        }
 
         if ($this->request->isAJAX()) {
             $name = $this->request->getPost('name');
             if (!$name || trim($name) === '') {
                 return $this->response->setJSON(['success' => false, 'message' => 'Category name is required.']);
             }
+            
+            // Check for duplicate in same scope
             $existing = $model->db->table('categories')
                 ->where('name', trim($name))
-                ->where('id !=', $id)
-                ->get()->getRowArray();
-            if ($existing) {
-                return $this->response->setJSON(['success' => false, 'message' => 'Category name already exists.']);
+                ->where('id !=', $id);
+                
+            if ($category['barangay_id']) {
+                $existing->where('barangay_id', $category['barangay_id']);
+            } else {
+                $existing->where('barangay_id', null);
             }
+            
+            if ($existing->get()->getRowArray()) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Category name already exists in this scope.']);
+            }
+            
             $ok = $model->updateCategory($id, trim($name));
             return $this->response->setJSON([
                 'success' => (bool) $ok,
@@ -159,20 +238,38 @@ class CategoryController extends BaseController
             if (!$name) {
                 $errorMsg = 'Category name is required.';
             } else {
-                $ok = $model->updateCategory($id, $name);
-                if ($ok) {
-                    return redirect()->to(base_url('admin/categories'))->with('success', 'Category updated.');
+                // Check for duplicate
+                $existing = $model->db->table('categories')
+                    ->where('name', trim($name))
+                    ->where('id !=', $id);
+                    
+                if ($category['barangay_id']) {
+                    $existing->where('barangay_id', $category['barangay_id']);
+                } else {
+                    $existing->where('barangay_id', null);
                 }
-                $errorMsg = 'Failed to update category.';
+                
+                if ($existing->get()->getRowArray()) {
+                    $errorMsg = 'Category name already exists in this scope.';
+                } else {
+                    $ok = $model->updateCategory($id, $name);
+                    if ($ok) {
+                        return redirect()->to(base_url('admin/categories'))->with('success', 'Category updated.');
+                    }
+                    $errorMsg = 'Failed to update category.';
+                }
             }
         }
 
-        $userRole = session('role');
-        $viewData = ['category' => $category, 'errorMsg' => $errorMsg];
-        if (in_array($userRole, ['super_admin', 'admin'])) {
+        $viewData = ['category' => $category, 'errorMsg' => $errorMsg, 'barangayId' => $userBarangayId];
+        
+        if ($userRole === 'super_admin' || $userType === 'pederasyon') {
             return $this->renderWithTemplate('K-NECT/Pederasyon/Categories/edit', $viewData);
+        } elseif ($userRole === 'admin' || $userType === 'sk') {
+            return $this->renderWithTemplate('K-NECT/SK/Categories/edit', $viewData);
         }
-        return redirect()->to(base_url('admin/documents'))->with('error', 'Access denied. Only Super Admin and SK can edit categories.');
+        
+        return redirect()->to(base_url('admin/documents'))->with('error', 'Access denied.');
     }
 
     public function delete($id)
@@ -186,6 +283,14 @@ class CategoryController extends BaseController
         }
 
         $model = new DocumentModel();
+        $userRole = session('role');
+        $userType = session('user_type');
+        
+        // Get user's barangay ID
+        $userBarangayId = null;
+        if ($userRole === 'admin' || $userType === 'sk') {
+            $userBarangayId = session('barangay_id');
+        }
         
         try {
             // Check if category exists
@@ -196,6 +301,14 @@ class CategoryController extends BaseController
                     return $this->response->setJSON(['success' => false, 'message' => 'Category not found.']);
                 }
                 return redirect()->to(base_url('admin/categories'))->with('error', 'Category not found.');
+            }
+            
+            // Check if user can manage this category
+            if (!$model->canManageCategory($id, $userBarangayId, $userType)) {
+                if ($this->request->isAJAX()) {
+                    return $this->response->setJSON(['success' => false, 'message' => 'You do not have permission to delete this category.']);
+                }
+                return redirect()->to(base_url('admin/categories'))->with('error', 'You do not have permission to delete this category.');
             }
 
             // Check if category is in use by documents

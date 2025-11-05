@@ -66,6 +66,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
     <link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css" rel="stylesheet" type="text/css" />
     
+    <!-- SweetAlert2 for beautiful modals/alerts -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <!-- CSRF AJAX Protection -->
     <script src="<?= base_url('assets/js/csrf-ajax-handler.js') ?>"></script>
     
@@ -524,25 +527,5 @@
     ];
     ?>
     
-    // Handle session messages using toast notification
-    document.addEventListener('DOMContentLoaded', function() {
-        if (window.__suppressFlashToast) { return; }
-        <?php if (session('success')): ?>
-            (function(){
-                var msg = '<?= addslashes(session('success')) ?>';
-                if (typeof window.showNotification === 'function') {
-                    window.showNotification(msg, 'success');
-                }
-            })();
-        <?php endif; ?>
-
-        <?php if (session('error')): ?>
-            (function(){
-                var msg = '<?= addslashes(session('error')) ?>';
-                if (typeof window.showNotification === 'function') {
-                    window.showNotification(msg, 'error');
-                }
-            })();
-        <?php endif; ?>
-    });
+    // Flash message handlers removed - handled in individual pages to avoid duplicates
 </script>

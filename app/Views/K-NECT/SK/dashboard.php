@@ -4,7 +4,7 @@
         <div class="max-w-7xl mx-auto p-6 w-full">
             <div class="space-y-8 overflow-x-hidden">
     <!-- Welcome Section (Unified Style) -->
-    <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 border-l-4 border-blue-600 relative overflow-hidden">
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 relative overflow-hidden" style="border-left: 4px solid #2563eb;">
         <div class="flex items-start justify-between gap-6">
             <div class="space-y-1">
                 <h1 class="text-xl font-bold leading-snug">Welcome back, <?= esc(session('username')) ?>!</h1>

@@ -65,6 +65,9 @@
     <!-- Toast Notification System -->
     <script src="<?= base_url('assets/js/toast-notifications.js') ?>"></script>
     
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <!-- Confirmation Modal System -->
     <script src="<?= base_url('assets/js/confirm-modal.js') ?>"></script>
 

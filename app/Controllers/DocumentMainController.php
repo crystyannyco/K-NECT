@@ -161,7 +161,21 @@ class DocumentMainController extends BaseController
     public function index()
     {
         $model = new DocumentModel();
-        $categories = $model->getCategories();
+        
+        // Get user info first
+        $userRole = session('role');
+        $userType = session('user_type');
+        $userBarangayId = session('barangay_id');
+        
+        // Fetch categories based on user type
+        if ($userRole === 'super_admin' || $userType === 'pederasyon') {
+            // Pederasyon sees only city-wide categories
+            $categories = $model->getCategories(null, false);
+        } else {
+            // SK and KK see their barangay categories + city-wide
+            $categories = $model->getCategories($userBarangayId, true);
+        }
+        
         $search = $this->request ? $this->request->getGet('search') : null;
         $categoryFilter = $this->request ? $this->request->getGet('category') : null;
         $page = (int)($this->request ? ($this->request->getGet('page') ?? 1) : 1);
@@ -197,15 +211,18 @@ class DocumentMainController extends BaseController
             $doc['tags'] = implode(',', $tagNames);
         }
         unset($doc);
-        // Fetch uploader roles for all documents in one query
+        // Fetch uploader roles and profile pictures for all documents in one query
         $uploaderUsernames = array_unique(array_map(function($doc) {
-            return strtolower(trim($doc['uploaded_by']));
+            return trim($doc['uploaded_by']); // Keep original case for querying
         }, $allDocuments));
         $userRoles = [];
+        $userProfiles = [];
         if (!empty($uploaderUsernames)) {
             $users = $model->getUsersByUsernames($uploaderUsernames);
             foreach ($users as $u) {
-                $userRoles[strtolower(trim($u['username']))] = $u['role'];
+                $username = strtolower(trim($u['username'])); // Store with lowercase key for consistent lookup
+                $userRoles[$username] = $u['role'];
+                $userProfiles[$username] = $u['profile_picture'] ?? '';
             }
         }
         // Normalize role with fallback to user_type mapping
@@ -226,8 +243,10 @@ class DocumentMainController extends BaseController
         }
         $user = strtolower(trim((string) session('username')));
         
-        // Get user's barangay for filtering
-        $userBarangayId = $model->getUserBarangayId($user);
+        // Get user's barangay for filtering (already retrieved earlier, but keep for document filtering)
+        if (!$userBarangayId) {
+            $userBarangayId = $model->getUserBarangayId($user);
+        }
         
         $filteredDocuments = array_filter($allDocuments, function($doc) use ($role, $userType, $user, $userBarangayId) {
             $uploadedBy = strtolower(trim($doc['uploaded_by'] ?? ''));
@@ -292,6 +311,7 @@ class DocumentMainController extends BaseController
             'allTags' => $allTags,
             'selectedTags' => $selectedTags,
             'userRoles' => $userRoles, // pass uploader roles to view
+            'userProfiles' => $userProfiles, // pass uploader profile pictures to view
             'barangays' => $barangays,
             'userBarangayId' => $userBarangayId,
         ];
@@ -592,14 +612,36 @@ class DocumentMainController extends BaseController
                     if ($docId && !empty($categoryIds)) {
                         try {
                             $db = \Config\Database::connect();
+                            
+                            // Remove duplicates from categoryIds array
+                            $categoryIds = array_unique($categoryIds);
+                            
+                            // Use transaction for atomicity
+                            $db->transStart();
+                            
+                            // Delete existing categories
                             $db->table('document_category')->where('document_id', $docId)->delete();
+                            
+                            // Insert categories in batch
+                            $categoryData = [];
                             foreach ($categoryIds as $catId) {
-                                $db->table('document_category')->insert([
-                                    'document_id' => $docId,
-                                    'category_id' => $catId
-                                ]);
+                                $categoryData[] = [
+                                    'document_id' => (int)$docId,
+                                    'category_id' => (int)$catId
+                                ];
                             }
-                            file_put_contents($logFile, "Categories assigned: " . implode(',', $categoryIds) . "\n", FILE_APPEND);
+                            
+                            if (!empty($categoryData)) {
+                                $db->table('document_category')->insertBatch($categoryData);
+                            }
+                            
+                            $db->transComplete();
+                            
+                            if ($db->transStatus() === false) {
+                                file_put_contents($logFile, "Category assignment transaction failed\n", FILE_APPEND);
+                            } else {
+                                file_put_contents($logFile, "Categories assigned: " . implode(',', $categoryIds) . "\n", FILE_APPEND);
+                            }
                         } catch (\Exception $e) {
                             file_put_contents($logFile, "Category assignment error: " . $e->getMessage() . "\n", FILE_APPEND);
                         }
@@ -841,10 +883,26 @@ class DocumentMainController extends BaseController
                 file_put_contents(WRITEPATH . 'logs/tag_debug.log', "[EDIT] Validation failed: Filename is required.\n", FILE_APPEND);
                 return redirect()->back()->withInput()->with('error', 'Filename is required.');
             }
-            $categoryIds = $this->request->getPost('categories') ?? [];
-            if (!is_array($categoryIds)) {
-                $categoryIds = $categoryIds ? [$categoryIds] : [];
+            $categoryIds = $this->request->getPost('categories');
+            
+            // Handle different input formats for categories
+            if ($categoryIds === null || $categoryIds === '' || $categoryIds === []) {
+                $categoryIds = [];
+            } elseif (!is_array($categoryIds)) {
+                // Single category selected (shouldn't happen with checkboxes, but handle it)
+                $categoryIds = [$categoryIds];
+            } else {
+                // Multiple categories - filter out empty values
+                $categoryIds = array_filter($categoryIds, function($val) {
+                    return $val !== '' && $val !== null;
+                });
             }
+            
+            // Validate: Only allow 1 category selection
+            if (count($categoryIds) > 1) {
+                return redirect()->back()->withInput()->with('error', 'Please select only 1 category per document.');
+            }
+            
             $description = $this->request->getPost('description');
             $tagsInput = $this->request->getPost('tags');
             $downloadable = $this->request->getPost('downloadable') ? 1 : 0;
@@ -908,14 +966,50 @@ class DocumentMainController extends BaseController
                 file_put_contents(WRITEPATH . 'logs/tag_debug.log', "[EDIT] Model validation errors: " . print_r($model->errors(), true) . "\n", FILE_APPEND);
                 return redirect()->back()->withInput()->with('error', implode(' ', $model->errors()));
             }
+            
             // Always update categories, even if empty
+            // Use transaction to ensure atomicity
+            $db->transStart();
+            
+            // Delete existing categories for this document
             $db->table('document_category')->where('document_id', $id)->delete();
-            foreach ($categoryIds as $catId) {
-                $db->table('document_category')->insert([
-                    'document_id' => $id,
-                    'category_id' => $catId
-                ]);
+            
+            // Insert new categories if any
+            if (!empty($categoryIds)) {
+                // Remove duplicates and ensure all values are valid integers
+                $categoryIds = array_unique($categoryIds);
+                $categoryIds = array_filter($categoryIds, function($catId) {
+                    return is_numeric($catId) && (int)$catId > 0;
+                });
+                
+                $categoryData = [];
+                foreach ($categoryIds as $catId) {
+                    $categoryData[] = [
+                        'document_id' => (int)$id,
+                        'category_id' => (int)$catId
+                    ];
+                }
+                
+                if (!empty($categoryData)) {
+                    try {
+                        $db->table('document_category')->insertBatch($categoryData);
+                        file_put_contents(WRITEPATH . 'logs/category_debug.log', "[EDIT] Successfully inserted " . count($categoryData) . " categories for document $id\n", FILE_APPEND);
+                    } catch (\Exception $e) {
+                        file_put_contents(WRITEPATH . 'logs/category_debug.log', "[EDIT] Error inserting categories: " . $e->getMessage() . "\n", FILE_APPEND);
+                        throw $e;
+                    }
+                }
             }
+            
+            $db->transComplete();
+            
+            if ($db->transStatus() === false) {
+                $error = $db->error();
+                file_put_contents(WRITEPATH . 'logs/category_debug.log', "[EDIT] Transaction failed for document $id. Error: " . print_r($error, true) . "\n", FILE_APPEND);
+                file_put_contents(WRITEPATH . 'logs/category_debug.log', "[EDIT] Category IDs attempted: " . print_r($categoryIds, true) . "\n", FILE_APPEND);
+                return redirect()->back()->withInput()->with('error', 'Failed to update document categories. Please try again.');
+            }
+            
             // Always update tags
             file_put_contents(WRITEPATH . 'logs/tag_debug.log', "[EDIT] tagsArray before update: " . print_r($tagsArray, true) . "\n", FILE_APPEND);
             if (empty($tagsArray)) {

@@ -161,62 +161,23 @@ $totalPages = (int) max(1, ceil($total / max(1, $perPage)));
     </div>
 </div>
 
-<script>
-// Toast notification function - defined early for flash messages
-function showSuccessToast(message) {
-    // Create toast container if it doesn't exist
-    let toastContainer = document.getElementById('toastContainer');
-    if (!toastContainer) {
-        toastContainer = document.createElement('div');
-        toastContainer.id = 'toastContainer';
-        toastContainer.className = 'fixed top-4 right-4 z-50 space-y-2';
-        document.body.appendChild(toastContainer);
-    }
-    
-    // Create toast element
-    const toast = document.createElement('div');
-    toast.className = 'bg-green-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 transform translate-x-full opacity-0 transition-all duration-300 ease-out max-w-sm';
-    toast.innerHTML = `
-        <div class="flex-shrink-0">
-            <svg class="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-            </svg>
-        </div>
-        <div class="flex-1">
-            <p class="font-medium text-sm">${message}</p>
-        </div>
-        <button onclick="this.parentElement.remove()" class="flex-shrink-0 text-white hover:text-green-200 transition-colors">
-            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-            </svg>
-        </button>
-    `;
-    
-    // Add to container
-    toastContainer.appendChild(toast);
-    
-    // Animate in
-    setTimeout(() => {
-        toast.classList.remove('translate-x-full', 'opacity-0');
-    }, 100);
-    
-    // Auto hide after 5 seconds
-    setTimeout(() => {
-        toast.classList.add('translate-x-full', 'opacity-0');
-        setTimeout(() => {
-            if (toast.parentElement) {
-                toast.remove();
-            }
-        }, 300);
-    }, 5000);
-}
-</script>
-
 <?php if (session()->getFlashdata('success')): ?>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            showSuccessToast('<?= addslashes(session()->getFlashdata('success')) ?>');
-        });
+        (function() {
+            // Use a flag to prevent double execution
+            if (window.successToastShown) return;
+            window.successToastShown = true;
+            
+            // Show toast immediately without waiting for DOMContentLoaded
+            if (typeof showSuccessToast === 'function') {
+                showSuccessToast('<?= addslashes(session()->getFlashdata('success')) ?>');
+            } else {
+                // If function not loaded yet, wait for DOMContentLoaded
+                document.addEventListener('DOMContentLoaded', function() {
+                    showSuccessToast('<?= addslashes(session()->getFlashdata('success')) ?>');
+                }, { once: true }); // 'once: true' ensures it only runs once
+            }
+        })();
     </script>
 <?php endif; ?>
 
@@ -270,10 +231,13 @@ function showSuccessToast(message) {
     <div class="space-y-4">
         <?php foreach ($documents as $doc): ?>
                     <?php
-        // Get uploader role for access control using unified model
+        // Get uploader role and profile picture for access control using unified model
         $uploaderRole = null;
+        $uploaderProfilePicture = '';
         if (!empty($doc['uploaded_by'])) {
-            $uploaderRole = $userRoles[strtolower(trim($doc['uploaded_by']))] ?? null;
+            $uploaderUsername = strtolower(trim($doc['uploaded_by']));
+            $uploaderRole = $userRoles[$uploaderUsername] ?? null;
+            $uploaderProfilePicture = $userProfiles[$uploaderUsername] ?? '';
         }
         
         $previewUrl = base_url('admin/documents/preview/' . $doc['id']);
@@ -352,15 +316,26 @@ function showSuccessToast(message) {
                 </div>
 
                 <div class="flex items-center gap-2 mt-2">
-                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-semibold text-xs">
-                        <?= strtoupper(substr(esc($doc['uploaded_by']), 0, 1)) ?>
-                    </span>
-                    <span class="text-gray-700 font-medium text-sm"><?= esc($doc['uploaded_by']) ?></span>
-                    <?php if ($uploaderRole): ?>
-                    <span class="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200 uppercase font-medium">
-                        <?= esc($uploaderRole) ?>
-                    </span>
+                    <?php if (!empty($uploaderProfilePicture)): ?>
+                        <?php 
+                        // Handle profile picture path - check if it already contains the full path
+                        $profilePicUrl = (strpos($uploaderProfilePicture, 'uploads/') === 0) 
+                            ? base_url($uploaderProfilePicture) 
+                            : base_url('uploads/profile_pictures/' . $uploaderProfilePicture);
+                        ?>
+                        <img src="<?= $profilePicUrl ?>" 
+                             alt="<?= esc($doc['uploaded_by']) ?>" 
+                             class="w-6 h-6 rounded-full object-cover border border-gray-200"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+                        <span class="hidden inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-semibold text-xs">
+                            <?= strtoupper(substr(esc($doc['uploaded_by']), 0, 1)) ?>
+                        </span>
+                    <?php else: ?>
+                        <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-semibold text-xs">
+                            <?= strtoupper(substr(esc($doc['uploaded_by']), 0, 1)) ?>
+                        </span>
                     <?php endif; ?>
+                    <span class="text-gray-700 font-medium text-sm"><?= esc($doc['uploaded_by']) ?></span>
                 </div>
 
                 <?php if (!empty($doc['category_name'])): ?>

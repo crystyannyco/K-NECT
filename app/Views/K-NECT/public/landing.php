@@ -457,7 +457,7 @@
             max-width: 1100px;
             margin: 0 auto;
         }
-        .chairman-container {
+        .chairperson-container {
             display: flex;
             justify-content: center;
             margin-bottom: 2.5rem;
@@ -476,10 +476,10 @@
             box-shadow: 0 18px 40px -24px rgba(2,6,23,.28);
             border-color: var(--primary-200);
         }
-        .chairman-card {
+        .chairperson-card {
             width: 280px;
         }
-        .chairman-card::after {
+        .chairperson-card::after {
             content: "";
             position: absolute;
             inset: 0;
@@ -491,7 +491,7 @@
             mask-composite: exclude;
             pointer-events: none;
         }
-        .chairman-card .officer-photo {
+        .chairperson-card .officer-photo {
             width: 160px;
             height: 160px;
             margin: 0 auto 1.2rem;
@@ -523,7 +523,7 @@
             font-weight: 700;
             font-family: 'Domine', serif;
         }
-        .chairman-card .officer-initials {
+        .chairperson-card .officer-initials {
             font-size: 2.8rem;
         }
         .officer-info {
@@ -537,7 +537,7 @@
             margin: 0 0 0.4rem;
             color: var(--ink);
         }
-        .chairman-card .officer-name {
+        .chairperson-card .officer-name {
             font-size: 1.4rem;
         }
         .officer-position {
@@ -547,7 +547,7 @@
             margin: 0;
             letter-spacing: 0.3px;
         }
-        .chairman-card .officer-position {
+        .chairperson-card .officer-position {
             font-size: 0.95rem;
         }
         .text-gray-400 {
@@ -566,7 +566,7 @@
                 grid-template-columns: repeat(2, 1fr);
                 gap: 1rem;
             }
-            .chairman-card {
+            .chairperson-card {
                 width: 100%;
                 max-width: 280px;
             }
@@ -874,18 +874,18 @@
                         }
                     }
                     
-                    // Separate chairman (position 1) from other officers
-                    $chairman = $allPositions[1];
+                    // Separate chairperson (position 1) from other officers
+                    $chairperson = $allPositions[1];
                     $officers = array_slice($allPositions, 1); // positions 2-7
                     ?>
                     
                     <!-- Chairman Card (centered, larger) -->
-                    <div class="chairman-container">
-                        <div class="officer-card chairman-card">
+                    <div class="chairperson-container">
+                        <div class="officer-card chairperson-card">
                             <div class="officer-photo">
-                                <?php if ($chairman['officer'] && !empty($chairman['officer']['profile_picture'])): ?>
+                                <?php if ($chairperson['officer'] && !empty($chairperson['officer']['profile_picture'])): ?>
                                     <?php 
-                                        $pp = $chairman['officer']['profile_picture'];
+                                        $pp = $chairperson['officer']['profile_picture'];
                                         // Handle different profile picture formats
                                         if (strpos($pp, '/') !== false) {
                                             $ppUrl = base_url($pp);
@@ -894,12 +894,12 @@
                                         }
                                     ?>
                                     <img src="<?= esc($ppUrl) ?>" 
-                                         alt="<?= esc($chairman['officer']['first_name'] . ' ' . $chairman['officer']['last_name']) ?>" 
+                                         alt="<?= esc($chairperson['officer']['first_name'] . ' ' . $chairperson['officer']['last_name']) ?>" 
                                          loading="lazy">
                                 <?php else: ?>
                                     <div class="officer-initials">
-                                        <?php if ($chairman['officer']): ?>
-                                            <?= strtoupper(substr($chairman['officer']['first_name'], 0, 1) . substr($chairman['officer']['last_name'], 0, 1)) ?>
+                                        <?php if ($chairperson['officer']): ?>
+                                            <?= strtoupper(substr($chairperson['officer']['first_name'], 0, 1) . substr($chairperson['officer']['last_name'], 0, 1)) ?>
                                         <?php else: ?>
                                             <i class="fa-solid fa-user" style="font-size: 3rem; color: var(--primary-400);"></i>
                                         <?php endif; ?>
@@ -908,13 +908,13 @@
                             </div>
                             <div class="officer-info">
                                 <h3 class="officer-name">
-                                    <?php if ($chairman['officer']): ?>
-                                        Hon. <?= esc($chairman['officer']['first_name'] . ' ' . $chairman['officer']['last_name']) ?>
+                                    <?php if ($chairperson['officer']): ?>
+                                        Hon. <?= esc($chairperson['officer']['first_name'] . ' ' . $chairperson['officer']['last_name']) ?>
                                     <?php else: ?>
                                         <span class="text-gray-400">To Be Appointed</span>
                                     <?php endif; ?>
                                 </h3>
-                                <p class="officer-position"><?= $chairman['title'] ?></p>
+                                <p class="officer-position"><?= $chairperson['title'] ?></p>
                             </div>
                         </div>
                     </div>

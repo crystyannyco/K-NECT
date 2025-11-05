@@ -160,7 +160,6 @@
     <div class="email-container">
         <!-- Header -->
         <div class="header">
-            <div class="success-icon">✓</div>
             <h1>Profiling Completed!</h1>
             <p>K-NECT Youth Management System</p>
         </div>

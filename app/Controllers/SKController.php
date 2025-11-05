@@ -1362,6 +1362,11 @@ class SKController extends BaseController
 
     public function generateKKListWord()
     {
+        // Clean any output buffers to prevent file corruption
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        
         // Preflight: Zip is required for PhpWord (DOCX)
         if (!class_exists('ZipArchive') || !extension_loaded('zip')) {
             $ini = function_exists('php_ini_loaded_file') ? (php_ini_loaded_file() ?: 'php.ini') : 'php.ini';
@@ -1453,6 +1458,11 @@ class SKController extends BaseController
 
     public function generateKKListExcel()
     {
+        // Clean any output buffers to prevent file corruption
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        
         try {
             log_message('info', 'Starting KK List Excel generation...');
             
@@ -1946,28 +1956,42 @@ class SKController extends BaseController
         if (isset($logos['barangay']) || isset($logos['sk'])) {
             $logoData = $logos['barangay'] ?? $logos['sk'];
             $logoType = isset($logos['barangay']) ? 'barangay' : 'sk';
-            $logoPath = ROOTPATH . $logoData['file_path'];
+            
+            // Build proper file path - check both ROOTPATH/public and ROOTPATH
+            $relativePath = ltrim($logoData['file_path'], '/\\');
+            $logoPath = ROOTPATH . 'public/' . $relativePath;
+            
+            if (!file_exists($logoPath)) {
+                $logoPath = ROOTPATH . $relativePath;
+            }
+            
             log_message('info', "Attempting to add {$logoType} logo: {$logoPath}");
             
-            if (file_exists($logoPath)) {
+            if (file_exists($logoPath) && is_readable($logoPath)) {
                 try {
-                    $leftCell->addImage($logoPath, [
-                        'width' => 50.4,  // 0.70 inches = 50.4 points
-                        'height' => 50.4,
-                        'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER
-                    ]);
-                    log_message('info', "Successfully added {$logoType} logo to Word document");
+                    // Validate image format
+                    $imageInfo = @getimagesize($logoPath);
+                    if ($imageInfo !== false && in_array($imageInfo[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_GIF])) {
+                        $leftCell->addImage($logoPath, [
+                            'width' => 50.4,  // 0.70 inches = 50.4 points
+                            'height' => 50.4,
+                            'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER,
+                            'wrappingStyle' => 'inline'
+                        ]);
+                        log_message('info', "Successfully added {$logoType} logo to Word document");
+                    } else {
+                        log_message('warning', "Invalid or unsupported image format for {$logoType} logo");
+                        // Don't add anything if logo is invalid - let Word handle gracefully
+                    }
                 } catch (\Exception $e) {
                     log_message('error', "Failed to add {$logoType} logo to Word document: " . $e->getMessage());
-                    $leftCell->addText('BRGY LOGO', $headerStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
+                    // Don't add anything on error - let Word handle gracefully
                 }
             } else {
-                log_message('warning', "Logo file does not exist: {$logoPath}");
-                $leftCell->addText('BRGY LOGO', $headerStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
+                log_message('warning', "Logo file does not exist or is not readable: {$logoPath}");
             }
         } else {
-            log_message('info', 'No barangay or SK logo available, using placeholder');
-            $leftCell->addText('BRGY LOGO', $headerStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
+            log_message('info', 'No barangay or SK logo available');
         }
         
         // Center text cell
@@ -1981,28 +2005,41 @@ class SKController extends BaseController
         // Right logo cell
         $rightCell = $headerTable->addCell(2000, ['valign' => 'center']);
         if (isset($logos['iriga_city'])) {
-            $logoPath = ROOTPATH . $logos['iriga_city']['file_path'];
+            // Build proper file path - check both ROOTPATH/public and ROOTPATH
+            $relativePath = ltrim($logos['iriga_city']['file_path'], '/\\');
+            $logoPath = ROOTPATH . 'public/' . $relativePath;
+            
+            if (!file_exists($logoPath)) {
+                $logoPath = ROOTPATH . $relativePath;
+            }
+            
             log_message('info', "Attempting to add Iriga City logo: {$logoPath}");
             
-            if (file_exists($logoPath)) {
+            if (file_exists($logoPath) && is_readable($logoPath)) {
                 try {
-                    $rightCell->addImage($logoPath, [
-                        'width' => 50.4,  // 0.70 inches = 50.4 points
-                        'height' => 50.4,
-                        'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER
-                    ]);
-                    log_message('info', "Successfully added Iriga City logo to Word document");
+                    // Validate image format
+                    $imageInfo = @getimagesize($logoPath);
+                    if ($imageInfo !== false && in_array($imageInfo[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_GIF])) {
+                        $rightCell->addImage($logoPath, [
+                            'width' => 50.4,  // 0.70 inches = 50.4 points
+                            'height' => 50.4,
+                            'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER,
+                            'wrappingStyle' => 'inline'
+                        ]);
+                        log_message('info', "Successfully added Iriga City logo to Word document");
+                    } else {
+                        log_message('warning', "Invalid or unsupported image format for Iriga City logo");
+                        // Don't add anything if logo is invalid - let Word handle gracefully
+                    }
                 } catch (\Exception $e) {
                     log_message('error', "Failed to add Iriga City logo to Word document: " . $e->getMessage());
-                    $rightCell->addText('IRIGA LOGO', $headerStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
+                    // Don't add anything on error - let Word handle gracefully
                 }
             } else {
-                log_message('warning', "Iriga City logo file does not exist: {$logoPath}");
-                $rightCell->addText('IRIGA LOGO', $headerStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
+                log_message('warning', "Iriga City logo file does not exist or is not readable: {$logoPath}");
             }
         } else {
-            log_message('info', 'No Iriga City logo available, using placeholder');
-            $rightCell->addText('IRIGA LOGO', $headerStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
+            log_message('info', 'No Iriga City logo available');
         }
         
         // Add horizontal line
@@ -2164,19 +2201,13 @@ class SKController extends BaseController
         $cell1->addText('SK Secretary', ['size' => 8], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
         $cell2->addText('SK Chairperson', ['size' => 8], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
 
-        // Save the document
-        // $outputDir = FCPATH . 'uploads/generated/';
-        // if (!is_dir($outputDir)) {
-        //     mkdir($outputDir, 0777, true);
-        // }
-        
-        $fileName = 'KK_List_' . str_replace(' ', '_', $barangayName) . '_' . date('Y_m_d_H_i_s') . '.docx';
-        $outputFile = $outputDir . $fileName;
+        // Save the document to a temporary file
+        $tempFile = tempnam(sys_get_temp_dir(), 'KK_List_') . '.docx';
         
         $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
         $writer->save($tempFile);
             
-        log_message('info', 'Word document generated successfully');
+        log_message('info', 'Word document generated successfully at: ' . $tempFile);
         return $tempFile;
         
         } catch (\Exception $e) {
@@ -2443,20 +2474,13 @@ class SKController extends BaseController
             $sheet->setCellValue('M' . $currentRow, 'SK Chairperson');
             $sheet->getStyle('M' . $currentRow)->getFont()->setBold(true);
 
-            // Generate filename and save
-            $filename = 'KK_List_' . str_replace(' ', '_', $barangayName) . '_' . date('Y-m-d') . '.xlsx';
-            // $outputPath = FCPATH . 'uploads/generated/' . $filename;
-
-            // Ensure the directory exists
-            $dir = dirname($outputPath);
-            if (!is_dir($dir)) {
-                mkdir($dir, 0755, true);
-            }
+            // Save to temporary file
+            $tempFile = tempnam(sys_get_temp_dir(), 'KK_List_') . '.xlsx';
 
             $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
             $writer->save($tempFile);
 
-            log_message('info', 'Excel document generated successfully');
+            log_message('info', 'Excel document generated successfully at: ' . $tempFile);
             return $tempFile;
 
         } catch (\Exception $e) {
@@ -3707,11 +3731,23 @@ class SKController extends BaseController
                 }
             }
             
-            if ($skLogo && file_exists(ROOTPATH . $skLogo['file_path'])) {
-                $logos['sk'] = $skLogo;
-                log_message('info', 'SK logo added: ' . $skLogo['file_path']);
+            if ($skLogo) {
+                // Build proper file path - check both ROOTPATH and ROOTPATH/public
+                $filePath = ltrim($skLogo['file_path'], '/\\');
+                $fullPath = ROOTPATH . 'public/' . $filePath;
+                
+                if (!file_exists($fullPath)) {
+                    $fullPath = ROOTPATH . $filePath;
+                }
+                
+                if (file_exists($fullPath)) {
+                    $logos['sk'] = $skLogo;
+                    log_message('info', 'SK logo added: ' . $fullPath);
+                } else {
+                    log_message('warning', 'SK logo file does not exist at: ' . $fullPath);
+                }
             } else {
-                log_message('warning', 'No SK logo found or file does not exist');
+                log_message('warning', 'No SK logo found in database');
             }
             
             // Get Barangay logo (prioritize barangay-specific, then any active)
@@ -3733,11 +3769,23 @@ class SKController extends BaseController
                                                ->first();
             }
             
-            if ($barangayLogo && file_exists(ROOTPATH . $barangayLogo['file_path'])) {
-                $logos['barangay'] = $barangayLogo;
-                log_message('info', 'Barangay logo added: ' . $barangayLogo['file_path']);
+            if ($barangayLogo) {
+                // Build proper file path - check both ROOTPATH and ROOTPATH/public
+                $filePath = ltrim($barangayLogo['file_path'], '/\\');
+                $fullPath = ROOTPATH . 'public/' . $filePath;
+                
+                if (!file_exists($fullPath)) {
+                    $fullPath = ROOTPATH . $filePath;
+                }
+                
+                if (file_exists($fullPath)) {
+                    $logos['barangay'] = $barangayLogo;
+                    log_message('info', 'Barangay logo added: ' . $fullPath);
+                } else {
+                    log_message('warning', 'Barangay logo file does not exist at: ' . $fullPath);
+                }
             } else {
-                log_message('warning', 'No barangay logo found or file does not exist');
+                log_message('warning', 'No barangay logo found in database');
             }
             
             // Get Iriga City logo (should be global)
@@ -3745,11 +3793,23 @@ class SKController extends BaseController
                                         ->where('is_active', true)
                                         ->orderBy('created_at', 'DESC')
                                         ->first();
-            if ($irigaLogo && file_exists(ROOTPATH . $irigaLogo['file_path'])) {
-                $logos['iriga_city'] = $irigaLogo;
-                log_message('info', 'Iriga City logo added: ' . $irigaLogo['file_path']);
+            if ($irigaLogo) {
+                // Build proper file path - check both ROOTPATH and ROOTPATH/public
+                $filePath = ltrim($irigaLogo['file_path'], '/\\');
+                $fullPath = ROOTPATH . 'public/' . $filePath;
+                
+                if (!file_exists($fullPath)) {
+                    $fullPath = ROOTPATH . $filePath;
+                }
+                
+                if (file_exists($fullPath)) {
+                    $logos['iriga_city'] = $irigaLogo;
+                    log_message('info', 'Iriga City logo added: ' . $fullPath);
+                } else {
+                    log_message('warning', 'Iriga City logo file does not exist at: ' . $fullPath);
+                }
             } else {
-                log_message('warning', 'No Iriga City logo found or file does not exist');
+                log_message('warning', 'No Iriga City logo found in database');
             }
             
             log_message('info', 'Total logos found for document: ' . count($logos));
@@ -3823,16 +3883,16 @@ class SKController extends BaseController
                 }
             }
             
-            // Find chairman (position 1)
+            // Find chairperson (position 1)
             if (!empty($chairpersons)) {
-                $chairman = $chairpersons[0];
-                $nameParts = [$chairman['first_name']];
-                if (!empty($chairman['middle_name'])) {
-                    $nameParts[] = $chairman['middle_name'];
+                $chairperson = $chairpersons[0];
+                $nameParts = [$chairperson['first_name']];
+                if (!empty($chairperson['middle_name'])) {
+                    $nameParts[] = $chairperson['middle_name'];
                 }
-                $nameParts[] = $chairman['last_name'];
-                if (!empty($chairman['suffix'])) {
-                    $nameParts[] = $chairman['suffix'];
+                $nameParts[] = $chairperson['last_name'];
+                if (!empty($chairperson['suffix'])) {
+                    $nameParts[] = $chairperson['suffix'];
                 }
                 $chairmanName = implode(' ', $nameParts);
             }
@@ -4330,12 +4390,41 @@ class SKController extends BaseController
             
             // Left logo cell
             $leftCell = $headerTable->addCell(2000, ['valign' => 'center']);
-            if (!empty($logos['sk']) && file_exists(ROOTPATH . $logos['sk']['file_path'])) {
-                $leftCell->addImage(ROOTPATH . $logos['sk']['file_path'], [
-                    'width' => 60,
-                    'height' => 60,
-                    'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER,
-                ]);
+            if (!empty($logos['sk']) || !empty($logos['barangay'])) {
+                $logoData = $logos['barangay'] ?? $logos['sk'];
+                $logoType = isset($logos['barangay']) ? 'barangay' : 'sk';
+                
+                // Build proper file path - check both ROOTPATH/public and ROOTPATH
+                $relativePath = ltrim($logoData['file_path'], '/\\');
+                $logoPath = ROOTPATH . 'public/' . $relativePath;
+                
+                if (!file_exists($logoPath)) {
+                    $logoPath = ROOTPATH . $relativePath;
+                }
+                
+                log_message('info', "Attempting to add {$logoType} logo to credentials: {$logoPath}");
+                
+                if (file_exists($logoPath) && is_readable($logoPath)) {
+                    try {
+                        // Validate image format
+                        $imageInfo = @getimagesize($logoPath);
+                        if ($imageInfo !== false && in_array($imageInfo[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_GIF])) {
+                            $leftCell->addImage($logoPath, [
+                                'width' => 60,
+                                'height' => 60,
+                                'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER,
+                                'wrappingStyle' => 'inline'
+                            ]);
+                            log_message('info', "Successfully added {$logoType} logo to credentials Word document");
+                        } else {
+                            log_message('warning', "Invalid or unsupported image format for {$logoType} logo");
+                        }
+                    } catch (\Exception $e) {
+                        log_message('error', "Failed to add {$logoType} logo to credentials Word document: " . $e->getMessage());
+                    }
+                } else {
+                    log_message('warning', "Logo file does not exist or is not readable: {$logoPath}");
+                }
             }
 
             // Center content (matching attendance report format exactly)
@@ -4348,12 +4437,38 @@ class SKController extends BaseController
             
             // Right logo cell
             $rightCell = $headerTable->addCell(2000, ['valign' => 'center']);
-            if (!empty($logos['iriga_city']) && file_exists(ROOTPATH . $logos['iriga_city']['file_path'])) {
-                $rightCell->addImage(ROOTPATH . $logos['iriga_city']['file_path'], [
-                    'width' => 60,
-                    'height' => 60,
-                    'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER,
-                ]);
+            if (!empty($logos['iriga_city'])) {
+                // Build proper file path - check both ROOTPATH/public and ROOTPATH
+                $relativePath = ltrim($logos['iriga_city']['file_path'], '/\\');
+                $logoPath = ROOTPATH . 'public/' . $relativePath;
+                
+                if (!file_exists($logoPath)) {
+                    $logoPath = ROOTPATH . $relativePath;
+                }
+                
+                log_message('info', "Attempting to add Iriga City logo to credentials: {$logoPath}");
+                
+                if (file_exists($logoPath) && is_readable($logoPath)) {
+                    try {
+                        // Validate image format
+                        $imageInfo = @getimagesize($logoPath);
+                        if ($imageInfo !== false && in_array($imageInfo[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_GIF])) {
+                            $rightCell->addImage($logoPath, [
+                                'width' => 60,
+                                'height' => 60,
+                                'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER,
+                                'wrappingStyle' => 'inline'
+                            ]);
+                            log_message('info', "Successfully added Iriga City logo to credentials Word document");
+                        } else {
+                            log_message('warning', "Invalid or unsupported image format for Iriga City logo");
+                        }
+                    } catch (\Exception $e) {
+                        log_message('error', "Failed to add Iriga City logo to credentials Word document: " . $e->getMessage());
+                    }
+                } else {
+                    log_message('warning', "Iriga City logo file does not exist or is not readable: {$logoPath}");
+                }
             }
 
             // Add title (matching attendance report)

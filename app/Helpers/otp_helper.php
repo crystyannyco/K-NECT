@@ -303,6 +303,93 @@ if (!function_exists('send_account_approved_notification')) {
     }
 }
 
+if (!function_exists('send_sk_chairperson_approved_notification')) {
+    /**
+     * Send SK Chairperson approval notification via Email and SMS
+     * 
+     * @param array $user User data array
+     * @param array $address Address data array
+     * @param string $skUsername SK Username credential
+     * @param string $skPassword SK Password credential
+     * @return array ['email' => bool, 'sms' => bool] Success status for each channel
+     */
+    function send_sk_chairperson_approved_notification($user, $address = null, $skUsername = '', $skPassword = '') {
+        $result = ['email' => false, 'sms' => false];
+        
+        // Prepare user information
+        $userName = trim($user['first_name'] . ' ' . $user['last_name']);
+        $userId = $user['user_id'] ?? '';
+        $email = $user['email'] ?? '';
+        $phoneNumber = $user['phone_number'] ?? '';
+        
+        // Account type label
+        $accountTypeLabel = 'SK Chairperson';
+        
+        // Get barangay name if available
+        $barangayName = '';
+        if ($address && isset($address['barangay'])) {
+            $barangayHelper = new \App\Libraries\BarangayHelper();
+            $barangayName = $barangayHelper->getBarangayName($address['barangay']);
+        }
+        
+        // Send Email Notification
+        try {
+            $emailService = \Config\Services::email();
+            $emailService->setTo($email);
+            $emailService->setSubject('SK Chairperson Appointment - K-NECT Account Activated');
+            
+            $message = view('emails/sk_chairperson_approved', [
+                'userName' => $userName,
+                'userId' => $userId,
+                'skUsername' => $skUsername,
+                'skPassword' => $skPassword,
+                'accountTypeLabel' => $accountTypeLabel,
+                'barangayName' => $barangayName
+            ]);
+            
+            $emailService->setMessage($message);
+            
+            if ($emailService->send()) {
+                $result['email'] = true;
+                log_message('info', "SK Chairperson approval email sent successfully to {$email}");
+            } else {
+                log_message('error', "Failed to send SK Chairperson approval email to {$email}: " . $emailService->printDebugger(['headers']));
+            }
+        } catch (\Exception $e) {
+            log_message('error', "SK Chairperson approval email exception for {$email}: " . $e->getMessage());
+        }
+        
+        // Send SMS Notification
+        if (!empty($phoneNumber)) {
+            try {
+                $smsMessage = "Congratulations {$userName}!\n";
+                $smsMessage .= "You are now an SK CHAIRPERSON";
+                if ($barangayName) {
+                    $smsMessage .= " for Barangay {$barangayName}";
+                }
+                $smsMessage .= ".\n\n";
+                $smsMessage .= "SK Login Credentials:\n";
+                $smsMessage .= "Username: {$skUsername}\n";
+                $smsMessage .= "Password: {$skPassword}\n\n";
+                $smsMessage .= "Login at K-NECT to access SK features. Welcome!";
+
+                $smsResult = send_sms($phoneNumber, $smsMessage);
+
+                if ($smsResult && !isset($smsResult['error'])) {
+                    $result['sms'] = true;
+                    log_message('info', "SK Chairperson approval SMS sent successfully to {$phoneNumber}");
+                } else {
+                    log_message('error', "Failed to send SK Chairperson approval SMS to {$phoneNumber}");
+                }
+            } catch (\Exception $e) {
+                log_message('error', "SK Chairperson approval SMS exception for {$phoneNumber}: " . $e->getMessage());
+            }
+        }
+        
+        return $result;
+    }
+}
+
 if (!function_exists('send_account_rejected_notification')) {
     /**
      * Send account rejection notification via Email and SMS

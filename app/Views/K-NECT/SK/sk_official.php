@@ -118,9 +118,6 @@
                         <div class="flex flex-wrap items-center justify-between gap-4">
                             <!-- Status Tabs -->
                             <div class="flex flex-wrap gap-2">
-                                <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all" data-status="all">
-                                    All
-                                </button>
                                 <button class="status-tab active px-4 py-2 rounded-lg text-sm font-medium transition-all" data-status="officials">
                                     All SK Officials
                                 </button>
@@ -135,6 +132,9 @@
                                 </button>
                                 <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all" data-status="kkmember">
                                     KK Member
+                                </button>
+                                <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all" data-status="all">
+                                    All
                                 </button>
                             </div>
                             <!-- Zone Filter -->
@@ -633,8 +633,41 @@
             }, 5000);
         }
         $(document).ready(function () {
+            const defaultStatus = 'officials';
+            let currentStatusFilter = localStorage.getItem(memberTabStorageKey) || defaultStatus;
+            let table;
+
+            $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+                if (settings.nTable.id !== 'myTable') {
+                    return true;
+                }
+
+                const rowData = settings.aoData[dataIndex];
+                if (!rowData || !rowData.nTr) {
+                    return true;
+                }
+
+                const position = parseInt($(rowData.nTr).data('position'), 10) || 0;
+
+                switch (currentStatusFilter) {
+                    case 'officials':
+                        return position >= 1 && position <= 4;
+                    case 'chairperson':
+                        return position === 1;
+                    case 'councilor':
+                        return position === 4;
+                    case 'appointed':
+                        return position === 2 || position === 3;
+                    case 'kkmember':
+                        return position >= 5;
+                    case 'all':
+                    default:
+                        return true;
+                }
+            });
+
             // DataTable and tab logic
-            const table = $('#myTable').DataTable({
+            table = $('#myTable').DataTable({
                 columnDefs: [
                     { orderable: false, targets: 0 },
                     { responsivePriority: 1, targets: 1 }, // name
@@ -660,9 +693,6 @@
                     
                     // Populate zone filter options
                     populateZoneFilter();
-                    
-                    // Initialize "All" tab as active by default
-                    $('.status-tab[data-status="officials"]').trigger('click');
                 }
             });
 
@@ -692,45 +722,22 @@
 
             // Tab filtering logic
 
+            function setStatusTabActive(status) {
+                $('.status-tab').removeClass('active');
+                $('.status-tab[data-status="' + status + '"]').addClass('active');
+            }
+
             function applyStatusFilter(status) {
-                $('#myTable tbody tr').each(function() {
-                    const position = parseInt($(this).data('position'), 10) || 0;
-                    let showRow = true;
-
-                    switch (status) {
-                        case 'officials':
-                            showRow = position >= 1 && position <= 4;
-                            break;
-                        case 'chairperson':
-                            showRow = position === 1;
-                            break;
-                        case 'councilor':
-                            showRow = position === 4;
-                            break;
-                        case 'appointed':
-                            showRow = position === 2 || position === 3;
-                            break;
-                        case 'kkmember':
-                            showRow = position >= 5;
-                            break;
-                        case 'all':
-                        default:
-                            showRow = true;
-                    }
-
-                    $(this).toggle(showRow);
-                });
+                currentStatusFilter = status;
+                if (table) {
+                    table.draw();
+                }
             }
 
             // Status tab click handler
             $(document).on('click', '.status-tab', function() {
-                // Remove active class from all tabs
-                $('.status-tab').removeClass('active');
-                
-                // Add active class to clicked tab
-                $(this).addClass('active');
-
                 const status = $(this).data('status');
+                setStatusTabActive(status);
                 applyStatusFilter(status);
                 localStorage.setItem(memberTabStorageKey, status);
             });
@@ -771,25 +778,46 @@
                 // Reset zone filter
                 $('#zoneFilter').val('');
                 
+                table.search('');
+                table.columns().search('');
+
                 // Reset status tabs
-                $('.status-tab').removeClass('active');
-                $('.status-tab[data-status="all"]').addClass('active');
-                
-                // Clear all column searches
-                table.columns().search('').draw();
-                
-                // Show all rows
+                setStatusTabActive('all');
                 applyStatusFilter('all');
-                
                 localStorage.setItem(memberTabStorageKey, 'all');
                 
                 // Show notification
                 showNotification('Filters cleared successfully', 'success');
             });
             
-            // On page load, restore last selected tab
-            var savedTab = localStorage.getItem(memberTabStorageKey) || 'officials';
-            $('.status-tab[data-status="' + savedTab + '"]').trigger('click');
+            // On page load, restore last selected tab or default to 'officials'
+            let savedTab = localStorage.getItem(memberTabStorageKey);
+            if (!savedTab) {
+                const legacyTab = localStorage.getItem('kkTab');
+                const legacyMap = {
+                    tabAll: 'officials',
+                    tabChairperson: 'chairperson',
+                    tabSK: 'councilor',
+                    tabPederasyon: 'appointed',
+                    tabKK: 'kkmember'
+                };
+                if (legacyTab && legacyMap[legacyTab]) {
+                    savedTab = legacyMap[legacyTab];
+                    localStorage.setItem(memberTabStorageKey, savedTab);
+                    if (legacyTab === 'tabAll') {
+                        localStorage.removeItem('kkTab');
+                    }
+                }
+            }
+            if (!savedTab) {
+                savedTab = defaultStatus;
+            }
+            if (!$('.status-tab[data-status="' + savedTab + '"]').length) {
+                savedTab = defaultStatus;
+            }
+
+            setStatusTabActive(savedTab);
+            applyStatusFilter(savedTab);
 
             // Populate zone filter options after table is loaded
             populateZoneFilter();
@@ -828,9 +856,16 @@
                 applyStatusFilter('kkmember');
                 localStorage.setItem('kkTab', 'tabKK');
             });
-            // On page load, restore last selected tab for legacy
-            var savedLegacyTab = localStorage.getItem('kkTab') || 'tabAll';
-            $('#' + savedLegacyTab).trigger('click');
+            // On page load, keep legacy tab styling in sync without overriding filters
+            const savedLegacyTab = localStorage.getItem('kkTab');
+            if (savedLegacyTab) {
+                const $legacyTab = $('#' + savedLegacyTab);
+                if ($legacyTab.length) {
+                    setActiveTab($legacyTab);
+                }
+            } else {
+                setActiveTab($('#tabAll'));
+            }
 
             // Bulk select checkboxes
             $('#selectAllRows').on('change', function() {
@@ -841,7 +876,7 @@
                     var isCurrentUser = (userId == currentUserId);
                     var isChairman = (position == 1);
                     
-                    // Only check/uncheck if it's not the current user or chairman
+                    // Only check/uncheck if it's not the current user or chairperson
                     if (!isCurrentUser && !isChairman) {
                         $(this).prop('checked', checked);
                     } else if (checked) {
@@ -852,7 +887,7 @@
                 updateBulkChangeBtn();
             });
             $(document).on('change', '.rowCheckbox', function() {
-                // Apply restrictions - don't allow selection of current user or chairman
+                // Apply restrictions - don't allow selection of current user or chairperson
                 var userId = $(this).data('user_id');
                 var position = $(this).data('position');
                 var isCurrentUser = (userId == currentUserId);
@@ -1001,7 +1036,7 @@
                                 // Set position dropdown for all users
                                 $('#modalUserType').val(String(u.position || 5));
                                 
-                                // Implement restrictions: user can't change their own position or the chairman's position
+                                // Implement restrictions: user can't change their own position or the chairperson's position
                                 let isCurrentUser = (u.id == currentUserId);
                                 let isChairman = (u.position == 1);
                                 let canEdit = !isCurrentUser && !isChairman;

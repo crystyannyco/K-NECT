@@ -27,20 +27,20 @@ class PublicController extends BaseController
             $analyticsModel = new \App\Models\AnalyticsModel();
             $systemLogoModel = new \App\Models\SystemLogoModel();
             $userModel = new \App\Models\UserModel();
-            // Limit to published + visibility public or city
+            // Limit to published + visibility public or city + featured posts only
             $posts = $bulletinModel->builder()
                 ->select('bp.id,bp.title,bp.excerpt,bp.content,bp.featured_image,bp.published_at,bp.view_count,bp.is_featured,bp.is_urgent,bc.name as category_name,bc.color as category_color,u.first_name,u.last_name')
                 ->from('bulletin_posts bp')
                 ->join('bulletin_categories bc','bc.id=bp.category_id','left')
                 ->join('user u','u.id=bp.author_id','left')
                 ->where('bp.status','published')
+                ->where('bp.is_featured', 1)
                 ->groupStart()
                     ->where('bp.visibility','public')
                     ->orWhere('bp.visibility','city')
                 ->groupEnd()
                 // Ensure we don't get duplicate rows if future joins (e.g. tags) create multiplicity
                 ->groupBy('bp.id')
-                ->orderBy('bp.is_featured','DESC')
                 ->orderBy('bp.is_urgent','DESC')
                 ->orderBy('bp.published_at','DESC')
                 ->limit(6)->get()->getResultArray();

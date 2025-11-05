@@ -206,11 +206,14 @@
     #stories .news-carousel{position:relative;padding:.1rem 0}
     #stories .news-viewport{position:relative;overflow:hidden;border-radius:14px}
     #stories .news-track{--gap:.8rem;display:flex;gap:var(--gap);transition:transform .45s ease;will-change:transform}
-    #stories .news-slide{flex:0 0 100%;min-width:100%}
+    #stories .news-slide{flex:0 0 auto}
+    @media (min-width:1280px){#stories .news-slide{flex-basis:calc((100% - var(--gap)*3)/4);min-width:calc((100% - var(--gap)*3)/4)}}
+    @media (min-width:768px) and (max-width:1279.98px){#stories .news-slide{flex-basis:calc((100% - var(--gap)*2)/3);min-width:calc((100% - var(--gap)*2)/3)}}
+    @media (max-width:767.98px){#stories .news-slide{flex-basis:88%;min-width:88%}}
     #stories .news-card{display:block;position:relative;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:#f8fafc;box-shadow:0 8px 24px -22px rgba(2,6,23,.2);transition:transform .2s ease, box-shadow .2s ease}
     #stories .news-card::after{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;background:linear-gradient(180deg,rgba(59,130,246,.15),rgba(59,130,246,0));-webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);-webkit-mask-composite:x;mask-composite:exclude;pointer-events:none}
     #stories .news-card:hover{transform:translateY(-1px);box-shadow:0 14px 30px -24px rgba(2,6,23,.22)}
-    #stories .news-media{position:relative;aspect-ratio:1/1;background:#e5e7eb}
+    #stories .news-media{position:relative;aspect-ratio:16/10;max-height:280px;background:#e5e7eb}
     #stories .news-media img{width:100%;height:100%;object-fit:cover;display:block}
     #stories .news-info{position:absolute;left:0;right:0;bottom:0;padding:.4rem .5rem;color:#fff;background:linear-gradient(to top, rgba(2,6,23,.6), rgba(2,6,23,0));font-size:.8rem;font-weight:700;letter-spacing:.2px;text-shadow:0 1px 2px rgba(0,0,0,.35);display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;white-space:normal}
     #stories .news-chip{position:absolute;top:.4rem;left:.4rem;z-index:2;background:rgba(255,255,255,.8);backdrop-filter:blur(4px);border:1px solid rgba(15,23,42,.12);color:#0f172a;border-radius:999px;padding:.15rem .45rem;font-size:.65rem;font-weight:800;letter-spacing:.2px}

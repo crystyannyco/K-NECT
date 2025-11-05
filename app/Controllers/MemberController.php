@@ -213,6 +213,23 @@ class MemberController extends BaseController
         if ($result) {
             $updatedUser = $userModel->find($userId) ?: $user;
 
+            // Send SMS notification when promoting to SK Chairperson
+            if ($newType === 2 && $generatedSkCredentials) {
+                helper('otp');
+                
+                // Get user's address data for barangay info
+                $addressModel = new \App\Models\AddressModel();
+                $address = $addressModel->where('user_id', $updatedUser['id'])->first();
+                
+                // Send SK Chairperson approval notification with credentials
+                send_sk_chairperson_approved_notification(
+                    $updatedUser,
+                    $address,
+                    $generatedSkCredentials['username'],
+                    $generatedSkCredentials['password']
+                );
+            }
+
             $response = [
                 'success' => true,
                 'message' => 'User type updated successfully',

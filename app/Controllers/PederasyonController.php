@@ -185,6 +185,25 @@ class PederasyonController extends BaseController
         $data['user_list'] = array_values($filteredUsers); // Re-index array
         // Provide centralized maps for JS in view
         $data['field_mappings'] = DemographicsHelper::allMapsForJs();
+
+        $userModel = new UserModel();
+        $totalUsersCount = (int) $userModel->builder()->countAllResults();
+        $skChairCount = (int) $userModel->builder()
+            ->groupStart()
+                ->where('user_type', 2)
+                ->where('position', 1)
+            ->groupEnd()
+            ->orWhere('user_type', 3)
+            ->countAllResults();
+        $kkMemberCount = (int) $userModel->builder()
+            ->where('user_type', 1)
+            ->countAllResults();
+
+        $data['count_summary'] = [
+            'all' => $totalUsersCount,
+            'sk'  => $skChairCount,
+            'kk'  => $kkMemberCount,
+        ];
         return 
             $this->loadView('K-NECT/Pederasyon/template/header') .
             $this->loadView('K-NECT/Pederasyon/template/sidebar') .
@@ -751,10 +770,12 @@ class PederasyonController extends BaseController
         // Preflight: Zip is required for PhpWord (DOCX)
         if (!class_exists('ZipArchive') || !extension_loaded('zip')) {
             $ini = function_exists('php_ini_loaded_file') ? (php_ini_loaded_file() ?: 'php.ini') : 'php.ini';
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Missing PHP zip extension. Enable extension=zip in ' . $ini . ' and restart the server to generate Word documents.'
-            ]);
+            return $this->response
+                ->setStatusCode(ResponseInterface::HTTP_INTERNAL_SERVER_ERROR)
+                ->setJSON([
+                    'success' => false,
+                    'message' => 'Missing PHP zip extension. Enable extension=zip in ' . $ini . ' and restart the server to generate Word documents.'
+                ]);
         }
         try {
             log_message('info', 'Starting Pederasyon Official List Word generation...');
@@ -776,7 +797,9 @@ class PederasyonController extends BaseController
             }));
 
             if (empty($officials)) {
-                return $this->response->setJSON(['success' => false, 'message' => 'No officials found for the official list']);
+                return $this->response
+                    ->setStatusCode(ResponseInterface::HTTP_NOT_FOUND)
+                    ->setJSON(['success' => false, 'message' => 'No officials found for the official list']);
             }
 
             // Get logos for the Word document
@@ -785,29 +808,32 @@ class PederasyonController extends BaseController
             // Generate Word document and stream directly to user
             $fileName = 'Pederasyon_Officials_List_' . date('Y-m-d_His') . '.docx';
             $phpWord = $this->generateOfficialListWordDocument($officials, $logos);
-            
-            // Stream the file directly to the user
+
+            if (ob_get_level()) {
+                ob_end_clean();
+            }
+
             $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
-            
-            // Set headers for file download
+
             $this->response->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
             $this->response->setHeader('Content-Disposition', 'attachment; filename="' . $fileName . '"');
             $this->response->setHeader('Cache-Control', 'max-age=0');
-            
-            // Write to output buffer
+
             ob_start();
             $writer->save('php://output');
             $wordOutput = ob_get_clean();
-            
+
             log_message('info', 'Word document streamed successfully: ' . $fileName);
             return $this->response->setBody($wordOutput);
         } catch (\Exception $e) {
             log_message('error', 'Error in generateOfficialListWord: ' . $e->getMessage());
             log_message('error', 'Stack trace: ' . $e->getTraceAsString());
-            return $this->response->setJSON([
-                'success' => false, 
-                'message' => 'Server error: ' . $e->getMessage()
-            ]);
+            return $this->response
+                ->setStatusCode(ResponseInterface::HTTP_INTERNAL_SERVER_ERROR)
+                ->setJSON([
+                    'success' => false, 
+                    'message' => 'Server error: ' . $e->getMessage()
+                ]);
         }
     }
 
@@ -865,8 +891,8 @@ class PederasyonController extends BaseController
             // Left logo cell (Pederasyon)
             $leftCell = $headerTable->addCell(2000, ['valign' => 'center']);
             if (isset($logos['pederasyon'])) {
-                $logoPath = ROOTPATH . $logos['pederasyon']['file_path'];
-                if (file_exists($logoPath)) {
+                $logoPath = $logos['pederasyon']['absolute_path'] ?? null;
+                if ($logoPath && file_exists($logoPath)) {
                     try {
                         $leftCell->addImage($logoPath, [
                             'width' => 50.4,
@@ -894,8 +920,8 @@ class PederasyonController extends BaseController
             // Right logo cell (Iriga City)
             $rightCell = $headerTable->addCell(2000, ['valign' => 'center']);
             if (isset($logos['iriga_city'])) {
-                $logoPath = ROOTPATH . $logos['iriga_city']['file_path'];
-                if (file_exists($logoPath)) {
+                $logoPath = $logos['iriga_city']['absolute_path'] ?? null;
+                if ($logoPath && file_exists($logoPath)) {
                     try {
                         $rightCell->addImage($logoPath, [
                             'width' => 50.4,
@@ -937,8 +963,7 @@ class PederasyonController extends BaseController
             $table->addCell(800)->addText('Age', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             $table->addCell(1200)->addText('Birthdate', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             $table->addCell(1700)->addText('Position', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-            
-            // Process officials and add to table
+
             foreach ($officials as $official) {
                 $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : 0;
                 if (!isset($positionMap[$pedPosition])) {
@@ -1029,14 +1054,8 @@ class PederasyonController extends BaseController
             //     mkdir($outputDir, 0755, true);
             // }
             
-            $fileName = 'PEDERASYON_Official_List_' . date('Y-m-d') . '.docx';
-            $outputPath = $fileName;
-            
-            $objWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
-            $objWriter->save($outputPath);
-            
-            log_message('info', 'Word document saved to: ' . $outputPath);
-            return $outputPath;
+            log_message('info', 'Credentials Word document constructed in memory.');
+            return $phpWord;
             
         } catch (\Exception $e) {
             log_message('error', 'Error in generateOfficialListWordDocument: ' . $e->getMessage());
@@ -1058,14 +1077,17 @@ class PederasyonController extends BaseController
                                              ->first();
             if ($pederasyonLogo) {
                 $logos['pederasyon'] = $pederasyonLogo;
-                log_message('info', 'Pederasyon logo found: ' . $pederasyonLogo['file_path']);
+                log_message('info', 'Pederasyon logo found: ' . ($pederasyonLogo['file_path'] ?? '')); 
             } else {
                 // Fallback to check direct files
                 $logoFiles = glob(ROOTPATH . 'uploads/logos/pederasyon_logo_*');
                 if (!empty($logoFiles)) {
                     $latestFile = end($logoFiles);
-                    $logos['pederasyon'] = ['file_path' => str_replace(FCPATH, '', $latestFile)];
-                    log_message('info', 'Pederasyon logo found via fallback: ' . $logos['pederasyon']['file_path']);
+                    $logos['pederasyon'] = [
+                        'file_path' => str_replace(FCPATH, '', $latestFile),
+                        'absolute_path' => $latestFile
+                    ];
+                    log_message('info', 'Pederasyon logo found via fallback: ' . $latestFile);
                 } else {
                     log_message('warning', 'Pederasyon logo not found');
                 }
@@ -1078,19 +1100,32 @@ class PederasyonController extends BaseController
                                         ->first();
             if ($irigaLogo) {
                 $logos['iriga_city'] = $irigaLogo;
-                log_message('info', 'Iriga City logo found: ' . $irigaLogo['file_path']);
+                log_message('info', 'Iriga City logo found: ' . ($irigaLogo['file_path'] ?? ''));
             } else {
                 // Fallback to check direct files
                 $logoFiles = glob(ROOTPATH . 'uploads/logos/iriga_city_logo_*');
                 if (!empty($logoFiles)) {
                     $latestFile = end($logoFiles);
-                    $logos['iriga_city'] = ['file_path' => str_replace(FCPATH, '', $latestFile)];
-                    log_message('info', 'Iriga City logo found via fallback: ' . $logos['iriga_city']['file_path']);
+                    $logos['iriga_city'] = [
+                        'file_path' => str_replace(FCPATH, '', $latestFile),
+                        'absolute_path' => $latestFile
+                    ];
+                    log_message('info', 'Iriga City logo found via fallback: ' . $latestFile);
                 } else {
                     log_message('warning', 'Iriga City logo not found');
                 }
             }
             
+            // Resolve absolute filesystem paths for each logo
+            foreach ($logos as $key => $logoData) {
+                $resolved = $this->resolveLogoAbsolutePath($logoData);
+                if ($resolved) {
+                    $logos[$key]['absolute_path'] = $resolved;
+                } else {
+                    log_message('warning', 'Unable to resolve filesystem path for ' . $key . ' logo.');
+                }
+            }
+
             log_message('info', 'Total logos found: ' . count($logos));
             return $logos;
         } catch (\Exception $e) {
@@ -1101,17 +1136,83 @@ class PederasyonController extends BaseController
             $logoFiles = glob(ROOTPATH . 'uploads/logos/pederasyon_logo_*');
             if (!empty($logoFiles)) {
                 $latestFile = end($logoFiles);
-                $logos['pederasyon'] = ['file_path' => str_replace(FCPATH, '', $latestFile)];
+                $logos['pederasyon'] = [
+                    'file_path' => str_replace(FCPATH, '', $latestFile),
+                    'absolute_path' => $latestFile
+                ];
             }
             
             $logoFiles = glob(ROOTPATH . 'uploads/logos/iriga_city_logo_*');
             if (!empty($logoFiles)) {
                 $latestFile = end($logoFiles);
-                $logos['iriga_city'] = ['file_path' => str_replace(FCPATH, '', $latestFile)];
+                $logos['iriga_city'] = [
+                    'file_path' => str_replace(FCPATH, '', $latestFile),
+                    'absolute_path' => $latestFile
+                ];
             }
-            
+            foreach ($logos as $key => $logoData) {
+                $resolved = $this->resolveLogoAbsolutePath($logoData);
+                if ($resolved) {
+                    $logos[$key]['absolute_path'] = $resolved;
+                }
+            }
             return $logos;
         }
+    }
+
+    private function resolveLogoAbsolutePath($logoData): ?string
+    {
+        if (!$logoData) {
+            return null;
+        }
+
+        $candidates = [];
+
+        if (is_array($logoData)) {
+            foreach (['absolute_path', 'file_path', 'filepath', 'path'] as $field) {
+                if (!empty($logoData[$field])) {
+                    $candidates[] = (string) $logoData[$field];
+                }
+            }
+        } elseif (is_string($logoData)) {
+            $candidates[] = $logoData;
+        }
+
+        foreach ($candidates as $raw) {
+            $raw = trim($raw);
+            if ($raw === '') {
+                continue;
+            }
+
+            // Skip URLs; Word embedding requires local files
+            if (preg_match('~^https?://~i', $raw)) {
+                continue;
+            }
+
+            $normalized = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $raw);
+
+            $pathsToCheck = [];
+
+            // Absolute path detection (Windows or Unix)
+            if (preg_match('~^(?:[A-Za-z]:\\\\|/|\\\\\\\S)~', $normalized)) {
+                $pathsToCheck[] = $normalized;
+            } else {
+                $trimmed = ltrim($normalized, DIRECTORY_SEPARATOR);
+                $pathsToCheck[] = ROOTPATH . $trimmed;
+                if (defined('FCPATH')) {
+                    $pathsToCheck[] = FCPATH . $trimmed;
+                }
+                $pathsToCheck[] = ROOTPATH . 'public' . DIRECTORY_SEPARATOR . $trimmed;
+            }
+
+            foreach (array_unique($pathsToCheck) as $candidate) {
+                if (is_file($candidate)) {
+                    return realpath($candidate) ?: $candidate;
+                }
+            }
+        }
+
+        return null;
     }
 
     public function generateOfficialListExcel()
@@ -1119,10 +1220,12 @@ class PederasyonController extends BaseController
         // Preflight: Zip is required for PhpSpreadsheet (XLSX)
         if (!class_exists('ZipArchive') || !extension_loaded('zip')) {
             $ini = function_exists('php_ini_loaded_file') ? (php_ini_loaded_file() ?: 'php.ini') : 'php.ini';
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Missing PHP zip extension. Enable extension=zip in ' . $ini . ' and restart the server to generate Excel files.'
-            ]);
+            return $this->response
+                ->setStatusCode(ResponseInterface::HTTP_INTERNAL_SERVER_ERROR)
+                ->setJSON([
+                    'success' => false,
+                    'message' => 'Missing PHP zip extension. Enable extension=zip in ' . $ini . ' and restart the server to generate Excel files.'
+                ]);
         }
         try {
             log_message('info', 'Starting Pederasyon Official List Excel generation...');
@@ -1144,15 +1247,17 @@ class PederasyonController extends BaseController
             }));
 
             if (empty($officials)) {
-                return $this->response->setJSON(['success' => false, 'message' => 'No officials found for the official list']);
+                return $this->response
+                    ->setStatusCode(ResponseInterface::HTTP_NOT_FOUND)
+                    ->setJSON(['success' => false, 'message' => 'No officials found for the official list']);
             }
 
             // Generate Excel document and stream directly to user
             $fileName = 'Pederasyon_Officials_List_' . date('Y-m-d_His') . '.xlsx';
             $spreadsheet = $this->generateOfficialListExcelDocument($officials);
             
-            // Clear any previous output
-            if (ob_get_level()) {
+            // Clear any previous output buffers
+            while (ob_get_level() > 0) {
                 ob_end_clean();
             }
             
@@ -1163,6 +1268,9 @@ class PederasyonController extends BaseController
             $this->response->setHeader('Pragma', 'public');
             
             // Write to output buffer
+            if (ob_get_level() > 0) {
+                ob_end_clean();
+            }
             ob_start();
             $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
             $writer->save('php://output');
@@ -1173,10 +1281,12 @@ class PederasyonController extends BaseController
         } catch (\Exception $e) {
             log_message('error', 'Error in generateOfficialListExcel: ' . $e->getMessage());
             log_message('error', 'Stack trace: ' . $e->getTraceAsString());
-            return $this->response->setJSON([
-                'success' => false, 
-                'message' => 'Server error: ' . $e->getMessage()
-            ]);
+            return $this->response
+                ->setStatusCode(ResponseInterface::HTTP_INTERNAL_SERVER_ERROR)
+                ->setJSON([
+                    'success' => false, 
+                    'message' => 'Server error: ' . $e->getMessage()
+                ]);
         }
     }
 
@@ -1414,20 +1524,8 @@ class PederasyonController extends BaseController
             $sheet->getPageMargins()->setLeft(0.5);
             $sheet->getPageMargins()->setRight(0.5);
 
-            // // Save the document
-            // $outputDir = FCPATH . 'uploads/generated/';
-            // if (!is_dir($outputDir)) {
-            //     mkdir($outputDir, 0755, true);
-            // }
-            
-            $fileName = 'PEDERASYON_Official_List_' . date('Y-m-d') . '.xlsx';
-            $outputPath = $fileName;
-            
-            $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
-            $writer->save($outputPath);
-            
-            log_message('info', 'Excel document saved to: ' . $outputPath);
-            return $outputPath;
+            log_message('info', 'Credentials Excel document constructed in memory.');
+            return $spreadsheet;
             
         } catch (\Exception $e) {
             log_message('error', 'Error in generateOfficialListExcelDocument: ' . $e->getMessage());
@@ -1678,20 +1776,8 @@ class PederasyonController extends BaseController
             $sheet->getPageMargins()->setLeft(0.5);
             $sheet->getPageMargins()->setRight(0.5);
 
-            // Save the document
-            // $outputDir = FCPATH . 'uploads/generated/';
-            // if (!is_dir($outputDir)) {
-            //     mkdir($outputDir, 0755, true);
-            // }
-            
-            $fileName = 'PEDERASYON_Officials_Credentials_' . date('Y-m-d') . '.xlsx';
-            $outputPath = $fileName;
-            
-            $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
-            $writer->save($outputPath);
-            
-            log_message('info', 'Credentials document saved to: ' . $outputPath);
-            return $outputPath;
+            log_message('info', 'Credentials Excel document constructed in memory.');
+            return $spreadsheet;
             
         } catch (\Exception $e) {
             log_message('error', 'Error in generateCredentialsDocument: ' . $e->getMessage());
@@ -1746,13 +1832,11 @@ class PederasyonController extends BaseController
                     $statusFiltered++;
                     continue; // Only accepted users eligible for credential listing
                 }
-
-                $skPosition = isset($u['sk_position']) ? (int)$u['sk_position'] : 0;
                 
                 // Include users who are SK Chairpersons:
-                // 1. user_type = 2 (SK Chairperson) AND sk_position = 1 (Chairperson position)
+                // 1. user_type = 2 (SK Chairperson) AND position = 1 (Chairperson position)
                 // 2. user_type = 3 (Pederasyon Officer - they are also SK Chairpersons from their barangay)
-                $isSkChairperson = ($userType === 2 && $skPosition === 1) || ($userType === 3);
+                $isSkChairperson = ($userType === 2 && $position === 1) || ($userType === 3);
                 
                 if ($isSkChairperson) {
                     $userId = $u['user_id'] ?? '';
@@ -2053,8 +2137,8 @@ class PederasyonController extends BaseController
             // Left logo (Pederasyon)
             $html .= '<td class="logo-cell">';
             if (isset($logos['pederasyon'])) {
-                $logoPath = ROOTPATH . $logos['pederasyon']['file_path'];
-                if (file_exists($logoPath)) {
+                $logoPath = $this->resolveLogoAbsolutePath($logos['pederasyon']);
+                if ($logoPath && file_exists($logoPath)) {
                     $logoData = base64_encode(file_get_contents($logoPath));
                     
                     // Get MIME type by file extension
@@ -2099,8 +2183,8 @@ class PederasyonController extends BaseController
             // Right logo (Iriga City)
             $html .= '<td class="logo-cell">';
             if (isset($logos['iriga_city'])) {
-                $logoPath = ROOTPATH . $logos['iriga_city']['file_path'];
-                if (file_exists($logoPath)) {
+                $logoPath = $this->resolveLogoAbsolutePath($logos['iriga_city']);
+                if ($logoPath && file_exists($logoPath)) {
                     $logoData = base64_encode(file_get_contents($logoPath));
                     
                     // Get MIME type by file extension
@@ -2133,11 +2217,11 @@ class PederasyonController extends BaseController
             }
             $html .= '</td>';
             
-            $html .= '</tr></table>
-                <hr style="border: 1px solid #000; margin: 10px 0;">
-                <p class="title-text">PANLUNGSOD NA PEDERASYON NG MGA KABATAAN</p>
-                <p class="title-text">OFFICIALS CREDENTIALS</p>
-            </div>';
+            // $html .= '</tr></table>
+            //     <hr style="border: 1px solid #000; margin: 10px 0;">
+            //     <p class="title-text">PANLUNGSOD NA PEDERASYON NG MGA KABATAAN</p>
+            //     <p class="title-text">OFFICIALS CREDENTIALS</p>
+            // </div>';
             
             // Separate SK and Pederasyon officials
             // Rule: Type 3 (Pederasyon) also appears under SK; Type 2 appears only under SK
@@ -2247,7 +2331,9 @@ class PederasyonController extends BaseController
             $html .= '</body></html>';
             
             // Use DomPDF to generate PDF from HTML
-            require_once ROOTPATH . '../vendor/autoload.php';
+            if (!class_exists('\\PhpOffice\\PhpWord\\PhpWord')) {
+                require_once ROOTPATH . 'vendor/autoload.php';
+            }
             
             $dompdf = new \Dompdf\Dompdf([
                 'isPhpEnabled' => true
@@ -2262,20 +2348,10 @@ class PederasyonController extends BaseController
             // Render the HTML as PDF
             $dompdf->render();
             
-            // Save the document
-            // $outputDir = FCPATH . 'uploads/generated/';
-            // if (!is_dir($outputDir)) {
-            //     mkdir($outputDir, 0755, true);
-            // }
-            
-            $fileName = 'PEDERASYON_Officials_Credentials_' . date('Y-m-d') . '.pdf';
-            $outputPath = $fileName;
-            
-            // Save PDF to file
-            file_put_contents($outputPath, $dompdf->output());
-            
-            log_message('info', 'Credentials PDF document saved to: ' . $outputPath);
-            return $outputPath;
+            $pdfOutput = $dompdf->output();
+
+            log_message('info', 'Credentials PDF document rendered in memory.');
+            return $pdfOutput;
             
         } catch (\Exception $e) {
             log_message('error', 'Error in generateCredentialsPDFDocument: ' . $e->getMessage());
@@ -2332,11 +2408,15 @@ class PederasyonController extends BaseController
             $this->response->setHeader('Cache-Control', 'max-age=0');
             
             // Write to output buffer
+            while (ob_get_level() > 0) {
+                ob_end_clean();
+            }
             ob_start();
             $writer->save('php://output');
             $wordOutput = ob_get_clean();
             
             log_message('info', 'Credentials Word streamed successfully: ' . $fileName);
+            $this->response->setHeader('Content-Length', (string) strlen($wordOutput));
             return $this->response->setBody($wordOutput);
         } catch (\Exception $e) {
             log_message('error', 'Error in generateCredentialsWord: ' . $e->getMessage());
@@ -2353,7 +2433,9 @@ class PederasyonController extends BaseController
         try {
             log_message('info', 'Starting Credentials Word document creation...');
             
-            require_once ROOTPATH . '../vendor/autoload.php';
+            if (!class_exists('\\PhpOffice\\PhpWord\\PhpWord')) {
+                require_once ROOTPATH . 'vendor/autoload.php';
+            }
             
             $phpWord = new \PhpOffice\PhpWord\PhpWord();
             log_message('info', 'PHPWord instance created successfully');
@@ -2400,8 +2482,9 @@ class PederasyonController extends BaseController
             // Left logo cell (Pederasyon)
             $leftCell = $headerTable->addCell(2000, ['valign' => 'center']);
             if (isset($logos['pederasyon'])) {
-                $logoPath = ROOTPATH . $logos['pederasyon']['file_path'];
-                if (file_exists($logoPath)) {
+                $logoPath = $this->resolveLogoAbsolutePath($logos['pederasyon']);
+                if ($logoPath && file_exists($logoPath)) {
+                    log_message('info', 'Embedding Pederasyon logo for credentials Word: ' . $logoPath);
                     try {
                         $leftCell->addImage($logoPath, [
                             'width' => 60,
@@ -2409,12 +2492,15 @@ class PederasyonController extends BaseController
                             'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER
                         ]);
                     } catch (\Exception $e) {
+                        log_message('warning', 'Failed to embed Pederasyon logo: ' . $e->getMessage());
                         $leftCell->addText('PEDERASYON LOGO', $subHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
                     }
                 } else {
+                    log_message('warning', 'Pederasyon logo path unavailable for credentials Word.');
                     $leftCell->addText('PEDERASYON LOGO', $subHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
                 }
             } else {
+                log_message('warning', 'Pederasyon logo entry missing for credentials Word.');
                 $leftCell->addText('PEDERASYON LOGO', $subHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             }
 
@@ -2429,8 +2515,9 @@ class PederasyonController extends BaseController
             // Right logo cell (Iriga City)
             $rightCell = $headerTable->addCell(2000, ['valign' => 'center']);
             if (isset($logos['iriga_city'])) {
-                $logoPath = ROOTPATH . $logos['iriga_city']['file_path'];
-                if (file_exists($logoPath)) {
+                $logoPath = $this->resolveLogoAbsolutePath($logos['iriga_city']);
+                if ($logoPath && file_exists($logoPath)) {
+                    log_message('info', 'Embedding Iriga City logo for credentials Word: ' . $logoPath);
                     try {
                         $rightCell->addImage($logoPath, [
                             'width' => 60,
@@ -2438,12 +2525,15 @@ class PederasyonController extends BaseController
                             'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER
                         ]);
                     } catch (\Exception $e) {
+                        log_message('warning', 'Failed to embed Iriga City logo: ' . $e->getMessage());
                         $rightCell->addText('IRIGA LOGO', $subHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
                     }
                 } else {
+                    log_message('warning', 'Iriga City logo path unavailable for credentials Word.');
                     $rightCell->addText('IRIGA LOGO', $subHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
                 }
             } else {
+                log_message('warning', 'Iriga City logo entry missing for credentials Word.');
                 $rightCell->addText('IRIGA LOGO', $subHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             }
 
@@ -2573,14 +2663,7 @@ class PederasyonController extends BaseController
             //     mkdir($outputDir, 0755, true);
             // }
             
-            $fileName = 'PEDERASYON_Officials_Credentials_' . date('Y-m-d') . '.docx';
-            $outputPath = $fileName;
-            
-            $objWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
-            $objWriter->save($outputPath);
-            
-            log_message('info', 'Credentials Word document saved to: ' . $outputPath);
-            return $outputPath;
+            return $phpWord;
             
         } catch (\Exception $e) {
             log_message('error', 'Error in generateCredentialsWordDocument: ' . $e->getMessage());
@@ -2638,6 +2721,7 @@ class PederasyonController extends BaseController
             $excelOutput = ob_get_clean();
             
             log_message('info', 'Credentials Excel streamed successfully: ' . $fileName);
+            $this->response->setHeader('Content-Length', (string) strlen($excelOutput));
             return $this->response->setBody($excelOutput);
         } catch (\Exception $e) {
             log_message('error', 'Error in generateCredentialsExcel: ' . $e->getMessage());
@@ -2652,7 +2736,9 @@ class PederasyonController extends BaseController
     private function generateCredentialsExcelDocument($officials, $activeTab = 'sk')
     {
         try {
-            require_once ROOTPATH . '../vendor/autoload.php';
+            if (!class_exists('\\PhpOffice\\PhpSpreadsheet\\Spreadsheet')) {
+                require_once ROOTPATH . 'vendor/autoload.php';
+            }
 
             $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
             $sheet = $spreadsheet->getActiveSheet();
@@ -2881,14 +2967,7 @@ class PederasyonController extends BaseController
             //     mkdir($outputDir, 0755, true);
             // }
             
-            $fileName = 'PEDERASYON_Officials_Credentials_' . date('Y-m-d') . '.xlsx';
-            $outputPath = $fileName;
-            
-            $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
-            $writer->save($outputPath);
-            
-            log_message('info', 'Credentials Excel document saved to: ' . $outputPath);
-            return $outputPath;
+            return $spreadsheet;
             
         } catch (\Exception $e) {
             log_message('error', 'Error in generateCredentialsExcelDocument: ' . $e->getMessage());
@@ -3298,21 +3377,8 @@ class PederasyonController extends BaseController
             $sheet->getPageMargins()->setTop(0.5)->setRight(0.5)->setBottom(0.5)->setLeft(0.5);
             $sheet->getPageSetup()->setFitToPage(false);
             
-            // Save the document
-            // $outputDir = FCPATH . 'uploads/generated/';
-            // if (!is_dir($outputDir)) {
-            //     mkdir($outputDir, 0755, true);
-            // }
-            
-            $eventTitle = preg_replace('/[^a-zA-Z0-9_-]/', '_', $event['title']);
-            $fileName = $eventTitle . '_Attendance_Report_' . date('Y-m-d') . '.xlsx';
-            $outputPath = $fileName;
-            
-            $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
-            $writer->save($outputPath);
-            
-            log_message('info', 'Pederasyon Attendance Excel document saved to: ' . $outputPath);
-            return $outputPath;
+            log_message('info', 'Pederasyon Attendance Excel document constructed in memory.');
+            return $spreadsheet;
             
         } catch (\Exception $e) {
             log_message('error', 'Error in generateAttendanceExcelDocument: ' . $e->getMessage());
@@ -3541,30 +3607,8 @@ class PederasyonController extends BaseController
                 $table->addCell($colWidths[9])->addText($pmStatus, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             }
             
-            // Save the document
-            // $outputDir = FCPATH . 'uploads/generated/';
-            // if (!is_dir($outputDir)) {
-            //     if (!mkdir($outputDir, 0755, true)) {
-            //         throw new \Exception('Failed to create output directory: ' . $outputDir);
-            //     }
-            //     log_message('info', 'Created output directory: ' . $outputDir);
-            // }
-            
-            $eventTitle = preg_replace('/[^a-zA-Z0-9_-]/', '_', $event['title']);
-            $fileName = 'Pederasyon_Attendance_Report_' . $eventTitle . '_' . date('Y-m-d') . '.docx';
-            $outputPath = $fileName;
-            
-            log_message('info', 'Attempting to save Word document to: ' . $outputPath);
-            
-            $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
-            $writer->save($outputPath);
-            
-            if (!file_exists($outputPath)) {
-                throw new \Exception('Word document was not created at expected path: ' . $outputPath);
-            }
-            
-            log_message('info', 'Pederasyon Attendance Word document saved successfully to: ' . $outputPath);
-            return $outputPath;
+            log_message('info', 'Pederasyon Attendance Word document constructed in memory.');
+            return $phpWord;
             
         } catch (\Exception $e) {
             log_message('error', 'Error in generateAttendanceWordDocument: ' . $e->getMessage());

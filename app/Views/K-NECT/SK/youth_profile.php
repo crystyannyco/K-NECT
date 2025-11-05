@@ -2780,22 +2780,26 @@
                 tableLineWidth: 0,
                 // Add page break handling with header repetition
                 didDrawPage: function(data) {
-                    // Draw header on every page
-                    if (data.pageNumber > 1) {
-                        drawPageHeader(data);
-                        
-                        // Draw horizontal line under header
-                        const pageWidth = doc.internal.pageSize.getWidth();
-                        const margin = 12.7;
-                        const headerY = margin + 33;
-                        doc.setLineWidth(0.2);
-                        doc.line(margin, headerY, pageWidth - margin, headerY);
-                        
-                        // Draw title
-                        doc.setFont('helvetica', 'bold');
-                        doc.setFontSize(11);
-                        doc.text('KATIPUNAN NG KABATAAN YOUTH PROFILE', pageWidth / 2, headerY + 8, { align: 'center' });
+                    // Only draw header/title on first page - subsequent pages handled by autoTable
+                    // The table header repeats automatically due to showHead: 'everyPage'
+                    if (data.pageNumber === 1) {
+                        // Header already drawn before autoTable for first page, no need to redraw
+                        return;
                     }
+                    
+                    // For continuation pages (page 2+), draw the government header and logos
+                    // but DON'T draw the title to avoid overlap with table content
+                    drawPageHeader(data);
+                    
+                    // Draw horizontal line under header
+                    const pageWidth = doc.internal.pageSize.getWidth();
+                    const margin = 12.7;
+                    const headerY = margin + 33;
+                    doc.setLineWidth(0.2);
+                    doc.line(margin, headerY, pageWidth - margin, headerY);
+                    
+                    // Note: Title is NOT drawn here to prevent overlap with table
+                    // The table will start immediately after the header line
                 },
                 showHead: 'everyPage' // Ensure table headers repeat on each page
             });

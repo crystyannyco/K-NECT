@@ -1,3 +1,6 @@
+<?php
+    $countSummary = $count_summary ?? ['all' => 0, 'sk' => 0, 'kk' => 0];
+?>
 <style>
         /* Clean Color Palette: Blue (#3b82f6), Gray (#6b7280), Dark Gray (#374151), White (#ffffff) */
         table.dataTable thead th {
@@ -236,7 +239,7 @@
                                 <svg class="w-3 h-3 text-gray-400 mx-2" fill="none" viewBox="0 0 6 10">
                                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
                                 </svg>
-                                <span class="text-sm font-medium text-gray-600">SK Chairman</span>
+                                <span class="text-sm font-medium text-gray-600">SK Chairperson</span>
                             </div>
                         </li>
                     </ol>
@@ -245,7 +248,7 @@
                 <!-- Header Section -->
                 <div class="mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                     <div>
-                        <h3 class="text-2xl font-bold text-gray-900">SK Chairman</h3>
+                        <h3 class="text-2xl font-bold text-gray-900">SK Chairperson</h3>
                         <p class="text-sm text-gray-600 mt-1">Manage user types and credentials</p>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-3">
@@ -271,13 +274,13 @@
                             <!-- Role Status Tabs -->
                             <div class="flex flex-wrap gap-2">
                                 <button class="status-tab bg-gray-100 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="all">
-                                    All (<span id="countAll">0</span>)
+                                    All (<span id="countAll"><?= esc($countSummary['all'] ?? 0) ?></span>)
                                 </button>
                                 <button class="status-tab active bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="sk">
-                                    SK Chairperson (<span id="countSK">0</span>)
+                                    SK Chairperson (<span id="countSK"><?= esc($countSummary['sk'] ?? 0) ?></span>)
                                 </button>
                                 <button class="status-tab bg-red-100 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="kk">
-                                    KK Member (<span id="countKK">0</span>)
+                                    KK Member (<span id="countKK"><?= esc($countSummary['kk'] ?? 0) ?></span>)
                                 </button>
                             </div>
                             
@@ -689,7 +692,21 @@
     <script>
         // Barangay mapping from PHP
         const barangayMap = <?= json_encode(BarangayHelper::getBarangayMap()) ?>;
-        
+        // Snapshot of youth records for client-side utilities (keeps modals independent of table filters)
+        const youthUserList = <?= json_encode($user_list ?? []) ?>;
+
+        function escapeHtml(value) {
+            if (value === null || value === undefined) {
+                return '';
+            }
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         // Helper function to get barangay name
         function getBarangayName(barangayId) {
             return barangayMap[barangayId] || barangayId || '';
@@ -820,52 +837,22 @@
             return 'Unknown';
         }
 
-        function pedRenderSkCredentials(username, password) {
-            const $card = $('#pedSkCredentialsCard');
-            if (!$card.length) return;
-
-            const cleanUsername = (username || '').trim();
-            const displayPassword = formatSkPasswordForDisplay(password || '');
-            const hashed = isHashedSkPassword(password || '');
-
-            const $usernameEl = $('#pedSkUsernameValue');
-            const $passwordEl = $('#pedSkPasswordValue');
-            const $hintEl = $('#pedSkPasswordHint');
-
-            if (cleanUsername) {
-                $card.removeClass('hidden');
-                $usernameEl.text(cleanUsername);
-                $passwordEl.text(displayPassword);
-                if (hashed) {
-                    $hintEl.removeClass('hidden');
-                } else {
-                    $hintEl.addClass('hidden');
-                }
-            } else {
-                $usernameEl.text('Not generated');
-                $passwordEl.text('Not generated');
-                $hintEl.addClass('hidden');
-                $card.addClass('hidden');
-            }
-        }
-
-        function pedPulseSkCredentialsCard() {
-            const $card = $('#pedSkCredentialsCard');
-            if (!$card.length) return;
-            $card.removeClass('hidden').addClass('ring-2 ring-blue-300 ring-offset-2');
-            setTimeout(() => {
-                $card.removeClass('ring-2 ring-blue-300 ring-offset-2');
-            }, 1500);
-        }
-
         // Store original counts globally
-        let originalCounts = {
-            all: 0,
-            sk: 0,
-            kk: 0
-        };
+        let originalCounts = <?php
+            $initialCounts = [
+                'all' => (int) ($countSummary['all'] ?? 0),
+                'sk' => (int) ($countSummary['sk'] ?? 0),
+                'kk' => (int) ($countSummary['kk'] ?? 0),
+                'approved' => 0,
+                'pending' => 0,
+                'rejected' => 0,
+            ];
+            echo json_encode($initialCounts, JSON_UNESCAPED_UNICODE);
+        ?>;
         
-        $(document).ready(function () {
+    let table;
+
+    $(document).ready(function () {
             // Remove placeholder row if present to prevent DataTables column errors when empty
             (function ensureConsistentCellsForDataTables() {
                 const $table = $('#myTable');
@@ -879,7 +866,7 @@
             })();
 
             // DataTable and tab logic
-            const table = $('#myTable').DataTable({
+            table = $('#myTable').DataTable({
                 columnDefs: [
                     { orderable: false, targets: 0 },
                     { responsivePriority: 1, targets: 7 }, // Actions
@@ -940,23 +927,14 @@
 
             // Calculate original counts from all data (not filtered)
             function calculateOriginalCounts() {
-                let allCount = 0, skCount = 0, kkCount = 0;
                 let approvedCount = 0, pendingCount = 0, rejectedCount = 0;
-                
-                // Count all rows, not just visible ones
+
+                // Count approval status values from table data to keep UI in sync
                 $('#myTable tbody tr').each(function() {
-                    if ($(this).find('td').length > 1) { // Skip "no data" rows
-                        const userType = $(this).find('td').eq(7).text().trim();
-                        const status = parseInt($(this).data('status')) || 1;
-                        
-                        allCount++;
-                        if (userType === 'SK Chairperson') {
-                            skCount++;
-                        } else if (userType === 'KK Member') {
-                            kkCount++;
-                        }
-                        
-                        // Count by approval status
+                    if ($(this).find('td').length > 1) {
+                        const statusRaw = $(this).data('status');
+                        const status = Number.parseInt(statusRaw, 10);
+
                         if (status === 2) {
                             approvedCount++;
                         } else if (status === 3) {
@@ -966,16 +944,10 @@
                         }
                     }
                 });
-                
-                // Store original counts
-                originalCounts = {
-                    all: allCount,
-                    sk: skCount,
-                    kk: kkCount,
-                    approved: approvedCount,
-                    pending: pendingCount,
-                    rejected: rejectedCount
-                };
+
+                originalCounts.approved = approvedCount;
+                originalCounts.pending = pendingCount;
+                originalCounts.rejected = rejectedCount;
             }
 
             // Update displayed counts (always show original counts)
@@ -1417,10 +1389,8 @@
                         const docHtml = buildDocPreviewHtml(birthCertFile, uploadIdFile, uploadIdBackFile);
                         document.getElementById('pedModalDocPreview').innerHTML = docHtml;
 
-                        pedRenderSkCredentials(u.sk_username || '', u.sk_password || '');
-
                         // Show modal
-                        $('#pedPreviewModal').removeClass('hidden');
+                        $('#pedPreviewModal').css('display', 'flex');
 
                         // Initialize panzoom for images after DOM updated
                         setTimeout(() => {
@@ -1458,7 +1428,7 @@
 
             function closePedPreviewModal() {
                 try {
-                    $('#pedPreviewModal').addClass('hidden');
+                    $('#pedPreviewModal').css('display', 'none');
                     pedCleanupPanzoom('pedCertPreviewWrapper');
                     pedCleanupPanzoom('pedIdPreviewWrapper');
                     pedCleanupPanzoom('pedIdPreviewWrapperBack');
@@ -1516,43 +1486,39 @@
                 pendingUserTypeChange.userId = $('#modalUserId').text();
                 pendingUserTypeChange.newType = $('#modalUserType').val();
                 // Show confirmation modal (now inside userDetailModal)
-                $('#roleChangeModal').removeClass('hidden');
+                $('#roleChangeModal').removeClass('hidden').css('display', 'flex');
                 // Ensure it's above modal content
-                $('#roleChangeModal').css('display', 'flex');
             });
 
             // Confirm role change
             $('#confirmRoleChangeBtn').on('click', function() {
                 const userId = pendingUserTypeChange.userId;
                 const newType = pendingUserTypeChange.newType;
-                
-                // Show loading state
-                $(this).prop('disabled', true).text('Updating...');
-                
-                // Find the user row to get the database ID
+                const $confirmBtn = $(this);
+
+                $confirmBtn.prop('disabled', true).text('Updating...');
+
                 const userRow = $(`tr[data-sk_username], tr[data-ped_username]`).filter(function() {
                     return $(this).find('td').eq(1).text().trim() === userId;
                 });
-                
+
                 const dbId = userRow.find('.rowCheckbox').val();
-                
+
                 $.ajax({
                     url: '/updateUserType',
                     method: 'POST',
                     data: { user_id: dbId || userId, user_type: parseInt(newType, 10) },
                     success: function(response) {
                         if (response && response.success) {
-                            showNotification('User type updated successfully!', 'success');
-                            // Close modals before reload
+                            showNotification('User type updated successfully! Email notification sent.', 'success');
+                            try { if (window.localStorage) localStorage.setItem('knect_show_credentials_prompt', '1'); } catch (e) {}
                             try {
                                 $('#roleChangeModal').addClass('hidden').css('display', 'none');
                                 $('#userDetailModal').addClass('hidden');
                             } catch (e) {}
-                            // Set flag to show prompt after page reload and refresh table
-                            try { if (window.localStorage) localStorage.setItem('knect_show_credentials_prompt', '1'); } catch (e) {}
-                            setTimeout(() => { location.reload(); }, 400);
+                            setTimeout(() => location.reload(), 1000);
                         } else {
-                            showNotification(response.message || 'Failed to update user type.', 'error');
+                            showNotification((response && response.message) ? response.message : 'Failed to update user type.', 'error');
                         }
                     },
                     error: function(xhr, status, error) {
@@ -1561,18 +1527,14 @@
                         showNotification(msg, 'error');
                     },
                     complete: function() {
-                        $('#confirmRoleChangeBtn').prop('disabled', false).text('Confirm');
-                        // Close both modals
-                        $('#roleChangeModal').addClass('hidden').css('display', 'none');
-                        $('#userDetailModal').addClass('hidden');
+                        $confirmBtn.prop('disabled', false).text('Confirm');
                     }
                 });
             });
 
             // Cancel role change
             $('#cancelRoleChangeBtn').on('click', function() {
-                $('#roleChangeModal').addClass('hidden');
-                $('#roleChangeModal').css('display', 'none');
+                $('#roleChangeModal').addClass('hidden').css('display', 'none');
             });
 
                 // Prevent modal from closing when clicking inside the modal content
@@ -1623,92 +1585,61 @@
 
         // Load official list
         function loadOfficialList() {
-            document.getElementById('officialListLoading').classList.remove('hidden');
-            document.getElementById('officialListContent').classList.add('hidden');
-            
-            // Get officials data from current table (SK Chairpersons only)
-            const officials = [];
-            
-            $('#myTable tbody tr').each(function() {
-                const userType = $(this).find('td').eq(7).text().trim();
-                const status = $(this).find('td').eq(6).find('span').text().trim();
-                
-                // Include SK Chairpersons and Pederasyon Officers (who are also SK Chairpersons) with Approved status
-                const isSkOrPed = userType === 'SK Chairperson' || userType === 'Pederasyon Officer';
-                if (isSkOrPed && status === 'Approved') {
-                    // Column indices based on table header: 0=checkbox, 1=user_id, 2=barangay, 3=name, 4=age, 5=sex, 6=status, 7=user type
-                    const userIdCell = $(this).find('td').eq(1); // This contains the displayed permanent user_id
-                    const primaryId = $(this).find('input.rowCheckbox').val(); // hidden primary key from checkbox value
-                    const displayUserId = (userIdCell.text() || '').trim();
-                    const barangay = $(this).find('td').eq(2).text().trim();
-                    const name = $(this).find('td').eq(3).text().trim();
-                    const age = $(this).find('td').eq(4).text().trim();
-                    const sex = $(this).find('td').eq(5).text().trim();
-                    
-                    // Get the actual user data from the PHP data to access birthdate and user_id
-                    let userData = null;
-                    let actualUserId = '';
-                    let birthday = 'N/A';
-                    let position = userType;
-                    
-                    // Find user data from the PHP user_list
-                    <?php if (!empty($user_list)): ?>
-                        const userList = <?= json_encode($user_list) ?>;
-                        // Prefer matching by permanent user_id shown in the table; fallback to primary id from checkbox
-                        userData = userList.find(u => String(u.user_id) === String(displayUserId));
-                        if (userData) {
-                            actualUserId = userData.user_id || displayUserId || primaryId;
-                            
-                            // Handle birthdate with better validation
-                            if (userData.birthdate && userData.birthdate !== null && userData.birthdate !== '') {
-                                birthday = userData.birthdate;
-                            } else {
-                                birthday = 'N/A';
-                            }
-                            
-                            // SK Chairperson or Pederasyon Officer (both should show as SK Chairperson in official list)
-                            if (userType === 'SK Chairperson' || userType === 'Pederasyon Officer') {
-                                position = 'SK Chairperson';
-                            }
-                            
-                            // Format birthday for display
-                            if (birthday && birthday !== 'N/A' && birthday !== null && birthday !== '') {
-                                const birthDate = new Date(birthday);
-                                if (!isNaN(birthDate.getTime()) && birthDate.getFullYear() > 1900) {
-                                    birthday = birthDate.toLocaleDateString('en-US', {
-                                        month: '2-digit',
-                                        day: '2-digit', 
-                                        year: 'numeric'
-                                    });
-                                } else {
-                                    birthday = 'N/A';
-                                }
-                            } else {
-                                birthday = 'N/A';
-                            }
-                        }
-                    <?php endif; ?>
-                    
-                    // Only show permanent user_id; if missing, leave blank (do not show DB primary id)
-                    const safeUserId = (actualUserId && String(actualUserId).trim() !== '')
-                        ? actualUserId
-                        : ((displayUserId && String(displayUserId).trim() !== '') ? displayUserId : '');
+            const loadingEl = document.getElementById('officialListLoading');
+            const contentEl = document.getElementById('officialListContent');
+            loadingEl.classList.remove('hidden');
+            contentEl.classList.add('hidden');
 
-                    officials.push({
+            const source = Array.isArray(youthUserList) ? youthUserList : [];
+            const officials = source
+                .filter(user => {
+                    const status = Number(user.status ?? user.status_value ?? 0);
+                    const userType = Number(user.user_type ?? 0);
+                    const position = Number(user.position ?? 0);
+                    const isSkClassification = userType === 2 || userType === 3 || position === 1;
+                    return status === 2 && isSkClassification;
+                })
+                .map(user => {
+                    const barangayName = getBarangayName(user.barangay) || user.barangay_name || '';
+                    const safeUserId = (user.user_id && String(user.user_id).trim() !== '') ? user.user_id : '';
+                    const fullNameParts = [user.last_name, user.first_name, user.middle_name]
+                        .map(part => (part ? String(part).trim() : ''));
+                    const formattedName = [fullNameParts[0], [fullNameParts[1], fullNameParts[2]].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+                    const sexValue = String(user.sex ?? '').trim();
+                    const resolvedSex = sexValue === '1' ? 'Male' : (sexValue === '2' ? 'Female' : (sexValue || ''));
+                    let birthday = 'N/A';
+                    if (user.birthdate) {
+                        const parsed = new Date(user.birthdate);
+                        if (!Number.isNaN(parsed.getTime()) && parsed.getFullYear() > 1900) {
+                            birthday = parsed.toLocaleDateString('en-US', {
+                                month: '2-digit',
+                                day: '2-digit',
+                                year: 'numeric'
+                            });
+                        }
+                    }
+
+                    return {
                         userId: safeUserId,
-                        barangay: barangay,
-                        name: name,
-                        age: age,
-                        birthday: birthday,
-                        sex: sex,
-                        position: position
-                    });
-                }
-            });
-            
-            document.getElementById('officialListLoading').classList.add('hidden');
-            document.getElementById('officialListContent').classList.remove('hidden');
-            
+                        barangay: barangayName,
+                        name: formattedName,
+                        age: user.age ?? '',
+                        birthday,
+                        sex: resolvedSex,
+                        position: 'SK Chairperson'
+                    };
+                })
+                .sort((a, b) => {
+                    const barangayCompare = a.barangay.localeCompare(b.barangay);
+                    if (barangayCompare !== 0) {
+                        return barangayCompare;
+                    }
+                    return a.name.localeCompare(b.name);
+                });
+
+            loadingEl.classList.add('hidden');
+            contentEl.classList.remove('hidden');
+
             if (officials.length > 0) {
                 displayOfficialList(officials);
                 document.getElementById('noOfficials').classList.add('hidden');
@@ -1716,9 +1647,8 @@
                 document.getElementById('noOfficials').classList.remove('hidden');
                 document.getElementById('officialListTableBody').innerHTML = '';
             }
-            
-            document.getElementById('officialListCount').textContent = 
-                `Total Officials: ${officials.length}`;
+
+            document.getElementById('officialListCount').textContent = `Total Officials: ${officials.length}`;
         }
         
         // Display officials in table
@@ -1732,25 +1662,25 @@
                 
                 row.innerHTML = `
                     <td class="border border-gray-300 text-center py-3 px-4 text-sm text-gray-900">
-                        ${official.userId}
+                        ${escapeHtml(official.userId)}
                     </td>
                     <td class="border border-gray-300 text-left py-3 px-4 text-sm text-gray-900">
-                        ${official.name}
+                        ${escapeHtml(official.name)}
                     </td>
                     <td class="border border-gray-300 text-center py-3 px-4 text-sm text-gray-900">
-                        ${official.barangay}
+                        ${escapeHtml(official.barangay)}
                     </td>
                     <td class="border border-gray-300 text-center py-3 px-4 text-sm text-gray-900">
-                        ${official.sex}
+                        ${escapeHtml(official.sex)}
                     </td>
                     <td class="border border-gray-300 text-center py-3 px-4 text-sm text-gray-900">
-                        ${official.age}
+                        ${escapeHtml(official.age)}
                     </td>
                     <td class="border border-gray-300 text-center py-3 px-4 text-sm text-gray-900">
-                        ${official.birthday}
+                        ${escapeHtml(official.birthday)}
                     </td>
                     <td class="border border-gray-300 text-center py-3 px-4 text-sm text-gray-900">
-                        ${official.position}
+                        ${escapeHtml(official.position)}
                     </td>
                 `;
                 
@@ -2958,7 +2888,7 @@
                 const labelMap = {1: 'KK Member', 2: 'SK Chairperson'};
                 // Show confirmation modal instead of confirm()
                 $('#pedRoleChangeMessage').text(`Are you sure you want to change the user type to "${labelMap[newType]}"?`);
-                $('#pedRoleChangeModal').removeClass('hidden').css('display', 'flex');
+                $('#pedRoleChangeModal').css('display', 'flex');
 
                 // One-time handlers to avoid stacking
                 $('#pedConfirmRoleChangeBtn').off('click').on('click', function() {
@@ -2966,67 +2896,20 @@
                     const original = $btn.text();
                     $btn.prop('disabled', true).text('Updating...').addClass('opacity-80');
                     // Hide modal while processing
-                    $('#pedRoleChangeModal').addClass('hidden').css('display', 'none');
+                    $('#pedRoleChangeModal').css('display', 'none');
                     $.ajax({
                         url: '/updateUserType',
                         method: 'POST',
                         data: { user_id: dbId || displayUserId, user_type: newType },
                         success: function(resp) {
                             if (resp && resp.success) {
-                                showNotification('User type updated successfully!', 'success');
-
-                                const updatedUser = resp.user || {};
-                                const resolvedType = parseInt(updatedUser.user_type != null ? updatedUser.user_type : newType, 10);
-                                const resolvedStatus = parseInt(updatedUser.status != null ? updatedUser.status : $('#pedModalUserStatusValue').val() || '0', 10);
-                                const resolvedUserId = updatedUser.user_id || $('#pedModalDisplayUserId').val() || '';
-
-                                $('#pedModalUserType').val(resolvedType);
-                                $('#pedRoleSelect').val(String(resolvedType));
-                                $('#pedModalDisplayUserId').val(resolvedUserId);
-                                $('#pedModalUserId').text(resolvedUserId || '-');
-
-                                pedRenderSkCredentials(updatedUser.sk_username || '', updatedUser.sk_password || '');
-
-                                const statusMeta = pedComputeStatusBadge(resolvedStatus);
-                                $('#pedModalUserStatus')
-                                    .text(statusMeta.text)
-                                    .removeClass()
-                                    .addClass('inline-flex px-2 py-1 rounded-full text-sm font-medium ' + statusMeta.className);
-                                $('#pedModalUserStatusValue').val(resolvedStatus);
-
-                                pedApplyPerUserRoleRules('#pedRoleSelect', barangayId, dbId || displayUserId, resolvedType, '#pedSkChairmanNote');
-
-                                const $row = $('#myTable tbody tr').filter(function() {
-                                    const $tr = $(this);
-                                    const rowDbId = String($tr.data('user-id') || '');
-                                    const rowDisplayId = String($tr.data('display-user-id') || '');
-                                    return (updatedUser.id && rowDbId === String(updatedUser.id)) || (resolvedUserId && rowDisplayId === String(resolvedUserId));
-                                }).first();
-
-                                if ($row.length) {
-                                    $row.attr('data-user-type', resolvedType);
-                                    $row.attr('data-status', resolvedStatus);
-                                    $row.attr('data-display-user-id', resolvedUserId);
-                                    $row.attr('data-sk_username', updatedUser.sk_username || '');
-                                    $row.attr('data-sk_password', pedSanitizePasswordForDataAttr(updatedUser.sk_password || ''));
-
-                                    $row.find('td').eq(1).text(resolvedUserId || '');
-                                    $row.find('td').eq(6).html(pedRenderStatusCellHtml(resolvedStatus));
-                                    $row.find('td').eq(7).text(pedResolveUserTypeLabel(resolvedType));
-
-                                    table.row($row).invalidate('dom').draw(false);
-                                }
-
-                                calculateOriginalCounts();
-                                updateDisplayedCounts();
-                                applyFilters();
-                                loadCredentialsData();
-
-                                if (resp.generated_credentials && resp.generated_credentials.sk) {
-                                    pedRenderSkCredentials(resp.generated_credentials.sk.username || updatedUser.sk_username || '', resp.generated_credentials.sk.password || updatedUser.sk_password || '');
-                                    pedPulseSkCredentialsCard();
-                                    showNotification('Fresh SK credentials generated. Copy them from the credentials card.', 'info');
-                                }
+                                showNotification('User type updated successfully! Email notification sent.', 'success');
+                                try { if (window.localStorage) localStorage.setItem('knect_show_credentials_prompt', '1'); } catch (e) {}
+                                try {
+                                    $('#pedRoleChangeModal').css('display', 'none');
+                                    $('#pedPreviewModal').css('display', 'none');
+                                } catch (e) {}
+                                setTimeout(() => window.location.reload(), 1000);
                             } else {
                                 showNotification((resp && resp.message) || 'Failed to update user type.', 'error');
                             }
@@ -3042,7 +2925,7 @@
                 });
 
                 $('#pedCancelRoleChangeBtn').off('click').on('click', function() {
-                    $('#pedRoleChangeModal').addClass('hidden').css('display', 'none');
+                    $('#pedRoleChangeModal').css('display', 'none');
                 });
             };
 
@@ -3181,10 +3064,10 @@
     
 
     <!-- Pederasyon: SK-style View Modal (Info left, Documents right) -->
-    <div id="pedPreviewModal" class="fixed inset-0 z-[9998] hidden bg-black bg-opacity-50 flex items-center justify-center p-4">
+    <div id="pedPreviewModal" class="fixed inset-0 z-[9998] bg-black bg-opacity-50 items-center justify-center p-4" style="display: none;">
         <div class="bg-white rounded-lg shadow-xl w-[90vw] max-h-[90vh] relative overflow-hidden flex flex-col">
             <!-- Confirmation Popup inside ped preview modal (matches ped-officers design) -->
-            <div id="pedRoleChangeModal" class="absolute inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-40">
+            <div id="pedRoleChangeModal" class="absolute inset-0 z-50 items-center justify-center bg-black bg-opacity-40" style="display: none;">
                 <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
                     <div class="text-center">
                         <div class="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
@@ -3297,31 +3180,6 @@
                         <button id="pedRoleUpdateBtn" class="w-full mt-3 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm">
                             Update Position
                         </button>
-                    </div>
-
-                    <div id="pedSkCredentialsCard" class="w-full mt-4 bg-white rounded-xl p-4 shadow-sm border border-blue-100 hidden">
-                        <div class="flex items-start gap-2 mb-3">
-                            <div class="flex-shrink-0">
-                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3zm0 2c-2.761 0-5 2.239-5 5v2a1 1 0 001 1h8a1 1 0 001-1v-2c0-2.761-2.239-5-5-5z"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <p class="text-sm font-semibold text-gray-700">SK Login Credentials</p>
-                                <p class="text-xs text-gray-500">Generated automatically when the user becomes an SK Chairperson.</p>
-                            </div>
-                        </div>
-                        <div class="space-y-2 text-sm">
-                            <div class="flex items-center justify-between">
-                                <span class="text-gray-600">Username</span>
-                                <span id="pedSkUsernameValue" class="font-mono text-gray-900">Not generated</span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-gray-600">Password</span>
-                                <span id="pedSkPasswordValue" class="font-mono text-gray-900">Not generated</span>
-                            </div>
-                            <p id="pedSkPasswordHint" class="text-xs text-orange-600 bg-orange-50 border border-orange-200 rounded-md px-2 py-1 hidden">Password is already secured on the system and cannot be displayed.</p>
-                        </div>
                     </div>
                 </div>
                 <!-- Right: Document Preview -->

@@ -950,24 +950,30 @@
             // Calculate original counts from all data (not filtered)
             function calculateOriginalCounts() {
                 let allCount = 0, officersCount = 0, membersCount = 0;
-                
+                const officerTitles = [
+                    'President',
+                    'Vice President',
+                    'Secretary',
+                    'Treasurer',
+                    'Auditor',
+                    'Public Information Officer',
+                    'Sergeant at Arms'
+                ];
+
                 // Count all rows, not just visible ones
                 $('#myTable tbody tr').each(function() {
                     if ($(this).find('td').length > 1) { // Skip "no data" rows
-                        const position = $(this).find('td').eq(7).text().trim();
+                        const positionCell = $(this).find('td').eq(7).find('.position-cell');
+                        const position = positionCell.length
+                            ? (positionCell.attr('data-full-text') || positionCell.text().trim())
+                            : $(this).find('td').eq(7).text().trim();
+
                         allCount++;
-                        
-                        // Officers: President, VP, Secretary, Treasurer, Auditor, PIO, Sergeant
-                        if (position === 'President' || 
-                            position === 'Vice President' ||
-                            position === 'Secretary' ||
-                            position === 'Treasurer' ||
-                            position === 'Auditor' ||
-                            position === 'Public Information Officer' ||
-                            position === 'Sergeant at Arms') {
+
+                        if (officerTitles.includes(position)) {
                             officersCount++;
                         } else {
-                            membersCount++; // Member
+                            membersCount++; // Member or other label
                         }
                     }
                 });
@@ -1046,14 +1052,19 @@
                     }
                 }
                 
+                const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                 if (searchTerms.length > 0) {
-                    const regex = searchTerms.join('|');
+                    const regex = searchTerms.map(escapeRegex).join('|');
                     table.column(7).search(regex, true, false);
+                } else {
+                    table.column(7).search('', true, false);
                 }
                 
                 // Apply barangay filter using DataTable column search
                 if (barangayFilter) {
-                    table.column(2).search('^' + barangayFilter + '$', true, false);
+                    table.column(2).search('^' + escapeRegex(barangayFilter) + '$', true, false);
+                } else {
+                    table.column(2).search('', true, false);
                 }
                 
                 // Redraw table with filters applied
@@ -1198,7 +1209,7 @@
                 var userId = $(this).data('id');
                 
                 // Show loading state
-                $('#userDetailModal').removeClass('hidden');
+                $('#userDetailModal').removeClass('hidden').css('display', 'flex');
                 $('#modalUserFullName').text('Loading...');
                 
                 $.ajax({
@@ -1234,7 +1245,8 @@
                             $('#modalUserId').data('db-id', u.id);
                             $('#modalUserAge').text(u.age + ' years old');
                             $('#modalUserSex').text(u.sex == '1' ? 'Male' : (u.sex == '2' ? 'Female' : ''));
-                            $('#modalOfficerPosition').val(String(u.ped_position || 0));
+                            const pedPositionValue = (u.ped_position === null || u.ped_position === undefined) ? 'NULL' : String(u.ped_position);
+                            $('#modalOfficerPosition').val(pedPositionValue);
                             
                             // Mark occupied positions in grey
                             updateOccupiedPositions(u.id);
@@ -1346,7 +1358,7 @@
                             }
                         } else {
                             showNotification('Officer not found.', 'error');
-                            $('#userDetailModal').addClass('hidden');
+                            $('#userDetailModal').addClass('hidden').css('display', 'none');
                         }
                     },
                     error: function(xhr, status, error) {
@@ -1356,20 +1368,20 @@
                             errorMessage = xhr.responseJSON.message;
                         }
                         showNotification(errorMessage, 'error');
-                        $('#userDetailModal').addClass('hidden');
+                        $('#userDetailModal').addClass('hidden').css('display', 'none');
                     }
                 });
             });
 
             // Close modal functionality
             $('#closeUserDetailModal').on('click', function() {
-                $('#userDetailModal').addClass('hidden');
+                $('#userDetailModal').addClass('hidden').css('display', 'none');
             });
 
             // Close modal when clicking outside
             $('#userDetailModal').on('click', function(e) {
                 if (e.target === this) {
-                    $('#userDetailModal').addClass('hidden');
+                    $('#userDetailModal').addClass('hidden').css('display', 'none');
                 }
             });
 
@@ -1389,39 +1401,27 @@
 
             // Confirm position change
             $('#confirmRoleChangeBtn').on('click', function() {
+                const button = $(this);
                 const dbId = pendingPositionChange.dbId;
                 const newPosition = pendingPositionChange.newPosition;
-                
-                // Validate that we have a database ID
+
                 if (!dbId) {
                     showNotification('Error: Unable to identify user. Please try again.', 'error');
                     $('#roleChangeModal').addClass('hidden').css('display', 'none');
-                    $('#userDetailModal').addClass('hidden');
+                    $('#userDetailModal').addClass('hidden').css('display', 'none');
                     return;
                 }
-                
-                // Show loading state
-                $(this).prop('disabled', true).text('Updating...');
-                
-                // Find the user row to get the database ID
-                const userRow = $(`tr[data-ped_username]`).filter(function() {
-                    return $(this).find('td').eq(1).text().trim() === userId;
-                });
-                
-                const dbId = userRow.find('.rowCheckbox').val();
-                
-                // Handle "NULL" string for SK Pederasyon Member position
-                let pedPositionValue;
-                if (newPosition === 'NULL') {
-                    pedPositionValue = 'NULL';
-                } else {
-                    pedPositionValue = parseInt(newPosition, 10);
-                }
-                
+
+                button.prop('disabled', true).text('Updating...');
+
+                const pedPositionValue = newPosition === 'NULL'
+                    ? 'NULL'
+                    : parseInt(newPosition, 10);
+
                 $.ajax({
                     url: '<?= base_url('updateOfficerPosition') ?>',
                     method: 'POST',
-                    data: { user_id: dbId || userId, ped_position: pedPositionValue },
+                    data: { user_id: dbId, ped_position: pedPositionValue },
                     dataType: 'json',
                     success: function(response) {
                         if (response.success) {
@@ -1442,33 +1442,16 @@
                         showNotification(errorMessage, 'error');
                     },
                     complete: function() {
-                        $('#confirmRoleChangeBtn').prop('disabled', false).text('Confirm');
-                        // Close both modals
+                        button.prop('disabled', false).text('Confirm');
                         $('#roleChangeModal').addClass('hidden').css('display', 'none');
-                        $('#userDetailModal').addClass('hidden');
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            showNotification(response.message, 'success');
-                            
-                            // Reload the page to reflect changes and check for officer warning
-                            setTimeout(function() {
-                                location.reload();
-                            }, 1000);
-                        } else {
-                            showNotification(response.message || 'Failed to update position', 'error');
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        showNotification('Error: ' + error, 'error');
+                        $('#userDetailModal').addClass('hidden').css('display', 'none');
                     }
                 });
             });
 
             // Cancel position change
             $('#cancelRoleChangeBtn').on('click', function() {
-                $('#roleChangeModal').addClass('hidden');
-                $('#roleChangeModal').css('display', 'none');
+                $('#roleChangeModal').addClass('hidden').css('display', 'none');
             });
 
             // Prevent modal from closing when clicking inside the modal content

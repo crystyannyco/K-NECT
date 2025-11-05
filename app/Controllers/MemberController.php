@@ -73,7 +73,8 @@ class MemberController extends BaseController
             }
         }
 
-        $updateData = ['user_type' => (int)$userType];
+    $updateData = ['user_type' => (int)$userType];
+    $generatedSkCredentials = null;
 
         // Position handling rules based on user type transitions
         $oldType = (int) ($user['user_type'] ?? 1);
@@ -115,15 +116,17 @@ class MemberController extends BaseController
                     ]);
                 }
             }
-            // Ensure position aligns to Chairperson (handled by position rules above)
+            // Ensure position aligns to Chairperson (position = 1)
+            $updateData['position'] = 1;
         }
 
-        // Auto-accept pending users and generate USER_ID when promoting to SK/Pederasyon
-        $isPromotionType = ((int)$userType === 2 || (int)$userType === 3);
-        if ($isPromotionType && (int)($user['status'] ?? 0) === 1) {
-            $updateData['status'] = 2; // accept
+        // When changing to SK Chairperson (user_type = 2), automatically verify and generate credentials
+        if ($newType === 2) {
+            // Auto-verify the user (set status to 2 - Accepted)
+            $updateData['status'] = 2;
+            
+            // Generate USER_ID if missing
             if (empty($user['user_id'])) {
-                // Generate like SK youth_profile approval (yy-XXXXXX)
                 $tries = 0;
                 do {
                     $newId = UserHelper::generateYearPrefixedUserId();
@@ -138,24 +141,46 @@ class MemberController extends BaseController
                 }
                 $updateData['user_id'] = $newId;
             }
-        }
-
-        if ($userType == 2) { // SK Chairperson
-            // Only generate SK credentials if missing
+            
+            // Generate SK credentials if missing
             if (empty($user['sk_username']) || empty($user['sk_password'])) {
-                $updateData['sk_username'] = UserHelper::generateSKUsername($user['first_name'], $user['last_name']);
-                $updateData['sk_password'] = UserHelper::generatePassword(8);
+                $newSkUsername = UserHelper::generateSKUsername($user['first_name'], $user['last_name']);
+                $newSkPassword = UserHelper::generatePassword(8);
+                $updateData['sk_username'] = $newSkUsername;
+                $updateData['sk_password'] = $newSkPassword;
+                $generatedSkCredentials = [
+                    'username' => $newSkUsername,
+                    'password' => $newSkPassword,
+                ];
             }
-            // Set position to 1 (Chairperson) for SK officials
-            $updateData['position'] = 1;
-
+            
             // If downgrading from PED -> SK, clear PED credentials
-            if (isset($user['user_type']) && (int)$user['user_type'] === 3) {
+            if ($oldType === 3) {
                 $updateData['ped_username'] = null;
                 $updateData['ped_password'] = null;
             }
-        } elseif ($userType == 3) { // Pederasyon Officer
-            $wasSK = isset($user['user_type']) && (int)$user['user_type'] === 2;
+        } elseif ($newType === 3) { // Pederasyon Officer
+            // Auto-verify for Pederasyon promotions
+            if ((int)($user['status'] ?? 0) === 1) {
+                $updateData['status'] = 2;
+                if (empty($user['user_id'])) {
+                    $tries = 0;
+                    do {
+                        $newId = UserHelper::generateYearPrefixedUserId();
+                        $exists = $userModel->where('user_id', $newId)->first();
+                        $tries++;
+                    } while ($exists && $tries < 5);
+                    if ($exists) {
+                        return $this->response->setStatusCode(500)->setJSON([
+                            'success' => false,
+                            'message' => 'Failed to generate a unique USER ID. Please try again.'
+                        ]);
+                    }
+                    $updateData['user_id'] = $newId;
+                }
+            }
+            
+            $wasSK = $oldType === 2;
 
             // Ensure PED credentials exist
             if (empty($user['ped_username']) || empty($user['ped_password'])) {
@@ -171,25 +196,45 @@ class MemberController extends BaseController
                 }
                 $updateData['position'] = 1; // Promote to SK Chairperson to align with Pederasyon composition
             }
-        } elseif ($userType == 1) { // KK Member
+        } elseif ($newType === 1) { // KK Member
             // Downgrades to KK should nullify credentials accordingly
-            if (isset($user['user_type'])) {
-                if ((int)$user['user_type'] === 3) { // PED -> KK: clear both SK and PED creds
-                    $updateData['ped_username'] = null;
-                    $updateData['ped_password'] = null;
-                    $updateData['sk_username'] = null;
-                    $updateData['sk_password'] = null;
-                } elseif ((int)$user['user_type'] === 2) { // SK -> KK: clear SK creds
-                    $updateData['sk_username'] = null;
-                    $updateData['sk_password'] = null;
-                }
+            if ($oldType === 3) { // PED -> KK: clear both SK and PED creds
+                $updateData['ped_username'] = null;
+                $updateData['ped_password'] = null;
+                $updateData['sk_username'] = null;
+                $updateData['sk_password'] = null;
+            } elseif ($oldType === 2) { // SK -> KK: clear SK creds
+                $updateData['sk_username'] = null;
+                $updateData['sk_password'] = null;
             }
         }
-        // If KK Member (userType == 1), do not change username/password
 
         $result = $userModel->update($userId, $updateData);
         if ($result) {
-            return $this->response->setJSON(['success' => true, 'message' => 'User type updated successfully']);
+            $updatedUser = $userModel->find($userId) ?: $user;
+
+            $response = [
+                'success' => true,
+                'message' => 'User type updated successfully',
+                'user' => [
+                    'id' => $updatedUser['id'] ?? null,
+                    'user_id' => $updatedUser['user_id'] ?? null,
+                    'user_type' => isset($updatedUser['user_type']) ? (int)$updatedUser['user_type'] : null,
+                    'status' => isset($updatedUser['status']) ? (int)$updatedUser['status'] : null,
+                    'position' => $updatedUser['position'] ?? null,
+                    'ped_position' => $updatedUser['ped_position'] ?? null,
+                    'sk_username' => $updatedUser['sk_username'] ?? null,
+                    'sk_password' => $updatedUser['sk_password'] ?? null,
+                    'ped_username' => $updatedUser['ped_username'] ?? null,
+                    'ped_password' => $updatedUser['ped_password'] ?? null,
+                ],
+            ];
+
+            if ($generatedSkCredentials) {
+                $response['generated_credentials']['sk'] = $generatedSkCredentials;
+            }
+
+            return $this->response->setJSON($response);
         } else {
             $errors = method_exists($userModel, 'errors') ? $userModel->errors() : [];
             $msg = 'Failed to update user type';
@@ -364,31 +409,6 @@ class MemberController extends BaseController
             log_message('error', 'Error updating user position: ' . $e->getMessage());
             return $this->response->setStatusCode(500)->setJSON(['success' => false, 'message' => 'Database error occurred while updating position']);
         }
-    }
-
-    private function generateUniqueUsername($prefix = 'user') {
-        return $prefix . '_' . bin2hex(random_bytes(3)) . time();
-    }
-    
-    private function generatePassword($length = 8) {
-        return bin2hex(random_bytes($length/2));
-    }
-
-    private function generateSKUsername($firstName, $lastName) {
-        return 'SK_' . ucfirst(str_replace(' ', '', $firstName)) . ucfirst(str_replace(' ', '', $lastName));
-    }
-    
-    private function generatePEDUsername($firstName, $lastName) {
-        return 'PED_' . ucfirst(str_replace(' ', '', $firstName)) . ucfirst(str_replace(' ', '', $lastName));
-    }
-
-    private function generateUnique6DigitId() {
-        $userModel = new UserModel();
-        do {
-            $id = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-            $exists = $userModel->where('user_id', $id)->first();
-        } while ($exists);
-        return $id;
     }
 
     public function bulkUpdateUserType()

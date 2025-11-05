@@ -884,11 +884,11 @@ class AttendanceController extends BaseController
                 $timeDifference = $currentTimeObj->diff($lastScanTime);
                 $minutesDifference = ($timeDifference->h * 60) + $timeDifference->i;
                 
-                // Check if user is already checked out
+                // Check if user is already Time Out
                 if (!empty($existingAttendance[$timeOutField])) {
                     return $this->response->setJSON([
                         'success' => false,
-                        'message' => 'Duplicate entry - already scanned and checked out for this session',
+                        'message' => 'Duplicate entry - already scanned and Time Out for this session',
                         'duplicate' => true
                     ]);
                 }
@@ -1217,25 +1217,28 @@ class AttendanceController extends BaseController
                 return $this->response->setJSON(['success' => false, 'message' => 'No attendance records found for this event']);
             }
             
-            // Generate Excel document
-            $outputFile = $this->generateAttendanceExcelDocument($event, $attendanceRecords, $barangayName);
+            // Generate Excel document and stream directly to user
+            $eventTitle = preg_replace('/[^a-zA-Z0-9_-]/', '_', $event['title']);
+            $eventDate = date('Y-m-d', strtotime($event['start_datetime']));
+            $fileName = 'SK_' . $eventTitle . '_Attendance_' . $eventDate . '.xlsx';
             
-            if ($outputFile && file_exists($outputFile)) {
-                $fileName = basename($outputFile);
-                log_message('info', 'Excel document ready for download: ' . $fileName);
-                return $this->response->setJSON([
-                    'success' => true, 
-                    'message' => 'Attendance report Excel document generated successfully',
-                    'download_url' => base_url('uploads/generated/' . $fileName),
-                    'record_count' => count($attendanceRecords)
-                ]);
-            } else {
-                log_message('error', 'Excel document file not created or does not exist');
-                return $this->response->setJSON([
-                    'success' => false, 
-                    'message' => 'Error generating Excel document - file not created'
-                ]);
-            }
+            $spreadsheet = $this->generateAttendanceExcelDocument($event, $attendanceRecords, $barangayName);
+            
+            // Stream the file directly to the user
+            $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+            
+            // Set headers for file download
+            $this->response->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            $this->response->setHeader('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+            $this->response->setHeader('Cache-Control', 'max-age=0');
+            
+            // Write to output buffer
+            ob_start();
+            $writer->save('php://output');
+            $excelOutput = ob_get_clean();
+            
+            log_message('info', 'Excel document streamed successfully: ' . $fileName);
+            return $this->response->setBody($excelOutput);
         } catch (\Exception $e) {
             log_message('error', 'Error in generateAttendanceReportExcel: ' . $e->getMessage());
             return $this->response->setJSON([
@@ -1281,25 +1284,28 @@ class AttendanceController extends BaseController
             // Get logos for the Word document
             $logos = $this->getLogosForDocument();
             
-            // Generate Word document
-            $outputFile = $this->generateAttendanceWordDocument($event, $attendanceRecords, $logos, $barangayName);
+            // Generate Word document and stream directly to user
+            $eventTitle = preg_replace('/[^a-zA-Z0-9_-]/', '_', $event['title']);
+            $eventDate = date('Y-m-d', strtotime($event['start_datetime']));
+            $fileName = 'SK_' . $eventTitle . '_Attendance_' . $eventDate . '.docx';
             
-            if ($outputFile && file_exists($outputFile)) {
-                $fileName = basename($outputFile);
-                log_message('info', 'Word document ready for download: ' . $fileName);
-                return $this->response->setJSON([
-                    'success' => true, 
-                    'message' => 'Attendance report Word document generated successfully',
-                    'download_url' => base_url('uploads/generated/' . $fileName),
-                    'record_count' => count($attendanceRecords)
-                ]);
-            } else {
-                log_message('error', 'Word document file not created or does not exist');
-                return $this->response->setJSON([
-                    'success' => false, 
-                    'message' => 'Error generating Word document - file not created'
-                ]);
-            }
+            $phpWord = $this->generateAttendanceWordDocument($event, $attendanceRecords, $logos, $barangayName);
+            
+            // Stream the file directly to the user
+            $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
+            
+            // Set headers for file download
+            $this->response->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+            $this->response->setHeader('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+            $this->response->setHeader('Cache-Control', 'max-age=0');
+            
+            // Write to output buffer
+            ob_start();
+            $writer->save('php://output');
+            $wordOutput = ob_get_clean();
+            
+            log_message('info', 'Word document streamed successfully: ' . $fileName);
+            return $this->response->setBody($wordOutput);
         } catch (\Exception $e) {
             log_message('error', 'Error in generateAttendanceReportWord: ' . $e->getMessage());
             return $this->response->setJSON([
@@ -1315,7 +1321,7 @@ class AttendanceController extends BaseController
     private function generateAttendanceExcelDocument($event, $attendanceRecords, $barangayName = null)
     {
         try {
-            require_once FCPATH . '../vendor/autoload.php';
+            require_once ROOTPATH . 'vendor/autoload.php';
             
             $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
             $sheet = $spreadsheet->getActiveSheet();
@@ -1507,22 +1513,58 @@ class AttendanceController extends BaseController
             $sheet->getColumnDimension('H')->setWidth(12); // PM Time-In
             $sheet->getColumnDimension('I')->setWidth(12); // PM Time-Out
             $sheet->getColumnDimension('J')->setWidth(10); // PM Status
-            
-            // Save the document
-            $outputDir = FCPATH . 'uploads/generated/';
-            if (!is_dir($outputDir)) {
-                mkdir($outputDir, 0755, true);
+
+            // Repeat header rows (including table headers) on every printed page
+            $sheet->getPageSetup()->setRowsToRepeatAtTop([1, $headerRowNum]);
+
+            // Append visible signature section for on-screen viewing
+            $currentRow += 2;
+            $sheet->mergeCells('B' . $currentRow . ':D' . $currentRow);
+            $sheet->setCellValue('B' . $currentRow, 'Prepared by:');
+            $sheet->mergeCells('G' . $currentRow . ':I' . $currentRow);
+            $sheet->setCellValue('G' . $currentRow, 'Approved by:');
+            $sheet->getStyle('B' . $currentRow . ':I' . $currentRow)->getFont()->setBold(true)->setSize(10);
+
+            $currentRow += 2;
+            $sheet->mergeCells('B' . $currentRow . ':D' . $currentRow);
+            $sheet->setCellValue('B' . $currentRow, '______________________________');
+            $sheet->mergeCells('G' . $currentRow . ':I' . $currentRow);
+            $sheet->setCellValue('G' . $currentRow, '______________________________');
+
+            $currentRow++;
+            $sheet->mergeCells('B' . $currentRow . ':D' . $currentRow);
+            $sheet->setCellValue('B' . $currentRow, 'SK Secretary');
+            $sheet->mergeCells('G' . $currentRow . ':I' . $currentRow);
+            $sheet->setCellValue('G' . $currentRow, 'SK Chairperson');
+            $sheet->getStyle('B' . ($currentRow - 1) . ':I' . $currentRow)
+                ->getAlignment()
+                ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+            // Configure printable area and repeated header/footer text
+            $sheet->getPageSetup()->setPrintArea('A1:J' . $currentRow);
+
+            $headerLines = "&C&\"Arial,Bold\"REPUBLIC OF THE PHILIPPINES\n"
+                . "&C&\"Arial,Bold\"PROVINCE OF CAMARINES SUR\n"
+                . "&C&\"Arial,Bold\"CITY OF IRIGA\n"
+                . "&C&\"Arial\"SANGGUNIANG KABATAAN";
+            if ($barangayName) {
+                $headerLines .= "\n&C&\"Arial\"NG BARANGAY " . strtoupper($barangayName);
             }
+            $sheet->getHeaderFooter()->setOddHeader($headerLines);
+
+            $footerLines = "&LPrepared by: ____________________"
+                . "&CGenerated: &D"
+                . "&RApproved by: ____________________";
+            $sheet->getHeaderFooter()->setOddFooter($footerLines);
+            $sheet->getHeaderFooter()->setDifferentOddEven(false);
+
+            // Adjust header/footer margins for clarity
+            $sheet->getPageMargins()->setHeader(0.3);
+            $sheet->getPageMargins()->setFooter(0.4);
             
-            $eventTitle = preg_replace('/[^a-zA-Z0-9_-]/', '_', $event['title']);
-            $fileName = $eventTitle . '_Attendance_Report_' . date('Y-m-d') . '.xlsx';
-            $outputPath = $outputDir . $fileName;
-            
-            $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
-            $writer->save($outputPath);
-            
-            log_message('info', 'Excel document saved to: ' . $outputPath);
-            return $outputPath;
+            // Return the spreadsheet object for streaming
+            log_message('info', 'Excel spreadsheet created successfully');
+            return $spreadsheet;
             
         } catch (\Exception $e) {
             log_message('error', 'Error in generateAttendanceExcelDocument: ' . $e->getMessage());
@@ -1537,9 +1579,9 @@ class AttendanceController extends BaseController
     {
         try {
             log_message('info', 'Starting Attendance Report Word document creation...');
-            
+
             $phpWord = new \PhpOffice\PhpWord\PhpWord();
-            
+
             // Set document properties
             $properties = $phpWord->getDocInfo();
             $properties->setCreator('K-NECT System');
@@ -1547,7 +1589,7 @@ class AttendanceController extends BaseController
             $properties->setTitle('Attendance Report - ' . $event['title']);
             $properties->setDescription('Attendance report generated from K-NECT System');
             $properties->setSubject('Attendance Report');
-            
+
             // Add section with landscape orientation and custom 13x8.5in size
             $section = $phpWord->addSection([
                 'orientation' => 'landscape',
@@ -1558,32 +1600,41 @@ class AttendanceController extends BaseController
                 'marginTop' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(0.5),
                 'marginBottom' => \PhpOffice\PhpWord\Shared\Converter::inchToTwip(0.5)
             ]);
-            
-            // Header styles
+
+            // Styles
             $headerStyle = ['name' => 'Arial', 'size' => 12, 'bold' => true];
             $subHeaderStyle = ['name' => 'Arial', 'size' => 10, 'bold' => false];
             $titleStyle = ['name' => 'Arial', 'size' => 14, 'bold' => true];
             $tableHeaderStyle = ['name' => 'Arial', 'size' => 8, 'bold' => true];
             $tableCellStyle = ['name' => 'Arial', 'size' => 8];
-            
-            // Create header section with logos
-            $headerTable = $section->addTable([
+
+            // Build repeating header
+            $header = $section->addHeader();
+            $headerTableStyle = [
+                'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER,
                 'borderSize' => 0,
                 'borderColor' => 'FFFFFF',
-                'width' => 100 * 50,
-                'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER
-            ]);
+                'borderInsideH' => 0,
+                'borderInsideV' => 0,
+                'cellMargin' => 0
+            ];
+            $headerCellStyle = [
+                'valign' => 'center',
+                'borderSize' => 0,
+                'borderColor' => 'FFFFFF'
+            ];
+            $headerTable = $header->addTable($headerTableStyle);
             $headerTable->addRow();
-            
+
             // Left logo cell (SK)
-            $leftCell = $headerTable->addCell(2000, ['valign' => 'center']);
+            $leftCell = $headerTable->addCell(1800, $headerCellStyle);
             if (isset($logos['sk'])) {
-                $logoPath = FCPATH . $logos['sk']['file_path'];
+                $logoPath = ROOTPATH . $logos['sk']['file_path'];
                 if (file_exists($logoPath)) {
                     try {
                         $leftCell->addImage($logoPath, [
-                            'width' => 50.4,
-                            'height' => 50.4,
+                            'width' => 48,
+                            'height' => 48,
                             'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER
                         ]);
                     } catch (\Exception $e) {
@@ -1595,9 +1646,8 @@ class AttendanceController extends BaseController
             } else {
                 $leftCell->addText('SK LOGO', $subHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
             }
-            
-            // Center text cell
-            $centerCell = $headerTable->addCell(6000, ['valign' => 'center']);
+
+            $centerCell = $headerTable->addCell(6000, $headerCellStyle);
             $centerCell->addText('REPUBLIC OF THE PHILIPPINES', $headerStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             $centerCell->addText('PROVINCE OF CAMARINES SUR', $headerStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             $centerCell->addText('CITY OF IRIGA', $headerStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
@@ -1605,16 +1655,15 @@ class AttendanceController extends BaseController
             if ($barangayName) {
                 $centerCell->addText('NG BARANGAY ' . strtoupper($barangayName), $subHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             }
-            
-            // Right logo cell (Iriga City)
-            $rightCell = $headerTable->addCell(2000, ['valign' => 'center']);
+
+            $rightCell = $headerTable->addCell(1800, $headerCellStyle);
             if (isset($logos['iriga_city'])) {
-                $logoPath = FCPATH . $logos['iriga_city']['file_path'];
+                $logoPath = ROOTPATH . $logos['iriga_city']['file_path'];
                 if (file_exists($logoPath)) {
                     try {
                         $rightCell->addImage($logoPath, [
-                            'width' => 50.4,
-                            'height' => 50.4,
+                            'width' => 48,
+                            'height' => 48,
                             'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER
                         ]);
                     } catch (\Exception $e) {
@@ -1626,79 +1675,73 @@ class AttendanceController extends BaseController
             } else {
                 $rightCell->addText('IRIGA LOGO', $subHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER]);
             }
-            
-            // Add title and event details (no extra space after paragraphs)
-            $section->addTextBreak();
-            $section->addText('ATTENDANCE REPORT', $titleStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-            $section->addTextBreak();
-            
-            // Event information - FIXED: Remove space after paragraphs
+
+            // Footer with signature placeholders (repeated each page)
+            $footer = $section->addFooter();
+            $footerTable = $footer->addTable([
+                'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER,
+                'borderSize' => 0,
+                'borderColor' => 'FFFFFF',
+                'cellMargin' => 80
+            ]);
+            $footerTable->addRow(null, ['cantSplit' => true]);
+            $footerLeft = $footerTable->addCell(5000, ['borderSize' => 0, 'borderColor' => 'FFFFFF', 'valign' => 'top']);
+            $footerRight = $footerTable->addCell(5000, ['borderSize' => 0, 'borderColor' => 'FFFFFF', 'valign' => 'top']);
+
+            $footerLeft->addText('Prepared by:', ['name' => 'Arial', 'size' => 9, 'bold' => true], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $footerLeft->addText('', [], ['spaceAfter' => 160]);
+            $footerLeft->addText('_________________________', ['name' => 'Arial', 'size' => 9], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $footerLeft->addText('SK Secretary', ['name' => 'Arial', 'size' => 9], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+
+            $footerRight->addText('Approved by:', ['name' => 'Arial', 'size' => 9, 'bold' => true], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $footerRight->addText('', [], ['spaceAfter' => 160]);
+            $footerRight->addText('_________________________', ['name' => 'Arial', 'size' => 9], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $footerRight->addText('SK Chairperson', ['name' => 'Arial', 'size' => 9], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+
+            // Body content
+            $section->addTextBreak(1);
+            $section->addText('ATTENDANCE REPORT', $titleStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 120]);
             $section->addText('Event: ' . $event['title'], $subHeaderStyle, ['spaceAfter' => 0]);
             $section->addText('Date: ' . date('F j, Y', strtotime($event['start_datetime'])), $subHeaderStyle, ['spaceAfter' => 0]);
             $section->addText('Time: ' . date('g:i A', strtotime($event['start_datetime'])) . ' - ' . date('g:i A', strtotime($event['end_datetime'])), $subHeaderStyle, ['spaceAfter' => 0]);
             if (!empty($event['location'])) {
                 $section->addText('Location: ' . $event['location'], $subHeaderStyle, ['spaceAfter' => 0]);
             }
-            $section->addTextBreak();
-            
-            // Create attendance table and compute column widths to exactly fill printable area
+            $section->addTextBreak(1);
+
+            // Attendance table with repeating header row
             $table = $section->addTable([
-                'borderSize' => 4,
+                'borderSize' => 6,
                 'borderColor' => '000000',
-                'cellMargin' => 20,
-                // width will be set by cell widths; keep table centered
+                'cellMargin' => 40,
                 'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER
             ]);
 
-            // Printable width in twips: page width (13in) minus left/right margins (0.5in each) = 12in
             $printableWidth = \PhpOffice\PhpWord\Shared\Converter::inchToTwip(12.0);
-            // Use the previous relative column units to distribute widths proportionally
             $colRel = [1000, 1500, 3500, 1000, 1200, 1200, 1200, 1200, 1200, 1200];
             $totalRel = array_sum($colRel);
-            $colWidths = array_map(function($r) use ($printableWidth, $totalRel) {
+            $colWidths = array_map(static function ($r) use ($printableWidth, $totalRel) {
                 return (int) floor(($r / $totalRel) * $printableWidth);
             }, $colRel);
 
-            // Add table header with computed column widths (spaceAfter=0 to remove extra paragraph spacing)
-            $table->addRow();
-            $table->addCell($colWidths[0])->addText('No.', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-            $table->addCell($colWidths[1])->addText('KK Number', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-            $table->addCell($colWidths[2])->addText('Name', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-            $table->addCell($colWidths[3])->addText('Zone', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-            $table->addCell($colWidths[4])->addText('AM Time-In', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-            $table->addCell($colWidths[5])->addText('AM Time-Out', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-            $table->addCell($colWidths[6])->addText('AM Status', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-            $table->addCell($colWidths[7])->addText('PM Time-In', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-            $table->addCell($colWidths[8])->addText('PM Time-Out', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-            $table->addCell($colWidths[9])->addText('PM Status', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-            
-            // Add data rows
+            $headerRow = $table->addRow(null, ['tblHeader' => true]);
+            $headerRow->addCell($colWidths[0])->addText('No.', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $headerRow->addCell($colWidths[1])->addText('KK Number', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $headerRow->addCell($colWidths[2])->addText('Name', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $headerRow->addCell($colWidths[3])->addText('Zone', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $headerRow->addCell($colWidths[4])->addText('AM Time-In', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $headerRow->addCell($colWidths[5])->addText('AM Time-Out', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $headerRow->addCell($colWidths[6])->addText('AM Status', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $headerRow->addCell($colWidths[7])->addText('PM Time-In', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $headerRow->addCell($colWidths[8])->addText('PM Time-Out', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+            $headerRow->addCell($colWidths[9])->addText('PM Status', $tableHeaderStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+
             foreach ($attendanceRecords as $index => $record) {
-                // AM Time-In
-                $amTimeIn = '-';
-                if (!empty($record['time-in_am'])) {
-                    $amTimeIn = date('h:i A', strtotime($record['time-in_am']));
-                }
-                
-                // AM Time-Out
-                $amTimeOut = '-';
-                if (!empty($record['time-out_am'])) {
-                    $amTimeOut = date('h:i A', strtotime($record['time-out_am']));
-                }
-                
-                // PM Time-In
-                $pmTimeIn = '-';
-                if (!empty($record['time-in_pm'])) {
-                    $pmTimeIn = date('h:i A', strtotime($record['time-in_pm']));
-                }
-                
-                // PM Time-Out
-                $pmTimeOut = '-';
-                if (!empty($record['time-out_pm'])) {
-                    $pmTimeOut = date('h:i A', strtotime($record['time-out_pm']));
-                }
-                
-                // AM Status
+                $amTimeIn = !empty($record['time-in_am']) ? date('h:i A', strtotime($record['time-in_am'])) : '-';
+                $amTimeOut = !empty($record['time-out_am']) ? date('h:i A', strtotime($record['time-out_am'])) : '-';
+                $pmTimeIn = !empty($record['time-in_pm']) ? date('h:i A', strtotime($record['time-in_pm'])) : '-';
+                $pmTimeOut = !empty($record['time-out_pm']) ? date('h:i A', strtotime($record['time-out_pm'])) : '-';
+
                 $amStatus = 'Absent';
                 if (!empty($record['time-in_am'])) {
                     if (!empty($record['status_am']) && strtolower($record['status_am']) === 'late') {
@@ -1709,8 +1752,7 @@ class AttendanceController extends BaseController
                         $amStatus = 'Present';
                     }
                 }
-                
-                // PM Status
+
                 $pmStatus = 'Absent';
                 if (!empty($record['time-in_pm'])) {
                     if (!empty($record['status_pm']) && strtolower($record['status_pm']) === 'late') {
@@ -1721,48 +1763,33 @@ class AttendanceController extends BaseController
                         $pmStatus = 'Present';
                     }
                 }
-                
-                // Format name as Lastname, Firstname Middlename
+
                 $userName = $record['user_name'] ?? 'N/A';
-                $nameParts = explode(' ', trim($userName));
+                $formattedName = $userName;
+                $nameParts = array_values(array_filter(explode(' ', trim($userName))));
                 if (count($nameParts) >= 2) {
-                    $firstName = $nameParts[0];
-                    $lastName = end($nameParts);
-                    $middleName = count($nameParts) > 2 ? implode(' ', array_slice($nameParts, 1, -1)) : '';
-                    $formattedName = $lastName . ', ' . $firstName . ($middleName ? ' ' . $middleName : '');
-                } else {
-                    $formattedName = $userName;
+                    $firstName = array_shift($nameParts);
+                    $lastName = array_pop($nameParts);
+                    $middleName = !empty($nameParts) ? ' ' . implode(' ', $nameParts) : '';
+                    $formattedName = $lastName . ', ' . $firstName . $middleName;
                 }
-                
-                $table->addRow();
-                $table->addCell($colWidths[0])->addText($index + 1, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-                $table->addCell($colWidths[1])->addText($record['permanent_user_id'] ?? 'N/A', $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-                $table->addCell($colWidths[2])->addText($formattedName, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::LEFT, 'spaceAfter' => 0]);
-                $table->addCell($colWidths[3])->addText($record['zone_purok'] ?? 'N/A', $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-                $table->addCell($colWidths[4])->addText($amTimeIn, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-                $table->addCell($colWidths[5])->addText($amTimeOut, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-                $table->addCell($colWidths[6])->addText($amStatus, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-                $table->addCell($colWidths[7])->addText($pmTimeIn, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-                $table->addCell($colWidths[8])->addText($pmTimeOut, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
-                $table->addCell($colWidths[9])->addText($pmStatus, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+
+                $dataRow = $table->addRow(null, ['cantSplit' => true]);
+                $dataRow->addCell($colWidths[0])->addText($index + 1, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $dataRow->addCell($colWidths[1])->addText($record['permanent_user_id'] ?? 'N/A', $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $dataRow->addCell($colWidths[2])->addText($formattedName, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::LEFT, 'spaceAfter' => 0]);
+                $dataRow->addCell($colWidths[3])->addText($record['zone_purok'] ?? 'N/A', $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $dataRow->addCell($colWidths[4])->addText($amTimeIn, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $dataRow->addCell($colWidths[5])->addText($amTimeOut, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $dataRow->addCell($colWidths[6])->addText($amStatus, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $dataRow->addCell($colWidths[7])->addText($pmTimeIn, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $dataRow->addCell($colWidths[8])->addText($pmTimeOut, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
+                $dataRow->addCell($colWidths[9])->addText($pmStatus, $tableCellStyle, ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0]);
             }
-            
-            // Save the document
-            $outputDir = FCPATH . 'uploads/generated/';
-            if (!is_dir($outputDir)) {
-                mkdir($outputDir, 0755, true);
-            }
-            
-            $eventTitle = preg_replace('/[^a-zA-Z0-9_-]/', '_', $event['title']);
-            $fileName = $eventTitle . '_Attendance_Report_' . date('Y-m-d') . '.docx';
-            $outputPath = $outputDir . $fileName;
-            
-            $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
-            $writer->save($outputPath);
-            
-            log_message('info', 'Word document saved to: ' . $outputPath);
-            return $outputPath;
-            
+
+            log_message('info', 'Word document created successfully');
+            return $phpWord;
+
         } catch (\Exception $e) {
             log_message('error', 'Error in generateAttendanceWordDocument: ' . $e->getMessage());
             throw $e;

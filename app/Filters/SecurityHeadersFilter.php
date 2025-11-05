@@ -62,8 +62,8 @@ class SecurityHeadersFilter implements FilterInterface
             "default-src 'self'",
             // Script sources - removed wildcards, specific CDNs only
             $isProduction 
-                ? "script-src 'self' 'nonce-{$nonce}' https://code.jquery.com https://cdn.datatables.net https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://apis.google.com https://accounts.google.com"
-                : "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://code.jquery.com https://cdn.datatables.net https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://apis.google.com https://accounts.google.com",
+                ? "script-src 'self' 'nonce-{$nonce}' https://code.jquery.com https://cdn.datatables.net https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://code.highcharts.com https://apis.google.com https://accounts.google.com"
+                : "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://code.jquery.com https://cdn.datatables.net https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://code.highcharts.com https://apis.google.com https://accounts.google.com",
             // Style sources - specific CDNs only
             $isProduction
                 ? "style-src 'self' 'nonce-{$nonce}' https://fonts.googleapis.com https://cdn.datatables.net https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://accounts.google.com"
@@ -118,7 +118,11 @@ class SecurityHeadersFilter implements FilterInterface
             $response->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0, private, no-transform');
             $response->setHeader('Pragma', 'no-cache');
             $response->setHeader('Expires', '0');
-            $response->setHeader('Clear-Site-Data', '"cache", "storage"');
+
+            // Avoid clearing storage on every sensitive page because that revokes the session/CSRF cookie
+            // which breaks POST-based flows (login, OTP, etc.) after redirects like logout.
+            // Clearing the HTTP cache is sufficient here; dedicated actions (e.g., logout) can handle full storage clears.
+            $response->setHeader('Clear-Site-Data', '"cache"');
         } else {
             // For public content, allow caching but revalidate and set proper cache duration
             $response->setHeader('Cache-Control', 'public, max-age=3600, must-revalidate, no-transform');

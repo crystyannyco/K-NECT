@@ -186,9 +186,9 @@
                                 'title' => 'Documents', 
                                 'description' => 'Files and official papers'
                             ],
-                            'pederasyon/youthlist' => [
-                                'title' => 'Youth List', 
-                                'description' => 'Manage youth and user type'
+                            'pederasyon/skchairperson' => [
+                                'title' => 'SK Chairperson List', 
+                                'description' => 'Manage SK Chairpersons and user type'
                             ],
                             'pederasyon/ped-officers' => [
                                 'title' => 'Pederasyon Officers', 

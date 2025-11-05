@@ -141,6 +141,12 @@ app/ThirdParty/google/
 *.crt
 
 #-------------------------
+# Archive & Cleanup
+#-------------------------
+# Archive folder for removed/deprecated files
+archive/
+
+#-------------------------
 # Allow Important Config Files
 #-------------------------
 # These files should be included in version control

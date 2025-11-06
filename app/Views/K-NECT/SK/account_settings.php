@@ -98,9 +98,12 @@
 								<input type="text" name="street" value="<?= esc($address['zone_purok'] ?? '') ?>" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
 							</div>
 							<div>
-								<label class="block text-sm font-medium text-gray-700 mb-1">Barangay</label>
-								<input type="text" value="<?= esc($barangay_name ?? '') ?>" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50" disabled>
-								<input type="hidden" name="barangay" value="<?= esc($address['barangay'] ?? '') ?>">
+								<label class="block text-sm font-medium text-gray-700 mb-1">Barangay <span class="text-red-500">*</span></label>
+								<select id="barangay-select" name="barangay" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+									<option value="">Loading barangays...</option>
+								</select>
+								<input type="hidden" id="barangay-psgc-code" name="barangay_psgc_code" value="<?= esc($address['barangay_psgc_code'] ?? '') ?>">
+								<p class="mt-1 text-xs text-gray-500" id="barangay-status">Fetching data from PSGC API...</p>
 							</div>
 											<div>
 												<label class="block text-sm font-medium text-gray-700 mb-1">City</label>
@@ -609,5 +612,91 @@ if (pwdForm) {
 				if (typeof showNotification==='function') showNotification('Please fix the highlighted fields before saving.', 'error');
 			}
 		});
+	})();
+
+	// ==================== PSGC BARANGAY LOADER ==================== //
+	(function() {
+		const barangaySelect = document.getElementById('barangay-select');
+		const barangayPsgcCode = document.getElementById('barangay-psgc-code');
+		const barangayStatus = document.getElementById('barangay-status');
+		
+		// Current selected barangay (from server)
+		const currentBarangayId = '<?= esc($address['barangay'] ?? '') ?>';
+		const currentBarangayName = '<?= esc($barangay_name ?? '') ?>';
+		const currentPsgcCode = '<?= esc($address['barangay_psgc_code'] ?? '') ?>';
+		
+		// Map of old barangay IDs to names for backward compatibility
+		const legacyBarangayMap = {
+			1: 'Antipolo', 2: 'Cristo Rey', 3: 'Del Rosario (Banao)', 4: 'Francia',
+			5: 'La Anunciacion', 6: 'La Medalla', 7: 'La Purisima', 8: 'La Trinidad',
+			9: 'Niño Jesus', 10: 'Perpetual Help', 11: 'Sagrada', 12: 'Salvacion',
+			13: 'San Agustin', 14: 'San Andres', 15: 'San Antonio', 16: 'San Francisco',
+			17: 'San Isidro', 18: 'San Jose', 19: 'San Juan', 20: 'San Miguel',
+			21: 'San Nicolas', 22: 'San Pedro', 23: 'San Rafael', 24: 'San Ramon',
+			25: 'San Roque', 26: 'Santiago', 27: 'San Vicente Norte', 28: 'San Vicente Sur',
+			29: 'Santa Cruz Norte', 30: 'Santa Cruz Sur', 31: 'Santa Elena', 32: 'Santa Isabel',
+			33: 'Santa Maria', 34: 'Santa Teresita', 35: 'Santo Domingo', 36: 'Santo Niño'
+		};
+		
+		async function loadBarangays() {
+			try {
+				const response = await fetch('<?= base_url('api/psgc/iriga-barangays') ?>');
+				const result = await response.json();
+				
+				if (!result.success || !result.data) {
+					throw new Error('Failed to load barangays');
+				}
+				
+				const barangays = result.data;
+				
+				// Clear loading option
+				barangaySelect.innerHTML = '<option value="">-- Select Barangay --</option>';
+				
+				// Populate dropdown
+				barangays.forEach(brgy => {
+					const option = document.createElement('option');
+					option.value = brgy.name; // Store name as value
+					option.textContent = brgy.name;
+					option.setAttribute('data-psgc-code', brgy.code);
+					
+					// Check if this matches current selection (by name or legacy ID)
+					const isSelected = brgy.name === currentBarangayName || 
+					                   (currentBarangayId && legacyBarangayMap[currentBarangayId] === brgy.name);
+					
+					if (isSelected) {
+						option.selected = true;
+						barangayPsgcCode.value = brgy.code;
+					}
+					
+					barangaySelect.appendChild(option);
+				});
+				
+				// Update status
+				const source = result.source === 'cache' ? 'cached data' : 
+				              result.source === 'fallback' ? 'local data (API unavailable)' : 'PSGC API';
+				barangayStatus.textContent = `✓ Loaded ${barangays.length} barangays from ${source}`;
+				barangayStatus.className = 'mt-1 text-xs text-green-600';
+				
+			} catch (error) {
+				console.error('Error loading barangays:', error);
+				barangayStatus.textContent = '⚠ Failed to load barangays. Please refresh the page.';
+				barangayStatus.className = 'mt-1 text-xs text-red-600';
+				
+				// Show error notification
+				if (typeof showNotification === 'function') {
+					showNotification('Unable to load barangay list. Please refresh the page.', 'error');
+				}
+			}
+		}
+		
+		// Update PSGC code when barangay changes
+		barangaySelect.addEventListener('change', function() {
+			const selectedOption = this.options[this.selectedIndex];
+			const psgcCode = selectedOption.getAttribute('data-psgc-code') || '';
+			barangayPsgcCode.value = psgcCode;
+		});
+		
+		// Load barangays on page load
+		loadBarangays();
 	})();
 </script>

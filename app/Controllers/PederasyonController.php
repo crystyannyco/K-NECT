@@ -325,11 +325,12 @@ class PederasyonController extends BaseController
             }
 
             $postedAddress = [
-                'zone_purok'   => $this->request->getPost('street'),
-                'barangay'     => $this->request->getPost('barangay'),
-                'municipality' => $this->request->getPost('city'),
-                'province'     => $this->request->getPost('province'),
-                'zip_code'     => $this->request->getPost('postal_code'),
+                'zone_purok'        => $this->request->getPost('street'),
+                'barangay'          => $this->request->getPost('barangay'),
+                'barangay_psgc_code'=> $this->request->getPost('barangay_psgc_code'),
+                'municipality'      => $this->request->getPost('city'),
+                'province'          => $this->request->getPost('province'),
+                'zip_code'          => $this->request->getPost('postal_code'),
             ];
             $addressRow = $addressModel->where('user_id', $dbUserId)->first();
             if ($addressRow) {

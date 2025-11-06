@@ -11,7 +11,7 @@ class AddressModel extends Model
     // user_id is a foreign key to user.id and not auto-incrementing here
     protected $useAutoIncrement = false;
     protected $returnType     = 'array';
-    protected $allowedFields = ['user_id', 'address_type','house_number','street','subdivision','barangay','municipality','province','region','zone_purok','zip_code','created_at','updated_at'];
+    protected $allowedFields = ['user_id', 'address_type','house_number','street','subdivision','barangay','barangay_psgc_code','municipality','province','region','zone_purok','zip_code','created_at','updated_at'];
     protected $useTimestamps = true;
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';

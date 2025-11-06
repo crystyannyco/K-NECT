@@ -22,6 +22,11 @@ $routes->get('api/top-barangays', 'PublicController::topBarangaysData');
 $routes->get('api/top-barangays/(:num)', 'PublicController::topBarangaysData/$1');
 $routes->get('event/(:num)', 'PublicController::event/$1');
 
+// ------------- PSGC API Routes (Public for address selection) ------------- //
+$routes->get('api/psgc/iriga-barangays', 'PSGCController::getIrigaBarangays');
+$routes->get('api/psgc/barangay/(:segment)', 'PSGCController::getBarangayByCode/$1');
+$routes->get('api/psgc/clear-cache', 'PSGCController::clearCache');
+
 // Guest-only routes (login etc.)
 $routes->group('', ['filter' => 'guest'], function ($routes) {
     $routes->get('login', 'KNectController::login');

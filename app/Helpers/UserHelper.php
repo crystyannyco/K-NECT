@@ -76,7 +76,7 @@ class UserHelper
         if ($userType === 'sk') {
             // SK Official positions
             $positions = [
-                1 => 'Chairman', 
+                1 => 'Chairperson', 
                 2 => 'Secretary',
                 3 => 'Treasurer',
                 4 => 'SK Councilor',

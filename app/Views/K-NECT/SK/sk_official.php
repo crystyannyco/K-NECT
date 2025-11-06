@@ -118,10 +118,7 @@
                         <div class="flex flex-wrap items-center justify-between gap-4">
                             <!-- Status Tabs -->
                             <div class="flex flex-wrap gap-2">
-                                <button class="status-tab active px-4 py-2 rounded-lg text-sm font-medium transition-all" data-status="all">
-                                    All
-                                </button>
-                                <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all" data-status="officials">
+                                <button class="status-tab active px-4 py-2 rounded-lg text-sm font-medium transition-all" data-status="officials">
                                     All SK Officials
                                 </button>
                                 <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all" data-status="chairperson">
@@ -135,6 +132,9 @@
                                 </button>
                                 <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all" data-status="kkmember">
                                     KK Member
+                                </button>
+                                <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all" data-status="all">
+                                    All
                                 </button>
                             </div>
                             <!-- Zone Filter -->
@@ -172,7 +172,7 @@
                                             <input type="checkbox" id="selectAllRows" class="form-checkbox h-4 w-4 text-indigo-600">
                                         </th>
                                         <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Barangay</th>
+                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">User ID</th>
                                         <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Zone</th>
                                         <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Name</th>
                                         <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Age</th>
@@ -209,7 +209,7 @@
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= esc($user['id']) ?></td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    <?= esc(BarangayHelper::getBarangayName($user['barangay'])) ?>
+                                                    <?= esc($user['user_id'] ?? '') ?>
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= esc($user['zone_purok'] ?? '') ?></td>
                                                 <td class="px-6 py-4 text-sm text-gray-900 name-cell"><?= esc($user['last_name']) ?>, <?= esc($user['first_name']) ?> <?= esc($user['middle_name']) ?></td>
@@ -553,8 +553,9 @@
         // Barangay mapping from PHP
         const barangayMap = <?= json_encode(BarangayHelper::getBarangayMap()) ?>;
         
-        // Current user data for restrictions
-        const currentUserId = <?= json_encode($current_user_id ?? null) ?>;
+    // Current user data for restrictions
+    const currentUserId = <?= json_encode($current_user_id ?? null) ?>;
+    const memberTabStorageKey = 'skMemberTab';
         
         // Helper function to get barangay name
         function getBarangayName(barangayId) {
@@ -632,8 +633,41 @@
             }, 5000);
         }
         $(document).ready(function () {
+            const defaultStatus = 'officials';
+            let currentStatusFilter = localStorage.getItem(memberTabStorageKey) || defaultStatus;
+            let table;
+
+            $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+                if (settings.nTable.id !== 'myTable') {
+                    return true;
+                }
+
+                const rowData = settings.aoData[dataIndex];
+                if (!rowData || !rowData.nTr) {
+                    return true;
+                }
+
+                const position = parseInt($(rowData.nTr).data('position'), 10) || 0;
+
+                switch (currentStatusFilter) {
+                    case 'officials':
+                        return position >= 1 && position <= 4;
+                    case 'chairperson':
+                        return position === 1;
+                    case 'councilor':
+                        return position === 4;
+                    case 'appointed':
+                        return position === 2 || position === 3;
+                    case 'kkmember':
+                        return position >= 5;
+                    case 'all':
+                    default:
+                        return true;
+                }
+            });
+
             // DataTable and tab logic
-            const table = $('#myTable').DataTable({
+            table = $('#myTable').DataTable({
                 columnDefs: [
                     { orderable: false, targets: 0 },
                     { responsivePriority: 1, targets: 1 }, // name
@@ -659,9 +693,6 @@
                     
                     // Populate zone filter options
                     populateZoneFilter();
-                    
-                    // Initialize "All" tab as active by default
-                    $('.status-tab[data-status="all"]').trigger('click');
                 }
             });
 
@@ -691,47 +722,24 @@
 
             // Tab filtering logic
 
+            function setStatusTabActive(status) {
+                $('.status-tab').removeClass('active');
+                $('.status-tab[data-status="' + status + '"]').addClass('active');
+            }
+
             function applyStatusFilter(status) {
-                $('#myTable tbody tr').each(function() {
-                    const position = parseInt($(this).data('position'), 10) || 0;
-                    let showRow = true;
-
-                    switch (status) {
-                        case 'officials':
-                            showRow = position >= 1 && position <= 4;
-                            break;
-                        case 'chairperson':
-                            showRow = position === 1;
-                            break;
-                        case 'councilor':
-                            showRow = position === 4;
-                            break;
-                        case 'appointed':
-                            showRow = position === 2 || position === 3;
-                            break;
-                        case 'kkmember':
-                            showRow = position >= 5;
-                            break;
-                        case 'all':
-                        default:
-                            showRow = true;
-                    }
-
-                    $(this).toggle(showRow);
-                });
+                currentStatusFilter = status;
+                if (table) {
+                    table.draw();
+                }
             }
 
             // Status tab click handler
             $(document).on('click', '.status-tab', function() {
-                // Remove active class from all tabs
-                $('.status-tab').removeClass('active');
-                
-                // Add active class to clicked tab
-                $(this).addClass('active');
-
                 const status = $(this).data('status');
+                setStatusTabActive(status);
                 applyStatusFilter(status);
-                localStorage.setItem('memberTab', status);
+                localStorage.setItem(memberTabStorageKey, status);
             });
             
             // Function to populate zone filter dropdown
@@ -770,25 +778,46 @@
                 // Reset zone filter
                 $('#zoneFilter').val('');
                 
+                table.search('');
+                table.columns().search('');
+
                 // Reset status tabs
-                $('.status-tab').removeClass('active');
-                $('.status-tab[data-status="all"]').addClass('active');
-                
-                // Clear all column searches
-                table.columns().search('').draw();
-                
-                // Show all rows
+                setStatusTabActive('all');
                 applyStatusFilter('all');
-                
-                localStorage.setItem('memberTab', 'all');
+                localStorage.setItem(memberTabStorageKey, 'all');
                 
                 // Show notification
                 showNotification('Filters cleared successfully', 'success');
             });
             
-            // On page load, restore last selected tab
-            var savedTab = localStorage.getItem('memberTab') || 'all';
-            $('.status-tab[data-status="' + savedTab + '"]').trigger('click');
+            // On page load, restore last selected tab or default to 'officials'
+            let savedTab = localStorage.getItem(memberTabStorageKey);
+            if (!savedTab) {
+                const legacyTab = localStorage.getItem('kkTab');
+                const legacyMap = {
+                    tabAll: 'officials',
+                    tabChairperson: 'chairperson',
+                    tabSK: 'councilor',
+                    tabPederasyon: 'appointed',
+                    tabKK: 'kkmember'
+                };
+                if (legacyTab && legacyMap[legacyTab]) {
+                    savedTab = legacyMap[legacyTab];
+                    localStorage.setItem(memberTabStorageKey, savedTab);
+                    if (legacyTab === 'tabAll') {
+                        localStorage.removeItem('kkTab');
+                    }
+                }
+            }
+            if (!savedTab) {
+                savedTab = defaultStatus;
+            }
+            if (!$('.status-tab[data-status="' + savedTab + '"]').length) {
+                savedTab = defaultStatus;
+            }
+
+            setStatusTabActive(savedTab);
+            applyStatusFilter(savedTab);
 
             // Populate zone filter options after table is loaded
             populateZoneFilter();
@@ -827,9 +856,16 @@
                 applyStatusFilter('kkmember');
                 localStorage.setItem('kkTab', 'tabKK');
             });
-            // On page load, restore last selected tab for legacy
-            var savedLegacyTab = localStorage.getItem('kkTab') || 'tabAll';
-            $('#' + savedLegacyTab).trigger('click');
+            // On page load, keep legacy tab styling in sync without overriding filters
+            const savedLegacyTab = localStorage.getItem('kkTab');
+            if (savedLegacyTab) {
+                const $legacyTab = $('#' + savedLegacyTab);
+                if ($legacyTab.length) {
+                    setActiveTab($legacyTab);
+                }
+            } else {
+                setActiveTab($('#tabAll'));
+            }
 
             // Bulk select checkboxes
             $('#selectAllRows').on('change', function() {
@@ -840,7 +876,7 @@
                     var isCurrentUser = (userId == currentUserId);
                     var isChairman = (position == 1);
                     
-                    // Only check/uncheck if it's not the current user or chairman
+                    // Only check/uncheck if it's not the current user or chairperson
                     if (!isCurrentUser && !isChairman) {
                         $(this).prop('checked', checked);
                     } else if (checked) {
@@ -851,7 +887,7 @@
                 updateBulkChangeBtn();
             });
             $(document).on('change', '.rowCheckbox', function() {
-                // Apply restrictions - don't allow selection of current user or chairman
+                // Apply restrictions - don't allow selection of current user or chairperson
                 var userId = $(this).data('user_id');
                 var position = $(this).data('position');
                 var isCurrentUser = (userId == currentUserId);
@@ -1000,7 +1036,7 @@
                                 // Set position dropdown for all users
                                 $('#modalUserType').val(String(u.position || 5));
                                 
-                                // Implement restrictions: user can't change their own position or the chairman's position
+                                // Implement restrictions: user can't change their own position or the chairperson's position
                                 let isCurrentUser = (u.id == currentUserId);
                                 let isChairman = (u.position == 1);
                                 let canEdit = !isCurrentUser && !isChairman;
@@ -1264,17 +1300,40 @@
                 allCredentials = allCredentials.concat(data.chairpersons);
             }
 
-            // Remove duplicates based on user ID and exclude KK Members (position 5)
-            const uniqueCredentials = allCredentials.filter((credential, index, self) => 
-                index === self.findIndex((c) => c.user_id === credential.user_id) &&
-                credential.position !== 5 // Exclude KK Members
-            );
+            const uniqueCredentials = [];
+            const seenIds = new Set();
+            allCredentials.forEach((credential) => {
+                if (!credential || credential.position === 5) {
+                    return;
+                }
+                const key = credential.user_id || credential.id;
+                if (!key) {
+                    return;
+                }
+                if (!seenIds.has(key)) {
+                    seenIds.add(key);
+                    uniqueCredentials.push(credential);
+                }
+            });
+
+            uniqueCredentials.sort((a, b) => {
+                const posA = parseInt(a.position, 10) || 0;
+                const posB = parseInt(b.position, 10) || 0;
+                if (posA !== posB) {
+                    return posA - posB;
+                }
+                const nameA = (a.full_name || '').toLowerCase();
+                const nameB = (b.full_name || '').toLowerCase();
+                if (nameA < nameB) return -1;
+                if (nameA > nameB) return 1;
+                return 0;
+            });
 
             if (!uniqueCredentials || uniqueCredentials.length === 0) {
                 tableBody.append(`
                     <tr>
                         <td colspan="6" class="border border-gray-300 px-4 py-8 text-center text-gray-500">
-                            No SK officials with credentials found
+                            No SK officials found for this barangay
                         </td>
                     </tr>
                 `);
@@ -1282,11 +1341,15 @@
             }
 
             uniqueCredentials.forEach(function(credential) {
-                const barangayName = getBarangayName(credential.barangay_id);
+                const barangayName = credential.barangay_name || getBarangayName(credential.barangay_id);
                 const positionText = getPositionText(credential.position);
                 
-                // Mask password if it's not temporary (i.e., if it's hashed)
-                const displayPassword = credential.is_temp_password ? credential.sk_password : '******';
+                const hasPassword = credential.has_password;
+                const isTemporary = credential.is_temp_password;
+                let displayPassword = 'Not Set';
+                if (hasPassword) {
+                    displayPassword = isTemporary ? credential.sk_password : '******';
+                }
                 
                 tableBody.append(`
                     <tr class="hover:bg-gray-50">
@@ -1294,7 +1357,7 @@
                         <td class="border border-gray-300 px-3 py-2 text-center text-xs text-gray-900">${credential.full_name}</td>
                         <td class="border border-gray-300 px-3 py-2 text-center text-xs text-gray-700">${barangayName}</td>
                         <td class="border border-gray-300 px-3 py-2 text-center text-xs text-gray-700">${positionText}</td>
-                        <td class="border border-gray-300 px-3 py-2 text-center text-xs font-mono text-gray-900 bg-gray-50">${credential.sk_username}</td>
+                        <td class="border border-gray-300 px-3 py-2 text-center text-xs font-mono text-gray-900 bg-gray-50">${credential.sk_username || 'N/A'}</td>
                         <td class="border border-gray-300 px-3 py-2 text-center text-xs font-mono text-gray-900 bg-gray-50">${displayPassword}</td>
                     </tr>
                 `);
@@ -1398,11 +1461,21 @@
                     allCredentials = allCredentials.concat(dataJson.data.chairpersons);
                 }
 
-                // Remove duplicates and exclude KK Members (position 5)
-                const uniqueCredentials = allCredentials.filter((credential, index, self) => 
-                    index === self.findIndex((c) => c.user_id === credential.user_id) &&
-                    credential.position !== 5
-                );
+                const uniqueCredentials = [];
+                const seenIds = new Set();
+                allCredentials.forEach((credential) => {
+                    if (!credential || credential.position === 5) {
+                        return;
+                    }
+                    const key = credential.user_id || credential.id;
+                    if (!key) {
+                        return;
+                    }
+                    if (!seenIds.has(key)) {
+                        seenIds.add(key);
+                        uniqueCredentials.push(credential);
+                    }
+                });
 
                 // Fetch logos
                 const logosResp = await fetch('<?= base_url('documents/logos') ?>');
@@ -1419,11 +1492,15 @@
                     irigaLogoUrl ? imageUrlToDataUrl(irigaLogoUrl) : Promise.resolve(null)
                 ]);
 
+                if (uniqueCredentials.length === 0) {
+                    throw new Error('No SK officials available for credentials export');
+                }
+
                 // Build PDF (legal, landscape)
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF('l', 'mm', 'legal');
                 const pageWidth = doc.internal.pageSize.getWidth();
-                const margin = 12.7; // 0.5 inch margins
+                const margin = 25.4; // 1 inch margins
                 let y = margin + 5;
 
                 // Header with logos
@@ -1508,10 +1585,28 @@
                 const headers = ['No.', 'User ID', 'Full Name', 'Barangay', 'Position', 'SK Username', 'SK Password'];
 
                 // Build table body
+                uniqueCredentials.sort((a, b) => {
+                    const posA = parseInt(a.position, 10) || 0;
+                    const posB = parseInt(b.position, 10) || 0;
+                    if (posA !== posB) {
+                        return posA - posB;
+                    }
+                    const nameA = (a.full_name || '').toLowerCase();
+                    const nameB = (b.full_name || '').toLowerCase();
+                    if (nameA < nameB) return -1;
+                    if (nameA > nameB) return 1;
+                    return 0;
+                });
+
                 const body = uniqueCredentials.map((credential, index) => {
                     const fullName = `${credential.first_name || ''} ${credential.middle_name || ''} ${credential.last_name || ''}`.trim();
                     const positionText = getPositionText(credential.position);
-                    const displayPassword = credential.is_temp_password ? (credential.sk_password || 'Not Set') : '******';
+                    const hasPassword = credential.has_password;
+                    const isTemporary = credential.is_temp_password;
+                    let displayPassword = 'Not Set';
+                    if (hasPassword) {
+                        displayPassword = isTemporary ? (credential.sk_password || 'Not Set') : '******';
+                    }
                     
                     return [
                         (index + 1).toString(),
@@ -1524,6 +1619,11 @@
                     ];
                 });
 
+                const tablePadding = 12; // extra spacing inside margins
+                const tableMarginLeft = Math.max(margin + tablePadding, margin);
+                const tableMarginRight = tableMarginLeft;
+                const tableWidth = Math.max(pageWidth - (tableMarginLeft + tableMarginRight), 120);
+
                 // Create table
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(6);
@@ -1531,8 +1631,8 @@
                     head: [headers],
                     body: body,
                     startY: y + 2,
-                    margin: { left: margin, right: margin },
-                    tableWidth: 'auto',
+                    margin: { left: tableMarginLeft, right: tableMarginRight },
+                    tableWidth: tableWidth,
                     styles: { 
                         fontSize: 6,
                         cellPadding: 1.2,

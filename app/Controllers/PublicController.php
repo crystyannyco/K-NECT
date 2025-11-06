@@ -26,22 +26,21 @@ class PublicController extends BaseController
             $bulletinModel = new \App\Models\BulletinModel();
             $analyticsModel = new \App\Models\AnalyticsModel();
             $systemLogoModel = new \App\Models\SystemLogoModel();
-            $analyticsModel = new \App\Models\AnalyticsModel();
-            $systemLogoModel = new \App\Models\SystemLogoModel();
-            // Limit to published + visibility public or city
+            $userModel = new \App\Models\UserModel();
+            // Limit to published + visibility public or city + featured posts only
             $posts = $bulletinModel->builder()
                 ->select('bp.id,bp.title,bp.excerpt,bp.content,bp.featured_image,bp.published_at,bp.view_count,bp.is_featured,bp.is_urgent,bc.name as category_name,bc.color as category_color,u.first_name,u.last_name')
                 ->from('bulletin_posts bp')
                 ->join('bulletin_categories bc','bc.id=bp.category_id','left')
                 ->join('user u','u.id=bp.author_id','left')
                 ->where('bp.status','published')
+                ->where('bp.is_featured', 1)
                 ->groupStart()
                     ->where('bp.visibility','public')
                     ->orWhere('bp.visibility','city')
                 ->groupEnd()
                 // Ensure we don't get duplicate rows if future joins (e.g. tags) create multiplicity
                 ->groupBy('bp.id')
-                ->orderBy('bp.is_featured','DESC')
                 ->orderBy('bp.is_urgent','DESC')
                 ->orderBy('bp.published_at','DESC')
                 ->limit(6)->get()->getResultArray();
@@ -57,6 +56,17 @@ class PublicController extends BaseController
             $topBarangays = $analyticsModel->getTopPerformingBarangays(3, 30);
             // Active SK logo (optional adornment in public ranking section)
             $skLogo = $systemLogoModel->getActiveLogoByType('sk');
+            
+            // Pederasyon officers for organizational chart (with profile pictures)
+            $pedOfficers = $userModel
+                ->select('user.id, user.first_name, user.last_name, user.ped_position, user_ext_info.profile_picture')
+                ->join('user_ext_info', 'user_ext_info.user_id = user.id', 'left')
+                ->where('user.user_type', 3)
+                ->where('user.status', 2)
+                ->whereIn('user.ped_position', [1, 2, 3, 4, 5, 6, 7])
+                ->orderBy('user.ped_position', 'ASC')
+                ->findAll();
+            
             // Fallback: if no upcoming events are found, show the most recent published events
             if (empty($events)) {
                 $events = $bulletinModel->getRecentEventsAnyDate(4, 'pederasyon', null);
@@ -129,6 +139,7 @@ class PublicController extends BaseController
             'canonicalUrl' => $canonicalUrl,
             'pageDescription' => $pageDescription,
             'skLogo' => $skLogo['file_path'] ?? null,
+            'pedOfficers' => $pedOfficers ?? [],
         ];
         return view('K-NECT/public/landing', $data);
     }

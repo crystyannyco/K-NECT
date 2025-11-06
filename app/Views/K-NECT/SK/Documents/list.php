@@ -45,21 +45,33 @@
         </nav>
 
         <!-- Header Section -->
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-2">
-                <div>
+        <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-2">
+            <div>
                 <h1 class="text-2xl font-bold text-blue-900 tracking-tight flex items-center gap-2 drop-shadow-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7V3a1 1 0 011-1h8a1 1 0 011 1v4m-2 4h2a2 2 0 012 2v7a2 2 0 01-2 2H7a2 2 0 01-2-2v-7a2 2 0 012-2h2m2 0V3" /></svg>
-                        Document Management
-                    </h1>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7V3a1 1 0 011-1h8a1 1 0 011 1v4m-2 4h2a2 2 0 012 2v7a2 2 0 01-2 2H7a2 2 0 01-2-2v-7a2 2 0 012-2h2m2 0V3" />
+                    </svg>
+                    Document Management
+                </h1>
                 <div class="text-sm text-blue-700 mt-1 font-medium opacity-80">SK Admin - All your documents, organized and searchable</div>
-                </div>
-                <?php if (in_array(session('role'), ['admin', 'super_admin'])): ?>
-            <a href="<?= base_url('admin/documents/upload') ?>" class="bg-gradient-to-r from-blue-500 to-blue-400 text-white px-6 py-2 rounded-xl font-bold shadow-lg hover:from-blue-600 hover:to-blue-500 transition-all text-base flex items-center gap-2 border-2 border-blue-200 hover:border-blue-400 focus:ring-2 focus:ring-blue-200 outline-none">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+            </div>
+            <?php if (in_array(session('role'), ['admin', 'super_admin'])): ?>
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <button onclick="openCategoryModal()" style="background: linear-gradient(to right, #22c55e, #4ade80);" class="text-white px-6 py-2.5 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all text-sm flex items-center justify-center gap-2 border-2 border-green-200 hover:border-green-400 focus:ring-2 focus:ring-green-200 outline-none whitespace-nowrap hover:opacity-90">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                    Manage Categories
+                </button>
+                <a href="<?= base_url('admin/documents/upload') ?>" style="background: linear-gradient(to right, #3b82f6, #60a5fa);" class="text-white px-6 py-2.5 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all text-sm flex items-center justify-center gap-2 border-2 border-blue-200 hover:border-blue-400 focus:ring-2 focus:ring-blue-200 outline-none whitespace-nowrap hover:opacity-90">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
                     Upload Document
                 </a>
-                <?php endif; ?>
             </div>
+            <?php endif; ?>
+        </div>
 
         <!-- Search and Filter Section -->
         <div class="bg-gradient-to-br from-blue-50/50 to-white rounded-xl shadow-sm p-6 border border-blue-100 backdrop-blur-sm">
@@ -129,62 +141,19 @@
         </div>
     </div>
 
-    <script>
-    // Toast notification function - defined early for flash messages
-    function showSuccessToast(message) {
-        // Create toast container if it doesn't exist
-        let toastContainer = document.getElementById('toastContainer');
-        if (!toastContainer) {
-            toastContainer = document.createElement('div');
-            toastContainer.id = 'toastContainer';
-            toastContainer.className = 'fixed top-4 right-4 z-50 space-y-2';
-            document.body.appendChild(toastContainer);
-        }
-        
-        // Create toast element
-        const toast = document.createElement('div');
-        toast.className = 'bg-green-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 transform translate-x-full opacity-0 transition-all duration-300 ease-out max-w-sm';
-        toast.innerHTML = `
-            <div class="flex-shrink-0">
-                <svg class="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                </svg>
-            </div>
-            <div class="flex-1">
-                <p class="font-medium text-sm">${message}</p>
-            </div>
-            <button onclick="this.parentElement.remove()" class="flex-shrink-0 text-white hover:text-green-200 transition-colors">
-                <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                </svg>
-            </button>
-        `;
-        
-        // Add to container
-        toastContainer.appendChild(toast);
-        
-        // Animate in
-        setTimeout(() => {
-            toast.classList.remove('translate-x-full', 'opacity-0');
-        }, 100);
-        
-        // Auto hide after 5 seconds
-        setTimeout(() => {
-            toast.classList.add('translate-x-full', 'opacity-0');
-            setTimeout(() => {
-                if (toast.parentElement) {
-                    toast.remove();
-                }
-            }, 300);
-        }, 5000);
-    }
-    </script>
-
     <?php if (session()->getFlashdata('success')): ?>
         <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                showSuccessToast('<?= addslashes(session()->getFlashdata('success')) ?>');
-            });
+            (function() {
+                const flagKey = 'toast_<?= time() ?>_<?= rand(1000, 9999) ?>';
+                if (window[flagKey]) {
+                    return;
+                }
+                window[flagKey] = true;
+                
+                if (typeof showSuccessToast === 'function') {
+                    showSuccessToast('<?= addslashes(session()->getFlashdata('success')) ?>');
+                }
+            })();
         </script>
     <?php endif; ?>
 
@@ -275,8 +244,11 @@
                 <?php $status = $doc['approval_status'] ?? 'pending'; ?>
                 <?php 
                 $uploaderRole = null;
+                $uploaderProfilePicture = '';
                 if (isset($doc['uploaded_by']) && isset($userRoles)) {
-                    $uploaderRole = $userRoles[strtolower(trim($doc['uploaded_by']))] ?? null;
+                    $uploaderUsername = strtolower(trim($doc['uploaded_by']));
+                    $uploaderRole = $userRoles[$uploaderUsername] ?? null;
+                    $uploaderProfilePicture = $userProfiles[$uploaderUsername] ?? '';
                 }
                 $previewUrl = base_url('admin/documents/preview/' . $doc['id']);
                 $isImage = strpos($doc['mimetype'], 'image/') === 0;
@@ -376,15 +348,26 @@
                     </div>
 
                     <div class="flex items-center gap-2 mt-1">
-                      <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-100 text-blue-700 font-bold text-sm">
-                        <?= strtoupper(substr(esc($doc['uploaded_by']), 0, 1)) ?>
-                      </span>
-                            <span class="text-gray-800 font-semibold text-base"><?= esc($doc['uploaded_by']) ?></span>
-                      <?php if ($uploaderRole): ?>
-                            <span class="ml-2 text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 uppercase font-semibold tracking-wide">
-                                <?= esc($uploaderRole) ?>
-                            </span>
+                      <?php if (!empty($uploaderProfilePicture)): ?>
+                        <?php 
+                        // Handle profile picture path - check if it already contains the full path
+                        $profilePicUrl = (strpos($uploaderProfilePicture, 'uploads/') === 0) 
+                            ? base_url($uploaderProfilePicture) 
+                            : base_url('uploads/profile_pictures/' . $uploaderProfilePicture);
+                        ?>
+                        <img src="<?= $profilePicUrl ?>" 
+                             alt="<?= esc($doc['uploaded_by']) ?>" 
+                             class="w-7 h-7 rounded-full object-cover border border-gray-200"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+                        <span class="hidden inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-100 text-blue-700 font-bold text-sm">
+                            <?= strtoupper(substr(esc($doc['uploaded_by']), 0, 1)) ?>
+                        </span>
+                      <?php else: ?>
+                        <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-100 text-blue-700 font-bold text-sm">
+                            <?= strtoupper(substr(esc($doc['uploaded_by']), 0, 1)) ?>
+                        </span>
                       <?php endif; ?>
+                            <span class="text-gray-800 font-semibold text-base"><?= esc($doc['uploaded_by']) ?></span>
                     </div>
 
                         <?php if (!empty($doc['category_name'])): ?>
@@ -699,6 +682,182 @@ document.addEventListener('DOMContentLoaded', function() {
     updateBulkUI();
 });
 </script>
+
+<!-- Category Management Modal -->
+<div id="categoryModal" class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden transform transition-all duration-300 scale-95 opacity-0" id="categoryModalContent">
+        <!-- Modal Header -->
+        <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold text-white">Category Management</h3>
+                        <p class="text-blue-100 text-sm">Organize your barangay documents with categories</p>
+                    </div>
+                </div>
+                <button onclick="closeCategoryModal()" class="text-white/80 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Info Banner -->
+        <div class="px-6 py-3 bg-blue-50 border-b border-blue-100">
+            <div class="flex items-start gap-2 text-sm text-blue-800">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>You can manage categories for your barangay. City-wide categories (purple badge) are managed by Pederasyon.</span>
+            </div>
+        </div>
+
+        <!-- Modal Content -->
+        <div class="p-6 overflow-y-auto" style="max-height: calc(90vh - 120px);">
+            <!-- Add New Category Section -->
+            <div class="bg-gray-50 rounded-xl p-5 mb-6">
+                <h4 class="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Add New Category
+                </h4>
+                <form id="addCategoryForm" class="flex gap-3">
+                    <div class="flex-1">
+                        <input type="text" id="newCategoryName" name="name" 
+                               class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm placeholder-gray-400 shadow-sm"
+                               placeholder="Enter category name (e.g., Youth Programs, Sports Events)" required>
+                    </div>
+                    <button type="submit" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Add Category
+                    </button>
+                </form>
+            </div>
+
+            <!-- Categories List Section -->
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <h4 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                        </svg>
+                        Existing Categories
+                    </h4>
+                    <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-1 rounded-full">
+                        <?= count($categories) ?> total
+                    </span>
+                </div>
+                
+                <div id="categoriesList" class="space-y-3">
+                    <?php if (empty($categories)): ?>
+                        <div class="text-center py-12 bg-gray-50 rounded-xl">
+                            <div class="mx-auto h-16 w-16 text-gray-300 mb-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-medium text-gray-900 mb-2">No categories yet</h3>
+                            <p class="text-gray-500">Create your first category to start organizing documents</p>
+                        </div>
+                    <?php else: ?>
+                        <?php 
+                        $userBarangayId = session('barangay_id');
+                        foreach ($categories as $category): 
+                            $isCityWide = empty($category['barangay_id']);
+                            $canManage = !$isCityWide && ($category['barangay_id'] == $userBarangayId);
+                            
+                            // Check if category is in use
+                            $db = \Config\Database::connect();
+                            $usage_count = $db->table('document_category')->where('category_id', $category['id'])->countAllResults();
+                        ?>
+                        <div class="group bg-white border border-gray-200 rounded-xl p-4 hover:border-blue-300 hover:shadow-md transition-all duration-200">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3 flex-1">
+                                    <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center group-hover:bg-blue-100 transition-colors flex-shrink-0">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a1.994 1.994 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <h5 class="font-medium text-gray-900 truncate"><?= esc($category['name']) ?></h5>
+                                            <?php if ($isCityWide): ?>
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded-full flex-shrink-0">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                                                    </svg>
+                                                    City-Wide
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full flex-shrink-0">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    </svg>
+                                                    Barangay
+                                                </span>
+                                            <?php endif; ?>
+                                        </div>
+                                        <p class="text-sm text-gray-500">
+                                            Category ID: #<?= $category['id'] ?>
+                                            <?php 
+                                            if ($usage_count > 0) {
+                                                echo " • Used by {$usage_count} document" . ($usage_count > 1 ? 's' : '');
+                                            } else {
+                                                echo " • Not in use";
+                                            }
+                                            ?>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2 <?= $canManage ? 'opacity-0 group-hover:opacity-100' : '' ?> transition-opacity flex-shrink-0 ml-2">
+                                    <?php if ($canManage): ?>
+                                        <button onclick="editCategory(<?= $category['id'] ?>, '<?= esc($category['name']) ?>')" 
+                                                class="bg-blue-50 text-blue-600 hover:bg-blue-100 p-2 rounded-lg transition-colors" 
+                                                title="Edit category">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                        </button>
+                                        <?php if ($usage_count > 0): ?>
+                                        <button onclick="showCategoryUsage(<?= $category['id'] ?>, '<?= esc($category['name']) ?>', <?= $usage_count ?>)" 
+                                                class="bg-orange-50 text-orange-600 hover:bg-orange-100 p-2 rounded-lg transition-colors" 
+                                                title="Category is in use - click to see details">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                            </svg>
+                                        </button>
+                                        <?php else: ?>
+                                        <button onclick="deleteCategory(<?= $category['id'] ?>)" 
+                                                class="bg-red-50 text-red-600 hover:bg-red-100 p-2 rounded-lg transition-colors" 
+                                                title="Delete category">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        <span class="text-xs text-gray-400 italic px-2">Read-only</span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Document Detail Modal (KK Style) -->
 <div id="documentModal" class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center p-6 hidden">
@@ -1264,5 +1423,248 @@ document.addEventListener('click', function(event) {
         });
     }
 });
+
+// Category Modal Functions
+function openCategoryModal() {
+    const modal = document.getElementById('categoryModal');
+    const modalContent = document.getElementById('categoryModalContent');
+    modal.classList.remove('hidden');
+    
+    // Trigger entrance animation
+    setTimeout(() => {
+        modalContent.classList.remove('scale-95', 'opacity-0');
+        modalContent.classList.add('scale-100', 'opacity-100');
+    }, 10);
+}
+
+function closeCategoryModal() {
+    const modal = document.getElementById('categoryModal');
+    const modalContent = document.getElementById('categoryModalContent');
+    
+    // Trigger exit animation
+    modalContent.classList.remove('scale-100', 'opacity-100');
+    modalContent.classList.add('scale-95', 'opacity-0');
+    
+    // Hide modal after animation
+    setTimeout(() => {
+        modal.classList.add('hidden');
+    }, 300);
+}
+
+// Close modal when clicking outside
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('categoryModal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeCategoryModal();
+            }
+        });
+    }
+    
+    // Add Category Form Handler
+    const addCategoryForm = document.getElementById('addCategoryForm');
+    if (addCategoryForm) {
+        addCategoryForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const addBtn = this.querySelector('button[type="submit"]');
+            const originalText = addBtn.innerHTML;
+            
+            // Show loading state
+            addBtn.disabled = true;
+            addBtn.innerHTML = `
+                <svg class="animate-spin h-4 w-4 text-white mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Adding...
+            `;
+            
+            fetch('<?= base_url('admin/categories/add') ?>', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                addBtn.disabled = false;
+                addBtn.innerHTML = originalText;
+                
+                if (data.success) {
+                    // Clear the form
+                    document.getElementById('newCategoryName').value = '';
+                    
+                    // Show success notification
+                    showSuccessToast('Category added successfully!');
+                    
+                    // Refresh the page to update categories
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    showErrorToast(data.message || 'Failed to add category.');
+                }
+            })
+            .catch(error => {
+                addBtn.disabled = false;
+                addBtn.innerHTML = originalText;
+                console.error('Error:', error);
+                showErrorToast('An error occurred while adding the category.');
+            });
+        });
+    }
+});
+
+function editCategory(id, name) {
+    Swal.fire({
+        title: 'Edit Category',
+        input: 'text',
+        inputLabel: 'Category Name',
+        inputValue: name,
+        inputPlaceholder: 'Enter category name',
+        showCancelButton: true,
+        confirmButtonText: 'Update',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#2563eb',
+        cancelButtonColor: '#6b7280',
+        inputValidator: (value) => {
+            if (!value || !value.trim()) {
+                return 'Category name is required!';
+            }
+            if (value.trim().length < 2) {
+                return 'Category name must be at least 2 characters!';
+            }
+        }
+    }).then((result) => {
+        if (result.isConfirmed && result.value.trim() !== name) {
+            const newName = result.value.trim();
+            
+            // Show loading
+            Swal.fire({
+                title: 'Updating...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            const formData = new FormData();
+            formData.append('name', newName);
+            
+            fetch('<?= base_url('admin/categories/edit/') ?>' + id, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccessToast('Category updated successfully!');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    showErrorToast(data.message || 'Failed to update category.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showErrorToast('An error occurred while updating the category.');
+            });
+        }
+    });
+}
+
+function showCategoryUsage(id, name, count) {
+    Swal.fire({
+        title: 'Category in Use',
+        html: `
+            <div class="text-left">
+                <p class="mb-3">The category <strong>"${name}"</strong> cannot be deleted because it is currently being used by <strong>${count}</strong> document${count > 1 ? 's' : ''}.</p>
+                <p class="text-sm text-gray-600">To delete this category, you must first:</p>
+                <ol class="text-sm text-gray-600 mt-2 ml-4 list-decimal">
+                    <li>Remove this category from all documents that use it</li>
+                    <li>Or assign those documents to a different category</li>
+                </ol>
+            </div>
+        `,
+        icon: 'info',
+        confirmButtonText: 'Got it',
+        confirmButtonColor: '#2563eb',
+        customClass: {
+            popup: 'text-left'
+        }
+    });
+}
+
+function deleteCategory(id) {
+    Swal.fire({
+        title: 'Are you sure?',
+        text: 'This category will be permanently deleted. This action cannot be undone!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Show loading
+            Swal.fire({
+                title: 'Deleting...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Use fetch with proper AJAX headers
+            const formData = new FormData();
+            formData.append('ajax_request', '1');
+            
+            <?php if (function_exists('csrf_token')): ?>
+            formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
+            <?php endif; ?>
+            
+            fetch('<?= base_url('admin/categories/delete/') ?>' + id, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccessToast('Category deleted successfully!');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: data.message,
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'An unexpected error occurred. Please try again.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            });
+        }
+    });
+}
 </script>
 

@@ -950,24 +950,30 @@
             // Calculate original counts from all data (not filtered)
             function calculateOriginalCounts() {
                 let allCount = 0, officersCount = 0, membersCount = 0;
-                
+                const officerTitles = [
+                    'President',
+                    'Vice President',
+                    'Secretary',
+                    'Treasurer',
+                    'Auditor',
+                    'Public Information Officer',
+                    'Sergeant at Arms'
+                ];
+
                 // Count all rows, not just visible ones
                 $('#myTable tbody tr').each(function() {
                     if ($(this).find('td').length > 1) { // Skip "no data" rows
-                        const position = $(this).find('td').eq(7).text().trim();
+                        const positionCell = $(this).find('td').eq(7).find('.position-cell');
+                        const position = positionCell.length
+                            ? (positionCell.attr('data-full-text') || positionCell.text().trim())
+                            : $(this).find('td').eq(7).text().trim();
+
                         allCount++;
-                        
-                        // Officers: President, VP, Secretary, Treasurer, Auditor, PIO, Sergeant
-                        if (position === 'President' || 
-                            position === 'Vice President' ||
-                            position === 'Secretary' ||
-                            position === 'Treasurer' ||
-                            position === 'Auditor' ||
-                            position === 'Public Information Officer' ||
-                            position === 'Sergeant at Arms') {
+
+                        if (officerTitles.includes(position)) {
                             officersCount++;
                         } else {
-                            membersCount++; // Member
+                            membersCount++; // Member or other label
                         }
                     }
                 });
@@ -1046,14 +1052,19 @@
                     }
                 }
                 
+                const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                 if (searchTerms.length > 0) {
-                    const regex = searchTerms.join('|');
+                    const regex = searchTerms.map(escapeRegex).join('|');
                     table.column(7).search(regex, true, false);
+                } else {
+                    table.column(7).search('', true, false);
                 }
                 
                 // Apply barangay filter using DataTable column search
                 if (barangayFilter) {
-                    table.column(2).search('^' + barangayFilter + '$', true, false);
+                    table.column(2).search('^' + escapeRegex(barangayFilter) + '$', true, false);
+                } else {
+                    table.column(2).search('', true, false);
                 }
                 
                 // Redraw table with filters applied
@@ -1198,7 +1209,7 @@
                 var userId = $(this).data('id');
                 
                 // Show loading state
-                $('#userDetailModal').removeClass('hidden');
+                $('#userDetailModal').removeClass('hidden').css('display', 'flex');
                 $('#modalUserFullName').text('Loading...');
                 
                 $.ajax({
@@ -1234,7 +1245,8 @@
                             $('#modalUserId').data('db-id', u.id);
                             $('#modalUserAge').text(u.age + ' years old');
                             $('#modalUserSex').text(u.sex == '1' ? 'Male' : (u.sex == '2' ? 'Female' : ''));
-                            $('#modalOfficerPosition').val(String(u.ped_position || 0));
+                            const pedPositionValue = (u.ped_position === null || u.ped_position === undefined) ? 'NULL' : String(u.ped_position);
+                            $('#modalOfficerPosition').val(pedPositionValue);
                             
                             // Mark occupied positions in grey
                             updateOccupiedPositions(u.id);
@@ -1346,7 +1358,7 @@
                             }
                         } else {
                             showNotification('Officer not found.', 'error');
-                            $('#userDetailModal').addClass('hidden');
+                            $('#userDetailModal').addClass('hidden').css('display', 'none');
                         }
                     },
                     error: function(xhr, status, error) {
@@ -1356,20 +1368,20 @@
                             errorMessage = xhr.responseJSON.message;
                         }
                         showNotification(errorMessage, 'error');
-                        $('#userDetailModal').addClass('hidden');
+                        $('#userDetailModal').addClass('hidden').css('display', 'none');
                     }
                 });
             });
 
             // Close modal functionality
             $('#closeUserDetailModal').on('click', function() {
-                $('#userDetailModal').addClass('hidden');
+                $('#userDetailModal').addClass('hidden').css('display', 'none');
             });
 
             // Close modal when clicking outside
             $('#userDetailModal').on('click', function(e) {
                 if (e.target === this) {
-                    $('#userDetailModal').addClass('hidden');
+                    $('#userDetailModal').addClass('hidden').css('display', 'none');
                 }
             });
 
@@ -1389,39 +1401,27 @@
 
             // Confirm position change
             $('#confirmRoleChangeBtn').on('click', function() {
+                const button = $(this);
                 const dbId = pendingPositionChange.dbId;
                 const newPosition = pendingPositionChange.newPosition;
-                
-                // Validate that we have a database ID
+
                 if (!dbId) {
                     showNotification('Error: Unable to identify user. Please try again.', 'error');
                     $('#roleChangeModal').addClass('hidden').css('display', 'none');
-                    $('#userDetailModal').addClass('hidden');
+                    $('#userDetailModal').addClass('hidden').css('display', 'none');
                     return;
                 }
-                
-                // Show loading state
-                $(this).prop('disabled', true).text('Updating...');
-                
-                // Find the user row to get the database ID
-                const userRow = $(`tr[data-ped_username]`).filter(function() {
-                    return $(this).find('td').eq(1).text().trim() === userId;
-                });
-                
-                const dbId = userRow.find('.rowCheckbox').val();
-                
-                // Handle "NULL" string for SK Pederasyon Member position
-                let pedPositionValue;
-                if (newPosition === 'NULL') {
-                    pedPositionValue = 'NULL';
-                } else {
-                    pedPositionValue = parseInt(newPosition, 10);
-                }
-                
+
+                button.prop('disabled', true).text('Updating...');
+
+                const pedPositionValue = newPosition === 'NULL'
+                    ? 'NULL'
+                    : parseInt(newPosition, 10);
+
                 $.ajax({
                     url: '<?= base_url('updateOfficerPosition') ?>',
                     method: 'POST',
-                    data: { user_id: dbId || userId, ped_position: pedPositionValue },
+                    data: { user_id: dbId, ped_position: pedPositionValue },
                     dataType: 'json',
                     success: function(response) {
                         if (response.success) {
@@ -1442,33 +1442,16 @@
                         showNotification(errorMessage, 'error');
                     },
                     complete: function() {
-                        $('#confirmRoleChangeBtn').prop('disabled', false).text('Confirm');
-                        // Close both modals
+                        button.prop('disabled', false).text('Confirm');
                         $('#roleChangeModal').addClass('hidden').css('display', 'none');
-                        $('#userDetailModal').addClass('hidden');
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            showNotification(response.message, 'success');
-                            
-                            // Reload the page to reflect changes and check for officer warning
-                            setTimeout(function() {
-                                location.reload();
-                            }, 1000);
-                        } else {
-                            showNotification(response.message || 'Failed to update position', 'error');
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        showNotification('Error: ' + error, 'error');
+                        $('#userDetailModal').addClass('hidden').css('display', 'none');
                     }
                 });
             });
 
             // Cancel position change
             $('#cancelRoleChangeBtn').on('click', function() {
-                $('#roleChangeModal').addClass('hidden');
-                $('#roleChangeModal').css('display', 'none');
+                $('#roleChangeModal').addClass('hidden').css('display', 'none');
             });
 
             // Prevent modal from closing when clicking inside the modal content
@@ -1804,7 +1787,41 @@
                     return 'PNG';
                 };
 
-                // Add logos if available
+                // Helper function to draw page header (logos + government header)
+                const drawPageHeader = (data) => {
+                    const pageWidth = doc.internal.pageSize.getWidth();
+                    const centerX = pageWidth / 2;
+                    let y = 20;
+                    const logoSize = 25;
+                    
+                    // Add logos if available
+                    if (pederasyonLogoDataUrl) {
+                        doc.addImage(pederasyonLogoDataUrl, getImgFmt(pederasyonLogoDataUrl), 40, 15, logoSize, logoSize, undefined, 'FAST');
+                    }
+                    if (irigaLogoDataUrl) {
+                        doc.addImage(irigaLogoDataUrl, getImgFmt(irigaLogoDataUrl), 232, 15, logoSize, logoSize, undefined, 'FAST');
+                    }
+                    
+                    // Header text (centered)
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(12);
+                    doc.text("REPUBLIC OF THE PHILIPPINES", centerX, 20, { align: 'center' });
+                    doc.text("PROVINCE OF CAMARINES SUR", centerX, 25, { align: 'center' });
+                    doc.text("CITY OF IRIGA", centerX, 30, { align: 'center' });
+                    
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(10);
+                    doc.text("PANLUNGSOD NA PEDERASYON NG MGA", centerX, 35, { align: 'center' });
+                    doc.text("SANGGUNIANG KABATAAN", centerX, 39, { align: 'center' });
+                    
+                    // Title
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(12);
+                    doc.text("PANLUNGSOD NA PEDERASYON NG MGA SANGGUNIANG KABATAAN", centerX, 55, { align: 'center' });
+                    doc.text("OFFICIALS CREDENTIALS", centerX, 60, { align: 'center' });
+                };
+
+                // Initial page setup
                 const logoSize = 25;
                 if (pederasyonLogoDataUrl) {
                     doc.addImage(pederasyonLogoDataUrl, getImgFmt(pederasyonLogoDataUrl), 40, 15, logoSize, logoSize, undefined, 'FAST');
@@ -1861,7 +1878,7 @@
                     ];
                 });
                 
-                // Add Pederasyon Officials table with simple styling
+                // Add Pederasyon Officials table with page break handling
                 doc.autoTable({
                     head: [['User ID', 'Full Name', 'Barangay', 'Position', 'Username', 'Password']],
                     body: pedTableData,
@@ -1898,7 +1915,15 @@
                     theme: 'striped',
                     alternateRowStyles: {
                         fillColor: [245, 245, 245]
-                    }
+                    },
+                    // Add page break handling with header repetition
+                    didDrawPage: function(data) {
+                        // Draw header on every page after the first
+                        if (data.pageNumber > 1) {
+                            drawPageHeader(data);
+                        }
+                    },
+                    showHead: 'everyPage' // Ensure table headers repeat on each page
                 });
                 
                 // Get Pederasyon President and Secretary names
@@ -1916,30 +1941,67 @@
                     }
                 });
                 
-                // Add signature section
+                // Add signature section - always on final page
                 const finalY = doc.lastAutoTable.finalY + 15;
-                const signatureSpacing = 60;
-                const leftSignatureX = centerX - signatureSpacing;
-                const rightSignatureX = centerX + signatureSpacing;
+                const pageHeight = doc.internal.pageSize.getHeight();
+                const bottomMargin = 20;
+                const signatureHeight = 35;
                 
-                doc.setFont("helvetica", "normal");
-                doc.setFontSize(9);
-                
-                // Left signature (Prepared by - Secretary)
-                doc.text('Prepared by:', leftSignatureX, finalY, { align: 'center' });
-                doc.text('_________________________', leftSignatureX, finalY + 18, { align: 'center' });
-                doc.setFont("helvetica", "bold");
-                doc.text(secretaryName || '_________________________', leftSignatureX, finalY + 23, { align: 'center' });
-                doc.setFont("helvetica", "normal");
-                doc.text('Secretary', leftSignatureX, finalY + 28, { align: 'center' });
-                
-                // Right signature (Approved by - President)
-                doc.text('Approved by:', rightSignatureX, finalY, { align: 'center' });
-                doc.text('_________________________', rightSignatureX, finalY + 18, { align: 'center' });
-                doc.setFont("helvetica", "bold");
-                doc.text(presidentName || '_________________________', rightSignatureX, finalY + 23, { align: 'center' });
-                doc.setFont("helvetica", "normal");
-                doc.text('President', rightSignatureX, finalY + 28, { align: 'center' });
+                // Check if signature will fit on current page, if not add new page
+                if (finalY + signatureHeight > pageHeight - bottomMargin) {
+                    doc.addPage();
+                    // Draw header on new page for signatures
+                    drawPageHeader();
+                    
+                    // Position signatures at top of new page
+                    const newPageY = 75;
+                    const signatureSpacing = 60;
+                    const leftSignatureX = centerX - signatureSpacing;
+                    const rightSignatureX = centerX + signatureSpacing;
+                    
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(9);
+                    
+                    // Left signature (Prepared by - Secretary)
+                    doc.text('Prepared by:', leftSignatureX, newPageY, { align: 'center' });
+                    doc.text('_________________________', leftSignatureX, newPageY + 18, { align: 'center' });
+                    doc.setFont("helvetica", "bold");
+                    doc.text(secretaryName || '_________________________', leftSignatureX, newPageY + 23, { align: 'center' });
+                    doc.setFont("helvetica", "normal");
+                    doc.text('Secretary', leftSignatureX, newPageY + 28, { align: 'center' });
+                    
+                    // Right signature (Approved by - President)
+                    doc.text('Approved by:', rightSignatureX, newPageY, { align: 'center' });
+                    doc.text('_________________________', rightSignatureX, newPageY + 18, { align: 'center' });
+                    doc.setFont("helvetica", "bold");
+                    doc.text(presidentName || '_________________________', rightSignatureX, newPageY + 23, { align: 'center' });
+                    doc.setFont("helvetica", "normal");
+                    doc.text('President', rightSignatureX, newPageY + 28, { align: 'center' });
+                } else {
+                    // Signature fits on current page
+                    const signatureSpacing = 60;
+                    const leftSignatureX = centerX - signatureSpacing;
+                    const rightSignatureX = centerX + signatureSpacing;
+                    
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(9);
+                    
+                    // Left signature (Prepared by - Secretary)
+                    doc.text('Prepared by:', leftSignatureX, finalY, { align: 'center' });
+                    doc.text('_________________________', leftSignatureX, finalY + 18, { align: 'center' });
+                    doc.setFont("helvetica", "bold");
+                    doc.text(secretaryName || '_________________________', leftSignatureX, finalY + 23, { align: 'center' });
+                    doc.setFont("helvetica", "normal");
+                    doc.text('Secretary', leftSignatureX, finalY + 28, { align: 'center' });
+                    
+                    // Right signature (Approved by - President)
+                    doc.text('Approved by:', rightSignatureX, finalY, { align: 'center' });
+                    doc.text('_________________________', rightSignatureX, finalY + 18, { align: 'center' });
+                    doc.setFont("helvetica", "bold");
+                    doc.text(presidentName || '_________________________', rightSignatureX, finalY + 23, { align: 'center' });
+                    doc.setFont("helvetica", "normal");
+                    doc.text('President', rightSignatureX, finalY + 28, { align: 'center' });
+                }
                 
                 // Save the PDF
                 const fileName = 'Pederasyon_Officials_Credentials_' + new Date().toISOString().slice(0, 19).replace(/:/g, '-') + '.pdf';
@@ -2091,16 +2153,21 @@
                 setTimeout(() => { button.innerHTML = originalHTML; button.disabled = false; }, 500);
             }, 100);
         }
-        
-        // Close official list modal
+
+        // Close official list modal and reset state for next open
         function closeOfficialListModal() {
             const modal = document.getElementById('officialListModal');
             if (!modal) return;
             modal.classList.add('hidden');
             modal.style.display = 'none';
+
+            const loading = document.getElementById('officialListLoading');
+            const content = document.getElementById('officialListContent');
+            if (loading) loading.classList.remove('hidden');
+            if (content) content.classList.add('hidden');
         }
         
-        // Helper to format names as: First Middle Last
+        // Helper to format full name consistently across views
         function formatFullNameFromUser(user) {
             if (!user) return '';
             const parts = [];
@@ -2109,7 +2176,7 @@
             if (user.last_name) parts.push(String(user.last_name).trim());
             return parts.join(' ').replace(/\s+/g, ' ').trim();
         }
-        
+
         // Load official list (from officers table on this page)
         function loadOfficialList() {
             const loading = document.getElementById('officialListLoading');
@@ -2250,15 +2317,12 @@
 
                 // Update UI
                 const noOfficialsEl = document.getElementById('noOfficials');
-                const signatureEl = document.getElementById('signatureSection');
                 const countEl = document.getElementById('officialListCount');
                 if (officials.length > 0) {
                     displayOfficialList(officials);
                     if (noOfficialsEl) noOfficialsEl.classList.add('hidden');
-                    if (signatureEl) signatureEl.classList.remove('hidden');
                 } else {
                     if (noOfficialsEl) noOfficialsEl.classList.remove('hidden');
-                    if (signatureEl) signatureEl.classList.add('hidden');
                     document.getElementById('officialListTableBody').innerHTML = '';
                 }
                 if (countEl) countEl.textContent = `Total Officials: ${officials.length}`;
@@ -2275,8 +2339,6 @@
                 if (tbody) tbody.innerHTML = '';
                 const noOfficialsEl = document.getElementById('noOfficials');
                 if (noOfficialsEl) noOfficialsEl.classList.remove('hidden');
-                const signatureEl = document.getElementById('signatureSection');
-                if (signatureEl) signatureEl.classList.add('hidden');
                 const countEl = document.getElementById('officialListCount');
                 if (countEl) countEl.textContent = 'Total Officials: 0';
             } finally {
@@ -2309,8 +2371,6 @@
                 tbody.appendChild(row);
             });
             loadBarangayLogo();
-            if (window.pederasyonSecretary) document.getElementById('secretarySignature').textContent = window.pederasyonSecretary;
-            if (window.pederasyonPresident) document.getElementById('presidentSignature').textContent = window.pederasyonPresident;
         }
         
         // Load logos for header
@@ -2330,40 +2390,6 @@
                     }
                 })
                 .catch(() => {});
-        }
-        
-        // Print official list
-        function printOfficialList() {
-            const button = event.target;
-            const originalHTML = button.innerHTML;
-            button.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Preparing Print...';
-            button.disabled = true;
-            const officialsCount = document.getElementById('officialListTableBody').children.length;
-            if (officialsCount === 0) {
-                showNotification('No officials to print.', 'error');
-                button.innerHTML = originalHTML;
-                button.disabled = false;
-                return;
-            }
-            const printContent = document.getElementById('downloadOfficialContent').cloneNode(true);
-            const originalContent = document.body.innerHTML;
-            const styles = `
-                <style>
-                    @page { size: A4 landscape; margin: 0.5in; }
-                    body { font-family: Arial, sans-serif !important; margin:0; padding:20px; -webkit-print-color-adjust: exact; color-adjust: exact; }
-                    table { width:100% !important; border-collapse: collapse !important; font-size: 8px !important; }
-                    th, td { border: 1px solid #d1d5db !important; padding: 4px !important; text-align: center !important; font-size: 8px !important; }
-                    th { background-color: #f9fafb !important; font-weight: 600 !important; }
-                    tbody tr:nth-child(even) { background-color: #f9fafb !important; }
-                    tbody tr:nth-child(odd) { background-color: #ffffff !important; }
-                    .hidden { display: none !important; }
-                </style>`;
-            document.body.innerHTML = styles + printContent.outerHTML;
-            window.print();
-            document.body.innerHTML = originalContent;
-            button.innerHTML = originalHTML;
-            button.disabled = false;
-            setTimeout(() => { location.reload(); }, 100);
         }
         
         // Download PDF (client-side)
@@ -2476,6 +2502,9 @@
                     doc.text('OFFICIAL LIST', pageCenter, headerTop + 45, { align: 'center' });
                 };
 
+                // Draw initial header
+                drawHeader();
+
                 const headers = ['User ID', 'Barangay', 'Name', 'Age', 'Birthday', 'Sex', 'Position'];
                 const tableData = [];
                 $('#officialListTableBody tr').each(function() {
@@ -2526,9 +2555,13 @@
                     },
                     tableWidth: tableWidth,
                     theme: 'grid',
-                    didDrawPage: () => {
-                        drawHeader();
-                    }
+                    didDrawPage: (data) => {
+                        // Draw header on every page after the first
+                        if (data.pageNumber > 1) {
+                            drawHeader();
+                        }
+                    },
+                    showHead: 'everyPage' // Ensure table headers repeat on each page
                 });
 
                 const totalPages = doc.internal.getNumberOfPages();
@@ -3000,7 +3033,7 @@
             <div class="bg-white border-b border-gray-200 px-6 py-4">
                 <div class="flex justify-between items-center">
                     <div>
-                        <h3 class="text-xl font-bold text-gray-900">SK Pederasyon Official List</h3>
+                        <h3 class="text-xl font-bold text-gray-900">SK Pederasyon Official</h3>
                         <p class="text-sm text-gray-600 mt-1">Panlungsod na Pederasyon ng mga Sangguniang Kabataan Officials</p>
                     </div>
                     <button onclick="closeOfficialListModal()" class="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors p-1">
@@ -3023,42 +3056,14 @@
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                         <!-- Download Format Content -->
                         <div id="downloadOfficialContent" class="bg-white">
-                            <!-- Header Section -->
-                            <div class="text-center mb-6 print:mb-4" style="font-family: Arial, sans-serif;">
-                                <!-- Document Header with Logos -->
-                                <div class="flex items-center justify-center mb-4">
-                                    <!-- Pederasyon Logo (Left) -->
-                                    <div class="flex-shrink-0 mr-8">
-                                        <div id="official-list-pederasyon-logo" class="w-16 h-16 rounded flex items-center justify-center">
-                                            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                            </svg>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Center Text -->
-                                    <div class="text-center">
-                                        <h2 style="font-size: 12pt; font-weight: bold; color: black; margin: 0; line-height: 1.2;">REPUBLIC OF THE PHILIPPINES</h2>
-                                        <h3 style="font-size: 12pt; font-weight: bold; color: black; margin: 0; line-height: 1.2;">PROVINCE OF CAMARINES SUR</h3>
-                                        <h3 style="font-size: 12pt; font-weight: bold; color: black; margin: 0; line-height: 1.2;">CITY OF IRIGA</h3>
-                                        <h4 style="font-size: 9pt; font-weight: normal; color: black; margin: 0; line-height: 1.2;">PANLUNGSOD NA PEDERASYON NG MGA</h4>
-                                        <h4 style="font-size: 9pt; font-weight: normal; color: black; margin: 0; line-height: 1.2;">SANGGUNIANG KABATAAN NG IRIGA</h4>
-                                    </div>
-                                    
-                                    <!-- Iriga City Logo (Right) -->
-                                    <div class="flex-shrink-0 ml-8">
-                                        <div id="official-list-iriga-logo" class="w-16 h-16 rounded flex items-center justify-center">
-                                            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                            </svg>
-                                        </div>
-                                    </div>
+                            <div class="mb-4">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                                    </svg>
+                                    <h4 class="text-lg font-semibold text-gray-900">SK Pederasyon Officials List</h4>
                                 </div>
-                                
-                                <hr class="border-gray-300 mb-4">
-                                
-                                <h2 style="font-size: 12pt; font-weight: bold; color: black; margin: 16px 0 24px 0; font-family: Arial, sans-serif;">PANLUNGSOD NA PEDERASYON NG MGA KABATAAN</h2>
-                                <h3 style="font-size: 10pt; font-weight: bold; color: black; margin: 8px 0 16px 0; font-family: Arial, sans-serif;">OFFICIAL LIST</h3>
+                                <p class="text-sm text-gray-600">Official list of Pederasyon officers — elected SK Chairpersons and designated Pederasyon officers from all barangays for official records and distribution.</p>
                             </div>
 
                             <!-- Table -->
@@ -3091,31 +3096,7 @@
                                     <p class="text-sm text-gray-500">No officials are currently registered in the system.</p>
                                 </div>
 
-                                <!-- Signature Section -->
-                                <div id="signatureSection" class="mt-8 print:mt-6" style="font-family: Arial, sans-serif;">
-                            <!-- Signature Section -->
-                            <div class="mt-8 print:mt-6" style="font-family: Arial, sans-serif;">
-                                <div class="flex justify-center items-end">
-                                    <div class="flex justify-between items-end" style="width: 80%; max-width: 600px;">
-                                        <div class="text-center">
-                                            <p style="font-size: 9pt; margin-bottom: 48px; color: black;">Prepared by:</p>
-                                            <div class="border-b border-black w-48 mb-2"></div>
-                                            <p id="secretarySignature" style="font-size: 9pt; font-weight: bold; color: black; margin: 0;">________________</p>
-                                            <p style="font-size: 9pt; font-weight: bold; color: black; margin: 0;">Pederasyon Secretary</p>
-                                        </div>
-                                        <div class="text-center">
-                                            <p style="font-size: 9pt; margin-bottom: 48px; color: black;">Approved by:</p>
-                                            <div class="border-b border-black w-48 mb-2"></div>
-                                            <p id="presidentSignature" style="font-size: 9pt; font-weight: bold; color: black; margin: 0;">________________</p>
-                                            <p style="font-size: 9pt; font-weight: bold; color: black; margin: 0;">Pederasyon President</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
-
-                    
                 </div>
             </div>
 
@@ -3126,12 +3107,6 @@
                     <div class="flex gap-2">
                         <button onclick="closeOfficialListModal()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200">
                             Close
-                        </button>
-                        <button onclick="printOfficialList()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 shadow-sm">
-                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
-                            </svg>
-                            Print
                         </button>
                         <button onclick="downloadOfficialListPDF()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors duration-200 shadow-sm">
                             <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

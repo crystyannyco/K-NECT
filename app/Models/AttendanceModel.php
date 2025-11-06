@@ -163,7 +163,7 @@ class AttendanceModel extends Model
     }
 
     /**
-     * Check if user has already checked out for a specific session
+     * Check if user has already Time Out for a specific session
      */
     public function hasUserCheckedOut($userId, $eventId, $session)
     {
@@ -191,7 +191,7 @@ class AttendanceModel extends Model
     }
 
     /**
-     * Auto-timeout all users who haven't checked out for a session
+     * Auto-timeout all users who haven't Time Out for a session
      */
     public function autoTimeoutUsersForSession($eventId, $session)
     {

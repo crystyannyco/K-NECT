@@ -303,35 +303,66 @@ class DocumentModel extends Model
     // =====================================
 
     /**
-     * Get all categories
+     * Get all categories (optionally filtered by barangay)
+     * @param int|null $barangayId - Filter by barangay ID, null for city-wide only
+     * @param bool $includeCityWide - Include city-wide categories (barangay_id IS NULL)
      */
-    public function getCategories()
+    public function getCategories($barangayId = null, $includeCityWide = true)
     {
-        return $this->db->table('categories')
-            ->orderBy('name', 'ASC')
-            ->get()->getResultArray();
+        $builder = $this->db->table('categories');
+        
+        if ($barangayId !== null) {
+            // Get barangay-specific categories
+            $builder->groupStart();
+            $builder->where('barangay_id', $barangayId);
+            
+            // Optionally include city-wide categories
+            if ($includeCityWide) {
+                $builder->orWhere('barangay_id', null);
+            }
+            $builder->groupEnd();
+        } else {
+            // Get only city-wide categories (Pederasyon)
+            $builder->where('barangay_id', null);
+        }
+        
+        return $builder->orderBy('name', 'ASC')->get()->getResultArray();
     }
 
     /**
-     * Get categories with document count
+     * Get categories with document count (optionally filtered by barangay)
      */
-    public function getCategoriesWithDocumentCount()
+    public function getCategoriesWithDocumentCount($barangayId = null, $includeCityWide = true)
     {
-        return $this->db->table('categories')
+        $builder = $this->db->table('categories')
             ->select('categories.*, COUNT(document_category.document_id) as document_count')
             ->join('document_category', 'document_category.category_id = categories.id', 'left')
-            ->groupBy('categories.id')
-            ->orderBy('categories.name', 'ASC')
-            ->get()->getResultArray();
+            ->groupBy('categories.id');
+        
+        if ($barangayId !== null) {
+            $builder->groupStart();
+            $builder->where('categories.barangay_id', $barangayId);
+            if ($includeCityWide) {
+                $builder->orWhere('categories.barangay_id', null);
+            }
+            $builder->groupEnd();
+        } else {
+            $builder->where('categories.barangay_id', null);
+        }
+        
+        return $builder->orderBy('categories.name', 'ASC')->get()->getResultArray();
     }
 
     /**
      * Create a new category
+     * @param string $name - Category name
+     * @param int|null $barangayId - Barangay ID (null for city-wide)
      */
-    public function createCategory($name)
+    public function createCategory($name, $barangayId = null)
     {
         return $this->db->table('categories')->insert([
             'name' => $name,
+            'barangay_id' => $barangayId,
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s')
         ]);
@@ -358,6 +389,32 @@ class DocumentModel extends Model
         return $this->db->table('categories')
             ->where('id', $categoryId)
             ->delete();
+    }
+    
+    /**
+     * Check if user can manage category (based on barangay)
+     */
+    public function canManageCategory($categoryId, $userBarangayId = null, $userType = null)
+    {
+        $category = $this->db->table('categories')
+            ->where('id', $categoryId)
+            ->get()->getRowArray();
+        
+        if (!$category) {
+            return false;
+        }
+        
+        // Pederasyon can manage city-wide categories only
+        if ($userType === 'pederasyon' || $userType === 'super_admin') {
+            return $category['barangay_id'] === null;
+        }
+        
+        // SK can manage their barangay categories only
+        if ($userType === 'sk' || $userType === 'admin') {
+            return $category['barangay_id'] == $userBarangayId;
+        }
+        
+        return false;
     }
 
     /**
@@ -502,30 +559,59 @@ class DocumentModel extends Model
         if (empty($usernames)) {
             return [];
         }
-        $users = $this->db->table('user')
-            ->select('username, user_type')
-            ->whereIn('username', $usernames)
-            ->get()->getResultArray();
         
-        // Map user_type to role for consistency with authentication system
-        foreach ($users as &$user) {
-            switch ($user['user_type']) {
-                case 1:
-                    $user['role'] = 'user'; // KK users
-                    break;
-                case 2:
-                    $user['role'] = 'admin'; // SK users
-                    break;
-                case 3:
-                    $user['role'] = 'super_admin'; // Pederasyon users
-                    break;
-                default:
-                    $user['role'] = 'user'; // Default fallback
-                    break;
+        // Query needs to check username, sk_username, and ped_username columns
+        $users = $this->db->table('user')
+            ->select('user.id, user.username, user.sk_username, user.ped_username, user.user_type, user_ext_info.profile_picture')
+            ->join('user_ext_info', 'user_ext_info.user_id = user.id', 'left')
+            ->groupStart()
+                ->whereIn('user.username', $usernames)
+                ->orWhereIn('user.sk_username', $usernames)
+                ->orWhereIn('user.ped_username', $usernames)
+            ->groupEnd()
+            ->get()
+            ->getResultArray();
+        
+        // Map each user to their actual username used in uploaded_by field
+        $mappedUsers = [];
+        foreach ($users as $user) {
+            // Determine which username field matches the uploaded_by value
+            foreach ($usernames as $searchUsername) {
+                $matchedUsername = null;
+                if (strtolower(trim($user['username'])) === strtolower(trim($searchUsername))) {
+                    $matchedUsername = $user['username'];
+                } elseif (!empty($user['sk_username']) && strtolower(trim($user['sk_username'])) === strtolower(trim($searchUsername))) {
+                    $matchedUsername = $user['sk_username'];
+                } elseif (!empty($user['ped_username']) && strtolower(trim($user['ped_username'])) === strtolower(trim($searchUsername))) {
+                    $matchedUsername = $user['ped_username'];
+                }
+                
+                if ($matchedUsername) {
+                    // Map user_type to role for consistency with authentication system
+                    $role = 'user'; // Default fallback
+                    switch ($user['user_type']) {
+                        case 1:
+                            $role = 'user'; // KK users
+                            break;
+                        case 2:
+                            $role = 'admin'; // SK users
+                            break;
+                        case 3:
+                            $role = 'super_admin'; // Pederasyon users
+                            break;
+                    }
+                    
+                    $mappedUsers[] = [
+                        'username' => $matchedUsername,
+                        'user_type' => $user['user_type'],
+                        'role' => $role,
+                        'profile_picture' => $user['profile_picture'] ?? ''
+                    ];
+                }
             }
         }
         
-        return $users;
+        return $mappedUsers;
     }
 
     /**

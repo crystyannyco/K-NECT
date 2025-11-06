@@ -113,12 +113,12 @@ class DocumentController extends BaseController
                               ->orderBy('created_at', 'DESC')
                               ->findAll();
         } else {
-            // SK users see barangay-specific logos + global Iriga logos
+            // SK users see barangay-specific logos + global Iriga logos + Pederasyon logo
             $logos = $logoModel->where('is_active', true)
                               ->groupStart()
                                   ->groupStart()
-                                      ->where('logo_type', 'iriga_city')
-                                      ->where('barangay_id IS NULL') // Global Iriga logos
+                                      ->whereIn('logo_type', ['iriga_city', 'pederasyon'])
+                                      ->where('barangay_id IS NULL') // Global Iriga and Pederasyon logos
                                   ->groupEnd()
                                   ->orGroupStart()
                                       ->whereIn('logo_type', ['barangay', 'sk'])

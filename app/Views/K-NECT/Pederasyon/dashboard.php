@@ -32,7 +32,7 @@ if (!function_exists('ped_resolve_image')) {
     <main class="flex-1 overflow-auto px-6 pb-10 pt-6 bg-gray-50">
         <!-- Welcome Card (SK-style) -->
         <div class="mb-6">
-            <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 border-l-4 border-blue-600 relative overflow-hidden">
+            <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 relative overflow-hidden" style="border-left: 4px solid #2563eb;">
                 <div class="flex items-start justify-between gap-4">
                     <div class="space-y-1">
                         <h1 class="text-xl font-bold leading-snug">Welcome back, <?= esc($username ?? 'User') ?>!</h1>

@@ -1,3 +1,6 @@
+<?php
+    $countSummary = $count_summary ?? ['all' => 0, 'sk' => 0, 'kk' => 0];
+?>
 <style>
         /* Clean Color Palette: Blue (#3b82f6), Gray (#6b7280), Dark Gray (#374151), White (#ffffff) */
         table.dataTable thead th {
@@ -236,7 +239,7 @@
                                 <svg class="w-3 h-3 text-gray-400 mx-2" fill="none" viewBox="0 0 6 10">
                                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
                                 </svg>
-                                <span class="text-sm font-medium text-gray-600">SK Chairman</span>
+                                <span class="text-sm font-medium text-gray-600">SK Chairperson</span>
                             </div>
                         </li>
                     </ol>
@@ -245,7 +248,7 @@
                 <!-- Header Section -->
                 <div class="mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                     <div>
-                        <h3 class="text-2xl font-bold text-gray-900">SK Chairman</h3>
+                        <h3 class="text-2xl font-bold text-gray-900">SK Chairperson</h3>
                         <p class="text-sm text-gray-600 mt-1">Manage user types and credentials</p>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-3">
@@ -271,13 +274,13 @@
                             <!-- Role Status Tabs -->
                             <div class="flex flex-wrap gap-2">
                                 <button class="status-tab bg-gray-100 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="all">
-                                    All (<span id="countAll">0</span>)
+                                    All (<span id="countAll"><?= esc($countSummary['all'] ?? 0) ?></span>)
                                 </button>
                                 <button class="status-tab active bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="sk">
-                                    SK Chairperson (<span id="countSK">0</span>)
+                                    SK Chairperson (<span id="countSK"><?= esc($countSummary['sk'] ?? 0) ?></span>)
                                 </button>
                                 <button class="status-tab bg-red-100 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-role="kk">
-                                    KK Member (<span id="countKK">0</span>)
+                                    KK Member (<span id="countKK"><?= esc($countSummary['kk'] ?? 0) ?></span>)
                                 </button>
                             </div>
                             
@@ -689,7 +692,21 @@
     <script>
         // Barangay mapping from PHP
         const barangayMap = <?= json_encode(BarangayHelper::getBarangayMap()) ?>;
-        
+        // Snapshot of youth records for client-side utilities (keeps modals independent of table filters)
+        const youthUserList = <?= json_encode($user_list ?? []) ?>;
+
+        function escapeHtml(value) {
+            if (value === null || value === undefined) {
+                return '';
+            }
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         // Helper function to get barangay name
         function getBarangayName(barangayId) {
             return barangayMap[barangayId] || barangayId || '';
@@ -781,14 +798,61 @@
             });
         }
 
+        function isHashedSkPassword(password) {
+            if (!password) return false;
+            const value = String(password);
+            return value.startsWith('$2y$') || value.startsWith('$2b$') || value.startsWith('$argon2') || value.length > 40;
+        }
+
+        function formatSkPasswordForDisplay(password) {
+            if (!password) return 'Not generated';
+            return isHashedSkPassword(password) ? '********' : String(password);
+        }
+
+        function pedSanitizePasswordForDataAttr(password) {
+            if (!password) return '';
+            return isHashedSkPassword(password) ? '******' : String(password);
+        }
+
+        function pedComputeStatusBadge(status) {
+            const resolved = parseInt(status, 10);
+            if (resolved === 2) {
+                return { text: 'Approved', className: 'bg-green-100 text-green-800' };
+            }
+            if (resolved === 3) {
+                return { text: 'Rejected', className: 'bg-red-100 text-red-800' };
+            }
+            return { text: 'Pending', className: 'bg-yellow-100 text-yellow-800' };
+        }
+
+        function pedRenderStatusCellHtml(status) {
+            const meta = pedComputeStatusBadge(status);
+            return `<span class="px-2 py-1 rounded-full text-sm font-medium ${meta.className}">${meta.text}</span>`;
+        }
+
+        function pedResolveUserTypeLabel(userType) {
+            const resolved = parseInt(userType, 10);
+            if (resolved === 2 || resolved === 3) return 'SK Chairperson';
+            if (resolved === 1) return 'KK Member';
+            return 'Unknown';
+        }
+
         // Store original counts globally
-        let originalCounts = {
-            all: 0,
-            sk: 0,
-            kk: 0
-        };
+        let originalCounts = <?php
+            $initialCounts = [
+                'all' => (int) ($countSummary['all'] ?? 0),
+                'sk' => (int) ($countSummary['sk'] ?? 0),
+                'kk' => (int) ($countSummary['kk'] ?? 0),
+                'approved' => 0,
+                'pending' => 0,
+                'rejected' => 0,
+            ];
+            echo json_encode($initialCounts, JSON_UNESCAPED_UNICODE);
+        ?>;
         
-        $(document).ready(function () {
+    let table;
+
+    $(document).ready(function () {
             // Remove placeholder row if present to prevent DataTables column errors when empty
             (function ensureConsistentCellsForDataTables() {
                 const $table = $('#myTable');
@@ -802,7 +866,7 @@
             })();
 
             // DataTable and tab logic
-            const table = $('#myTable').DataTable({
+            table = $('#myTable').DataTable({
                 columnDefs: [
                     { orderable: false, targets: 0 },
                     { responsivePriority: 1, targets: 7 }, // Actions
@@ -863,23 +927,14 @@
 
             // Calculate original counts from all data (not filtered)
             function calculateOriginalCounts() {
-                let allCount = 0, skCount = 0, kkCount = 0;
                 let approvedCount = 0, pendingCount = 0, rejectedCount = 0;
-                
-                // Count all rows, not just visible ones
+
+                // Count approval status values from table data to keep UI in sync
                 $('#myTable tbody tr').each(function() {
-                    if ($(this).find('td').length > 1) { // Skip "no data" rows
-                        const userType = $(this).find('td').eq(7).text().trim();
-                        const status = parseInt($(this).data('status')) || 1;
-                        
-                        allCount++;
-                        if (userType === 'SK Chairperson') {
-                            skCount++;
-                        } else if (userType === 'KK Member') {
-                            kkCount++;
-                        }
-                        
-                        // Count by approval status
+                    if ($(this).find('td').length > 1) {
+                        const statusRaw = $(this).data('status');
+                        const status = Number.parseInt(statusRaw, 10);
+
                         if (status === 2) {
                             approvedCount++;
                         } else if (status === 3) {
@@ -889,16 +944,10 @@
                         }
                     }
                 });
-                
-                // Store original counts
-                originalCounts = {
-                    all: allCount,
-                    sk: skCount,
-                    kk: kkCount,
-                    approved: approvedCount,
-                    pending: pendingCount,
-                    rejected: rejectedCount
-                };
+
+                originalCounts.approved = approvedCount;
+                originalCounts.pending = pendingCount;
+                originalCounts.rejected = rejectedCount;
             }
 
             // Update displayed counts (always show original counts)
@@ -1341,7 +1390,7 @@
                         document.getElementById('pedModalDocPreview').innerHTML = docHtml;
 
                         // Show modal
-                        $('#pedPreviewModal').removeClass('hidden');
+                        $('#pedPreviewModal').css('display', 'flex');
 
                         // Initialize panzoom for images after DOM updated
                         setTimeout(() => {
@@ -1379,7 +1428,7 @@
 
             function closePedPreviewModal() {
                 try {
-                    $('#pedPreviewModal').addClass('hidden');
+                    $('#pedPreviewModal').css('display', 'none');
                     pedCleanupPanzoom('pedCertPreviewWrapper');
                     pedCleanupPanzoom('pedIdPreviewWrapper');
                     pedCleanupPanzoom('pedIdPreviewWrapperBack');
@@ -1437,43 +1486,39 @@
                 pendingUserTypeChange.userId = $('#modalUserId').text();
                 pendingUserTypeChange.newType = $('#modalUserType').val();
                 // Show confirmation modal (now inside userDetailModal)
-                $('#roleChangeModal').removeClass('hidden');
+                $('#roleChangeModal').removeClass('hidden').css('display', 'flex');
                 // Ensure it's above modal content
-                $('#roleChangeModal').css('display', 'flex');
             });
 
             // Confirm role change
             $('#confirmRoleChangeBtn').on('click', function() {
                 const userId = pendingUserTypeChange.userId;
                 const newType = pendingUserTypeChange.newType;
-                
-                // Show loading state
-                $(this).prop('disabled', true).text('Updating...');
-                
-                // Find the user row to get the database ID
+                const $confirmBtn = $(this);
+
+                $confirmBtn.prop('disabled', true).text('Updating...');
+
                 const userRow = $(`tr[data-sk_username], tr[data-ped_username]`).filter(function() {
                     return $(this).find('td').eq(1).text().trim() === userId;
                 });
-                
+
                 const dbId = userRow.find('.rowCheckbox').val();
-                
+
                 $.ajax({
                     url: '/updateUserType',
                     method: 'POST',
                     data: { user_id: dbId || userId, user_type: parseInt(newType, 10) },
                     success: function(response) {
                         if (response && response.success) {
-                            showNotification('User type updated successfully!', 'success');
-                            // Close modals before reload
+                            showNotification('User type updated successfully! Email notification sent.', 'success');
+                            try { if (window.localStorage) localStorage.setItem('knect_show_credentials_prompt', '1'); } catch (e) {}
                             try {
                                 $('#roleChangeModal').addClass('hidden').css('display', 'none');
                                 $('#userDetailModal').addClass('hidden');
                             } catch (e) {}
-                            // Set flag to show prompt after page reload and refresh table
-                            try { if (window.localStorage) localStorage.setItem('knect_show_credentials_prompt', '1'); } catch (e) {}
-                            setTimeout(() => { location.reload(); }, 400);
+                            setTimeout(() => location.reload(), 1000);
                         } else {
-                            showNotification(response.message || 'Failed to update user type.', 'error');
+                            showNotification((response && response.message) ? response.message : 'Failed to update user type.', 'error');
                         }
                     },
                     error: function(xhr, status, error) {
@@ -1482,18 +1527,14 @@
                         showNotification(msg, 'error');
                     },
                     complete: function() {
-                        $('#confirmRoleChangeBtn').prop('disabled', false).text('Confirm');
-                        // Close both modals
-                        $('#roleChangeModal').addClass('hidden').css('display', 'none');
-                        $('#userDetailModal').addClass('hidden');
+                        $confirmBtn.prop('disabled', false).text('Confirm');
                     }
                 });
             });
 
             // Cancel role change
             $('#cancelRoleChangeBtn').on('click', function() {
-                $('#roleChangeModal').addClass('hidden');
-                $('#roleChangeModal').css('display', 'none');
+                $('#roleChangeModal').addClass('hidden').css('display', 'none');
             });
 
                 // Prevent modal from closing when clicking inside the modal content
@@ -1544,92 +1585,61 @@
 
         // Load official list
         function loadOfficialList() {
-            document.getElementById('officialListLoading').classList.remove('hidden');
-            document.getElementById('officialListContent').classList.add('hidden');
-            
-            // Get officials data from current table (SK Chairpersons only)
-            const officials = [];
-            
-            $('#myTable tbody tr').each(function() {
-                const userType = $(this).find('td').eq(7).text().trim();
-                const status = $(this).find('td').eq(6).find('span').text().trim();
-                
-                // Include SK Chairpersons and Pederasyon Officers (who are also SK Chairpersons) with Approved status
-                const isSkOrPed = userType === 'SK Chairperson' || userType === 'Pederasyon Officer';
-                if (isSkOrPed && status === 'Approved') {
-                    // Column indices based on table header: 0=checkbox, 1=user_id, 2=barangay, 3=name, 4=age, 5=sex, 6=status, 7=user type
-                    const userIdCell = $(this).find('td').eq(1); // This contains the displayed permanent user_id
-                    const primaryId = $(this).find('input.rowCheckbox').val(); // hidden primary key from checkbox value
-                    const displayUserId = (userIdCell.text() || '').trim();
-                    const barangay = $(this).find('td').eq(2).text().trim();
-                    const name = $(this).find('td').eq(3).text().trim();
-                    const age = $(this).find('td').eq(4).text().trim();
-                    const sex = $(this).find('td').eq(5).text().trim();
-                    
-                    // Get the actual user data from the PHP data to access birthdate and user_id
-                    let userData = null;
-                    let actualUserId = '';
-                    let birthday = 'N/A';
-                    let position = userType;
-                    
-                    // Find user data from the PHP user_list
-                    <?php if (!empty($user_list)): ?>
-                        const userList = <?= json_encode($user_list) ?>;
-                        // Prefer matching by permanent user_id shown in the table; fallback to primary id from checkbox
-                        userData = userList.find(u => String(u.user_id) === String(displayUserId));
-                        if (userData) {
-                            actualUserId = userData.user_id || displayUserId || primaryId;
-                            
-                            // Handle birthdate with better validation
-                            if (userData.birthdate && userData.birthdate !== null && userData.birthdate !== '') {
-                                birthday = userData.birthdate;
-                            } else {
-                                birthday = 'N/A';
-                            }
-                            
-                            // SK Chairperson or Pederasyon Officer (both should show as SK Chairperson in official list)
-                            if (userType === 'SK Chairperson' || userType === 'Pederasyon Officer') {
-                                position = 'SK Chairperson';
-                            }
-                            
-                            // Format birthday for display
-                            if (birthday && birthday !== 'N/A' && birthday !== null && birthday !== '') {
-                                const birthDate = new Date(birthday);
-                                if (!isNaN(birthDate.getTime()) && birthDate.getFullYear() > 1900) {
-                                    birthday = birthDate.toLocaleDateString('en-US', {
-                                        month: '2-digit',
-                                        day: '2-digit', 
-                                        year: 'numeric'
-                                    });
-                                } else {
-                                    birthday = 'N/A';
-                                }
-                            } else {
-                                birthday = 'N/A';
-                            }
-                        }
-                    <?php endif; ?>
-                    
-                    // Only show permanent user_id; if missing, leave blank (do not show DB primary id)
-                    const safeUserId = (actualUserId && String(actualUserId).trim() !== '')
-                        ? actualUserId
-                        : ((displayUserId && String(displayUserId).trim() !== '') ? displayUserId : '');
+            const loadingEl = document.getElementById('officialListLoading');
+            const contentEl = document.getElementById('officialListContent');
+            loadingEl.classList.remove('hidden');
+            contentEl.classList.add('hidden');
 
-                    officials.push({
+            const source = Array.isArray(youthUserList) ? youthUserList : [];
+            const officials = source
+                .filter(user => {
+                    const status = Number(user.status ?? user.status_value ?? 0);
+                    const userType = Number(user.user_type ?? 0);
+                    const position = Number(user.position ?? 0);
+                    const isSkClassification = userType === 2 || userType === 3 || position === 1;
+                    return status === 2 && isSkClassification;
+                })
+                .map(user => {
+                    const barangayName = getBarangayName(user.barangay) || user.barangay_name || '';
+                    const safeUserId = (user.user_id && String(user.user_id).trim() !== '') ? user.user_id : '';
+                    const fullNameParts = [user.last_name, user.first_name, user.middle_name]
+                        .map(part => (part ? String(part).trim() : ''));
+                    const formattedName = [fullNameParts[0], [fullNameParts[1], fullNameParts[2]].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+                    const sexValue = String(user.sex ?? '').trim();
+                    const resolvedSex = sexValue === '1' ? 'Male' : (sexValue === '2' ? 'Female' : (sexValue || ''));
+                    let birthday = 'N/A';
+                    if (user.birthdate) {
+                        const parsed = new Date(user.birthdate);
+                        if (!Number.isNaN(parsed.getTime()) && parsed.getFullYear() > 1900) {
+                            birthday = parsed.toLocaleDateString('en-US', {
+                                month: '2-digit',
+                                day: '2-digit',
+                                year: 'numeric'
+                            });
+                        }
+                    }
+
+                    return {
                         userId: safeUserId,
-                        barangay: barangay,
-                        name: name,
-                        age: age,
-                        birthday: birthday,
-                        sex: sex,
-                        position: position
-                    });
-                }
-            });
-            
-            document.getElementById('officialListLoading').classList.add('hidden');
-            document.getElementById('officialListContent').classList.remove('hidden');
-            
+                        barangay: barangayName,
+                        name: formattedName,
+                        age: user.age ?? '',
+                        birthday,
+                        sex: resolvedSex,
+                        position: 'SK Chairperson'
+                    };
+                })
+                .sort((a, b) => {
+                    const barangayCompare = a.barangay.localeCompare(b.barangay);
+                    if (barangayCompare !== 0) {
+                        return barangayCompare;
+                    }
+                    return a.name.localeCompare(b.name);
+                });
+
+            loadingEl.classList.add('hidden');
+            contentEl.classList.remove('hidden');
+
             if (officials.length > 0) {
                 displayOfficialList(officials);
                 document.getElementById('noOfficials').classList.add('hidden');
@@ -1637,9 +1647,8 @@
                 document.getElementById('noOfficials').classList.remove('hidden');
                 document.getElementById('officialListTableBody').innerHTML = '';
             }
-            
-            document.getElementById('officialListCount').textContent = 
-                `Total Officials: ${officials.length}`;
+
+            document.getElementById('officialListCount').textContent = `Total Officials: ${officials.length}`;
         }
         
         // Display officials in table
@@ -1653,25 +1662,25 @@
                 
                 row.innerHTML = `
                     <td class="border border-gray-300 text-center py-3 px-4 text-sm text-gray-900">
-                        ${official.userId}
+                        ${escapeHtml(official.userId)}
                     </td>
                     <td class="border border-gray-300 text-left py-3 px-4 text-sm text-gray-900">
-                        ${official.name}
+                        ${escapeHtml(official.name)}
                     </td>
                     <td class="border border-gray-300 text-center py-3 px-4 text-sm text-gray-900">
-                        ${official.barangay}
+                        ${escapeHtml(official.barangay)}
                     </td>
                     <td class="border border-gray-300 text-center py-3 px-4 text-sm text-gray-900">
-                        ${official.sex}
+                        ${escapeHtml(official.sex)}
                     </td>
                     <td class="border border-gray-300 text-center py-3 px-4 text-sm text-gray-900">
-                        ${official.age}
+                        ${escapeHtml(official.age)}
                     </td>
                     <td class="border border-gray-300 text-center py-3 px-4 text-sm text-gray-900">
-                        ${official.birthday}
+                        ${escapeHtml(official.birthday)}
                     </td>
                     <td class="border border-gray-300 text-center py-3 px-4 text-sm text-gray-900">
-                        ${official.position}
+                        ${escapeHtml(official.position)}
                     </td>
                 `;
                 
@@ -2879,7 +2888,7 @@
                 const labelMap = {1: 'KK Member', 2: 'SK Chairperson'};
                 // Show confirmation modal instead of confirm()
                 $('#pedRoleChangeMessage').text(`Are you sure you want to change the user type to "${labelMap[newType]}"?`);
-                $('#pedRoleChangeModal').removeClass('hidden').css('display', 'flex');
+                $('#pedRoleChangeModal').css('display', 'flex');
 
                 // One-time handlers to avoid stacking
                 $('#pedConfirmRoleChangeBtn').off('click').on('click', function() {
@@ -2887,23 +2896,20 @@
                     const original = $btn.text();
                     $btn.prop('disabled', true).text('Updating...').addClass('opacity-80');
                     // Hide modal while processing
-                    $('#pedRoleChangeModal').addClass('hidden').css('display', 'none');
+                    $('#pedRoleChangeModal').css('display', 'none');
                     $.ajax({
                         url: '/updateUserType',
                         method: 'POST',
                         data: { user_id: dbId || displayUserId, user_type: newType },
                         success: function(resp) {
                             if (resp && resp.success) {
-                                showNotification('User type updated successfully!', 'success');
-                                // Close preview and confirm modals before reload
-                                try {
-                                    $('#pedRoleChangeModal').addClass('hidden').css('display', 'none');
-                                    const $pedModal = $('#pedPreviewModal');
-                                    if ($pedModal && $pedModal.length) { $pedModal.addClass('hidden'); }
-                                } catch (e) {}
-                                // Set flag and reload to refresh table then show prompt
+                                showNotification('User type updated successfully! Email notification sent.', 'success');
                                 try { if (window.localStorage) localStorage.setItem('knect_show_credentials_prompt', '1'); } catch (e) {}
-                                setTimeout(() => { location.reload(); }, 400);
+                                try {
+                                    $('#pedRoleChangeModal').css('display', 'none');
+                                    $('#pedPreviewModal').css('display', 'none');
+                                } catch (e) {}
+                                setTimeout(() => window.location.reload(), 1000);
                             } else {
                                 showNotification((resp && resp.message) || 'Failed to update user type.', 'error');
                             }
@@ -2919,7 +2925,7 @@
                 });
 
                 $('#pedCancelRoleChangeBtn').off('click').on('click', function() {
-                    $('#pedRoleChangeModal').addClass('hidden').css('display', 'none');
+                    $('#pedRoleChangeModal').css('display', 'none');
                 });
             };
 
@@ -3058,10 +3064,10 @@
     
 
     <!-- Pederasyon: SK-style View Modal (Info left, Documents right) -->
-    <div id="pedPreviewModal" class="fixed inset-0 z-[9998] hidden bg-black bg-opacity-50 flex items-center justify-center p-4">
+    <div id="pedPreviewModal" class="fixed inset-0 z-[9998] bg-black bg-opacity-50 items-center justify-center p-4" style="display: none;">
         <div class="bg-white rounded-lg shadow-xl w-[90vw] max-h-[90vh] relative overflow-hidden flex flex-col">
             <!-- Confirmation Popup inside ped preview modal (matches ped-officers design) -->
-            <div id="pedRoleChangeModal" class="absolute inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-40">
+            <div id="pedRoleChangeModal" class="absolute inset-0 z-50 items-center justify-center bg-black bg-opacity-40" style="display: none;">
                 <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
                     <div class="text-center">
                         <div class="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
@@ -3091,26 +3097,21 @@
             <!-- Content Wrapper (takes remaining vertical space) -->
             <div class="flex-1 flex overflow-hidden">
                 <!-- Left: User Info -->
-                <div class="w-[40%] bg-gray-50 p-6 flex flex-col items-center justify-start relative overflow-hidden">
+                <div class="w-[40%] bg-gray-50 p-6 flex flex-col items-center justify-start overflow-y-auto">
                     <!-- Hidden fields for role-change checks -->
                     <input type="hidden" id="pedModalUserBarangayId" value="">
                     <input type="hidden" id="pedModalUserStatusValue" value="">
                     <input type="hidden" id="pedModalUserType" value="">
                     <input type="hidden" id="pedModalDbId" value="">
                     <input type="hidden" id="pedModalDisplayUserId" value="">
-
-                    <div id="pedModalInfoScroll" class="w-full flex-1 overflow-y-auto pr-2 pb-6">
-                        <div class="flex flex-col items-center">
-                            <div class="w-40 h-40 bg-gray-300 mb-4 overflow-hidden shadow-md border-4 border-white flex items-center justify-center relative" style="min-width:220px; min-height:220px; max-width:220px; max-height:220px;">
-                                <img id="pedModalUserPhoto" src="" alt="User Profile" class="w-full h-full object-cover" style="aspect-ratio:1/1; min-width:220px; min-height:220px; max-width:220px; max-height:220px; border-radius:0;">
-                            </div>
-                            <h4 id="pedModalUserFullName" class="text-lg font-semibold text-gray-900 text-center mb-1"></h4>
-                            <p id="pedModalUserBarangay" class="text-sm text-gray-500 text-center mb-4"></p>
-                        </div>
-
-                        <!-- User Info Sections -->
-                        <div class="w-full space-y-6">
-                            <!-- Basic Information -->
+                    <div class="w-40 h-40 bg-gray-300 mb-4 overflow-hidden shadow-md border-4 border-white flex items-center justify-center relative" style="min-width:220px; min-height:220px; max-width:220px; max-height:220px;">
+                        <img id="pedModalUserPhoto" src="" alt="User Profile" class="w-full h-full object-cover" style="aspect-ratio:1/1; min-width:220px; min-height:220px; max-width:220px; max-height:220px; border-radius:0;">
+                    </div>
+                    <h4 id="pedModalUserFullName" class="text-lg font-semibold text-gray-900 text-center mb-1"></h4>
+                    <p id="pedModalUserBarangay" class="text-sm text-gray-500 text-center mb-4"></p>
+                    <!-- User Info Sections -->
+                    <div class="w-full space-y-6">
+                        <!-- Basic Information -->
                         <div>
                             <h5 class="text-sm font-medium text-gray-900 mb-3 pb-1 border-b border-gray-200">Basic Information</h5>
                             <div class="grid grid-cols-2 gap-4">
@@ -3161,10 +3162,9 @@
                                 <div id="pedAssemblyReasonContainer" class="hidden"><label class="block text-sm font-medium text-gray-500 mb-1">If No, Why?</label><p id="pedModalUserAssemblyReason" class="text-sm text-gray-900"></p></div>
                             </div>
                         </div>
-                        </div>
                     </div>
 
-                    <!-- Officer Position Card (fixed footer) -->
+                    <!-- Officer Position Card (bottom area) -->
                     <div id="pedRoleCard" class="w-full mt-4 bg-white rounded-xl p-4 shadow-sm border border-gray-100">
                         <div class="flex items-center gap-2 mb-2">
                             <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3216,46 +3216,6 @@
                 </div>
 
                 <div id="credentialsContent" class="hidden">
-                    <!-- Document Header - Hidden in preview, shown in print -->
-                    <div class="bg-white hidden print:block" style="font-family: Arial, sans-serif;">
-                        <!-- Header Section with Logos -->
-                        <div class="text-center mb-6 print:mb-4" style="font-family: Arial, sans-serif;">
-                            <div class="flex items-center justify-center mb-4">
-                                <!-- Pederasyon Logo (Left) -->
-                                <div class="flex-shrink-0 mr-8">
-                                    <div id="credentials-pederasyon-logo" class="w-16 h-16 rounded flex items-center justify-center">
-                                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                        </svg>
-                                    </div>
-                                </div>
-                                
-                                <!-- Center Text -->
-                                <div class="text-center" style="font-family: Arial, sans-serif;">
-                                    <h2 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 0; line-height: 1.2;">REPUBLIC OF THE PHILIPPINES</h2>
-                                    <h3 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 0; line-height: 1.2;">PROVINCE OF CAMARINES SUR</h3>
-                                    <h3 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 0; line-height: 1.2;">CITY OF IRIGA</h3>
-                                    <h4 style="font-family: Arial, sans-serif; font-size: 9pt; font-weight: normal; color: black; margin: 0; line-height: 1.2;">PANLUNGSOD NA PEDERASYON NG MGA</h4>
-                                    <h4 style="font-family: Arial, sans-serif; font-size: 9pt; font-weight: normal; color: black; margin: 0; line-height: 1.2;">SANGGUNIANG KABATAAN NG IRIGA</h4>
-                                </div>
-                                
-                                <!-- Iriga City Logo (Right) -->
-                                <div class="flex-shrink-0 ml-8">
-                                    <div id="credentials-iriga-logo" class="w-16 h-16 rounded flex items-center justify-center">
-                                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                        </svg>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <hr class="border-gray-300 mb-4">
-                            
-                            <h2 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 16px 0 24px 0;">PANLUNGSOD NA PEDERASYON NG MGA KABATAAN</h2>
-                            <h3 style="font-family: Arial, sans-serif; font-size: 10pt; font-weight: bold; color: black; margin: 8px 0 16px 0;">SK CHAIRPERSON CREDENTIALS</h3>
-                        </div>
-                    </div>
-
                     <!-- Credentials Tables Container -->
                     <div id="credentialsTablesContainer" class="bg-white rounded-xl shadow-sm border border-gray-100">
                         <!-- SK Credentials Table -->
@@ -3271,6 +3231,14 @@
                                     </span>
                                 </div>
                                 <p class="text-sm text-gray-600">Login information for SK Chairperson positions across all barangays</p>
+                                <!-- Important Notes -->
+                                <div class="mt-3 p-3 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg">
+                                    <p class="text-xs text-blue-800 mb-1"><strong>Password Display Guide:</strong></p>
+                                    <ul class="text-xs text-blue-700 space-y-0.5 ml-4">
+                                        <li>• <strong>Plain text passwords</strong> = Temporary passwords (not yet changed by user)</li>
+                                        <li>• <strong>******** (asterisks)</strong> = Password has been changed by user (hashed for security)</li>
+                                    </ul>
+                                </div>
                             </div>
                             <div class="overflow-x-auto">
                                 <div class="border-2 border-gray-400 rounded-lg overflow-hidden">
@@ -3364,45 +3332,6 @@
                 </div>
 
                 <div id="officialListContent" class="hidden">
-                    <!-- Document Header - Hidden in preview, shown in print -->
-                    <div id="downloadOfficialContent" class="bg-white hidden print:block" style="font-family: Arial, sans-serif;">
-                        <!-- Header Section with Logos -->
-                        <div class="text-center mb-6 print:mb-4" style="font-family: Arial, sans-serif;">
-                            <div class="flex items-center justify-center mb-4">
-                                <!-- Pederasyon Logo (Left) -->
-                                <div class="flex-shrink-0 mr-8">
-                                    <div id="barangay-logo" class="w-16 h-16 rounded flex items-center justify-center">
-                                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                        </svg>
-                                    </div>
-                                </div>
-                                
-                                <!-- Center Text -->
-                                <div class="text-center" style="font-family: Arial, sans-serif;">
-                                    <h2 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 0; line-height: 1.2;">REPUBLIC OF THE PHILIPPINES</h2>
-                                    <h3 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 0; line-height: 1.2;">PROVINCE OF CAMARINES SUR</h3>
-                                    <h3 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 0; line-height: 1.2;">CITY OF IRIGA</h3>
-                                    <h4 style="font-family: Arial, sans-serif; font-size: 9pt; font-weight: normal; color: black; margin: 0; line-height: 1.2;">PANLUNGSOD NA PEDERASYON NG MGA</h4>
-                                    <h4 style="font-family: Arial, sans-serif; font-size: 9pt; font-weight: normal; color: black; margin: 0; line-height: 1.2;">SANGGUNIANG KABATAAN NG IRIGA</h4>
-                                </div>
-                                
-                                <!-- Iriga City Logo (Right) -->
-                                <div class="flex-shrink-0 ml-8">
-                                    <div id="sk-logo" class="w-16 h-16 rounded flex items-center justify-center">
-                                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                        </svg>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <hr class="border-gray-300 mb-4">
-                            
-                            <h2 style="font-family: Arial, sans-serif; font-size: 12pt; font-weight: bold; color: black; margin: 16px 0 8px 0;">SANGGUNIANG KABATAAN</h2>
-                            <h3 style="font-family: Arial, sans-serif; font-size: 10pt; font-weight: bold; color: black; margin: 8px 0 16px 0;">OFFICIAL LIST</h3>
-                        </div>
-                    </div>
 
                     <!-- Officials List Table -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100">
@@ -3415,6 +3344,7 @@
                                     <h4 class="text-lg font-semibold text-gray-900">SK Officials List</h4>
                                 </div>
                                 <p class="text-sm text-gray-600">Complete list of accepted SK Chairpersons and Pederasyon Officers across all barangays</p>
+                                
                             </div>
                             <div class="overflow-x-auto">
                                 <div class="border border-gray-200 rounded-lg overflow-hidden shadow-sm">

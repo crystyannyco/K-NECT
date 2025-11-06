@@ -250,7 +250,7 @@
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
-                                        Select one or more categories to organize this document
+                                        Select only 1 category for this document
                                     </p>
                                 <?php endif; ?>
                             </div>
@@ -476,12 +476,32 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Update category counter
+    // Update category counter and handle single selection
     function updateCategoryCounter() {
+        const checkboxes = document.querySelectorAll('input[name="categories[]"]');
         const checkedCategories = document.querySelectorAll('input[name="categories[]"]:checked');
         const counter = document.querySelector('.text-xs.bg-blue-100');
+        
         if (counter) {
             counter.textContent = `${checkedCategories.length} selected`;
+        }
+        
+        // Disable other checkboxes if one is already selected
+        if (checkedCategories.length >= 1) {
+            checkboxes.forEach(checkbox => {
+                if (!checkbox.checked) {
+                    checkbox.disabled = true;
+                    checkbox.parentElement.classList.add('opacity-50', 'cursor-not-allowed');
+                    checkbox.parentElement.classList.remove('hover:border-blue-300', 'hover:bg-blue-50', 'cursor-pointer');
+                }
+            });
+        } else {
+            // Re-enable all checkboxes if none are selected
+            checkboxes.forEach(checkbox => {
+                checkbox.disabled = false;
+                checkbox.parentElement.classList.remove('opacity-50', 'cursor-not-allowed');
+                checkbox.parentElement.classList.add('hover:border-blue-300', 'hover:bg-blue-50', 'cursor-pointer');
+            });
         }
     }
     
@@ -489,6 +509,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('input[name="categories[]"]').forEach(checkbox => {
         checkbox.addEventListener('change', updateCategoryCounter);
     });
+    
+    // Initialize on page load
+    updateCategoryCounter();
     
     // Visibility scope toggle (Pederasyon only)
     const scopeAll = document.getElementById('scopeAll');

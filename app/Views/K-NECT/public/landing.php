@@ -73,7 +73,7 @@
         .hero-copy h1{font-family:'Domine',serif;font-size:clamp(2.1rem,3.5vw,3rem);line-height:1.05;margin:.6rem 0 1rem}
         .hero-copy p{margin:0 0 1.4rem;color:var(--sub);font-size:1rem;line-height:1.6}
         .hero-actions{display:flex;flex-wrap:wrap;gap:.75rem}
-        .hero-media{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:.8rem}
+        .hero-media{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:.8rem;max-height:480px;height:480px}
     .hero-card{position:relative;overflow:hidden;border-radius:16px;border:1px solid var(--border);background:#fff}
         .hero-card.tall{grid-row:span 2}
     .hero-card .ph{display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,var(--primary-50),#ffffff);height:100%}
@@ -206,11 +206,14 @@
     #stories .news-carousel{position:relative;padding:.1rem 0}
     #stories .news-viewport{position:relative;overflow:hidden;border-radius:14px}
     #stories .news-track{--gap:.8rem;display:flex;gap:var(--gap);transition:transform .45s ease;will-change:transform}
-    #stories .news-slide{flex:0 0 100%;min-width:100%}
+    #stories .news-slide{flex:0 0 auto}
+    @media (min-width:1280px){#stories .news-slide{flex-basis:calc((100% - var(--gap)*3)/4);min-width:calc((100% - var(--gap)*3)/4)}}
+    @media (min-width:768px) and (max-width:1279.98px){#stories .news-slide{flex-basis:calc((100% - var(--gap)*2)/3);min-width:calc((100% - var(--gap)*2)/3)}}
+    @media (max-width:767.98px){#stories .news-slide{flex-basis:88%;min-width:88%}}
     #stories .news-card{display:block;position:relative;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:#f8fafc;box-shadow:0 8px 24px -22px rgba(2,6,23,.2);transition:transform .2s ease, box-shadow .2s ease}
     #stories .news-card::after{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;background:linear-gradient(180deg,rgba(59,130,246,.15),rgba(59,130,246,0));-webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);-webkit-mask-composite:x;mask-composite:exclude;pointer-events:none}
     #stories .news-card:hover{transform:translateY(-1px);box-shadow:0 14px 30px -24px rgba(2,6,23,.22)}
-    #stories .news-media{position:relative;aspect-ratio:1/1;background:#e5e7eb}
+    #stories .news-media{position:relative;aspect-ratio:16/10;max-height:280px;background:#e5e7eb}
     #stories .news-media img{width:100%;height:100%;object-fit:cover;display:block}
     #stories .news-info{position:absolute;left:0;right:0;bottom:0;padding:.4rem .5rem;color:#fff;background:linear-gradient(to top, rgba(2,6,23,.6), rgba(2,6,23,0));font-size:.8rem;font-weight:700;letter-spacing:.2px;text-shadow:0 1px 2px rgba(0,0,0,.35);display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;white-space:normal}
     #stories .news-chip{position:absolute;top:.4rem;left:.4rem;z-index:2;background:rgba(255,255,255,.8);backdrop-filter:blur(4px);border:1px solid rgba(15,23,42,.12);color:#0f172a;border-radius:999px;padding:.15rem .45rem;font-size:.65rem;font-weight:800;letter-spacing:.2px}
@@ -447,6 +450,139 @@
             .event-empty{border:1px dashed var(--border);border-radius:20px;padding:2rem;text-align:center;color:var(--muted);background:#fff}
             @media(max-width:680px){.events-grid{--card-min:200px;gap:1rem}.event-body{padding:.85rem .85rem 1rem}.event-title{font-size:.9rem}}
         @media(max-width:640px){.tp-champion h3{font-size:1.4rem}.tp-champion .tp-score{font-size:2rem}.tp-rank{width:34px;height:34px;font-size:.8rem}.tp-item{grid-template-columns:auto 1fr auto}}
+        
+        /* Organizational Chart */
+        #org-chart {
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            padding: 3rem 0;
+        }
+        .org-chart-wrapper {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .chairperson-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2.5rem;
+        }
+        .officer-card {
+            background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 1.5rem;
+            box-shadow: 0 12px 30px -20px rgba(2,6,23,.2);
+            transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease;
+            text-align: center;
+        }
+        .officer-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 18px 40px -24px rgba(2,6,23,.28);
+            border-color: var(--primary-200);
+        }
+        .chairperson-card {
+            width: 280px;
+        }
+        .chairperson-card::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(180deg, rgba(59,130,246,.15), rgba(59,130,246,0));
+            -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+        .chairperson-card .officer-photo {
+            width: 160px;
+            height: 160px;
+            margin: 0 auto 1.2rem;
+        }
+        .officer-photo {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 1rem;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid var(--primary-100);
+            box-shadow: 0 8px 24px -12px rgba(37,99,235,.4);
+            position: relative;
+        }
+        .officer-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .officer-initials {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary-100), var(--primary-200));
+            color: var(--primary-700);
+            font-size: 2rem;
+            font-weight: 700;
+            font-family: 'Domine', serif;
+        }
+        .chairperson-card .officer-initials {
+            font-size: 2.8rem;
+        }
+        .officer-info {
+            position: relative;
+            z-index: 1;
+        }
+        .officer-name {
+            font-family: 'Domine', serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin: 0 0 0.4rem;
+            color: var(--ink);
+        }
+        .chairperson-card .officer-name {
+            font-size: 1.4rem;
+        }
+        .officer-position {
+            color: var(--primary);
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin: 0;
+            letter-spacing: 0.3px;
+        }
+        .chairperson-card .officer-position {
+            font-size: 0.95rem;
+        }
+        .text-gray-400 {
+            color: #9ca3af;
+            font-weight: 500;
+        }
+        .officers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        @media(max-width: 768px) {
+            .officers-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+            .chairperson-card {
+                width: 100%;
+                max-width: 280px;
+            }
+        }
+        @media(max-width: 520px) {
+            .officers-grid {
+                grid-template-columns: 1fr;
+            }
+            .officer-card {
+                padding: 1.2rem;
+            }
+        }
+        
         /* Newsletter */
     .newsletter{background:linear-gradient(180deg,var(--primary-50) 0%, #ffffff 100%);border:1px solid var(--border);border-radius:20px;padding:1.6rem;box-shadow:0 10px 30px -18px rgba(2,6,23,.2)}
         .newsletter form{display:flex;gap:.6rem;flex-wrap:wrap}
@@ -461,7 +597,9 @@
         .copyright{text-align:center;margin-top:1.8rem;font-size:.75rem;letter-spacing:.3px}
         /* Responsive */
     @media(max-width:1100px){.hero-grid{grid-template-columns:1fr}.cards{grid-template-columns:repeat(2,1fr)}.highlights{grid-template-columns:1fr}}
-        @media(max-width:640px){.cards{grid-template-columns:1fr}.nav-links{display:none}}
+        @media(max-width:768px){.hero-media{max-height:380px;height:380px}}
+        @media(max-width:640px){.cards{grid-template-columns:1fr}.nav-links{display:none}.hero-media{max-height:320px;height:320px;gap:.6rem}}
+        @media(max-width:480px){.hero-media{max-height:280px;height:280px;gap:.5rem}}
     </style>
 </head>
 <body>
@@ -474,6 +612,7 @@
                 <a href="#programs">Programs</a>
                 <a href="#stories">Stories</a>
                 <a href="#highlights">Highlights</a>
+                <a href="#org-chart">Officers</a>
                 <a href="#newsletter">Newsletter</a>
             </nav>
             <div style="margin-left:auto;display:flex;gap:.65rem;">
@@ -697,6 +836,137 @@
                 <?php endif; ?>
             </div>
         </section>
+
+        <!-- ORGANIZATIONAL CHART -->
+        <?php if (!empty($pedOfficers)): ?>
+        <section id="org-chart" class="py-16 bg-gradient-to-b from-white to-gray-50">
+            <div class="container">
+                <div class="section-head" style="flex-direction: column; align-items: center; text-align: center; margin-bottom: 2rem;">
+                    <h2 class="section-title" style="margin: 0; font-size: clamp(1.8rem, 3vw, 2.2rem); font-weight: 700; letter-spacing: 0.5px; color: var(--primary);">PEDERASYON OFFICERS</h2>
+                    <span class="muted" style="font-size: 0.95rem; margin-top: 0.3rem;">CY <?= date('Y') ?> - Present</span>
+                </div>
+                
+                <div class="org-chart-wrapper">
+                    <?php
+                    // Position titles mapping
+                    $positionTitles = [
+                        1 => 'SK Pederasyon President',
+                        2 => 'Vice President',
+                        3 => 'Secretary',
+                        4 => 'Treasurer',
+                        5 => 'Auditor',
+                        6 => 'Public Information Officer',
+                        7 => 'Sergeant at Arms'
+                    ];
+                    
+                    // Create array of all positions with officer data or empty placeholder
+                    $allPositions = [];
+                    foreach ($positionTitles as $pos => $title) {
+                        $allPositions[$pos] = [
+                            'position' => $pos,
+                            'title' => $title,
+                            'officer' => null
+                        ];
+                    }
+                    
+                    // Fill in officer data where available
+                    foreach ($pedOfficers as $officer) {
+                        $pos = $officer['ped_position'];
+                        if (isset($allPositions[$pos])) {
+                            $allPositions[$pos]['officer'] = $officer;
+                        }
+                    }
+                    
+                    // Separate chairperson (position 1) from other officers
+                    $chairperson = $allPositions[1];
+                    $officers = array_slice($allPositions, 1); // positions 2-7
+                    ?>
+                    
+                    <!-- Chairman Card (centered, larger) -->
+                    <div class="chairperson-container">
+                        <div class="officer-card chairperson-card">
+                            <div class="officer-photo">
+                                <?php if ($chairperson['officer'] && !empty($chairperson['officer']['profile_picture'])): ?>
+                                    <?php 
+                                        $pp = $chairperson['officer']['profile_picture'];
+                                        // Handle different profile picture formats
+                                        if (strpos($pp, '/') !== false) {
+                                            $ppUrl = base_url($pp);
+                                        } else {
+                                            $ppUrl = base_url('uploads/profile_pictures/' . $pp);
+                                        }
+                                    ?>
+                                    <img src="<?= esc($ppUrl) ?>" 
+                                         alt="<?= esc($chairperson['officer']['first_name'] . ' ' . $chairperson['officer']['last_name']) ?>" 
+                                         loading="lazy">
+                                <?php else: ?>
+                                    <div class="officer-initials">
+                                        <?php if ($chairperson['officer']): ?>
+                                            <?= strtoupper(substr($chairperson['officer']['first_name'], 0, 1) . substr($chairperson['officer']['last_name'], 0, 1)) ?>
+                                        <?php else: ?>
+                                            <i class="fa-solid fa-user" style="font-size: 3rem; color: var(--primary-400);"></i>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                            <div class="officer-info">
+                                <h3 class="officer-name">
+                                    <?php if ($chairperson['officer']): ?>
+                                        Hon. <?= esc($chairperson['officer']['first_name'] . ' ' . $chairperson['officer']['last_name']) ?>
+                                    <?php else: ?>
+                                        <span class="text-gray-400">To Be Appointed</span>
+                                    <?php endif; ?>
+                                </h3>
+                                <p class="officer-position"><?= $chairperson['title'] ?></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Officers Grid -->
+                    <div class="officers-grid">
+                        <?php foreach ($officers as $position): ?>
+                        <div class="officer-card">
+                            <div class="officer-photo">
+                                <?php if ($position['officer'] && !empty($position['officer']['profile_picture'])): ?>
+                                    <?php 
+                                        $pp = $position['officer']['profile_picture'];
+                                        // Handle different profile picture formats
+                                        if (strpos($pp, '/') !== false) {
+                                            $ppUrl = base_url($pp);
+                                        } else {
+                                            $ppUrl = base_url('uploads/profile_pictures/' . $pp);
+                                        }
+                                    ?>
+                                    <img src="<?= esc($ppUrl) ?>" 
+                                         alt="<?= esc($position['officer']['first_name'] . ' ' . $position['officer']['last_name']) ?>" 
+                                         loading="lazy">
+                                <?php else: ?>
+                                    <div class="officer-initials">
+                                        <?php if ($position['officer']): ?>
+                                            <?= strtoupper(substr($position['officer']['first_name'], 0, 1) . substr($position['officer']['last_name'], 0, 1)) ?>
+                                        <?php else: ?>
+                                            <i class="fa-solid fa-user" style="font-size: 2.2rem; color: var(--primary-400);"></i>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                            <div class="officer-info">
+                                <h3 class="officer-name">
+                                    <?php if ($position['officer']): ?>
+                                        Hon. <?= esc($position['officer']['first_name'] . ' ' . $position['officer']['last_name']) ?>
+                                    <?php else: ?>
+                                        <span class="text-gray-400">To Be Appointed</span>
+                                    <?php endif; ?>
+                                </h3>
+                                <p class="officer-position"><?= $position['title'] ?></p>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <?php endif; ?>
 
         <!-- NEWSLETTER -->
         <section id="newsletter">

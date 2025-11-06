@@ -849,8 +849,9 @@
             ];
             echo json_encode($initialCounts, JSON_UNESCAPED_UNICODE);
         ?>;
+        const barangayList = <?php echo json_encode(array_values(\App\Libraries\BarangayHelper::getBarangayMap()), JSON_UNESCAPED_UNICODE); ?>;
         
-    let table;
+        let table;
 
     $(document).ready(function () {
             // Remove placeholder row if present to prevent DataTables column errors when empty
@@ -902,68 +903,96 @@
                     // Initialize filters after table is ready
                     setTimeout(() => {
                         populateBarangayFilter();
-                        calculateOriginalCounts();
                         updateDisplayedCounts();
                         restoreFilters();
                     }, 100);
                 }
             });
 
+            table.on('draw.dt', updateStatusCountsForFilteredData);
+            updateStatusCountsForFilteredData();
+
             // Populate barangay filter
             function populateBarangayFilter() {
-                const barangays = new Set();
+                const barangaySet = new Set(Array.isArray(barangayList) ? barangayList : []);
+
                 $('#myTable tbody tr').each(function() {
                     const barangay = $(this).find('td').eq(2).text().trim();
-                    if (barangay && barangay !== '') {
-                        barangays.add(barangay);
-                    }
-                });
-                
-                $('#barangayFilter').empty().append('<option value="">All Barangays</option>');
-                Array.from(barangays).sort().forEach(barangay => {
-                    $('#barangayFilter').append(`<option value="${barangay}">${barangay}</option>`);
-                });
-            }
-
-            // Calculate original counts from all data (not filtered)
-            function calculateOriginalCounts() {
-                let approvedCount = 0, pendingCount = 0, rejectedCount = 0;
-
-                // Count approval status values from table data to keep UI in sync
-                $('#myTable tbody tr').each(function() {
-                    if ($(this).find('td').length > 1) {
-                        const statusRaw = $(this).data('status');
-                        const status = Number.parseInt(statusRaw, 10);
-
-                        if (status === 2) {
-                            approvedCount++;
-                        } else if (status === 3) {
-                            rejectedCount++;
-                        } else {
-                            pendingCount++;
-                        }
+                    if (barangay) {
+                        barangaySet.add(barangay);
                     }
                 });
 
-                originalCounts.approved = approvedCount;
-                originalCounts.pending = pendingCount;
-                originalCounts.rejected = rejectedCount;
+                const sortedBarangays = Array.from(barangaySet).sort((a, b) =>
+                    a.localeCompare(b, undefined, { sensitivity: 'base' })
+                );
+
+                const $filter = $('#barangayFilter');
+                $filter.empty();
+                $filter.append($('<option>', { value: '', text: 'All Barangays' }));
+                sortedBarangays.forEach(name => {
+                    $filter.append($('<option>', { value: name, text: name }));
+                });
             }
 
-            // Update displayed counts (always show original counts)
+            // Update displayed counts for role tabs
             function updateDisplayedCounts() {
                 $('#countAll').text(originalCounts.all);
                 $('#countSK').text(originalCounts.sk);
                 $('#countKK').text(originalCounts.kk);
-                
-                // Update status dropdown option text with counts
-                $('#statusFilter option[value="all"]').text(`All Status (${originalCounts.all})`);
-                $('#statusFilter option[value="approved"]').text(`Approved (${originalCounts.approved})`);
-                $('#statusFilter option[value="pending"]').text(`Pending (${originalCounts.pending})`);
-                $('#statusFilter option[value="rejected"]').text(`Rejected (${originalCounts.rejected})`);
             }
 
-            // Update role counts based on filtered data (now just updates display with original counts)
+            // Update status counts based on current table filters
+            function updateStatusCountsForFilteredData() {
+                if (!table) {
+                    return;
+                }
+
+                const filteredCounts = {
+                    total: 0,
+                    approved: 0,
+                    pending: 0,
+                    rejected: 0
+                };
+
+                table.rows({ filter: 'applied' }).every(function() {
+                    const $row = $(this.node());
+                    const status = Number.parseInt($row.data('status'), 10);
+                    filteredCounts.total++;
+
+                    if (status === 2) {
+                        filteredCounts.approved++;
+                    } else if (status === 3) {
+                        filteredCounts.rejected++;
+                    } else {
+                        filteredCounts.pending++;
+                    }
+                });
+
+                const $countAllStatus = $('#countAllStatus');
+                if ($countAllStatus.length) {
+                    $countAllStatus.text(filteredCounts.total);
+                }
+                const $countApproved = $('#countApproved');
+                if ($countApproved.length) {
+                    $countApproved.text(filteredCounts.approved);
+                }
+                const $countPending = $('#countPending');
+                if ($countPending.length) {
+                    $countPending.text(filteredCounts.pending);
+                }
+                const $countRejected = $('#countRejected');
+                if ($countRejected.length) {
+                    $countRejected.text(filteredCounts.rejected);
+                }
+
+                $('#statusFilter option[value="all"]').text(`All Status (${filteredCounts.total})`);
+                $('#statusFilter option[value="approved"]').text(`Approved (${filteredCounts.approved})`);
+                $('#statusFilter option[value="pending"]').text(`Pending (${filteredCounts.pending})`);
+                $('#statusFilter option[value="rejected"]').text(`Rejected (${filteredCounts.rejected})`);
+            }
+
+            // Update role counts using persisted totals (retained for compatibility)
             function updateRoleCounts() {
                 // Always show original counts, regardless of current filter
                 updateDisplayedCounts();
@@ -1026,7 +1055,7 @@
                 // Redraw table with filters applied
                 table.draw();
                 
-                // Keep displaying original counts (don't update them based on filtered results)
+                // Keep role counts static; status totals update via the draw event
                 updateDisplayedCounts();
             }
 

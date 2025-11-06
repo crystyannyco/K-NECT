@@ -76,9 +76,9 @@ database.default.port = 3306
 
 # logger.threshold = 4
 
-SMTP_HOST = smtp.gmail.com
-SMTP_USER = knect.system@gmail.com
-SMTP_PASS = pjmpqdheerivygyr
+# SMTP_HOST = smtp.gmail.com
+# SMTP_USER = knect.system@gmail.com
+# SMTP_PASS = pjmpqdheerivygyr
 
 
 TEXTBEE_API_KEY = 8f9a7412-f462-4db1-bdc7-d1dd29bbd081

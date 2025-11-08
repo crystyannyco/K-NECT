@@ -65,7 +65,7 @@ $barangayNameText = $barangayName ? strtoupper($barangayName) : '[BARANGAY NAME]
                     <!-- Card Content -->
                     <div class="space-y-3 mb-4">
                         <ul class="list-disc pl-6 text-sm text-gray-600 space-y-3">
-                            <li>Aged Out (31+ Years Old)</li>
+                            <li>Above Eligibility Age (31+ Years Old)</li>
                             <li>Inactive (Over 1 Year)</li>
                             <li>Deactivate User</li>
                         </ul>
@@ -360,7 +360,7 @@ $barangayNameText = $barangayName ? strtoupper($barangayName) : '[BARANGAY NAME]
                 <div class="space-y-3">
                     <label class="flex items-center">
                         <input type="radio" name="deactivateReason" value="aged_out" class="mr-3 text-blue-600 focus:ring-blue-500">
-                        <span class="text-sm">Aged out (31+ years old)</span>
+                        <span class="text-sm">Above Eligibility Age (31+ years old)</span>
                     </label>
                     <label class="flex items-center">
                         <input type="radio" name="deactivateReason" value="inactive_long" class="mr-3 text-blue-600 focus:ring-blue-500">

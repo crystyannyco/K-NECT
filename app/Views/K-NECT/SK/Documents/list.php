@@ -333,8 +333,6 @@
                                             echo esc($barangayName ?? 'Unknown Barangay');
                                         ?>
                                     </span>
-                                <?php else: ?>
-                                    <span class="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-500 shadow-sm italic">No barangay</span>
                                 <?php endif; ?>
                       </div>
                     </div>

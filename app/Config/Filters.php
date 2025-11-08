@@ -84,6 +84,7 @@ class Filters extends BaseFilters
                     'cron/*',            // Exclude cron endpoints
                     'api/*',             // Exclude API endpoints if needed
                     'profiling/abort',   // Exclude profiling cleanup beacon (sent on page unload)
+                    'logout',            // Exclude logout to prevent CSRF token issues
                 ]
             ],
             // 'invalidchars',

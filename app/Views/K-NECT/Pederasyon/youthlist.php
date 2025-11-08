@@ -208,6 +208,21 @@
             }
         }
 
+        /* Main table alignment */
+        #myTable th,
+        #myTable td {
+            text-align: center;
+        }
+
+        #myTable th.name-header,
+        #myTable td.name-cell {
+            text-align: left;
+        }
+
+        #myTable td.action-cell {
+            text-align: center;
+        }
+
         /* Responsive cell classes */
         .name-cell {
             white-space: normal !important;
@@ -316,17 +331,17 @@
                             <table id="myTable" class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">
                                             <input type="checkbox" id="selectAllRows" class="form-checkbox h-4 w-4 text-blue-600">
                                         </th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">ID</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Barangay</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Name</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Age</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Sex</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Approval Status</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">User Type</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Action</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">User ID</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Barangay</th>
+                                        <th class="px-4 py-3 text-xs font-medium text-gray-600 uppercase tracking-wider name-header">Name</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Age</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Sex</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Approval Status</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">User Type</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
@@ -350,17 +365,17 @@
                                                 data-user-id="<?= esc($user['id']) ?>"
                                                 data-display-user-id="<?= esc($user['user_id']) ?>"
                                                 data-barangay-id="<?= esc($user['barangay']) ?>">
-                                <td class="px-4 py-4 whitespace-nowrap">
+                                <td class="px-4 py-4 whitespace-nowrap text-center">
                                                     <input type="checkbox" class="rowCheckbox form-checkbox h-4 w-4 text-blue-600" value="<?= esc($user['id']) ?>">
                                                 </td>
-                                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900"><?= esc($user['user_id']) ?></td>
-                                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-center"><?= esc($user['user_id']) ?></td>
+                                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
                                                     <?= esc(BarangayHelper::getBarangayName($user['barangay'])) ?>
                                                 </td>
                                                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 name-cell"><?= esc($user['last_name']) ?>, <?= esc($user['first_name']) ?> <?= esc($user['middle_name']) ?></td>
-                                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900"><?= esc($user['age']) ?></td>
-                                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900"><?= $user['sex'] == '1' ? 'Male' : ($user['sex'] == '2' ? 'Female' : '') ?></td>
-                                                <td class="px-4 py-4 whitespace-nowrap">
+                                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-center"><?= esc($user['age']) ?></td>
+                                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-center"><?= $user['sex'] == '1' ? 'Male' : ($user['sex'] == '2' ? 'Female' : '') ?></td>
+                                                <td class="px-4 py-4 whitespace-nowrap text-center">
                                                     <?php
                                                     $status = isset($user['status']) ? (int)$user['status'] : 1;
                                                     $statusClass = '';
@@ -381,13 +396,13 @@
                                                     ?>
                                                     <span class="px-2 py-1 rounded-full text-sm font-medium <?= $statusClass ?>"><?= $statusText ?></span>
                                                 </td>
-                                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
                                                     <?php
                                                         $type = isset($user['user_type']) ? (int)$user['user_type'] : 1;
                                                         echo $type == 1 ? 'KK Member' : ($type == 2 ? 'SK Chairperson' : ($type == 3 ? 'SK Chairperson' : 'Unknown'));
                                                     ?>
                                                 </td>
-                                                <td class="px-4 py-4 whitespace-nowrap action-cell">
+                                                <td class="px-4 py-4 whitespace-nowrap action-cell text-center">
                                                     <button type="button" 
                                                         class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors view-user-btn"
                                                         data-id="<?= esc($user['id']) ?>"
@@ -1272,7 +1287,7 @@
                     const url = '<?= base_url('/previewDocument/id/') ?>' + uploadIdFile;
                     const ext = uploadIdFile.split('.').pop().toLowerCase();
                     html += `<div class="w-full border border-gray-200 rounded-lg bg-gray-50 p-4">
-                        <div class='font-semibold text-gray-700 mb-2'>ID</div>
+                        <div class='font-semibold text-gray-700 mb-2'>User ID</div>
                         <div class='relative w-full'>`;
                     if (['pdf'].includes(ext)) {
                         html += `<iframe src='${url}' style='width: 100%; height: 600px;' class='rounded border' frameborder='0'></iframe>`;
@@ -1350,11 +1365,11 @@
                         $('#pedModalUserEmail').text(u.email || '');
                         if (u.birthdate) {
                             const dateObj = new Date(u.birthdate);
-                            if (!isNaN(dateObj)) {
-                                const day = dateObj.getDate();
-                                const month = dateObj.toLocaleString('default', { month: 'long' });
+                            if (!Number.isNaN(dateObj.getTime())) {
+                                const month = dateObj.toLocaleString('en-US', { month: 'short' });
+                                const day = String(dateObj.getDate()).padStart(2, '0');
                                 const year = dateObj.getFullYear();
-                                $('#pedModalUserBirthday').text(`${day}, ${month}, ${year}`);
+                                $('#pedModalUserBirthday').text(`${month} ${day}, ${year}`);
                             } else {
                                 $('#pedModalUserBirthday').text(u.birthdate);
                             }
@@ -1640,11 +1655,9 @@
                     if (user.birthdate) {
                         const parsed = new Date(user.birthdate);
                         if (!Number.isNaN(parsed.getTime()) && parsed.getFullYear() > 1900) {
-                            birthday = parsed.toLocaleDateString('en-US', {
-                                month: '2-digit',
-                                day: '2-digit',
-                                year: 'numeric'
-                            });
+                            const month = parsed.toLocaleString('en-US', { month: 'short' });
+                            const day = String(parsed.getDate()).padStart(2, '0');
+                            birthday = `${month} ${day}, ${parsed.getFullYear()}`;
                         }
                     }
 

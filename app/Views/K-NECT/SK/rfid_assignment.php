@@ -30,6 +30,16 @@
             border-color: #3b82f6;
         }
 
+        #rfidTable th,
+        #rfidTable td {
+            text-align: center;
+        }
+
+        #rfidTable th.name-header,
+        #rfidTable td.name-cell {
+            text-align: left;
+        }
+
         /* Simple animations */
         .animate-spin {
             animation: spin 1s linear infinite;
@@ -146,10 +156,9 @@
                         <table id="rfidTable" class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-4 py-2 border-b">No.</th>
                                     <th class="px-4 py-2 border-b">User ID</th>
                                     <th class="px-4 py-2 border-b">Zone</th>
-                                    <th class="px-4 py-2 border-b text-left">Full Name</th>
+                                    <th class="px-4 py-2 border-b name-header">Full Name</th>
                                     <th class="px-4 py-2 border-b">Age</th>
                                     <th class="px-4 py-2 border-b">Sex</th>
                                     <th class="px-4 py-2 border-b">RFID Status</th>
@@ -160,7 +169,6 @@
                                 <?php if (!empty($user_list)): ?>
                                     <?php foreach ($user_list as $index => $user): ?>
                                         <tr class="hover:bg-gray-50">
-                                            <td class="px-4 py-2 border-b text-center"><?= $index + 1 ?></td>
                                             <td class="px-4 py-2 border-b text-center">
                                                 <?php if (isset($user['user_id']) && $user['user_id']): ?>
                                                     <?= esc($user['user_id']) ?>
@@ -171,7 +179,7 @@
                                             <td class="px-4 py-2 border-b text-center">
                                                 <?= esc($user['zone_display']) ?>
                                             </td>
-                                            <td class="px-4 py-2 border-b text-left"><?= $user['full_name'] ?></td>
+                                            <td class="px-4 py-2 border-b name-cell"><?= $user['full_name'] ?></td>
                                             <td class="px-4 py-2 border-b text-center"><?= esc($user['age']) ?></td>
                                             <td class="px-4 py-2 border-b text-center"><?= esc($user['sex_text']) ?></td>
                                             <td class="px-4 py-2 border-b text-center">
@@ -188,7 +196,7 @@
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php else: ?>
-                                    <tr><td colspan="8" class="px-4 py-2 text-center">No verified users found.</td></tr>
+                                    <tr><td colspan="7" class="px-4 py-2 text-center">No verified users found.</td></tr>
                                 <?php endif; ?>
                             </tbody>
                         </table>
@@ -405,18 +413,11 @@
         var table = $('#rfidTable').DataTable({
             "pageLength": 25,
             "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
-            "order": [[6, "desc"], [1, "desc"]], // Sort by RFID Status desc (Unassigned first), then User ID desc
+            "order": [[5, "desc"], [0, "desc"]], // Sort by RFID Status desc (Unassigned first), then User ID desc
             "responsive": true,
             "columnDefs": [
-                { "orderable": false, "targets": [7] } // Disable sorting on Action column (now column 7)
-            ],
-            // Ensure the No. column shows correct sequential numbers after sorting/paging
-            "drawCallback": function(settings) {
-                var api = this.api();
-                api.column(0, {order: 'applied', search: 'applied'}).nodes().each(function(cell, i) {
-                    cell.innerHTML = i + 1;
-                });
-            }
+                { "orderable": false, "targets": [6] } // Disable sorting on Action column (now column 6)
+            ]
         });
 
         // Status filter functionality
@@ -470,7 +471,7 @@
         // Zone filter functionality
         $('#zoneFilter').on('change', function() {
             var zoneValue = $(this).val();
-            table.column(2).search(zoneValue).draw(); // Zone is now column 2
+            table.column(1).search(zoneValue).draw(); // Zone is now column 1
         });
 
         // Clear filters button functionality

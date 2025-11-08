@@ -35,6 +35,18 @@
         overflow-x: auto; /* allow horizontal scroll on small screens */
     }
 
+    #usersTable th, #usersTable td,
+    #inactiveTable th, #inactiveTable td,
+    #deactivatedTable th, #deactivatedTable td {
+        text-align: center;
+    }
+
+    #usersTable th.name-header, #usersTable td.name-cell,
+    #inactiveTable th.name-header, #inactiveTable td.name-cell,
+    #deactivatedTable th.name-header, #deactivatedTable td.name-cell {
+        text-align: left;
+    }
+
     /* Allow name cells to wrap and break long words */
     #usersTable td.name-cell,
     #inactiveTable td.name-cell,
@@ -126,7 +138,7 @@
                             <span class="text-sm font-medium text-gray-600">Reason:</span>
                             <select id="reasonFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 <option value="">All Reasons</option>
-                                <option value="aged_out">Aged Out (31+)</option>
+                                <option value="aged_out">Above Eligibility Age (31+)</option>
                                 <option value="inactive_long">Inactive 1+ Year</option>
                                 <option value="manual_deactivation">Manual Deactivation</option>
                             </select>
@@ -150,24 +162,20 @@
                         <table id="usersTable" class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">User ID</th>
-                                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Full Name</th>
-                                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Zone</th>
-                                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Age</th>
-                                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Position</th>
-                                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
-                                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">User ID</th>
+                                    <th class="px-6 py-3 text-sm font-medium text-gray-500 uppercase tracking-wider name-header">Full Name</th>
+                                    <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">Zone</th>
+                                    <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">Age</th>
+                                    <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">Position</th>
+                                    <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
+                                    <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 <?php if (!empty($user_list)): ?>
                                     <?php foreach ($user_list as $user): ?>
                                         <tr class="hover:bg-gray-50">
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                <?= esc($user['id']) ?>
-                                            </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                                 <?= esc($user['user_id']) ?>
                                             </td>
@@ -218,23 +226,21 @@
                         <table id="inactiveTable" class="min-w-full divide-y divide-gray-200 hidden">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">User ID</th>
-                                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Full Name</th>
-                                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Zone</th>
-                                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Age</th>
-                                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Reason</th>
-                                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
-                                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">User ID</th>
+                                    <th class="px-6 py-3 text-sm font-medium text-gray-500 uppercase tracking-wider name-header">Full Name</th>
+                                    <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">Zone</th>
+                                    <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">Age</th>
+                                    <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">Reason</th>
+                                    <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
+                                    <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 <?php if (!empty($inactive_list)): ?>
                                     <?php foreach ($inactive_list as $user): ?>
                                         <tr class="hover:bg-gray-50">
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= esc($user['id']) ?></td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><?= esc($user['user_id']) ?></td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= esc($user['full_name']) ?></td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 name-cell"><?= esc($user['full_name']) ?></td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= esc($user['zone_display']) ?></td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= esc($user['age']) ?></td>
                                             <td class="px-6 py-4 whitespace-nowrap">
@@ -256,23 +262,21 @@
                         <table id="deactivatedTable" class="min-w-full divide-y divide-gray-200 hidden">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">User ID</th>
-                                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Full Name</th>
-                                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Zone</th>
-                                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Age</th>
-                                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Deactivated</th>
-                                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Reason</th>
-                                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">User ID</th>
+                                    <th class="px-6 py-3 text-sm font-medium text-gray-500 uppercase tracking-wider name-header">Full Name</th>
+                                    <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">Zone</th>
+                                    <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">Age</th>
+                                    <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">Deactivated</th>
+                                    <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">Reason</th>
+                                    <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 <?php if (!empty($deactivated_list)): ?>
                                     <?php foreach ($deactivated_list as $user): ?>
                                         <tr class="hover:bg-gray-50">
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= esc($user['id']) ?></td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><?= esc($user['user_id']) ?></td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= esc($user['full_name']) ?></td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 name-cell"><?= esc($user['full_name']) ?></td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= esc($user['zone_display']) ?></td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= esc($user['age']) ?></td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= esc($user['deactivated_date'] ?? '') ?></td>
@@ -480,7 +484,7 @@
                 <div class="space-y-3 mb-4">
                     <label class="flex items-center">
                         <input type="radio" name="deactivateReason" value="aged_out" class="mr-3 text-blue-600 focus:ring-blue-500">
-                        <span class="text-sm">Aged out (31+ years old)</span>
+                        <span class="text-sm">Above Eligibility Age (31+ years old)</span>
                     </label>
                     <label class="flex items-center">
                         <input type="radio" name="deactivateReason" value="inactive_long" class="mr-3 text-blue-600 focus:ring-blue-500">
@@ -594,7 +598,7 @@ $(document).ready(function() {
         columnDefs: [
             { orderable: false, targets: -1 },
             { responsivePriority: 1, targets: -1 }, // Actions stays visible
-            { responsivePriority: 2, targets: 2 }   // Full Name prioritized
+            { responsivePriority: 2, targets: 1 }   // Full Name prioritized
         ],
         responsive: true,
         autoWidth: false
@@ -603,15 +607,15 @@ $(document).ready(function() {
     // Initialize DataTables for each tab
     const usersDataTable = $('#usersTable').DataTable({
         ...dtCommonOptions,
-        order: [[2, 'asc']]
+        order: [[1, 'asc']]
     });
     const inactiveDataTable = $('#inactiveTable').DataTable({
         ...dtCommonOptions,
-        order: [[2, 'asc']]
+        order: [[1, 'asc']]
     });
     const deactivatedDataTable = $('#deactivatedTable').DataTable({
         ...dtCommonOptions,
-        order: [[2, 'asc']]
+        order: [[1, 'asc']]
     });
 
     // Initial adjustment to avoid horizontal scroll flashes
@@ -706,7 +710,7 @@ $(document).ready(function() {
         if (val === 'aged_out') searchText = 'Overage';
         else if (val === 'inactive_long') searchText = 'Inactive';
         else if (val === 'manual_deactivation') searchText = 'Manual';
-        deactivatedDataTable.column(6).search(searchText).draw();
+    deactivatedDataTable.column(5).search(searchText).draw();
     });
 
     // Clear filters adapts to active tab
@@ -736,7 +740,7 @@ function populateZoneFilter() {
     
     // Extract unique zones from rendered table rows (SSR)
     $('#usersTable tbody tr').each(function() {
-        const zoneCell = $(this).find('td').eq(3).text().trim();
+    const zoneCell = $(this).find('td').eq(2).text().trim();
         if (zoneCell && zoneCell !== '-') zones.add(zoneCell);
     });
     
@@ -756,12 +760,12 @@ function setupFilterHandlers() {
         const zoneValue = $(this).val();
         const table = $('#usersTable').DataTable();
         if (!zoneValue) {
-            table.column(3).search('').draw();
+            table.column(2).search('').draw();
             return;
         }
         // Exact match using regex with anchors; escape user input
         const regex = '^' + escapeRegex(zoneValue) + '$';
-        table.column(3).search(regex, true, false).draw();
+        table.column(2).search(regex, true, false).draw();
     });
     
     // Position/User Type filter  
@@ -776,9 +780,9 @@ function setupFilterHandlers() {
                 '4': 'Member'
             };
             const searchText = positionMap[positionValue] || '';
-            table.column(5).search(searchText).draw();
+            table.column(4).search(searchText).draw();
         } else {
-            table.column(5).search('').draw();
+            table.column(4).search('').draw();
         }
     });
 }

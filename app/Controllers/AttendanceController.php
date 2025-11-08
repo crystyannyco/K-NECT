@@ -771,7 +771,7 @@ class AttendanceController extends BaseController
                     log_message('error', "User not found with RFID: {$rfidCode} and User ID: {$userId}");
                     return $this->response->setJSON([
                         'success' => false, 
-                        'message' => 'RFID and User ID do not match. Please verify your credentials.'
+                        'message' => 'Your card and ID number don\'t match. Please double-check both or ask the administrator for help.'
                     ]);
                 }
             } else if ($rfidCode) {
@@ -779,7 +779,7 @@ class AttendanceController extends BaseController
                 $user = $userModel->where('rfid_code', $rfidCode)->first();
                 if (!$user) {
                     log_message('error', "RFID not found: {$rfidCode}");
-                    return $this->response->setJSON(['success' => false, 'message' => 'RFID not found. Please ensure your ID is properly registered.']);
+                    return $this->response->setJSON(['success' => false, 'message' => 'Your card is not registered in the system. Please ask the administrator to register your card first.']);
                 }
             } else if ($userId) {
                 // Only User ID provided - handle YY-MMDD-NN format (e.g., 25-1005-01)
@@ -823,7 +823,7 @@ class AttendanceController extends BaseController
                     
                     return $this->response->setJSON([
                         'success' => false, 
-                        'message' => "User ID not found. Please ensure your ID is properly registered.",
+                        'message' => "Your ID number is not in the system yet. Please check your ID or ask the administrator for help.",
                         'debug_info' => [
                             'searched_user_id' => $searchUserId,
                             'user_id_field_search' => $debugUser1 ? true : false,

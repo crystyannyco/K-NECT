@@ -51,6 +51,12 @@
         #myTable th, #myTable td {
             vertical-align: middle;
             white-space: nowrap;
+            text-align: center;
+        }
+
+        #myTable th.name-header,
+        #myTable td.name-cell {
+            text-align: left;
         }
 
         #myTable td.name-cell {
@@ -60,6 +66,16 @@
 
         #myTable td.action-cell {
             white-space: nowrap;
+        }
+
+        #credentialsTable th,
+        #credentialsTable td {
+            text-align: center;
+        }
+
+        #credentialsTable th.name-header,
+        #credentialsTable td.name-cell {
+            text-align: left;
         }
 
         /* Smaller screens: allow more wrapping and increase readability */
@@ -168,18 +184,17 @@
                             <table id="myTable" class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                                        <th class="px-4 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">
                                             <input type="checkbox" id="selectAllRows" class="form-checkbox h-4 w-4 text-indigo-600">
                                         </th>
-                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">User ID</th>
-                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Zone</th>
-                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Age</th>
-                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Sex</th>
-                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Position</th>
-                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">View</th>
+                                        <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">User ID</th>
+                                        <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">Zone</th>
+                                        <th class="px-6 py-3 text-sm font-medium text-gray-500 uppercase tracking-wider name-header">Name</th>
+                                        <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">Age</th>
+                                        <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">Sex</th>
+                                        <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">Position</th>
+                                        <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">View</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
@@ -207,7 +222,6 @@
                                                            data-user_id="<?= esc($user['id']) ?>"
                                                            data-position="<?= isset($user['position']) ? (int)$user['position'] : 5 ?>">
                                                 </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= esc($user['id']) ?></td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     <?= esc($user['user_id'] ?? '') ?>
                                                 </td>
@@ -266,7 +280,7 @@
                                         <?php endforeach; ?>
                                     <?php else: ?>
                                         <tr>
-                                            <td colspan="11" class="px-6 py-4 text-center text-gray-500">
+                                            <td colspan="9" class="px-6 py-4 text-center text-gray-500">
                                                 <div class="flex flex-col items-center justify-center py-8">
                                                     <svg class="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
@@ -670,10 +684,10 @@
             table = $('#myTable').DataTable({
                 columnDefs: [
                     { orderable: false, targets: 0 },
-                    { responsivePriority: 1, targets: 1 }, // name
+                    { responsivePriority: 1, targets: 3 }, // name
                     { responsivePriority: 2, targets: -1 } // actions
                 ],
-                order: [[1, 'asc']],
+                order: [[3, 'asc']],
                 responsive: true,
                 autoWidth: false,
                 paging: true,
@@ -746,7 +760,7 @@
             function populateZoneFilter() {
                 const zones = new Set();
                 $('#myTable tbody tr').each(function() {
-                    const zoneCell = $(this).find('td').eq(3); // Zone is in the 4th column (0-indexed: 3)
+                    const zoneCell = $(this).find('td').eq(2); // Zone is in the 3rd column (0-indexed: 2)
                     if (zoneCell.length) {
                         const zoneText = zoneCell.text().trim();
                         if (zoneText && zoneText !== '-') {
@@ -769,8 +783,8 @@
             // Zone filter dropdown
             $('#zoneFilter').on('change', function() {
                 const zoneValue = $(this).val();
-                // Apply zone filter (zone is in column 3 - 0-indexed)
-                table.column(3).search(zoneValue).draw();
+                // Apply zone filter (zone is in column 2 - 0-indexed)
+                table.column(2).search(zoneValue).draw();
             });
             
             // Clear filters button
@@ -1064,10 +1078,11 @@
                                 if (u.birthdate) {
                                     const dateObj = new Date(u.birthdate);
                                     if (!isNaN(dateObj)) {
+                                        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
                                         const day = dateObj.getDate();
-                                        const month = dateObj.toLocaleString('default', { month: 'long' });
+                                        const month = months[dateObj.getMonth()];
                                         const year = dateObj.getFullYear();
-                                        $('#modalUserBirthday').text(`${day}, ${month}, ${year}`);
+                                        $('#modalUserBirthday').text(`${month} ${day}, ${year}`);
                                     } else {
                                         $('#modalUserBirthday').text(u.birthdate);
                                     }
@@ -1354,7 +1369,7 @@
                 tableBody.append(`
                     <tr class="hover:bg-gray-50">
                         <td class="border border-gray-300 px-3 py-2 text-center text-xs text-gray-900">${credential.user_id || ''}</td>
-                        <td class="border border-gray-300 px-3 py-2 text-center text-xs text-gray-900">${credential.full_name}</td>
+                        <td class="border border-gray-300 px-3 py-2 text-xs text-gray-900 name-cell">${credential.full_name}</td>
                         <td class="border border-gray-300 px-3 py-2 text-center text-xs text-gray-700">${barangayName}</td>
                         <td class="border border-gray-300 px-3 py-2 text-center text-xs text-gray-700">${positionText}</td>
                         <td class="border border-gray-300 px-3 py-2 text-center text-xs font-mono text-gray-900 bg-gray-50">${credential.sk_username || 'N/A'}</td>
@@ -1830,11 +1845,11 @@
                         </div>
                         <div class="overflow-x-auto">
                             <div class="border-2 border-gray-400 rounded-lg overflow-hidden">
-                                <table class="w-full border-collapse border border-gray-300 rounded-lg overflow-hidden">
+                                <table id="credentialsTable" class="w-full border-collapse border border-gray-300 rounded-lg overflow-hidden">
                                     <thead>
                                         <tr class="bg-gray-50">
                                             <th class="border border-gray-300 text-center font-bold py-3 px-3 text-gray-700 text-xs">User ID</th>
-                                            <th class="border border-gray-300 text-center font-bold py-3 px-3 text-gray-700 text-xs">Full Name</th>
+                                            <th class="border border-gray-300 font-bold py-3 px-3 text-gray-700 text-xs name-header">Full Name</th>
                                             <th class="border border-gray-300 text-center font-bold py-3 px-3 text-gray-700 text-xs">Barangay</th>
                                             <th class="border border-gray-300 text-center font-bold py-3 px-3 text-gray-700 text-xs">Position</th>
                                             <th class="border border-gray-300 text-center font-bold py-3 px-3 text-gray-700 text-xs">SK Username</th>

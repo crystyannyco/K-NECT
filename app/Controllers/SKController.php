@@ -380,6 +380,11 @@ class SKController extends BaseController
             // Calculate age
             $u['age'] = $u['birthdate'] ? (date_diff(date_create($u['birthdate']), date_create('today'))->y) : '';
             
+            // Format birthdate to "Mon Day, Year" (e.g., "Jan 1, 2000")
+            if ($u['birthdate']) {
+                $u['birthdate'] = date('M j, Y', strtotime($u['birthdate']));
+            }
+            
             // Format full name
             $fullName = esc($u['last_name']);
             if (!empty($u['first_name'])) {
@@ -924,9 +929,9 @@ class SKController extends BaseController
                 // Format barangay name
                 $u['barangay_name'] = BarangayHelper::getBarangayName($u['barangay'] ?? '');
                 
-                // Format birthdate for display
+                // Format birthdate to "Mon Day, Year" (e.g., "Jan 1, 2000")
                 if ($u['birthdate']) {
-                    $u['birthdate'] = date('m/d/Y', strtotime($u['birthdate']));
+                    $u['birthdate'] = date('M j, Y', strtotime($u['birthdate']));
                 }
                 
                 // Ensure all fields have default values to prevent undefined errors
@@ -1200,7 +1205,7 @@ class SKController extends BaseController
                 // Use custom reason from database
                 $u['deactivation_reason'] = $u['deactivation_reason'];
             } elseif ((int)$u['is_active'] === 2) {
-                $u['deactivation_reason'] = 'Aged out (31+ years old)';
+                $u['deactivation_reason'] = 'Above Eligibility Age (31+ years old)';
             } elseif ((int)$u['is_active'] === 3) {
                 $u['deactivation_reason'] = 'Inactive for 1+ year';
             } else {
@@ -1810,7 +1815,7 @@ class SKController extends BaseController
                     
                     // Format other fields
                     $sex = $user['sex'] == '1' ? 'M' : ($user['sex'] == '2' ? 'F' : '');
-                    $birthday = $user['birthdate'] ? date('m/d/Y', strtotime($user['birthdate'])) : '';
+                    $birthday = $user['birthdate'] ? date('M j, Y', strtotime($user['birthdate'])) : '';
                     $civilStatus = $this->formatCivilStatus($user['civil_status']);
                     $education = $this->formatEducation($user['educational_background']);
                     $workStatus = $this->formatWorkStatus($user['work_status']);
@@ -2089,7 +2094,7 @@ class SKController extends BaseController
         foreach ($users as $user) {
             // Format data similar to PDF version
             $age = $user['birthdate'] ? (date_diff(date_create($user['birthdate']), date_create('today'))->y) : '';
-            $birthday = $user['birthdate'] ? date('M d, Y', strtotime($user['birthdate'])) : '';
+            $birthday = $user['birthdate'] ? date('M j, Y', strtotime($user['birthdate'])) : '';
             $sex = $user['sex'] == '1' ? 'Male' : ($user['sex'] == '2' ? 'Female' : '');
             
             $lastName = $this->sanitizeForWord($user['last_name'] ?? '');
@@ -2369,7 +2374,7 @@ class SKController extends BaseController
 
                 $birthdayText = '';
                 if (!empty($user['birthdate'])) {
-                    $birthdayText = date('m/d/Y', strtotime($user['birthdate']));
+                    $birthdayText = date('M j, Y', strtotime($user['birthdate']));
                 }
                 $birthdayText = $this->sanitizeForSpreadsheet($birthdayText);
 

@@ -134,6 +134,12 @@
             vertical-align: middle;
             white-space: normal; /* allow wrapping */
             word-break: break-word;
+            text-align: center;
+        }
+
+        #kkTable th.fullname-header,
+        #kkTable td.fullname-cell {
+            text-align: left;
         }
 
         /* Give the full name column more room to wrap nicely */
@@ -155,6 +161,16 @@
                 font-size: 8px !important;
                 line-height: 1.1 !important; /* reduce line height for tighter rows */
             }
+        }
+
+        #downloadContent table thead th,
+        #downloadContent table tbody td {
+            text-align: center;
+        }
+
+        #downloadContent table thead th.name-header,
+        #downloadContent table tbody td.name-cell {
+            text-align: left;
         }
     </style>
 
@@ -247,22 +263,20 @@
                             <table id="kkTable" class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">No.</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">User ID</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Zone</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Full Name</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Age</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Birthday</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Sex</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Status</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Action</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">User ID</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Zone</th>
+                                        <th class="px-4 py-3 text-xs font-medium text-gray-600 uppercase tracking-wider fullname-header">Full Name</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Age</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Birthday</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Sex</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Status</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     <?php if (!empty($user_list)): ?>
                                         <?php foreach ($user_list as $user): ?>
                                             <tr class="hover:bg-gray-50 transition-colors">
-                                                <td class="px-4 py-3 text-sm text-gray-900 text-center"><?= esc($user['barangay_sequence'] ?? '') ?></td>
                                                 <td class="px-4 py-3 text-sm text-gray-900 text-center">
                                                     <?php if (isset($user['user_id']) && $user['user_id']): ?>
                                                         <?= esc($user['user_id']) ?>
@@ -271,7 +285,7 @@
                                                     <?php endif; ?>
                                                 </td>
                                                 <td class="px-4 py-3 text-sm text-gray-900 text-center"><?= esc($user['zone_display']) ?></td>
-                                                <td class="px-4 py-3 text-sm text-gray-900 font-medium"><?= $user['full_name'] ?></td>
+                                                <td class="px-4 py-3 text-sm text-gray-900 font-medium fullname-cell"><?= $user['full_name'] ?></td>
                                                 <td class="px-4 py-3 text-sm text-gray-900 text-center"><?= esc($user['age']) ?></td>
                                                 <td class="px-4 py-3 text-sm text-gray-900 text-center"><?= esc($user['birthdate']) ?></td>
                                                 <td class="px-4 py-3 text-sm text-gray-900 text-center"><?= esc($user['sex_text']) ?></td>
@@ -814,7 +828,7 @@
                                         <th class="border border-gray-300 px-1 py-2 text-center font-bold text-gray-700 text-xs" style="width: 4%">PROVINCE</th>
                                         <th class="border border-gray-300 px-1 py-2 text-center font-bold text-gray-700 text-xs" style="width: 6%">CITY</th>
                                         <th class="border border-gray-300 px-1 py-2 text-center font-bold text-gray-700 text-xs" style="width: 6%">BARANGAY</th>
-                                        <th class="border border-gray-300 px-1 py-2 text-center font-bold text-gray-700 text-xs" style="width: 8%">NAME</th>
+                                        <th class="border border-gray-300 px-1 py-2 font-bold text-gray-700 text-xs name-header" style="width: 8%">NAME</th>
                                         <th class="border border-gray-300 px-1 py-2 text-center font-bold text-gray-700 text-xs" style="width: 3%">AGE</th>
                                         <th class="border border-gray-300 px-1 py-2 text-center font-bold text-gray-700 text-xs" style="width: 6%">BIRTHDAY</th>
                                         <th class="border border-gray-300 px-1 py-2 text-center font-bold text-gray-700 text-xs" style="width: 4%">SEX<br>M/F</th>
@@ -1148,10 +1162,11 @@
                     if (u.birthdate) {
                         const dateObj = new Date(u.birthdate);
                         if (!isNaN(dateObj)) {
+                            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
                             const day = dateObj.getDate();
-                            const month = dateObj.toLocaleString('default', { month: 'long' });
+                            const month = months[dateObj.getMonth()];
                             const year = dateObj.getFullYear();
-                            $('#modalUserBirthday').text(`${day}, ${month}, ${year}`);
+                            $('#modalUserBirthday').text(`${month} ${day}, ${year}`);
                         } else {
                             $('#modalUserBirthday').text(u.birthdate);
                         }
@@ -1805,9 +1820,9 @@
             
             const status = $(this).data('status');
             if (status === 'all') {
-                table.column(7).search('').draw();
+                table.column(6).search('').draw();
             } else {
-                table.column(7).search(status).draw();
+                table.column(6).search(status).draw();
             }
         });
         
@@ -1815,7 +1830,7 @@
         function populateZoneFilter() {
             const zones = new Set();
             $('#kkTable tbody tr').each(function() {
-                const zoneCell = $(this).find('td').eq(2); // Zone is now in the 3rd column (0-indexed: 2)
+                const zoneCell = $(this).find('td').eq(1); // Zone is now in the 2nd column (0-indexed: 1)
                 if (zoneCell.length) {
                     const zoneText = zoneCell.text().trim();
                     if (zoneText && zoneText !== '-') {
@@ -1835,8 +1850,8 @@
         // Zone filter dropdown
         $('#zoneFilter').on('change', function() {
             const zoneValue = $(this).val();
-            // Apply zone filter (zone is now in column 2 - 0-indexed)
-            table.column(2).search(zoneValue).draw();
+            // Apply zone filter (zone is now in column 1 - 0-indexed)
+            table.column(1).search(zoneValue).draw();
         });
         
         // Clear filters button
@@ -1908,10 +1923,11 @@
                     if (u.birthdate) {
                         const dateObj = new Date(u.birthdate);
                         if (!isNaN(dateObj)) {
+                            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
                             const day = dateObj.getDate();
-                            const month = dateObj.toLocaleString('default', { month: 'long' });
+                            const month = months[dateObj.getMonth()];
                             const year = dateObj.getFullYear();
-                            $('#modalUserBirthday').text(`${day}, ${month}, ${year}`);
+                            $('#modalUserBirthday').text(`${month} ${day}, ${year}`);
                         } else {
                             $('#modalUserBirthday').text(u.birthdate);
                         }
@@ -2359,7 +2375,7 @@
                     <td class="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">Camarines Sur</td>
                     <td class="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">Iriga City</td>
                     <td class="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">${user.barangay_name || ''}</td>
-                    <td class="border border-gray-300 px-1 py-1 text-xs text-gray-900">${user.full_name || ''}</td>
+                    <td class="border border-gray-300 px-1 py-1 text-xs text-gray-900 name-cell">${user.full_name || ''}</td>
                     <td class="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">${user.age || ''}</td>
                     <td class="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">${user.birthdate || ''}</td>
                     <td class="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">${user.sex === '1' ? 'M' : user.sex === '2' ? 'F' : ''}</td>

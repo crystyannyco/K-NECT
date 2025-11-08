@@ -154,7 +154,7 @@ class UserStatusController extends BaseController
                     }
                 }
 
-                // Check inactivity (1+ year without login) - only if not already marked as aged out
+                // Check inactivity (1+ year without login) - only if not already marked as Above Eligibility Age
                 if (!$updated && !empty($user['last_login'])) {
                     $lastLogin = new \DateTime($user['last_login']);
                     $today = new \DateTime();
@@ -188,7 +188,7 @@ class UserStatusController extends BaseController
             $totalUpdated = $specialCaseCount + $processedCount;
 
             // Log the results
-            log_message('info', "Manual User Status Check completed. Special cases (active=4, age_group=4): {$specialCaseCount}, Aged out: {$aged31Count}, Inactive: {$inactiveCount}, Total: {$totalUpdated}");
+            log_message('info', "Manual User Status Check completed. Special cases (active=4, age_group=4): {$specialCaseCount}, Above Eligibility Age: {$aged31Count}, Inactive: {$inactiveCount}, Total: {$totalUpdated}");
 
             return $this->response->setJSON([
                 'success' => true,
@@ -561,7 +561,7 @@ class UserStatusController extends BaseController
             switch ($reason) {
                 case 'aged_out':
                     $isActiveValue = 2; // Overage (31+)
-                    $readableReason = 'Aged out (31+ years old)';
+                    $readableReason = 'Above Eligibility Age (31+ years old)';
                     break;
                 case 'inactive_long':
                     $isActiveValue = 3; // Inactive 1+ year

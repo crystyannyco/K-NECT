@@ -37,6 +37,20 @@
             table-layout: auto;
         }
 
+        #myTable th,
+        #myTable td {
+            text-align: center;
+        }
+
+        #myTable th.name-header,
+        #myTable td.name-cell {
+            text-align: left;
+        }
+
+        #myTable td.action-cell {
+            text-align: center;
+        }
+
         #myTable th:nth-child(3),
         #myTable td:nth-child(3),
         #myTable th:nth-child(4),
@@ -47,6 +61,15 @@
         #myTable td:nth-child(3),
         #myTable td:nth-child(4) {
             word-break: break-word;
+        }
+
+        .name-cell {
+            white-space: normal !important;
+            word-wrap: break-word;
+        }
+
+        .action-cell {
+            white-space: nowrap !important;
         }
 
         /* Mobile responsive adjustments */
@@ -175,7 +198,7 @@
             border-bottom: 6px solid #1f2937;
         }
 
-        /* Occupied position styling */
+        /* Assigned position styling */
         option.position-occupied {
             color: #9ca3af !important;
             background-color: #f3f4f6 !important;
@@ -291,17 +314,17 @@
                             <table id="myTable" class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">
                                             <input type="checkbox" id="selectAllRows" class="form-checkbox h-4 w-4 text-blue-600">
                                         </th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">ID</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Barangay</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Name</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Age</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Sex</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Status</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Position</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Action</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">User ID</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Barangay</th>
+                                        <th class="px-4 py-3 text-xs font-medium text-gray-600 uppercase tracking-wider name-header">Name</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Age</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Sex</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Status</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Position</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
@@ -309,18 +332,19 @@
                                         <?php foreach ($ped_officers as $officer): ?>
                                             <tr class="hover:bg-gray-50"
                                                 data-ped_username="<?= isset($officer['ped_username']) ? esc($officer['ped_username']) : '' ?>"
-                                                data-ped_password="<?= isset($officer['ped_password']) ? esc($officer['ped_password']) : '' ?>">
-                                                <td class="px-4 py-4 whitespace-nowrap">
+                                                data-ped_password="<?= isset($officer['ped_password']) ? esc($officer['ped_password']) : '' ?>"
+                                                data-ped_position="<?= isset($officer['ped_position']) ? esc($officer['ped_position']) : '0' ?>">
+                                                <td class="px-4 py-4 whitespace-nowrap text-center">
                                                     <input type="checkbox" class="rowCheckbox form-checkbox h-4 w-4 text-blue-600" value="<?= esc($officer['id']) ?>">
                                                 </td>
-                                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900"><?= esc($officer['user_id']) ?></td>
-                                                <td class="px-4 py-4 text-sm text-gray-900">
+                                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-center"><?= esc($officer['user_id']) ?></td>
+                                                <td class="px-4 py-4 text-sm text-gray-900 text-center">
                                                     <?= esc($officer['barangay_name'] ?? ($officer['barangay'] ?? '')) ?>
                                                 </td>
-                                                <td class="px-4 py-4 text-sm text-gray-900"><?= esc($officer['last_name']) ?>, <?= esc($officer['first_name']) ?> <?= esc($officer['middle_name']) ?></td>
-                                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900"><?= esc($officer['age']) ?></td>
-                                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900"><?= $officer['sex'] == '1' ? 'Male' : ($officer['sex'] == '2' ? 'Female' : '') ?></td>
-                                                <td class="px-4 py-4 whitespace-nowrap">
+                                                <td class="px-4 py-4 text-sm text-gray-900 name-cell"><?= esc($officer['last_name']) ?>, <?= esc($officer['first_name']) ?> <?= esc($officer['middle_name']) ?></td>
+                                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-center"><?= esc($officer['age']) ?></td>
+                                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-center"><?= $officer['sex'] == '1' ? 'Male' : ($officer['sex'] == '2' ? 'Female' : '') ?></td>
+                                                <td class="px-4 py-4 whitespace-nowrap text-center">
                                                     <?php
                                                     $status = isset($officer['status']) ? (int)$officer['status'] : 1;
                                                     $statusClass = '';
@@ -341,7 +365,7 @@
                                                     ?>
                                                     <span class="px-2 py-1 rounded-full text-sm font-medium <?= $statusClass ?>"><?= $statusText ?></span>
                                                 </td>
-                                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
                                                     <?php
                                                         $positionMap = [
                                                             1 => 'President',
@@ -364,7 +388,7 @@
                                                         <?= esc($displayText) ?>
                                                     </span>
                                                 </td>
-                                                <td class="px-4 py-4 whitespace-nowrap">
+                                                <td class="px-4 py-4 whitespace-nowrap action-cell text-center">
                                                     <button type="button" 
                                                         class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors view-user-btn"
                                                         data-id="<?= esc($officer['id']) ?>"
@@ -756,33 +780,21 @@
             // Scan through all table rows to find occupied positions
             $('#myTable tbody tr').each(function() {
                 const rowUserId = $(this).find('.rowCheckbox').val();
-                // Get the full position text from data-full-text attribute (handles truncated display)
-                const positionCell = $(this).find('td').eq(7).find('.position-cell');
-                const positionText = positionCell.length > 0 ? positionCell.attr('data-full-text') : $(this).find('td').eq(7).text().trim();
+                // Get the ped_position value directly from data attribute
+                const pedPosition = $(this).attr('data-ped_position');
                 
                 // Skip the current user being edited
                 if (rowUserId == currentUserId) {
                     return;
                 }
                 
-                // Map position text to position values
-                const positionMap = {
-                    'President': '1',
-                    'Vice President': '2',
-                    'Secretary': '3',
-                    'Treasurer': '4',
-                    'Auditor': '5',
-                    'Public Information Officer': '6',
-                    'Sergeant at Arms': '7'
-                };
-                
-                // Check if this row has an occupied position
-                for (const [posName, posValue] of Object.entries(positionMap)) {
-                    if (positionText.includes(posName)) {
-                        occupiedPositions[posValue] = true;
-                        break;
-                    }
+                // Skip if no position (Member) or invalid
+                if (!pedPosition || pedPosition === '0' || pedPosition === 'null' || pedPosition === 'NULL') {
+                    return;
                 }
+                
+                // Mark this position as occupied
+                occupiedPositions[pedPosition] = true;
             });
             
             // Update the dropdown options
@@ -795,16 +807,16 @@
                     return;
                 }
                 
-                // Mark as occupied if position is taken
+                // Mark as assigned if position is taken
                 if (occupiedPositions[optionValue]) {
                     $(this).addClass('position-occupied');
                     const currentText = $(this).text();
-                    if (!currentText.includes('(Occupied)')) {
-                        $(this).text(currentText + ' (Occupied)');
+                    if (!currentText.includes('(Assigned)')) {
+                        $(this).text(currentText + ' (Assigned)');
                     }
                 } else {
                     $(this).removeClass('position-occupied');
-                    $(this).text($(this).text().replace(' (Occupied)', ''));
+                    $(this).text($(this).text().replace(' (Assigned)', ''));
                 }
             });
         }
@@ -816,33 +828,21 @@
             // Scan through all table rows to find occupied positions
             $('#myTable tbody tr').each(function() {
                 const rowUserId = $(this).find('.rowCheckbox').val();
-                // Get the full position text from data-full-text attribute (handles truncated display)
-                const positionCell = $(this).find('td').eq(7).find('.position-cell');
-                const positionText = positionCell.length > 0 ? positionCell.attr('data-full-text') : $(this).find('td').eq(7).text().trim();
+                // Get the ped_position value directly from data attribute
+                const pedPosition = $(this).attr('data-ped_position');
                 
                 // Skip users that are selected for bulk update
                 if (excludeUserIds.includes(rowUserId)) {
                     return;
                 }
                 
-                // Map position text to position values
-                const positionMap = {
-                    'President': '1',
-                    'Vice President': '2',
-                    'Secretary': '3',
-                    'Treasurer': '4',
-                    'Auditor': '5',
-                    'Public Information Officer': '6',
-                    'Sergeant at Arms': '7'
-                };
-                
-                // Check if this row has an occupied position
-                for (const [posName, posValue] of Object.entries(positionMap)) {
-                    if (positionText.includes(posName)) {
-                        occupiedPositions[posValue] = true;
-                        break;
-                    }
+                // Skip if no position (Member) or invalid
+                if (!pedPosition || pedPosition === '0' || pedPosition === 'null' || pedPosition === 'NULL') {
+                    return;
                 }
+                
+                // Mark this position as occupied
+                occupiedPositions[pedPosition] = true;
             });
             
             // Update the bulk modal dropdown options
@@ -855,16 +855,16 @@
                     return;
                 }
                 
-                // Mark as occupied if position is taken
+                // Mark as assigned if position is taken
                 if (occupiedPositions[optionValue]) {
                     $(this).addClass('position-occupied');
                     const currentText = $(this).text();
-                    if (!currentText.includes('(Occupied)')) {
-                        $(this).text(currentText + ' (Occupied)');
+                    if (!currentText.includes('(Assigned)')) {
+                        $(this).text(currentText + ' (Assigned)');
                     }
                 } else {
                     $(this).removeClass('position-occupied');
-                    $(this).text($(this).text().replace(' (Occupied)', ''));
+                    $(this).text($(this).text().replace(' (Assigned)', ''));
                 }
             });
         }
@@ -1255,11 +1255,11 @@
                             
                             if (u.birthdate) {
                                 const dateObj = new Date(u.birthdate);
-                                if (!isNaN(dateObj)) {
-                                    const day = dateObj.getDate();
-                                    const month = dateObj.toLocaleString('default', { month: 'long' });
+                                if (!Number.isNaN(dateObj.getTime())) {
+                                    const month = dateObj.toLocaleString('en-US', { month: 'short' });
+                                    const day = String(dateObj.getDate()).padStart(2, '0');
                                     const year = dateObj.getFullYear();
-                                    $('#modalUserBirthday').text(`${day}, ${month}, ${year}`);
+                                    $('#modalUserBirthday').text(`${month} ${day}, ${year}`);
                                 } else {
                                     $('#modalUserBirthday').text(u.birthdate);
                                 }
@@ -2217,7 +2217,9 @@
                     if (!value) return 'N/A';
                     const date = new Date(value);
                     if (Number.isNaN(date.getTime()) || date.getFullYear() < 1900) return 'N/A';
-                    return date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+                    const month = date.toLocaleString('en-US', { month: 'short' });
+                    const day = String(date.getDate()).padStart(2, '0');
+                    return `${month} ${day}, ${date.getFullYear()}`;
                 };
 
                 const resolveSex = (value) => {

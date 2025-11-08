@@ -1068,10 +1068,10 @@
                 
             } catch (error) {
                 console.error('Failed to initialize attendance system:', error);
-                updateLoadingStatus('Initialization failed');
+                updateLoadingStatus('Unable to start the system');
                 await new Promise(resolve => setTimeout(resolve, 1500));
                 hideLoadingScreen();
-                showToast('Failed to initialize attendance system. Please refresh the page.', 'error');
+                showToast('The attendance system could not be loaded. Please refresh this page or contact support if the problem continues.', 'error');
             }
         }
 
@@ -2494,13 +2494,13 @@
             
             if (!currentActiveSession) {
                 // Enhanced notification for manual entry without active session
-                showToast('Manual entry attempted but no active session - Entry will not be recorded', 'warning');
-                updateScanStatus('No active session - Manual entry blocked');
+                showToast('The attendance session has not started yet. Your entry cannot be recorded at this time.', 'warning');
+                updateScanStatus('Please wait for the attendance session to begin');
                 
                 // Show visual feedback in user info card
                 showUserInfo({
                     name: userId ? `User ID: ${userId}` : 'Manual Entry',
-                    status: 'No active session available - Entry blocked',
+                    status: 'Attendance session not yet active',
                     error: true
                 });
                 
@@ -2513,32 +2513,30 @@
             }
             
             if (!rfidCode && !userId) {
-                showToast('Please enter RFID code or User ID', 'warning');
+                showToast('Please enter your RFID card or User ID to record attendance', 'warning');
                 return;
             }
             
             // Remove RFID length validation - let backend handle it
             
-            // Normalize User ID - accept with or without hyphens
+            // Normalize User ID - accept digits only
             let normalizedUserId = userId;
             if (userId) {
-                // Remove all non-numeric characters (including multiple hyphens)
+                // Remove all non-numeric characters
                 const digitsOnly = userId.replace(/\D/g, '');
                 
                 if (digitsOnly && !isNaN(digitsOnly)) {
                     // Check if it matches new KK ID format (8 digits: YYMMDDNN)
                     if (/^\d{8}$/.test(digitsOnly)) {
-                        // Format as YY-MMDD-NN for backend
-                        normalizedUserId = digitsOnly.substring(0, 2) + '-' + 
-                                          digitsOnly.substring(2, 6) + '-' + 
-                                          digitsOnly.substring(6, 8);
+                        // Use digits only (no hyphens)
+                        normalizedUserId = digitsOnly;
                         console.log(`Normalized KK ID from ${userId} to ${normalizedUserId}`);
                     } else {
                         // Regular numeric ID - use digits only
                         normalizedUserId = digitsOnly;
                     }
                 } else {
-                    showToast('User ID must contain valid numbers', 'warning');
+                    showToast('Please enter a valid User ID with numbers only', 'warning');
                     return;
                 }
             }
@@ -2611,25 +2609,8 @@
                 // Remove all non-numeric characters
                 const digitsOnly = value.replace(/\D/g, '');
                 
-                // Auto-format as YY-MMDD-NN while typing
-                let formatted = digitsOnly;
-                if (digitsOnly.length >= 3) {
-                    formatted = digitsOnly.substring(0, 2) + '-' + digitsOnly.substring(2);
-                }
-                if (digitsOnly.length >= 7) {
-                    formatted = digitsOnly.substring(0, 2) + '-' + 
-                               digitsOnly.substring(2, 6) + '-' + 
-                               digitsOnly.substring(6);
-                }
-                
-                // Limit to 8 digits maximum (YY-MMDD-NN format)
-                if (digitsOnly.length > 8) {
-                    formatted = digitsOnly.substring(0, 2) + '-' + 
-                               digitsOnly.substring(2, 6) + '-' + 
-                               digitsOnly.substring(6, 8);
-                }
-                
-                return formatted;
+                // Keep only digits (no hyphens) - limit to 8 digits maximum (YYMMDDNN format)
+                return digitsOnly.substring(0, 8);
             };
 
             userIdInput.addEventListener('input', (e) => {
@@ -2691,12 +2672,12 @@
 
             if (!currentActiveSession) {
                 const profileName = rfidCode ? `RFID: ${rfidCode}` : (userId ? `User ID: ${userId}` : 'No active session');
-                const inputType = rfidCode ? 'RFID card scanned' : 'User ID entered';
-                showToast(`${inputType} but no active session available`, 'error');
-                updateScanStatus('No active session available', 'error');
+                const inputType = rfidCode ? 'Card scanned' : 'User ID entered';
+                showToast(`${inputType}, but the attendance session hasn't started yet. Please wait for the session to begin.`, 'warning');
+                updateScanStatus('Attendance session not yet active. Please wait.', 'warning');
                 displayUserProfile({
                     name: profileName,
-                    status: 'No active session available',
+                    status: 'The attendance session has not started yet',
                     error: true
                 }, CONFIG.PROFILE_DISPLAY_DURATION / 2);
                 _releaseProcessing();
@@ -2813,8 +2794,13 @@
                         };
                     } else if (typeof data.message === 'string' && (data.message.toLowerCase().includes('not found') || data.message.toLowerCase().includes('invalid'))) {
                         errorType = 'warning';
-                        showToast(`${data.message}`, errorType);
-                        updateScanStatus(data.message, 'error');
+                        const friendlyMessage = data.message.toLowerCase().includes('rfid') 
+                            ? 'This card is not registered in the system. Please contact the administrator to register your card.'
+                            : data.message.toLowerCase().includes('user id') || data.message.toLowerCase().includes('user not found')
+                            ? 'This ID is not registered in the system. Please check your ID or contact the administrator.'
+                            : 'Your information was not found in the system. Please contact the administrator for assistance.';
+                        showToast(friendlyMessage, errorType);
+                        updateScanStatus(friendlyMessage, 'warning');
                         profilePayload = { ...profileContext, error: true };
                     } else {
                         showToast(`${data.message}`, errorType);
@@ -2831,14 +2817,14 @@
                 })
                 .catch(error => {
                     console.error('Error processing attendance:', error);
-                    let errorMessage = 'Network error occurred';
+                    let errorMessage = 'Unable to connect to the system. Please check your internet connection.';
 
                     if (error.message.includes('HTTP 500')) {
-                        errorMessage = 'Server error - Please try again';
+                        errorMessage = 'The system is having trouble right now. Please wait a moment and try scanning again.';
                     } else if (error.message.includes('HTTP 404')) {
-                        errorMessage = 'Service not found - Contact administrator';
+                        errorMessage = 'The attendance system cannot be reached. Please inform the administrator.';
                     } else if (error.message.includes('Failed to fetch')) {
-                        errorMessage = 'Connection failed - Check network';
+                        errorMessage = 'No internet connection detected. Please check if you are connected to the network.';
                     }
 
                     const lastScan = window.AppState.lastSuccessScan || null;
@@ -2936,7 +2922,7 @@
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
                         </svg>
                     </div>
-                    <h4 class="font-medium text-red-600 mb-1 text-sm">Error</h4>
+                    <h4 class="font-medium text-red-600 mb-1 text-sm">Oops! Something Went Wrong</h4>
                     <p class="text-xs text-red-500">${user.status}</p>
                 `;
                 return;
@@ -3598,12 +3584,12 @@
                     // Also update session/status via lightweight status check
                     checkAttendanceStatus();
                 } else {
-                    showToast(data.message || 'Failed to refresh attendance data', 'warning');
+                    showToast(data.message || 'Unable to refresh the attendance list. Please try again.', 'warning');
                 }
             })
             .catch(error => {
                 console.error('Error refreshing attendance data:', error);
-                showToast('Network error while refreshing attendance data', 'error');
+                showToast('Cannot refresh the attendance list right now. Please check your connection.', 'error');
             })
             .finally(() => {
                 if (refreshBtnIcon) {

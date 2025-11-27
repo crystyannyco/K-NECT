@@ -370,7 +370,7 @@
                                                 </td>
                                                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-center"><?= esc($user['user_id']) ?></td>
                                                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
-                                                    <?= esc(BarangayHelper::getBarangayName($user['barangay'])) ?>
+                                                    <?= esc($user['barangay_name'] ?? $user['barangay'] ?? '') ?>
                                                 </td>
                                                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 name-cell"><?= esc($user['last_name']) ?>, <?= esc($user['first_name']) ?> <?= esc($user['middle_name']) ?></td>
                                                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-center"><?= esc($user['age']) ?></td>
@@ -1347,7 +1347,7 @@
                         var fullName = (u.first_name || '') + ' ' + (u.middle_name ? u.middle_name + ' ' : '') + (u.last_name || '') + (u.suffix ? ', ' + u.suffix : '');
                         $('#pedModalUserFullName').text(fullName.trim());
                         $('#pedModalUserName').text(fullName.trim());
-                        var barangayStr = getBarangayName(u.barangay);
+                        var barangayStr = u.barangay_name || u.barangay || '';
                         $('#pedModalUserBarangay').text(barangayStr);
                         $('#pedModalUserBarangayDetail').text(barangayStr);
                         $('#pedModalUserId').text(u.user_id || '-');
@@ -1644,7 +1644,7 @@
                     return status === 2 && isSkClassification;
                 })
                 .map(user => {
-                    const barangayName = getBarangayName(user.barangay) || user.barangay_name || '';
+                    const barangayName = user.barangay_name || getBarangayName(user.barangay) || '';
                     const safeUserId = (user.user_id && String(user.user_id).trim() !== '') ? user.user_id : '';
                     const fullNameParts = [user.last_name, user.first_name, user.middle_name]
                         .map(part => (part ? String(part).trim() : ''));
@@ -2558,7 +2558,7 @@
                     // Prepare SK Officials table data
                     const skTableData = skOfficials.map(official => {
                         const fullName = `${official.first_name || ''} ${official.middle_name || ''} ${official.last_name || ''}`.trim();
-                        const barangay = getBarangayName(official.barangay);
+                        const barangay = official.barangay_name || getBarangayName(official.barangay) || '';
                         const skPassword = (official.sk_password && official.sk_password.length > 20) ? '********' : (official.sk_password || 'N/A');
                         
                         return [
@@ -2631,7 +2631,7 @@
                     // Prepare Pederasyon Officials table data
                     const pedTableData = pederasyonOfficials.map(official => {
                         const fullName = `${official.first_name || ''} ${official.middle_name || ''} ${official.last_name || ''}`.trim();
-                        const barangay = getBarangayName(official.barangay);
+                        const barangay = official.barangay_name || getBarangayName(official.barangay) || '';
                         
                         const positionMap = {
                             1: 'President',

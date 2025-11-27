@@ -111,6 +111,9 @@ class PederasyonController extends BaseController
 
     public function profile()
     {
+        // Force clear cache for debugging
+        \Config\Services::cache()->clean();
+
         $session = session();
         $userId = $session->get('user_id'); // This is the permanent user_id
         
@@ -129,6 +132,7 @@ class PederasyonController extends BaseController
         // Merge with session data
         $data = array_merge($profileData, [
             'username' => $session->get('username'),
+            'field_mappings' => $profileController->getFieldMappings(),
         ]);
 
         // Resolve profile picture URL here (supports absolute URL, relative path, or filename)
@@ -154,13 +158,8 @@ class PederasyonController extends BaseController
     $data['educationalBackgroundMap'] = DemographicsHelper::educationalBackgroundMap();
     $data['howManyTimesMap'] = DemographicsHelper::howManyTimesMap();
 
-        // Provide resolved barangay name to the view
-        if (!empty($data['address']) && is_array($data['address'])) {
-            $barangayId = $data['address']['barangay'] ?? null;
-            $data['address']['barangay_name'] = $barangayId !== null
-                ? (BarangayHelper::getBarangayName($barangayId) ?: '')
-                : '';
-        }
+        // The barangay_name is now provided by ProfileController via PSGCHelper
+        // No need to set it again here
 
         return 
             $this->loadView('K-NECT/Pederasyon/template/header') .
@@ -181,6 +180,17 @@ class PederasyonController extends BaseController
             $userType = isset($user['user_type']) ? (int)$user['user_type'] : 0;
             return in_array($userType, [1, 2, 3]); // KK Members, SK Chairpersons, and Pederasyon Officers
         });
+        
+        // Convert barangay IDs to names using PSGC API
+        $filteredUsers = array_map(function ($user) {
+            if (!empty($user['barangay'])) {
+                $barangayName = \App\Libraries\PSGCHelper::getLocationName($user['barangay'], 'barangay');
+                $user['barangay_name'] = $barangayName ?: $user['barangay'];
+            } else {
+                $user['barangay_name'] = '';
+            }
+            return $user;
+        }, $filteredUsers);
         
         $data['user_list'] = array_values($filteredUsers); // Re-index array
         // Provide centralized maps for JS in view
@@ -224,12 +234,14 @@ class PederasyonController extends BaseController
         });
 
         // Prepare barangay map and computed barangay names for the view (move helper usage to backend)
-        $barangayMap = BarangayHelper::getBarangayMap();
-        $pedOfficers = array_map(function ($user) use ($barangayMap) {
+        // $barangayMap = BarangayHelper::getBarangayMap(); // Legacy helper removed
+        $pedOfficers = array_map(function ($user) {
             $barangayId = $user['barangay'] ?? null;
-            $user['barangay_name'] = $barangayId !== null && isset($barangayMap[$barangayId])
-                ? $barangayMap[$barangayId]
-                : ($barangayId ?? '');
+            if ($barangayId) {
+                $user['barangay_name'] = \App\Libraries\PSGCHelper::getLocationName($barangayId, 'barangay') ?: $barangayId;
+            } else {
+                $user['barangay_name'] = '';
+            }
 
             $pedPosition = isset($user['ped_position']) ? (int)$user['ped_position'] : null;
             $user['position_display'] = $this->getPedPositionLabel($pedPosition);
@@ -244,7 +256,7 @@ class PederasyonController extends BaseController
         // Provide centralized maps for JS in view
         $data['field_mappings'] = DemographicsHelper::allMapsForJs();
         // Explicitly provide barangay_map to avoid helper calls in the view
-        $data['barangay_map'] = $barangayMap;
+        $data['barangay_map'] = []; // Legacy map no longer needed as names are pre-computed
         
         // Check if there are officers with credentials and pass to view
         $officersCheck = $this->checkPederasyonOfficersWithCredentials();
@@ -260,16 +272,76 @@ class PederasyonController extends BaseController
     public function settings()
     {
         $session = session();
+        
+        // Load location defaults
+        $settingsModel = new \App\Models\SystemSettingsModel();
+        $locationDefaults = $settingsModel->getLocationDefaults();
+        
         $data = [
             'user_id' => $session->get('user_id'),
             'username' => $session->get('username'),
-            'user_type' => 'pederasyon' // Set user type for access control
+            'user_type' => 'pederasyon', // Set user type for access control
+            'location_defaults' => $locationDefaults
         ];
 
         return 
             $this->loadView('K-NECT/Pederasyon/template/header') .
             $this->loadView('K-NECT/Pederasyon/template/sidebar') .
             $this->loadView('K-NECT/Pederasyon/settings', $data);
+    }
+    
+    /**
+     * Get location defaults (AJAX endpoint)
+     */
+    public function getLocationDefaults()
+    {
+        $settingsModel = new \App\Models\SystemSettingsModel();
+        $defaults = $settingsModel->getLocationDefaults();
+        
+        return $this->response->setJSON([
+            'success' => true,
+            'data' => $defaults
+        ]);
+    }
+    
+    /**
+     * Update location defaults (AJAX endpoint)
+     */
+    public function updateLocationDefaults()
+    {
+        $session = session();
+        $username = $session->get('username');
+        
+        if (!$username) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Unauthorized'
+            ]);
+        }
+        
+        $data = [
+            'region_code' => $this->request->getPost('region_code'),
+            'region_name' => $this->request->getPost('region_name'),
+            'province_code' => $this->request->getPost('province_code'),
+            'province_name' => $this->request->getPost('province_name'),
+            'municipality_code' => $this->request->getPost('municipality_code'),
+            'municipality_name' => $this->request->getPost('municipality_name')
+        ];
+        
+        $settingsModel = new \App\Models\SystemSettingsModel();
+        $result = $settingsModel->setLocationDefaults($data, $username);
+        
+        if ($result) {
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Location defaults updated successfully'
+            ]);
+        } else {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Failed to update location defaults'
+            ]);
+        }
     }
 
     public function accountSettings()
@@ -797,6 +869,17 @@ class PederasyonController extends BaseController
                 return $userType === 3 && $status === 2 && isset($positionMap[$pedPosition]);
             }));
 
+            // Convert barangay IDs to names using PSGC API
+            $officials = array_map(function ($official) {
+                if (!empty($official['barangay'])) {
+                    $barangayName = \App\Libraries\PSGCHelper::getLocationName($official['barangay'], 'barangay');
+                    $official['barangay_name'] = $barangayName ?: $official['barangay'];
+                } else {
+                    $official['barangay_name'] = '';
+                }
+                return $official;
+            }, $officials);
+
             if (empty($officials)) {
                 return $this->response
                     ->setStatusCode(ResponseInterface::HTTP_NOT_FOUND)
@@ -972,7 +1055,7 @@ class PederasyonController extends BaseController
                 }
 
                 $userId = $official['user_id'] ?? '';
-                $barangay = BarangayHelper::getBarangayName($official['barangay'] ?? '');
+                $barangay = $official['barangay_name'] ?? $official['barangay'] ?? '';
 
                 $fullName = esc($official['last_name'] ?? '');
                 if (!empty($official['first_name'])) {
@@ -1253,6 +1336,17 @@ class PederasyonController extends BaseController
                     ->setJSON(['success' => false, 'message' => 'No officials found for the official list']);
             }
 
+            // Convert barangay IDs to names using PSGCHelper
+            $officials = array_map(function ($official) {
+                if (!empty($official['barangay'])) {
+                    $barangayName = \App\Libraries\PSGCHelper::getLocationName($official['barangay'], 'barangay');
+                    $official['barangay_name'] = $barangayName ?: $official['barangay'];
+                } else {
+                    $official['barangay_name'] = '';
+                }
+                return $official;
+            }, $officials);
+
             // Generate Excel document and stream directly to user
             $fileName = 'Pederasyon_Officials_List_' . date('Y-m-d_His') . '.xlsx';
             $spreadsheet = $this->generateOfficialListExcelDocument($officials);
@@ -1402,7 +1496,7 @@ class PederasyonController extends BaseController
                 }
 
                 $userId = $official['user_id'] ?? '';
-                $barangay = BarangayHelper::getBarangayName($official['barangay'] ?? '');
+                $barangay = $official['barangay_name'] ?? $official['barangay'] ?? '';
 
                 $fullName = esc($official['last_name'] ?? '');
                 if (!empty($official['first_name'])) {
@@ -1565,6 +1659,17 @@ class PederasyonController extends BaseController
                 return $this->response->setJSON(['success' => false, 'message' => 'No SK Chairpersons found for credentials generation']);
             }
 
+            // Convert barangay IDs to names using PSGCHelper
+            $officials = array_map(function ($official) {
+                if (!empty($official['barangay'])) {
+                    $barangayName = \App\Libraries\PSGCHelper::getLocationName($official['barangay'], 'barangay');
+                    $official['barangay_name'] = $barangayName ?: $official['barangay'];
+                } else {
+                    $official['barangay_name'] = '';
+                }
+                return $official;
+            }, $officials);
+
             // Generate credentials document and stream directly to user
             $fileName = 'PEDERASYON_Officials_Credentials_' . date('Y-m-d_His') . '.xlsx';
             $spreadsheet = $this->generateCredentialsDocument($officials);
@@ -1708,7 +1813,7 @@ class PederasyonController extends BaseController
                 if (($userType === 2 || $userType === 3) && $status === 2) {
                     // Format data
                     $userId = $official['user_id'] ?: '';
-                    $barangay = BarangayHelper::getBarangayName($official['barangay']);
+                    $barangay = $official['barangay_name'] ?? $official['barangay'] ?? '';
                     
                     // Full name format: First Middle Last
                     $fullName = '';
@@ -1798,6 +1903,17 @@ class PederasyonController extends BaseController
 
             log_message('info', 'Total users fetched: ' . count($users));
 
+            // Convert barangay IDs to names using PSGCHelper
+            $users = array_map(function ($user) {
+                if (!empty($user['barangay'])) {
+                    $barangayName = \App\Libraries\PSGCHelper::getLocationName($user['barangay'], 'barangay');
+                    $user['barangay_name'] = $barangayName ?: $user['barangay'];
+                } else {
+                    $user['barangay_name'] = '';
+                }
+                return $user;
+            }, $users);
+
             $skCredentials = [];
             $debugCount = 0;
             $statusFiltered = 0;
@@ -1841,7 +1957,7 @@ class PederasyonController extends BaseController
                 
                 if ($isSkChairperson) {
                     $userId = $u['user_id'] ?? '';
-                    $barangay = \App\Libraries\BarangayHelper::getBarangayName($u['barangay'] ?? '');
+                    $barangay = $u['barangay_name'] ?? $u['barangay'] ?? '';
                     
                     // Consistent Full Name: Last, First Middle
                     $fullName = esc($u['last_name'] ?? '');
@@ -1925,6 +2041,17 @@ class PederasyonController extends BaseController
             $users = $profileController->getAllUsersWithExtendedInfo();
             $users = $profileController->processUsersForMemberListing($users, 'pederasyon');
 
+            // Convert barangay IDs to names using PSGCHelper
+            $users = array_map(function ($user) {
+                if (!empty($user['barangay'])) {
+                    $barangayName = \App\Libraries\PSGCHelper::getLocationName($user['barangay'], 'barangay');
+                    $user['barangay_name'] = $barangayName ?: $user['barangay'];
+                } else {
+                    $user['barangay_name'] = '';
+                }
+                return $user;
+            }, $users);
+
             $pedCredentials = [];
 
             $pedPositionMap = $this->getPedPositionMap();
@@ -1940,7 +2067,7 @@ class PederasyonController extends BaseController
                 // Include SK Chairpersons (user_type = 2) and Pederasyon Officers (user_type = 3)
                 if ($userType === 2 || $userType === 3) {
                     $userId = $u['user_id'] ?? '';
-                    $barangay = \App\Libraries\BarangayHelper::getBarangayName($u['barangay'] ?? '');
+                    $barangay = $u['barangay_name'] ?? $u['barangay'] ?? '';
                     $fullName = esc($u['last_name'] ?? '');
                     if (!empty($u['first_name'])) {
                         $fullName .= ', ' . esc($u['first_name']);
@@ -1969,6 +2096,7 @@ class PederasyonController extends BaseController
                             'middle_name'  => $u['middle_name'] ?? '',
                             'last_name'    => $u['last_name'] ?? '',
                             'barangay'     => $u['barangay'] ?? '',
+                            'barangay_name' => $u['barangay_name'] ?? '',
                             'position'     => $positionLabel,
                             'ped_position' => $pedPositionCode,
                             'ped_username' => $pedUsername,
@@ -2021,6 +2149,17 @@ class PederasyonController extends BaseController
             if (empty($officials)) {
                 return $this->response->setJSON(['success' => false, 'message' => 'No officials found for credentials PDF generation']);
             }
+
+            // Convert barangay IDs to names using PSGCHelper
+            $officials = array_map(function ($official) {
+                if (!empty($official['barangay'])) {
+                    $barangayName = \App\Libraries\PSGCHelper::getLocationName($official['barangay'], 'barangay');
+                    $official['barangay_name'] = $barangayName ?: $official['barangay'];
+                } else {
+                    $official['barangay_name'] = '';
+                }
+                return $official;
+            }, $officials);
 
             // Generate credentials PDF document and stream directly to user
             $fileName = 'PEDERASYON_Officials_Credentials_' . date('Y-m-d_His') . '.pdf';
@@ -2258,7 +2397,7 @@ class PederasyonController extends BaseController
                 
                 foreach ($skOfficials as $official) {
                     $fullName = trim(($official['first_name'] ?? '') . ' ' . ($official['middle_name'] ?? '') . ' ' . ($official['last_name'] ?? ''));
-                    $barangay = BarangayHelper::getBarangayName($official['barangay']);
+                    $barangay = $official['barangay_name'] ?? $official['barangay'] ?? '';
                     
                     // Check if password is hashed and mask it
                     $skPassword = $official['sk_password'] ?? 'N/A';
@@ -2301,7 +2440,7 @@ class PederasyonController extends BaseController
                 
                 foreach ($pederasyonOfficials as $official) {
                     $fullName = trim(($official['first_name'] ?? '') . ' ' . ($official['middle_name'] ?? '') . ' ' . ($official['last_name'] ?? ''));
-                    $barangay = BarangayHelper::getBarangayName($official['barangay']);
+                    $barangay = $official['barangay_name'] ?? $official['barangay'] ?? '';
                     
                     $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : null;
                     $position = $this->getPedPositionLabel($pedPosition);
@@ -2394,6 +2533,17 @@ class PederasyonController extends BaseController
             if (empty($officials)) {
                 return $this->response->setJSON(['success' => false, 'message' => 'No officials found for credentials Word generation']);
             }
+
+            // Convert barangay IDs to names using PSGCHelper
+            $officials = array_map(function ($official) {
+                if (!empty($official['barangay'])) {
+                    $barangayName = \App\Libraries\PSGCHelper::getLocationName($official['barangay'], 'barangay');
+                    $official['barangay_name'] = $barangayName ?: $official['barangay'];
+                } else {
+                    $official['barangay_name'] = '';
+                }
+                return $official;
+            }, $officials);
 
             // Generate credentials Word document and stream directly to user
             $tabName = ($activeTab === 'pederasyon') ? 'Pederasyon' : 'SK';
@@ -2633,7 +2783,7 @@ class PederasyonController extends BaseController
                 
                 foreach ($pederasyonOfficials as $official) {
                     $fullName = trim(($official['first_name'] ?? '') . ' ' . ($official['middle_name'] ?? '') . ' ' . ($official['last_name'] ?? ''));
-                    $barangay = BarangayHelper::getBarangayName($official['barangay']);
+                    $barangay = $official['barangay_name'] ?? $official['barangay'] ?? '';
                     
                     $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : null;
                     $position = $this->getPedPositionLabel($pedPosition);
@@ -2698,6 +2848,17 @@ class PederasyonController extends BaseController
             if (empty($officials)) {
                 return $this->response->setJSON(['success' => false, 'message' => 'No officials found for credentials Excel generation']);
             }
+
+            // Convert barangay IDs to names using PSGCHelper
+            $officials = array_map(function ($official) {
+                if (!empty($official['barangay'])) {
+                    $barangayName = \App\Libraries\PSGCHelper::getLocationName($official['barangay'], 'barangay');
+                    $official['barangay_name'] = $barangayName ?: $official['barangay'];
+                } else {
+                    $official['barangay_name'] = '';
+                }
+                return $official;
+            }, $officials);
 
             // Generate Excel document and stream directly to user
             $tabName = ($activeTab === 'pederasyon') ? 'Pederasyon' : 'SK';
@@ -2835,7 +2996,7 @@ class PederasyonController extends BaseController
                 $dataStartRow = $currentRow;
                 foreach ($skOfficials as $official) {
                     $fullName = trim(($official['first_name'] ?? '') . ' ' . ($official['middle_name'] ?? '') . ' ' . ($official['last_name'] ?? ''));
-                    $barangay = BarangayHelper::getBarangayName($official['barangay']);
+                    $barangay = $official['barangay_name'] ?? $official['barangay'] ?? '';
                     
                     // Check if password is hashed and mask it
                     $skPassword = $official['sk_password'] ?? 'N/A';
@@ -2910,7 +3071,7 @@ class PederasyonController extends BaseController
                 $dataStartRow = $currentRow;
                 foreach ($pederasyonOfficials as $official) {
                     $fullName = trim(($official['first_name'] ?? '') . ' ' . ($official['middle_name'] ?? '') . ' ' . ($official['last_name'] ?? ''));
-                    $barangay = BarangayHelper::getBarangayName($official['barangay']);
+                    $barangay = $official['barangay_name'] ?? $official['barangay'] ?? '';
                     
                     $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : null;
                     $position = $this->getPedPositionLabel($pedPosition);
@@ -4002,6 +4163,17 @@ class PederasyonController extends BaseController
                 return $this->response->setJSON(['success' => false, 'message' => 'No Pederasyon officers found for credentials']);
             }
 
+            // Convert barangay IDs to names using PSGCHelper
+            $officials = array_map(function ($official) {
+                if (!empty($official['barangay'])) {
+                    $barangayName = \App\Libraries\PSGCHelper::getLocationName($official['barangay'], 'barangay');
+                    $official['barangay_name'] = $barangayName ?: $official['barangay'];
+                } else {
+                    $official['barangay_name'] = '';
+                }
+                return $official;
+            }, $officials);
+
             // Get logos for the Word document
             $logos = $this->getLogosForDocument();
 
@@ -4149,7 +4321,7 @@ class PederasyonController extends BaseController
             
             foreach ($officials as $official) {
                 $fullName = trim(($official['first_name'] ?? '') . ' ' . ($official['middle_name'] ?? '') . ' ' . ($official['last_name'] ?? ''));
-                $barangay = BarangayHelper::getBarangayName($official['barangay']);
+                $barangay = $official['barangay_name'] ?? $official['barangay'] ?? '';
                 
                 $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : null;
                 $position = $this->getPedPositionLabel($pedPosition);
@@ -4244,6 +4416,17 @@ class PederasyonController extends BaseController
             if (empty($officials)) {
                 return $this->response->setJSON(['success' => false, 'message' => 'No Pederasyon officers found for credentials']);
             }
+
+            // Convert barangay IDs to names using PSGCHelper
+            $officials = array_map(function ($official) {
+                if (!empty($official['barangay'])) {
+                    $barangayName = \App\Libraries\PSGCHelper::getLocationName($official['barangay'], 'barangay');
+                    $official['barangay_name'] = $barangayName ?: $official['barangay'];
+                } else {
+                    $official['barangay_name'] = '';
+                }
+                return $official;
+            }, $officials);
 
             // Generate Excel document and stream directly to user
             $fileName = 'Pederasyon_Officers_Credentials_' . date('Y-m-d_His') . '.xlsx';
@@ -4370,7 +4553,7 @@ class PederasyonController extends BaseController
             // Populate table data
             foreach ($officials as $official) {
                 $fullName = trim(($official['first_name'] ?? '') . ' ' . ($official['middle_name'] ?? '') . ' ' . ($official['last_name'] ?? ''));
-                $barangay = BarangayHelper::getBarangayName($official['barangay']);
+                $barangay = $official['barangay_name'] ?? $official['barangay'] ?? '';
                 
                 $pedPosition = isset($official['ped_position']) ? (int)$official['ped_position'] : null;
                 $position = $this->getPedPositionLabel($pedPosition);

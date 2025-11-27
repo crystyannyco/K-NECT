@@ -11,32 +11,50 @@
 
         <!-- Settings Cards Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            <!-- Account Settings Card -->
-            <!-- <div class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
-                <div class="p-6 flex flex-col h-full">
+            <!-- Location Defaults Card -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
+                <div class="p-6">
+                    <!-- Card Header -->
                     <div class="flex items-center justify-between mb-4">
                         <div class="flex items-center space-x-3">
-                            <div class="p-3 bg-green-100 rounded-lg">
-                                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <div class="p-3 bg-blue-100 rounded-lg">
+                                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                 </svg>
                             </div>
                             <div>
-                                <h3 class="text-lg font-semibold text-gray-900">Account Settings</h3>
-                                <p class="text-sm text-gray-500">Update your profile and password</p>
+                                <h3 class="text-lg font-semibold text-gray-900">Location Defaults</h3>
+                                <p class="text-sm text-gray-500">Configure address defaults</p>
                             </div>
                         </div>
                     </div>
-                    <div class="space-y-3 mb-4 text-sm text-gray-600">
-                        <p>Open the settings page to change your personal information and security.</p>
+                    
+                    <!-- Card Content -->
+                    <div class="space-y-3 mb-4 text-sm">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Region:</span>
+                            <span id="current-region" class="font-medium text-gray-900"><?= esc($location_defaults['default_region_name'] ?? 'Not set') ?></span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Province:</span>
+                            <span id="current-province" class="font-medium text-gray-900"><?= esc($location_defaults['default_province_name'] ?? 'Not set') ?></span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">City/Municipality:</span>
+                            <span id="current-municipality" class="font-medium text-gray-900"><?= esc($location_defaults['default_municipality_name'] ?? 'Not set') ?></span>
+                        </div>
+                        <div class="mt-2 p-2 bg-blue-50 rounded text-xs text-blue-700">
+                            These defaults will auto-fill in user profiling forms
+                        </div>
                     </div>
-                    <div class="mt-auto">
-                        <a href="<?= base_url('pederasyon/account-settings') ?>" class="w-full bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 px-3 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2">
-                            Manage Account
-                        </a>
-                    </div>
+                    
+                    <!-- Card Actions -->
+                    <button onclick="openLocationDefaultsModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-3 rounded-lg transition-colors duration-200">
+                        Configure Defaults
+                    </button>
                 </div>
-            </div> -->
+            </div>
             
             <!-- Logo Management Card -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
@@ -294,6 +312,66 @@
             </button>
             <button onclick="openLogoManagerModal(); closeLogoPreviewModal();" class="bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 px-4 rounded transition-colors duration-200">
                 Manage Logos
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Location Defaults Modal -->
+<div id="locationDefaultsModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-[9999]" style="display: none;">
+    <div class="relative top-10 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-2/3 xl:w-1/2 max-w-2xl shadow-lg rounded-lg bg-white">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between p-4 border-b">
+            <h3 class="text-lg font-semibold text-gray-900">Configure Location Defaults</h3>
+            <button onclick="closeLocationDefaultsModal()" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Modal Content -->
+        <div class="p-6">
+            <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p class="text-sm text-blue-800">
+                    <strong>Note:</strong> These settings will automatically pre-fill the Region, Province, and City/Municipality fields in the profiling form. Users will only need to select their Barangay and enter their Zone/Purok.
+                </p>
+            </div>
+            
+            <form id="locationDefaultsForm" class="space-y-4">
+                <!-- Region -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Region <span class="text-red-500">*</span></label>
+                    <select id="region_select" name="region" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">Loading regions...</option>
+                    </select>
+                </div>
+
+                <!-- Province -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Province <span class="text-red-500">*</span></label>
+                    <select id="province_select" name="province" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" disabled>
+                        <option value="">Select region first</option>
+                    </select>
+                </div>
+
+                <!-- City/Municipality -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">City/Municipality <span class="text-red-500">*</span></label>
+                    <select id="municipality_select" name="municipality" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" disabled>
+                        <option value="">Select province first</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="flex items-center justify-end p-4 border-t space-x-2">
+            <button onclick="closeLocationDefaultsModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-4 rounded transition-colors duration-200">
+                Cancel
+            </button>
+            <button onclick="saveLocationDefaults()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors duration-200">
+                Save Defaults
             </button>
         </div>
     </div>
@@ -805,6 +883,261 @@ function preventDefaults(e) {
     e.preventDefault();
     e.stopPropagation();
 }
+
+// ============================================================
+// Location Defaults Management
+// ============================================================
+
+function openLocationDefaultsModal() {
+    document.getElementById('locationDefaultsModal').classList.remove('hidden');
+    document.getElementById('locationDefaultsModal').style.display = 'block';
+    loadLocationDefaults();
+}
+
+function closeLocationDefaultsModal() {
+    document.getElementById('locationDefaultsModal').classList.add('hidden');
+    document.getElementById('locationDefaultsModal').style.display = 'none';
+}
+
+function loadLocationDefaults() {
+    // Load regions
+    const apiUrl = '<?= base_url('api/psgc/regions') ?>';
+    console.log('Loading regions from:', apiUrl);
+    
+    fetch(apiUrl)
+        .then(response => {
+            console.log('Regions response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Regions data:', data);
+            if (data.success) {
+                const regionSelect = document.getElementById('region_select');
+                regionSelect.innerHTML = '<option value="">Select Region</option>';
+                data.data.forEach(region => {
+                    const option = document.createElement('option');
+                    option.value = region.code;
+                    option.textContent = region.name;
+                    option.dataset.name = region.name;
+                    regionSelect.appendChild(option);
+                });
+                
+                // Load and pre-select current defaults
+                loadCurrentDefaults();
+            } else {
+                console.error('API returned success=false:', data);
+                showNotification(data.message || 'Failed to load regions', 'error');
+                // Still try to use fallback data if available
+                if (data.data && data.data.length > 0) {
+                    const regionSelect = document.getElementById('region_select');
+                    regionSelect.innerHTML = '<option value="">Select Region</option>';
+                    data.data.forEach(region => {
+                        const option = document.createElement('option');
+                        option.value = region.code;
+                        option.textContent = region.name;
+                        option.dataset.name = region.name;
+                        regionSelect.appendChild(option);
+                    });
+                    // Load and pre-select current defaults
+                    loadCurrentDefaults();
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error loading regions:', error);
+            showNotification('Failed to load regions. Please check your internet connection.', 'error');
+            // Set a fallback option
+            const regionSelect = document.getElementById('region_select');
+            regionSelect.innerHTML = '<option value="">Error loading regions</option>';
+        });
+}
+
+function loadCurrentDefaults() {
+    fetch('<?= base_url('pederasyon/get-location-defaults') ?>')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const defaults = data.data;
+                
+                // Set region
+                if (defaults.default_region_code) {
+                    document.getElementById('region_select').value = defaults.default_region_code;
+                    loadProvinces(defaults.default_region_code, defaults.default_province_code);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error loading current defaults:', error);
+        });
+}
+
+function loadProvinces(regionCode, selectedProvinceCode = null) {
+    const provinceSelect = document.getElementById('province_select');
+    const municipalitySelect = document.getElementById('municipality_select');
+    
+    // Reset province dropdown to loading state
+    provinceSelect.innerHTML = '<option value="">Loading...</option>';
+    provinceSelect.disabled = true;
+    
+    // Also reset municipality dropdown since region changed
+    municipalitySelect.innerHTML = '<option value="">Select province first</option>';
+    municipalitySelect.disabled = true;
+    
+    fetch(`<?= base_url('api/psgc/provinces/') ?>${regionCode}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                provinceSelect.innerHTML = '<option value="">Select Province</option>';
+                data.data.forEach(province => {
+                    const option = document.createElement('option');
+                    option.value = province.code;
+                    option.textContent = province.name;
+                    option.dataset.name = province.name;
+                    provinceSelect.appendChild(option);
+                });
+                provinceSelect.disabled = false;
+                
+                // Only pre-select if a specific province was requested
+                if (selectedProvinceCode) {
+                    provinceSelect.value = selectedProvinceCode;
+                    loadCurrentMunicipality(selectedProvinceCode);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error loading provinces:', error);
+            provinceSelect.innerHTML = '<option value="">Error loading provinces</option>';
+        });
+}
+
+function loadMunicipalities(provinceCode, selectedMunicipalityCode = null) {
+    const municipalitySelect = document.getElementById('municipality_select');
+    municipalitySelect.innerHTML = '<option value="">Loading...</option>';
+    municipalitySelect.disabled = true;
+    
+    fetch(`<?= base_url('api/psgc/municipalities/') ?>${provinceCode}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                municipalitySelect.innerHTML = '<option value="">Select City/Municipality</option>';
+                data.data.forEach(municipality => {
+                    const option = document.createElement('option');
+                    option.value = municipality.code;
+                    option.textContent = municipality.name;
+                    option.dataset.name = municipality.name;
+                    municipalitySelect.appendChild(option);
+                });
+                municipalitySelect.disabled = false;
+                
+                if (selectedMunicipalityCode) {
+                    municipalitySelect.value = selectedMunicipalityCode;
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error loading municipalities:', error);
+            municipalitySelect.innerHTML = '<option value="">Error loading municipalities</option>';
+        });
+}
+
+function loadCurrentMunicipality(provinceCode) {
+    fetch('<?= base_url('pederasyon/get-location-defaults') ?>')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.data.default_municipality_code) {
+                loadMunicipalities(provinceCode, data.data.default_municipality_code);
+            } else {
+                loadMunicipalities(provinceCode);
+            }
+        });
+}
+
+// Event listeners for cascading dropdowns
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('region_select')?.addEventListener('change', function() {
+        const regionCode = this.value;
+        
+        // Reset municipality dropdown first
+        const municipalitySelect = document.getElementById('municipality_select');
+        municipalitySelect.innerHTML = '<option value="">Select province first</option>';
+        municipalitySelect.disabled = true;
+        
+        if (regionCode) {
+            // Load provinces for the selected region (will reset province dropdown)
+            loadProvinces(regionCode);
+        } else {
+            // If no region selected, reset province dropdown too
+            document.getElementById('province_select').innerHTML = '<option value="">Select region first</option>';
+            document.getElementById('province_select').disabled = true;
+        }
+    });
+    
+    document.getElementById('province_select')?.addEventListener('change', function() {
+        const provinceCode = this.value;
+        if (provinceCode) {
+            loadMunicipalities(provinceCode);
+        } else {
+            document.getElementById('municipality_select').innerHTML = '<option value="">Select province first</option>';
+            document.getElementById('municipality_select').disabled = true;
+        }
+    });
+});
+
+function saveLocationDefaults() {
+    const regionSelect = document.getElementById('region_select');
+    const provinceSelect = document.getElementById('province_select');
+    const municipalitySelect = document.getElementById('municipality_select');
+    
+    const regionCode = regionSelect.value;
+    const provinceCode = provinceSelect.value;
+    const municipalityCode = municipalitySelect.value;
+    
+    if (!regionCode || !provinceCode || !municipalityCode) {
+        showNotification('Please select all location fields', 'error');
+        return;
+    }
+    
+    const regionName = regionSelect.options[regionSelect.selectedIndex].dataset.name;
+    const provinceName = provinceSelect.options[provinceSelect.selectedIndex].dataset.name;
+    const municipalityName = municipalitySelect.options[municipalitySelect.selectedIndex].dataset.name;
+    
+    const formData = new FormData();
+    formData.append('region_code', regionCode);
+    formData.append('region_name', regionName);
+    formData.append('province_code', provinceCode);
+    formData.append('province_name', provinceName);
+    formData.append('municipality_code', municipalityCode);
+    formData.append('municipality_name', municipalityName);
+    
+    fetch('<?= base_url('pederasyon/update-location-defaults') ?>', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Location defaults updated successfully', 'success');
+            
+            // Update display on settings page
+            document.getElementById('current-region').textContent = regionName;
+            document.getElementById('current-province').textContent = provinceName;
+            document.getElementById('current-municipality').textContent = municipalityName;
+            
+            closeLocationDefaultsModal();
+        } else {
+            showNotification(data.message || 'Failed to update location defaults', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving location defaults:', error);
+        showNotification('An error occurred while saving', 'error');
+    });
+}
 </script>
+
+
 
 

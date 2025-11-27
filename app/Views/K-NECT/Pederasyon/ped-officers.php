@@ -1236,7 +1236,7 @@
                             $('#modalUserName').text(fullName);
                             
                             // Barangay display
-                            var barangayStr = barangayMap[u.barangay] || u.barangay || '';
+                            var barangayStr = u.barangay_name || barangayMap[u.barangay] || u.barangay || '';
                             $('#modalUserBarangay').text(barangayStr);
                             $('#modalUserBarangayDetail').text(barangayStr);
                             
@@ -1665,7 +1665,7 @@
                 
                 // Format full name
                 const fullName = `${credential.first_name || ''} ${credential.middle_name || ''} ${credential.last_name || ''}`.trim() || 'N/A';
-                const barangayName = getBarangayName(credential.barangay);
+                const barangayName = credential.barangay_name || getBarangayName(credential.barangay);
                 
                 // Handle username display
                 let displayUsername = credential.ped_username || 'N/A';
@@ -1854,7 +1854,7 @@
                 // Prepare Pederasyon Officials table data
                 const pedTableData = pedOfficials.map(official => {
                     const fullName = `${official.first_name || ''} ${official.middle_name || ''} ${official.last_name || ''}`.trim();
-                    const barangay = getBarangayName(official.barangay);
+                    const barangay = official.barangay_name || getBarangayName(official.barangay);
                     
                     const positionMap = {
                         1: 'President',

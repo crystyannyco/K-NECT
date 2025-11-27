@@ -316,18 +316,14 @@ class SKController extends BaseController
 
         $skBarangay = $session->get('sk_barangay');
         $barangayName = BarangayHelper::getBarangayName($skBarangay);
-        // Compute address barangay name from profile data
-        $addressBarangayName = '';
-        if (!empty($profileData['address']['barangay'])) {
-            $addressBarangayName = BarangayHelper::getBarangayName($profileData['address']['barangay']);
-        }
-
+        
+        // The address barangay_name is now provided by ProfileController via PSGCHelper
         // Merge with session and SK-specific data
         $data = array_merge($profileData, [
             'username' => $session->get('username'),
             'sk_barangay' => $skBarangay,
             'barangay_name' => $barangayName,
-            'address_barangay_name' => $addressBarangayName,
+            'address_barangay_name' => $profileData['address']['barangay_name'] ?? 'Not specified',
             'field_mappings' => $profileController->getFieldMappings(),
         ]);
 

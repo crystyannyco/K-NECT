@@ -140,6 +140,15 @@ class ProfilingController extends BaseController
         } catch (\Throwable $e) {
             // fail-safe: keep logos empty
         }
+        
+        // Load location defaults from system settings
+        $locationDefaults = [];
+        try {
+            $settingsModel = new \App\Models\SystemSettingsModel();
+            $locationDefaults = $settingsModel->getLocationDefaults();
+        } catch (\Throwable $e) {
+            log_message('error', 'Failed to load location defaults: ' . $e->getMessage());
+        }
 
         $data = [
             'page_title' => 'Profiling',
@@ -151,6 +160,7 @@ class ProfilingController extends BaseController
             'account_data' => $account_data,
             'success_type' => $success_type,
             'logos' => $logos,
+            'location_defaults' => $locationDefaults,
         ];
 
         // Clear success session after displaying
@@ -218,10 +228,11 @@ class ProfilingController extends BaseController
         ];
         
         $addressData = [
-            'region' => '1', // Always save as ID 1 for Region V
-            'province' => '1', // Always save as ID 1 for Camarines Sur
-            'municipality' => '1', // Always save as ID 1 for Iriga City
+            'region' => $this->request->getPost('region_code') ?: '',
+            'province' => $this->request->getPost('province_code') ?: '',
+            'municipality' => $this->request->getPost('municipality_code') ?: '',
             'barangay' => $this->request->getPost('barangay'),
+            'barangay_psgc_code' => $this->request->getPost('barangay_psgc_code'),
             'zone_purok' => $this->request->getPost('zone_purok'),
         ];
 
@@ -252,7 +263,17 @@ class ProfilingController extends BaseController
             
             if ($age < 15 && !$isTurning15Soon) {
                 session()->set('profiling_step', 2);
-                session()->set('profile_data', $userData + ['region' => 'Region V', 'province' => 'Camarines Sur', 'municipality' => 'Iriga City', 'barangay' => $addressData['barangay'], 'zone_purok' => $addressData['zone_purok'], 'age_group' => $ageGroup]);
+                session()->set('profile_data', $userData + [
+                    'region' => $this->request->getPost('region'),
+                    'region_code' => $this->request->getPost('region_code'),
+                    'province' => $this->request->getPost('province'),
+                    'province_code' => $this->request->getPost('province_code'),
+                    'municipality' => $this->request->getPost('municipality'),
+                    'municipality_code' => $this->request->getPost('municipality_code'),
+                    'barangay' => $addressData['barangay'],
+                    'zone_purok' => $addressData['zone_purok'],
+                    'age_group' => $ageGroup
+                ]);
                 $postData = $this->request->getPost();
                 session()->setFlashdata('_ci_old_input', $postData);
                 return redirect()->back()->with('validation_user', $userModel->validation)
@@ -261,7 +282,17 @@ class ProfilingController extends BaseController
             
             if ($age > 30) {
                 session()->set('profiling_step', 2);
-                session()->set('profile_data', $userData + ['region' => 'Region V', 'province' => 'Camarines Sur', 'municipality' => 'Iriga City', 'barangay' => $addressData['barangay'], 'zone_purok' => $addressData['zone_purok'], 'age_group' => $ageGroup]);
+                session()->set('profile_data', $userData + [
+                    'region' => $this->request->getPost('region'),
+                    'region_code' => $this->request->getPost('region_code'),
+                    'province' => $this->request->getPost('province'),
+                    'province_code' => $this->request->getPost('province_code'),
+                    'municipality' => $this->request->getPost('municipality'),
+                    'municipality_code' => $this->request->getPost('municipality_code'),
+                    'barangay' => $addressData['barangay'],
+                    'zone_purok' => $addressData['zone_purok'],
+                    'age_group' => $ageGroup
+                ]);
                 $postData = $this->request->getPost();
                 session()->setFlashdata('_ci_old_input', $postData);
                 return redirect()->back()->with('validation_user', $userModel->validation)
@@ -288,7 +319,18 @@ class ProfilingController extends BaseController
 
         if (!$userValid || !$addressValid || !empty($customValidationErrors)) {
             session()->set('profiling_step', 2);
-            session()->set('profile_data', $userData + ['region' => 'Region V', 'province' => 'Camarines Sur', 'municipality' => 'Iriga City', 'barangay' => $addressData['barangay'], 'zone_purok' => $addressData['zone_purok'], 'age_group' => $ageGroup]);
+            session()->set('profile_data', $userData + [
+                'region' => $this->request->getPost('region'),
+                'region_code' => $this->request->getPost('region_code'),
+                'province' => $this->request->getPost('province'),
+                'province_code' => $this->request->getPost('province_code'),
+                'municipality' => $this->request->getPost('municipality'),
+                'municipality_code' => $this->request->getPost('municipality_code'),
+                'barangay' => $addressData['barangay'],
+                'barangay_psgc_code' => $this->request->getPost('barangay_psgc_code'),
+                'zone_purok' => $addressData['zone_purok'],
+                'age_group' => $ageGroup
+            ]);
             
             // Force session save before redirect
             session()->markAsFlashdata('_ci_old_input');
@@ -305,7 +347,18 @@ class ProfilingController extends BaseController
 
         // Remove confirm_password before saving to session
         // unset($userData['confirm_password']);
-        session()->set('profile_data', $userData + ['region' => 'Region V', 'province' => 'Camarines Sur', 'municipality' => 'Iriga City', 'barangay' => $addressData['barangay'], 'zone_purok' => $addressData['zone_purok'], 'age_group' => $ageGroup]);
+        session()->set('profile_data', $userData + [
+            'region' => $this->request->getPost('region'),
+            'region_code' => $this->request->getPost('region_code'),
+            'province' => $this->request->getPost('province'),
+            'province_code' => $this->request->getPost('province_code'),
+            'municipality' => $this->request->getPost('municipality'),
+            'municipality_code' => $this->request->getPost('municipality_code'),
+            'barangay' => $addressData['barangay'],
+            'barangay_psgc_code' => $this->request->getPost('barangay_psgc_code'),
+            'zone_purok' => $addressData['zone_purok'],
+            'age_group' => $ageGroup
+        ]);
         session()->set('profiling_step', 3);
         return redirect()->to(base_url('profiling'));
     }
@@ -721,9 +774,9 @@ class ProfilingController extends BaseController
                 }
             }
             $addressData = [
-                'region' => '1',
-                'province' => '1',
-                'municipality' => '1',
+                'region' => $profile['region_code'] ?? '',
+                'province' => $profile['province_code'] ?? '',
+                'municipality' => $profile['municipality_code'] ?? '',
                 'barangay' => $profile['barangay'],
                 'zone_purok' => $profile['zone_purok'],
             ];
@@ -814,9 +867,9 @@ class ProfilingController extends BaseController
             // Insert address linked to the new user
             $addressModel->insert([
                 'user_id' => $newId,
-                'region' => '1',
-                'province' => '1',
-                'municipality' => '1',
+                'region' => $profile['region_code'] ?? '',
+                'province' => $profile['province_code'] ?? '',
+                'municipality' => $profile['municipality_code'] ?? '',
                 'barangay' => $profile['barangay'],
                 'zone_purok' => $profile['zone_purok'],
             ]);
@@ -910,6 +963,10 @@ class ProfilingController extends BaseController
             return redirect()->to(base_url('login'))->with('error', 'Access denied. This page is only for rejected applications.');
         }
 
+        // Load location defaults from system settings
+        $settingsModel = new \App\Models\SystemSettingsModel();
+        $locationDefaults = $settingsModel->getLocationDefaults();
+        
         // Prepare session data for each step
         $profile_data = [
             'first_name' => $user['first_name'],
@@ -921,9 +978,12 @@ class ProfilingController extends BaseController
             'gender' => $user['gender'] ?? null,
             'email' => $user['email'],
             'phone_number' => $user['phone_number'],
-            'region' => 'Region V', // Always display as Region V
-            'province' => 'Camarines Sur', // Always display as Camarines Sur
-            'municipality' => 'Iriga City', // Always display as Iriga City
+            'region' => $locationDefaults['default_region_name'] ?? '',
+            'region_code' => $locationDefaults['default_region_code'] ?? '',
+            'province' => $locationDefaults['default_province_name'] ?? '',
+            'province_code' => $locationDefaults['default_province_code'] ?? '',
+            'municipality' => $locationDefaults['default_municipality_name'] ?? '',
+            'municipality_code' => $locationDefaults['default_municipality_code'] ?? '',
             'barangay' => $address['barangay'] ?? '',
             'zone_purok' => $address['zone_purok'] ?? '',
             'age_group' => $ext['age_group'] ?? '',

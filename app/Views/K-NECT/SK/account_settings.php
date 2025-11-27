@@ -106,19 +106,19 @@
 								<p class="mt-1 text-xs text-gray-500" id="barangay-status">Fetching data from PSGC API...</p>
 							</div>
 											<div>
-												<label class="block text-sm font-medium text-gray-700 mb-1">City</label>
-								<input type="text" value="Iriga City" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50" disabled>
-								<input type="hidden" name="city" value="Iriga City">
+												<label class="block text-sm font-medium text-gray-700 mb-1">City/Municipality</label>
+								<input type="text" value="<?= esc($address['municipality_name'] ?? $address['municipality'] ?? '') ?>" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50" disabled>
+								<input type="hidden" name="city" value="<?= esc($address['municipality'] ?? '') ?>">
 							</div>
 							<div>
 								<label class="block text-sm font-medium text-gray-700 mb-1">Province</label>
-								<input type="text" value="Camarines Sur" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50" disabled>
-								<input type="hidden" name="province" value="Camarines Sur">
+								<input type="text" value="<?= esc($address['province_name'] ?? $address['province'] ?? '') ?>" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50" disabled>
+								<input type="hidden" name="province" value="<?= esc($address['province'] ?? '') ?>">
 							</div>
 							<div>
-								<label class="block text-sm font-medium text-gray-700 mb-1">Postal Code</label>
-								<input type="text" value="4431" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50" disabled>
-								<input type="hidden" name="postal_code" value="4431">
+								<label class="block text-sm font-medium text-gray-700 mb-1">Region</label>
+								<input type="text" value="<?= esc($address['region_name'] ?? $address['region'] ?? '') ?>" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50" disabled>
+								<input type="hidden" name="region" value="<?= esc($address['region'] ?? '') ?>">
 							</div>
 						</div>
 
@@ -625,22 +625,19 @@ if (pwdForm) {
 		const currentBarangayName = '<?= esc($barangay_name ?? '') ?>';
 		const currentPsgcCode = '<?= esc($address['barangay_psgc_code'] ?? '') ?>';
 		
-		// Map of old barangay IDs to names for backward compatibility
-		const legacyBarangayMap = {
-			1: 'Antipolo', 2: 'Cristo Rey', 3: 'Del Rosario (Banao)', 4: 'Francia',
-			5: 'La Anunciacion', 6: 'La Medalla', 7: 'La Purisima', 8: 'La Trinidad',
-			9: 'Niño Jesus', 10: 'Perpetual Help', 11: 'Sagrada', 12: 'Salvacion',
-			13: 'San Agustin', 14: 'San Andres', 15: 'San Antonio', 16: 'San Francisco',
-			17: 'San Isidro', 18: 'San Jose', 19: 'San Juan', 20: 'San Miguel',
-			21: 'San Nicolas', 22: 'San Pedro', 23: 'San Rafael', 24: 'San Ramon',
-			25: 'San Roque', 26: 'Santiago', 27: 'San Vicente Norte', 28: 'San Vicente Sur',
-			29: 'Santa Cruz Norte', 30: 'Santa Cruz Sur', 31: 'Santa Elena', 32: 'Santa Isabel',
-			33: 'Santa Maria', 34: 'Santa Teresita', 35: 'Santo Domingo', 36: 'Santo Niño'
-		};
+		// Municipality code (PSGC code) to fetch barangays dynamically
+		const municipalityCode = '<?= esc($address['municipality'] ?? '') ?>';
 		
 		async function loadBarangays() {
+			if (!municipalityCode) {
+				barangayStatus.textContent = '⚠ No municipality code found. Please contact administrator.';
+				barangayStatus.className = 'mt-1 text-xs text-red-600';
+				return;
+			}
+			
 			try {
-				const response = await fetch('<?= base_url('api/psgc/iriga-barangays') ?>');
+				// Use generic barangays API endpoint with municipality code
+				const response = await fetch('<?= base_url('api/psgc/barangays') ?>/' + municipalityCode);
 				const result = await response.json();
 				
 				if (!result.success || !result.data) {
@@ -659,9 +656,9 @@ if (pwdForm) {
 					option.textContent = brgy.name;
 					option.setAttribute('data-psgc-code', brgy.code);
 					
-					// Check if this matches current selection (by name or legacy ID)
+					// Check if this matches current selection (by name or PSGC code)
 					const isSelected = brgy.name === currentBarangayName || 
-					                   (currentBarangayId && legacyBarangayMap[currentBarangayId] === brgy.name);
+					                   brgy.code === currentPsgcCode;
 					
 					if (isSelected) {
 						option.selected = true;

@@ -1015,77 +1015,42 @@ document.addEventListener('DOMContentLoaded',function(){
                                 <label class="block text-xs sm:text-sm font-medium text-slate-700">
                                     Region <span class="text-red-500">*</span>
                                 </label>
-                                <input type="text" name="region" placeholder="Region"
-                                    value="<?= old('region') !== null ? old('region') : (isset($profile_data['region']) ? esc($profile_data['region']) : 'Region V') ?>"
-                                    readonly
+                                <input type="text" name="region" placeholder="Region (from system settings)" readonly
+                                    value="<?= old('region') !== null ? old('region') : (isset($profile_data['region']) ? esc($profile_data['region']) : ($location_defaults['default_region_name'] ?? '')) ?>"
                                     class="form-field w-full p-3 sm:p-3 border-2 rounded-lg sm:rounded-xl bg-slate-50 text-slate-600 cursor-not-allowed border-slate-200 text-sm sm:text-base">
+                                <input type="hidden" name="region_code" id="region_code" value="<?= old('region_code') !== null ? old('region_code') : (isset($profile_data['region_code']) ? esc($profile_data['region_code']) : ($location_defaults['default_region_code'] ?? '')) ?>">
                             </div>
                             
                             <div class="space-y-1 sm:space-y-2">
                                 <label class="block text-xs sm:text-sm font-medium text-slate-700">
                                     Province <span class="text-red-500">*</span>
                                 </label>
-                                <input type="text" name="province" placeholder="Province"
-                                    value="<?= old('province') !== null ? old('province') : (isset($profile_data['province']) ? esc($profile_data['province']) : 'Camarines Sur') ?>"
-                                    readonly
+                                <input type="text" name="province" placeholder="Province (from system settings)" readonly
+                                    value="<?= old('province') !== null ? old('province') : (isset($profile_data['province']) ? esc($profile_data['province']) : ($location_defaults['default_province_name'] ?? '')) ?>"
                                     class="form-field w-full p-3 sm:p-3 border-2 rounded-lg sm:rounded-xl bg-slate-50 text-slate-600 cursor-not-allowed border-slate-200 text-sm sm:text-base">
+                                <input type="hidden" name="province_code" id="province_code" value="<?= old('province_code') !== null ? old('province_code') : (isset($profile_data['province_code']) ? esc($profile_data['province_code']) : ($location_defaults['default_province_code'] ?? '')) ?>">
                             </div>
                             
                             <div class="space-y-1 sm:space-y-2">
                                 <label class="block text-xs sm:text-sm font-medium text-slate-700">
                                     City <span class="text-red-500">*</span>
                                 </label>
-                                <input type="text" name="municipality" placeholder="City"
-                                    value="<?= old('municipality') !== null ? old('municipality') : (isset($profile_data['municipality']) ? esc($profile_data['municipality']) : 'Iriga City') ?>"
-                                    readonly
+                                <input type="text" name="municipality" placeholder="City/Municipality (from system settings)" readonly
+                                    value="<?= old('municipality') !== null ? old('municipality') : (isset($profile_data['municipality']) ? esc($profile_data['municipality']) : ($location_defaults['default_municipality_name'] ?? '')) ?>"
                                     class="form-field w-full p-3 sm:p-3 border-2 rounded-lg sm:rounded-xl bg-slate-50 text-slate-600 cursor-not-allowed border-slate-200 text-sm sm:text-base">
+                                <input type="hidden" name="municipality_code" id="municipality_code" value="<?= old('municipality_code') !== null ? old('municipality_code') : (isset($profile_data['municipality_code']) ? esc($profile_data['municipality_code']) : ($location_defaults['default_municipality_code'] ?? '')) ?>">
                             </div>
                             
                             <div class="space-y-1 sm:space-y-2">
                                 <label class="block text-xs sm:text-sm font-medium text-slate-700">
                                     Barangay <span class="text-red-500">*</span>
                                 </label>
-                                <select name="barangay" data-required="true"
+                                <select name="barangay" id="barangay_select" data-required="true"
                                     class="form-field w-full p-2 sm:p-3 border-2 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?= session('validation_address') && session('validation_address')->hasError('barangay') ? 'border-red-400 bg-red-50' : 'border-slate-200' ?> transition-all duration-200 text-sm sm:text-base">
-                                    <option value="">Select Barangay</option>
-                                    <?php $barangay_val = old('barangay') !== null ? old('barangay') : (isset($profile_data['barangay']) ? $profile_data['barangay'] : ''); ?>
-                                    <option value="1" <?= $barangay_val == '1' ? 'selected' : '' ?>>Antipolo</option>
-                                    <option value="2" <?= $barangay_val == '2' ? 'selected' : '' ?>>Cristo Rey</option>
-                                    <option value="3" <?= $barangay_val == '3' ? 'selected' : '' ?>>Del Rosario (Banao)</option>
-                                    <option value="4" <?= $barangay_val == '4' ? 'selected' : '' ?>>Francia</option>
-                                    <option value="5" <?= $barangay_val == '5' ? 'selected' : '' ?>>La Anunciacion</option>
-                                    <option value="6" <?= $barangay_val == '6' ? 'selected' : '' ?>>La Medalla</option>
-                                    <option value="7" <?= $barangay_val == '7' ? 'selected' : '' ?>>La Purisima</option>
-                                    <option value="8" <?= $barangay_val == '8' ? 'selected' : '' ?>>La Trinidad</option>
-                                    <option value="9" <?= $barangay_val == '9' ? 'selected' : '' ?>>Niño Jesus</option>
-                                    <option value="10" <?= $barangay_val == '10' ? 'selected' : '' ?>>Perpetual Help</option>
-                                    <option value="11" <?= $barangay_val == '11' ? 'selected' : '' ?>>Sagrada</option>
-                                    <option value="12" <?= $barangay_val == '12' ? 'selected' : '' ?>>Salvacion</option>
-                                    <option value="13" <?= $barangay_val == '13' ? 'selected' : '' ?>>San Agustin</option>
-                                    <option value="14" <?= $barangay_val == '14' ? 'selected' : '' ?>>San Andres</option>
-                                    <option value="15" <?= $barangay_val == '15' ? 'selected' : '' ?>>San Antonio</option>
-                                    <option value="16" <?= $barangay_val == '16' ? 'selected' : '' ?>>San Francisco</option>
-                                    <option value="17" <?= $barangay_val == '17' ? 'selected' : '' ?>>San Isidro</option>
-                                    <option value="18" <?= $barangay_val == '18' ? 'selected' : '' ?>>San Jose</option>
-                                    <option value="19" <?= $barangay_val == '19' ? 'selected' : '' ?>>San Juan</option>
-                                    <option value="20" <?= $barangay_val == '20' ? 'selected' : '' ?>>San Miguel</option>
-                                    <option value="21" <?= $barangay_val == '21' ? 'selected' : '' ?>>San Nicolas</option>
-                                    <option value="22" <?= $barangay_val == '22' ? 'selected' : '' ?>>San Pedro</option>
-                                    <option value="23" <?= $barangay_val == '23' ? 'selected' : '' ?>>San Rafael</option>
-                                    <option value="24" <?= $barangay_val == '24' ? 'selected' : '' ?>>San Ramon</option>
-                                    <option value="25" <?= $barangay_val == '25' ? 'selected' : '' ?>>San Roque</option>
-                                    <option value="26" <?= $barangay_val == '26' ? 'selected' : '' ?>>Santiago</option>
-                                    <option value="27" <?= $barangay_val == '27' ? 'selected' : '' ?>>San Vicente Norte</option>
-                                    <option value="28" <?= $barangay_val == '28' ? 'selected' : '' ?>>San Vicente Sur</option>
-                                    <option value="29" <?= $barangay_val == '29' ? 'selected' : '' ?>>Santa Cruz Norte</option>
-                                    <option value="30" <?= $barangay_val == '30' ? 'selected' : '' ?>>Santa Cruz Sur</option>
-                                    <option value="31" <?= $barangay_val == '31' ? 'selected' : '' ?>>Santa Elena</option>
-                                    <option value="32" <?= $barangay_val == '32' ? 'selected' : '' ?>>Santa Isabel</option>
-                                    <option value="33" <?= $barangay_val == '33' ? 'selected' : '' ?>>Santa Maria</option>
-                                    <option value="34" <?= $barangay_val == '34' ? 'selected' : '' ?>>Santa Teresita</option>
-                                    <option value="35" <?= $barangay_val == '35' ? 'selected' : '' ?>>Santo Domingo</option>
-                                    <option value="36" <?= $barangay_val == '36' ? 'selected' : '' ?>>Santo Niño</option>
+                                    <option value="">Loading barangays...</option>
                                 </select>
+                                <!-- Hidden field for PSGC code -->
+                                <input type="hidden" name="barangay_psgc_code" id="barangay_psgc_code" value="<?= old('barangay_psgc_code') !== null ? old('barangay_psgc_code') : (isset($profile_data['barangay_psgc_code']) ? esc($profile_data['barangay_psgc_code']) : '') ?>">
                                 <?php if (session('validation_address') && session('validation_address')->hasError('barangay')): ?>
                                     <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('validation_address')->getError('barangay') ?></p>
                                 <?php endif; ?>
@@ -2385,22 +2350,7 @@ document.addEventListener('DOMContentLoaded',function(){
                             </div>
                             <div class="flex justify-between py-2 border-b border-slate-100">
                                 <span class="text-slate-600 font-medium">Barangay:</span>
-                                <span class="text-slate-800">
-                                    <?php
-                                    $barangay_names = [
-                                        '1' => 'Antipolo', '2' => 'Cristo Rey', '3' => 'Del Rosario (Banao)', '4' => 'Francia',
-                                        '5' => 'La Anunciacion', '6' => 'La Medalla', '7' => 'La Purisima', '8' => 'La Trinidad',
-                                        '9' => 'Niño Jesus', '10' => 'Perpetual Help', '11' => 'Sagrada', '12' => 'Salvacion',
-                                        '13' => 'San Agustin', '14' => 'San Andres', '15' => 'San Antonio', '16' => 'San Francisco',
-                                        '17' => 'San Isidro', '18' => 'San Jose', '19' => 'San Juan', '20' => 'San Miguel',
-                                        '21' => 'San Nicolas', '22' => 'San Pedro', '23' => 'San Rafael', '24' => 'San Ramon',
-                                        '25' => 'San Roque', '26' => 'Santiago', '27' => 'San Vicente Norte', '28' => 'San Vicente Sur',
-                                        '29' => 'Santa Cruz Norte', '30' => 'Santa Cruz Sur', '31' => 'Santa Elena', '32' => 'Santa Isabel',
-                                        '33' => 'Santa Maria', '34' => 'Santa Teresita', '35' => 'Santo Domingo', '36' => 'Santo Niño'
-                                    ];
-                                    echo esc($barangay_names[$profile_data['barangay'] ?? ''] ?? '');
-                                    ?>
-                                </span>
+                                <span class="text-slate-800"><?= esc($profile_data['barangay'] ?? '') ?></span>
                             </div>
                             <div class="flex justify-between py-2">
                                 <span class="text-slate-600 font-medium">Zone/Purok:</span>
@@ -5964,7 +5914,26 @@ document.addEventListener('DOMContentLoaded',function(){
                         const phoneValid = validatePhone();
                         const emailValid = window.validateEmailField ? window.validateEmailField() : true;
                         
-                        if (!phoneValid || !emailValid) {
+                        // Validate barangay selection
+                        const barangaySelect = document.getElementById('barangay_select');
+                        const barangayValid = barangaySelect && barangaySelect.value && barangaySelect.value !== '';
+                        
+                        if (!barangayValid) {
+                            ev.preventDefault();
+                            ev.stopPropagation();
+                            // Show error message
+                            const barangayError = barangaySelect.parentElement.querySelector('.error-message') || 
+                                                 document.createElement('p');
+                            barangayError.className = 'error-message text-red-500 text-xs sm:text-sm mt-1';
+                            barangayError.textContent = 'Please select a barangay';
+                            if (!barangaySelect.parentElement.querySelector('.error-message')) {
+                                barangaySelect.parentElement.appendChild(barangayError);
+                            }
+                            barangaySelect.classList.add('border-red-400', 'bg-red-50');
+                            barangaySelect.focus();
+                        }
+                        
+                        if (!phoneValid || !emailValid || !barangayValid) {
                             ev.preventDefault();
                             ev.stopPropagation();
                         }
@@ -6838,6 +6807,332 @@ document.addEventListener('DOMContentLoaded',function(){
             // DOM already loaded
             initializeTermsAndConditions();
         }
+    </script>
+    <script>
+        // PSGC Barangay Loading (Location from System Settings)
+        (function() {
+            const locationDefaults = <?= json_encode($location_defaults ?? []) ?>;
+            const municipalityCode = document.getElementById('municipality_code')?.value || locationDefaults?.default_municipality_code || '';
+            const oldBarangayValue = '<?= old('barangay') !== null ? old('barangay') : (isset($profile_data['barangay']) ? esc($profile_data['barangay']) : '') ?>';
+            const oldBarangayPsgcCode = '<?= old('barangay_psgc_code') !== null ? old('barangay_psgc_code') : (isset($profile_data['barangay_psgc_code']) ? esc($profile_data['barangay_psgc_code']) : '') ?>';
+            
+            // Fallback barangays for Iriga City (051716000) - only used if PSGC API fails
+            // This ensures the system works offline but normally loads from the configured municipality
+            const fallbackBarangays = [
+                {code: '051716001', name: 'Antipolo', id: 1},
+                {code: '051716002', name: 'Cristo Rey', id: 2},
+                {code: '051716003', name: 'Del Rosario (Banao)', id: 3},
+                {code: '051716004', name: 'Francia', id: 4},
+                {code: '051716005', name: 'La Anunciacion', id: 5},
+                {code: '051716006', name: 'La Medalla', id: 6},
+                {code: '051716007', name: 'La Purisima', id: 7},
+                {code: '051716008', name: 'La Trinidad', id: 8},
+                {code: '051716009', name: 'Niño Jesus', id: 9},
+                {code: '051716010', name: 'Perpetual Help', id: 10},
+                {code: '051716011', name: 'Sagrada', id: 11},
+                {code: '051716012', name: 'Salvacion', id: 12},
+                {code: '051716013', name: 'San Agustin', id: 13},
+                {code: '051716014', name: 'San Andres', id: 14},
+                {code: '051716015', name: 'San Antonio', id: 15},
+                {code: '051716016', name: 'San Francisco', id: 16},
+                {code: '051716017', name: 'San Isidro', id: 17},
+                {code: '051716018', name: 'San Jose', id: 18},
+                {code: '051716019', name: 'San Juan', id: 19},
+                {code: '051716020', name: 'San Miguel', id: 20},
+                {code: '051716021', name: 'San Nicolas', id: 21},
+                {code: '051716022', name: 'San Pedro', id: 22},
+                {code: '051716023', name: 'San Rafael', id: 23},
+                {code: '051716024', name: 'San Ramon', id: 24},
+                {code: '051716025', name: 'San Roque', id: 25},
+                {code: '051716026', name: 'Santiago', id: 26},
+                {code: '051716027', name: 'San Vicente Norte', id: 27},
+                {code: '051716028', name: 'San Vicente Sur', id: 28},
+                {code: '051716029', name: 'Santa Cruz Norte', id: 29},
+                {code: '051716030', name: 'Santa Cruz Sur', id: 30},
+                {code: '051716031', name: 'Santa Elena', id: 31},
+                {code: '051716032', name: 'Santa Isabel', id: 32},
+                {code: '051716033', name: 'Santa Maria', id: 33},
+                {code: '051716034', name: 'Santa Teresita', id: 34},
+                {code: '051716035', name: 'Santo Domingo', id: 35},
+                {code: '051716036', name: 'Santo Niño', id: 36}
+            ];
+
+            function loadBarangays() {
+                const barangaySelect = document.getElementById('barangay_select');
+                const barangayPsgcCodeInput = document.getElementById('barangay_psgc_code');
+                
+                if (!barangaySelect) return;
+
+                // Check if municipality code is configured
+                if (!municipalityCode) {
+                    barangaySelect.innerHTML = '<option value="">No location configured in system settings</option>';
+                    barangaySelect.disabled = true;
+                    console.error('Municipality code not configured in system settings');
+                    return;
+                }
+
+                // Show loading state
+                barangaySelect.innerHTML = '<option value="">Loading barangays...</option>';
+                barangaySelect.disabled = true;
+
+                // Fetch barangays from PSGC API
+                fetch(`<?= base_url('api/psgc/barangays/') ?>${municipalityCode}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.data && data.data.length > 0) {
+                            // API success - populate from API
+                            barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
+                            
+                            data.data.forEach(barangay => {
+                                const option = document.createElement('option');
+                                option.value = barangay.code; // Save PSGC code
+                                option.textContent = barangay.name;
+                                option.dataset.code = barangay.code;
+                                barangaySelect.appendChild(option);
+                            });
+                            
+                            barangaySelect.disabled = false;
+                            
+                            // Pre-select if old value exists
+                            if (oldBarangayValue) {
+                                barangaySelect.value = oldBarangayValue;
+                                if (oldBarangayPsgcCode) {
+                                    barangayPsgcCodeInput.value = oldBarangayPsgcCode;
+                                }
+                            }
+                            
+                            // Update PSGC code when barangay changes and clear validation errors
+                            barangaySelect.addEventListener('change', function() {
+                                const selectedOption = this.options[this.selectedIndex];
+                                if (selectedOption && selectedOption.dataset.code) {
+                                    barangayPsgcCodeInput.value = selectedOption.dataset.code;
+                                }
+                                // Clear error message if barangay is selected
+                                if (this.value) {
+                                    this.classList.remove('border-red-400', 'bg-red-50');
+                                    const errorMsg = this.parentElement.querySelector('.error-message');
+                                    if (errorMsg) errorMsg.remove();
+                                }
+                            });
+                        } else {
+                            // API failed or no data - use fallback
+                            console.warn('API failed or no barangays found, using fallback for Iriga City');
+                            barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
+                            
+                            fallbackBarangays.forEach(barangay => {
+                                const option = document.createElement('option');
+                                option.value = barangay.code; // Save PSGC code
+                                option.textContent = barangay.name;
+                                option.dataset.code = barangay.code;
+                                barangaySelect.appendChild(option);
+                            });
+                            
+                            barangaySelect.disabled = false;
+                            
+                            // Pre-select if old value exists
+                            if (oldBarangayValue) {
+                                barangaySelect.value = oldBarangayValue;
+                                if (oldBarangayPsgcCode) {
+                                    barangayPsgcCodeInput.value = oldBarangayPsgcCode;
+                                }
+                            }
+                            
+                            // Update PSGC code when barangay changes
+                            barangaySelect.addEventListener('change', function() {
+                                const selectedOption = this.options[this.selectedIndex];
+                                if (selectedOption && selectedOption.dataset.code) {
+                                    barangayPsgcCodeInput.value = selectedOption.dataset.code;
+                                }
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading barangays:', error);
+                        // Use fallback on error
+                        barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
+                        
+                        fallbackBarangays.forEach(barangay => {
+                            const option = document.createElement('option');
+                            option.value = barangay.code; // Save PSGC code
+                            option.textContent = barangay.name;
+                            option.dataset.code = barangay.code;
+                            barangaySelect.appendChild(option);
+                        });
+                        
+                        barangaySelect.disabled = false;
+                        
+                        if (oldBarangayValue) {
+                            barangaySelect.value = oldBarangayValue;
+                            if (oldBarangayPsgcCode) {
+                                barangayPsgcCodeInput.value = oldBarangayPsgcCode;
+                            }
+                        }
+                        
+                        barangaySelect.addEventListener('change', function() {
+                            const selectedOption = this.options[this.selectedIndex];
+                            if (selectedOption && selectedOption.dataset.code) {
+                                barangayPsgcCodeInput.value = selectedOption.dataset.code;
+                            }
+                        });
+                    });
+            }
+
+            // Initialize on page load
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', loadBarangays);
+            } else {
+                loadBarangays();
+            }
+        })();
+    </script>
+    <script>
+        // ==================== STEP 2: FILE UPLOAD VALIDATION ==================== //
+        (function() {
+            const locationDefaults = <?= json_encode($location_defaults ?? []) ?>;
+            const oldBarangayValue = '<?= old('barangay') !== null ? old('barangay') : (isset($profile_data['barangay']) ? esc($profile_data['barangay']) : '') ?>';
+            const oldBarangayPsgcCode = '<?= old('barangay_psgc_code') !== null ? old('barangay_psgc_code') : (isset($profile_data['barangay_psgc_code']) ? esc($profile_data['barangay_psgc_code']) : '') ?>';
+            
+            // Hardcoded fallback barangays for Iriga City
+            const fallbackBarangays = [
+                {code: '051716001', name: 'Antipolo', id: 1},
+                {code: '051716002', name: 'Cristo Rey', id: 2},
+                {code: '051716003', name: 'Del Rosario (Banao)', id: 3},
+                {code: '051716004', name: 'Francia', id: 4},
+                {code: '051716005', name: 'La Anunciacion', id: 5},
+                {code: '051716006', name: 'La Medalla', id: 6},
+                {code: '051716007', name: 'La Purisima', id: 7},
+                {code: '051716008', name: 'La Trinidad', id: 8},
+                {code: '051716009', name: 'Niño Jesus', id: 9},
+                {code: '051716010', name: 'Perpetual Help', id: 10},
+                {code: '051716011', name: 'Sagrada', id: 11},
+                {code: '051716012', name: 'Salvacion', id: 12},
+                {code: '051716013', name: 'San Agustin', id: 13},
+                {code: '051716014', name: 'San Andres', id: 14},
+                {code: '051716015', name: 'San Antonio', id: 15},
+                {code: '051716016', name: 'San Francisco', id: 16},
+                {code: '051716017', name: 'San Isidro', id: 17},
+                {code: '051716018', name: 'San Jose', id: 18},
+                {code: '051716019', name: 'San Juan', id: 19},
+                {code: '051716020', name: 'San Miguel', id: 20},
+                {code: '051716021', name: 'San Nicolas', id: 21},
+                {code: '051716022', name: 'San Pedro', id: 22},
+                {code: '051716023', name: 'San Rafael', id: 23},
+                {code: '051716024', name: 'San Ramon', id: 24},
+                {code: '051716025', name: 'San Roque', id: 25},
+                {code: '051716026', name: 'Santiago', id: 26},
+                {code: '051716027', name: 'San Vicente Norte', id: 27},
+                {code: '051716028', name: 'San Vicente Sur', id: 28},
+                {code: '051716029', name: 'Santa Cruz Norte', id: 29},
+                {code: '051716030', name: 'Santa Cruz Sur', id: 30},
+                {code: '051716031', name: 'Santa Elena', id: 31},
+                {code: '051716032', name: 'Santa Isabel', id: 32},
+                {code: '051716033', name: 'Santa Maria', id: 33},
+                {code: '051716034', name: 'Santa Teresita', id: 34},
+                {code: '051716035', name: 'Santo Domingo', id: 35},
+                {code: '051716036', name: 'Santo Niño', id: 36}
+            ];
+
+            function loadBarangays() {
+                const barangaySelect = document.getElementById('barangay_select');
+                const barangayPsgcCodeInput = document.getElementById('barangay_psgc_code');
+                
+                if (!barangaySelect) return;
+
+                // Get municipality code from location defaults
+                const municipalityCode = locationDefaults?.municipality_code || '051716000'; // Default to Iriga City
+
+                // Show loading state
+                barangaySelect.innerHTML = '<option value="">Loading barangays...</option>';
+                barangaySelect.disabled = true;
+
+                // Fetch barangays from PSGC API
+                fetch(`<?= base_url() ?>api/psgc/barangays/${municipalityCode}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
+                        
+                        if (data && Array.isArray(data) && data.length > 0) {
+                            // API returned barangays successfully
+                            data.forEach((barangay, index) => {
+                                const option = document.createElement('option');
+                                option.value = index + 1; // Keep numeric ID for backward compatibility
+                                option.textContent = barangay.name;
+                                option.dataset.psgcCode = barangay.code;
+                                
+                                // Restore selection based on old value or PSGC code
+                                if (oldBarangayPsgcCode && barangay.code === oldBarangayPsgcCode) {
+                                    option.selected = true;
+                                } else if (oldBarangayValue && option.value === oldBarangayValue) {
+                                    option.selected = true;
+                                }
+                                
+                                barangaySelect.appendChild(option);
+                            });
+                        } else {
+                            // API returned empty or invalid data, use fallback
+                            console.warn('PSGC API returned no barangays, using fallback');
+                            populateFallbackBarangays();
+                        }
+                        
+                        barangaySelect.disabled = false;
+                        
+                        // Set PSGC code if there's a selected option
+                        const selectedOption = barangaySelect.options[barangaySelect.selectedIndex];
+                        if (selectedOption && selectedOption.dataset.psgcCode) {
+                            barangayPsgcCodeInput.value = selectedOption.dataset.psgcCode;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading barangays from PSGC API:', error);
+                        populateFallbackBarangays();
+                        barangaySelect.disabled = false;
+                    });
+            }
+
+            function populateFallbackBarangays() {
+                const barangaySelect = document.getElementById('barangay_select');
+                const barangayPsgcCodeInput = document.getElementById('barangay_psgc_code');
+                
+                barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
+                
+                fallbackBarangays.forEach(barangay => {
+                    const option = document.createElement('option');
+                    option.value = barangay.code; // Save PSGC code like "020903001"
+                    option.textContent = barangay.name;
+                    option.dataset.psgcCode = barangay.code;
+                    
+                    // Restore selection
+                    if (oldBarangayPsgcCode && barangay.code === oldBarangayPsgcCode) {
+                        option.selected = true;
+                    } else if (oldBarangayValue && option.value == oldBarangayValue) {
+                        option.selected = true;
+                    }
+                    
+                    barangaySelect.appendChild(option);
+                });
+                
+                // Set PSGC code if there's a selected option
+                const selectedOption = barangaySelect.options[barangaySelect.selectedIndex];
+                if (selectedOption && selectedOption.dataset.psgcCode) {
+                    barangayPsgcCodeInput.value = selectedOption.dataset.psgcCode;
+                }
+            }
+
+            // Update PSGC code when barangay selection changes
+            function handleBarangayChange() {
+                const barangaySelect = document.getElementById('barangay_select');
+                const barangayPsgcCodeInput = document.getElementById('barangay_psgc_code');
+                
+                const selectedOption = barangaySelect.options[barangaySelect.selectedIndex];
+                if (selectedOption && selectedOption.dataset.psgcCode) {
+                    barangayPsgcCodeInput.value = selectedOption.dataset.psgcCode;
+                } else {
+                    barangayPsgcCodeInput.value = '';
+                }
+            }
+
+            // Initialize on page load - removed duplicate loadRegions() call
+        })();
     </script>
     <script>
         (function(){

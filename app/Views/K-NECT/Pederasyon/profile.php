@@ -159,12 +159,16 @@
                                 <p class="text-sm text-gray-900"><?= esc($address['zone_purok']) ?: 'Not specified' ?></p>
                             </div>
                             <div>
-                                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">City</p>
-                                <p class="text-sm text-gray-900">Iriga City</p>
+                                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">City/Municipality</p>
+                                <p class="text-sm text-gray-900"><?= esc($address['municipality_name'] ?? $address['municipality'] ?? 'Not specified') ?></p>
                             </div>
                             <div>
                                 <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Province</p>
-                                <p class="text-sm text-gray-900">Camarines Sur</p>
+                                <p class="text-sm text-gray-900"><?= esc($address['province_name'] ?? $address['province'] ?? 'Not specified') ?></p>
+                            </div>
+                            <div>
+                                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Region</p>
+                                <p class="text-sm text-gray-900"><?= esc($address['region_name'] ?? $address['region'] ?? 'Not specified') ?></p>
                             </div>
                         </div>
                     </div>

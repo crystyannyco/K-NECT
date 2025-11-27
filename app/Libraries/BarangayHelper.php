@@ -2,8 +2,29 @@
 
 namespace App\Libraries;
 
+/**
+ * BarangayHelper - Legacy support for old barangay ID system
+ * 
+ * This class maintains the mapping of old numeric barangay IDs (1-36) 
+ * to Iriga City barangay names for backward compatibility with existing data.
+ * 
+ * NEW IMPLEMENTATIONS should use the PSGC API (PSGCController) instead,
+ * which provides dynamic barangay data for ALL Philippine municipalities,
+ * not just Iriga City.
+ * 
+ * This helper is kept only for:
+ * - Converting legacy barangay IDs in existing database records
+ * - Supporting old data during migration period
+ * - Display purposes for historical data
+ */
 class BarangayHelper
 {
+    /**
+     * Get the legacy mapping of barangay IDs to names (Iriga City only)
+     * 
+     * @return array Map of barangay ID => barangay name
+     * @deprecated Use PSGC API for new implementations
+     */
     public static function getBarangayMap()
     {
         return [
@@ -46,6 +67,13 @@ class BarangayHelper
         ];
     }
 
+    /**
+     * Convert legacy barangay ID to barangay name (Iriga City only)
+     * 
+     * @param int|string $barangayId Legacy barangay ID (1-36)
+     * @return string Barangay name or the original value if not found
+     * @deprecated Use PSGC API for new implementations
+     */
     public static function getBarangayName($barangayId)
     {
         $barangayMap = self::getBarangayMap();

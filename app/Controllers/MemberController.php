@@ -36,6 +36,14 @@ class MemberController extends BaseController
         // Calculate age
         $user['age'] = $user['birthdate'] ? (date_diff(date_create($user['birthdate']), date_create('today'))->y) : '';
 
+        // Convert barangay ID to name
+        if (!empty($user['barangay'])) {
+            $barangayName = \App\Libraries\PSGCHelper::getLocationName($user['barangay'], 'barangay');
+            $user['barangay_name'] = $barangayName ?: $user['barangay'];
+        } else {
+            $user['barangay_name'] = '';
+        }
+
         return $this->response->setJSON(['success' => true, 'user' => $user]);
     }
 

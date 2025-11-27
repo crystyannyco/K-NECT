@@ -144,17 +144,12 @@ class KKController extends BaseController
         $attendanceStats['recent_events'] = array_slice($attendanceRecords, 0, 3);
 
         // Merge all data for the view (using ProfileController structure)
-        // Compute address barangay name for the view
-        $addressBarangayName = '';
-        if (!empty($profileData['address']['barangay'])) {
-            $addressBarangayName = BarangayHelper::getBarangayName($profileData['address']['barangay']);
-        }
-
+        // The barangay_name is now provided by ProfileController via PSGCHelper
         $data = array_merge($profileData, [
             'username' => $session->get('username'),
             'attendance_stats' => $attendanceStats,
             'field_mappings' => $profileController->getFieldMappings(),
-            'address_barangay_name' => $addressBarangayName,
+            'address_barangay_name' => $profileData['address']['barangay_name'] ?? 'Not specified',
         ]);
 
         return 

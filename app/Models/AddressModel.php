@@ -24,7 +24,7 @@ class AddressModel extends Model
         // 'house_number' => 'permit_empty|max_length[50]',
         // 'street' => 'required|min_length[2]|max_length[100]',
         // 'subdivision' => 'permit_empty|max_length[100]',
-    'barangay' => 'required|in_list[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36]',
+        'barangay' => 'required|min_length[2]|max_length[100]', // Now accepts barangay names from PSGC API
         // 'municipality' => 'required|min_length[2]|max_length[100]|alpha_space',
         // 'province' => 'required|min_length[2]|max_length[100]|alpha_space',
         // 'region' => 'required|min_length[2]|max_length[50]|alpha_numeric_space',
@@ -49,9 +49,10 @@ class AddressModel extends Model
         // 'subdivision' => [
         //     'max_length' => 'Subdivision name cannot exceed 100 characters'
         // ],
-    'barangay' => [
+        'barangay' => [
             'required' => 'Barangay is required',
-            'in_list' => 'Barangay must be a valid option',
+            'min_length' => 'Barangay name must be at least 2 characters long',
+            'max_length' => 'Barangay name cannot exceed 100 characters'
         ],
         // 'municipality' => [
         //     'required' => 'Municipality is required',

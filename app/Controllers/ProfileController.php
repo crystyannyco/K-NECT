@@ -49,6 +49,26 @@ class ProfileController extends BaseController
         $userExtInfo = $this->userExtInfoModel->where('user_id', $user['id'])->first();
         $address = $this->addressModel->where('user_id', $user['id'])->first();
 
+        // Convert PSGC codes to location names for display
+        if ($address) {
+            log_message('debug', 'ProfileController: Converting PSGC codes - Region: ' . ($address['region'] ?? 'null') . ', Province: ' . ($address['province'] ?? 'null') . ', Municipality: ' . ($address['municipality'] ?? 'null') . ', Barangay: ' . ($address['barangay'] ?? 'null'));
+            
+            $locationNames = \App\Libraries\PSGCHelper::getLocationNames([
+                'region' => $address['region'] ?? '',
+                'province' => $address['province'] ?? '',
+                'municipality' => $address['municipality'] ?? '',
+                'barangay' => $address['barangay'] ?? ''
+            ]);
+            
+            log_message('debug', 'ProfileController: Location names received - Region: ' . ($locationNames['region'] ?? 'null') . ', Province: ' . ($locationNames['province'] ?? 'null') . ', Municipality: ' . ($locationNames['municipality'] ?? 'null') . ', Barangay: ' . ($locationNames['barangay'] ?? 'null'));
+            
+            // Add display names to address array
+            $address['region_name'] = $locationNames['region'] ?? $address['region'];
+            $address['province_name'] = $locationNames['province'] ?? $address['province'];
+            $address['municipality_name'] = $locationNames['municipality'] ?? $address['municipality'];
+            $address['barangay_name'] = $locationNames['barangay'] ?? $address['barangay'];
+        }
+
         // Calculate age
         $age = '';
         if ($user['birthdate']) {

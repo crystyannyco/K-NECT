@@ -23,7 +23,14 @@ $routes->get('api/top-barangays/(:num)', 'PublicController::topBarangaysData/$1'
 $routes->get('event/(:num)', 'PublicController::event/$1');
 
 // ------------- PSGC API Routes (Public for address selection) ------------- //
-$routes->get('api/psgc/iriga-barangays', 'PSGCController::getIrigaBarangays');
+$routes->get('api/psgc/regions', 'PSGCController::getRegions');
+$routes->get('api/psgc/provinces/(:segment)', 'PSGCController::getProvinces/$1');
+$routes->get('api/psgc/provinces', 'PSGCController::getProvinces'); // Default to Region V
+$routes->get('api/psgc/municipalities/(:segment)', 'PSGCController::getMunicipalities/$1');
+$routes->get('api/psgc/municipalities', 'PSGCController::getMunicipalities'); // Default to Camarines Sur
+$routes->get('api/psgc/barangays/(:segment)', 'PSGCController::getBarangays/$1');
+$routes->get('api/psgc/barangays', 'PSGCController::getBarangays'); // Default to Iriga City
+$routes->get('api/psgc/iriga-barangays', 'PSGCController::getIrigaBarangays'); // Legacy
 $routes->get('api/psgc/barangay/(:segment)', 'PSGCController::getBarangayByCode/$1');
 $routes->get('api/psgc/clear-cache', 'PSGCController::clearCache');
 
@@ -170,6 +177,9 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->get('pederasyon/skchairperson', 'PederasyonController::youthlist');
     $routes->get('pederasyon/ped-officers', 'PederasyonController::pedOfficers');
     $routes->get('pederasyon/settings', 'PederasyonController::settings');
+    // Pederasyon Location Settings
+    $routes->get('pederasyon/get-location-defaults', 'PederasyonController::getLocationDefaults');
+    $routes->post('pederasyon/update-location-defaults', 'PederasyonController::updateLocationDefaults');
     // Pederasyon Account Settings
     $routes->get('pederasyon/account-settings', 'PederasyonController::accountSettings');
     $routes->post('pederasyon/account-settings/profile', 'PederasyonController::updateProfile');

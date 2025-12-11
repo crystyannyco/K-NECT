@@ -488,6 +488,7 @@ class BulletinModel extends Model
             ->select('e.event_id as id, e.title as title, e.start_datetime as event_date, e.event_banner, e.created_at')
             ->where('e.status', 'Published')
             ->where('e.start_datetime >=', $todayStart)
+            ->where('e.target_participants >', 0)
             ->orderBy('e.start_datetime', 'ASC')
             ->limit($limit);
 
@@ -506,6 +507,7 @@ class BulletinModel extends Model
         $builder = $this->db->table('event e')
             ->select('e.event_id as id, e.title as title, e.start_datetime as event_date, e.event_banner, e.created_at')
             ->where('e.status', 'Published')
+            ->where('e.target_participants >', 0)
             ->orderBy('e.created_at', 'DESC')
             ->limit($limit);
 

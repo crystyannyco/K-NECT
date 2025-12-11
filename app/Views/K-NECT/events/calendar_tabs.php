@@ -35,8 +35,8 @@
             <div id="cal<?= $i ?>" class="calendar-embed<?= $i === 0 ? ' active' : '' ?> mb-6">
                 <div class="flex justify-center">
                     <iframe 
-                        src="<?= $i === 0 ? 'https://calendar.google.com/calendar/embed?src=' . urlencode($tab['calendar_id']) . '&ctz=Asia%2FManila&showTitle=0&showPrint=0&showCalendars=0&mode=MONTH&bgcolor=%23FFFFFF' : 'about:blank' ?>"
-                        data-src="https://calendar.google.com/calendar/embed?src=<?= urlencode($tab['calendar_id']) ?>&ctz=Asia%2FManila&showTitle=0&showPrint=0&showCalendars=0&mode=MONTH&bgcolor=%23FFFFFF"
+                        src="<?= $i === 0 ? 'https://calendar.google.com/calendar/embed?src=' . urlencode($tab['calendar_id']) . '&src=en.philippines%23holiday%40group.v.calendar.google.com&ctz=Asia%2FManila&showTitle=0&showPrint=0&showCalendars=0&mode=MONTH&bgcolor=%23FFFFFF' : 'about:blank' ?>"
+                        data-src="https://calendar.google.com/calendar/embed?src=<?= urlencode($tab['calendar_id']) ?>&src=en.philippines%23holiday%40group.v.calendar.google.com&ctz=Asia%2FManila&showTitle=0&showPrint=0&showCalendars=0&mode=MONTH&bgcolor=%23FFFFFF"
                         style="border: 0; opacity: 0; transition: opacity 0.3s ease;" 
                         width="800" 
                         height="600" 

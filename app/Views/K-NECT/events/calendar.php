@@ -57,7 +57,7 @@
             <div class="flex justify-center">
                 <iframe 
                     id="gcalFrame" 
-                    src="https://calendar.google.com/calendar/embed?src=<?= urlencode($googleEmail) ?>&ctz=Asia%2FManila&showTitle=0&showPrint=0&showCalendars=0&mode=MONTH&bgcolor=%23FFFFFF"
+                    src="https://calendar.google.com/calendar/embed?src=<?= urlencode($googleEmail) ?>&src=en.philippines%23holiday%40group.v.calendar.google.com&ctz=Asia%2FManila&showTitle=0&showPrint=0&showCalendars=0&mode=MONTH&bgcolor=%23FFFFFF"
                     style="border: 0; opacity: 0; transition: opacity 0.3s ease;" 
                     width="800" 
                     height="600" 

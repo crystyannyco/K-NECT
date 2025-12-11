@@ -351,20 +351,25 @@ class PublishScheduledEventsCommand extends BaseCommand
         $startTime = $startDateTime->format('h:i A');
         $endTime = $endDateTime->format('h:i A');
         
-        $message = "NEW EVENT: {$event['title']}\n";
-        
-        // Show date range if event spans multiple days
-        if ($startDate !== $endDate) {
-            $message .= "Start: {$startDate} at {$startTime}\n";
-            $message .= "End: {$endDate} at {$endTime}\n";
+        if ($event['barangay_id'] == 0) {
+            // City-wide event
+            if ($startDate !== $endDate) {
+                $message = "Maray na aldow po kaninyo ngamin mga ka-Irigueños, mig ka-agko po kita event na {$event['title']}, sa aldow na {$startDate} ({$startTime}) - {$endDate} ({$endTime}).\n\nMayna po kita! Mag-iriba kita, tapos mag-muruya!";
+            } else {
+                $message = "Maray na aldow po kaninyo ngamin mga ka-Irigueños, mig ka-agko po kita event na {$event['title']}, sa aldow na {$startDate} sa {$startTime}.\n\nMayna po kita! Mag-iriba kita, tapos mag-muruya!";
+            }
         } else {
-            // Same day event
-            $message .= "Date: {$startDate}\n";
-            $message .= "Time: {$startTime} - {$endTime}\n";
+            // Barangay-specific event
+            $barangayModel = new \App\Models\BarangayModel();
+            $barangay = $barangayModel->find($event['barangay_id']);
+            $barangayName = $barangay ? $barangay['name'] : 'Barangay';
+            
+            if ($startDate !== $endDate) {
+                $message = "Maray na aldow po kaninyo ngamin mga ka-barangay {$barangayName}, mig ka-agko po kita event na {$event['title']}, sa aldow na {$startDate} ({$startTime}) - {$endDate} ({$endTime}).\n\nMayna po kita! Mag-iriba kita, tapos mag-muruya!";
+            } else {
+                $message = "Maray na aldow po kaninyo ngamin mga ka-barangay {$barangayName}, mig ka-agko po kita event na {$event['title']}, sa aldow na {$startDate} sa {$startTime}.\n\nMayna po kita! Mag-iriba kita, tapos mag-muruya!";
+            }
         }
-        
-        $message .= "Location: {$event['location']}\n";
-        $message .= "Description: {$event['description']}";
         
         return $message;
     }

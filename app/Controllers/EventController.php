@@ -1575,53 +1575,46 @@ class EventController extends BaseController
         $startTime = $startDateTime->format('h:i A');
         $endTime = $endDateTime->format('h:i A');
         
-        // Determine header based on event scope
+        // Handle cancellation separately
+        if ($action === 'cancel') {
+            if ($event['barangay_id'] == 0) {
+                $header = "Panlungsod na Pederasyon ng mga Sangguniang Kabataan\nIriga City\n\n";
+            } else {
+                $barangayModel = new \App\Models\BarangayModel();
+                $barangay = $barangayModel->find($event['barangay_id']);
+                $barangayName = $barangay ? $barangay['name'] : 'Barangay';
+                $header = "Sangguniang Kabataan - {$barangayName}\nIriga City\n\n";
+            }
+
+            $message = $header . "EVENT CANCELLED\n\n";
+            if ($startDate !== $endDate) {
+                $message .= "We regret to inform you that the {$event['title']} scheduled from {$startDate} to {$endDate} has been cancelled.";
+            } else {
+                $message .= "We regret to inform you that the {$event['title']} on {$startDate} has been cancelled.";
+            }
+            return $message;
+        }
+        
+        // New format for Event SMS
         if ($event['barangay_id'] == 0) {
             // City-wide event
-            $header = "Panlungsod na Pederasyon ng mga Sangguniang Kabataan\nIriga City\n\n";
+            if ($startDate !== $endDate) {
+                $message = "Maray na aldow po kaninyo ngamin mga ka-Irigueños, mig ka-agko po kita event na {$event['title']}, sa aldow na {$startDate} ({$startTime}) - {$endDate} ({$endTime}).\n\nMayna po kita! Mag-iriba kita, tapos mag-muruya!";
+            } else {
+                $message = "Maray na aldow po kaninyo ngamin mga ka-Irigueños, mig ka-agko po kita event na {$event['title']}, sa aldow na {$startDate} sa {$startTime}.\n\nMayna po kita! Mag-iriba kita, tapos mag-muruya!";
+            }
         } else {
             // Barangay-specific event
             $barangayModel = new \App\Models\BarangayModel();
             $barangay = $barangayModel->find($event['barangay_id']);
             $barangayName = $barangay ? $barangay['name'] : 'Barangay';
-            $header = "Sangguniang Kabataan - {$barangayName}\nIriga City\n\n";
+            
+            if ($startDate !== $endDate) {
+                $message = "Maray na aldow po kaninyo ngamin mga ka-barangay {$barangayName}, mig ka-agko po kita event na {$event['title']}, sa aldow na {$startDate} ({$startTime}) - {$endDate} ({$endTime}).\n\nMayna po kita! Mag-iriba kita, tapos mag-muruya!";
+            } else {
+                $message = "Maray na aldow po kaninyo ngamin mga ka-barangay {$barangayName}, mig ka-agko po kita event na {$event['title']}, sa aldow na {$startDate} sa {$startTime}.\n\nMayna po kita! Mag-iriba kita, tapos mag-muruya!";
+            }
         }
-        
-        // Build message based on action
-        $message = $header;
-        
-        switch ($action) {
-            case 'add':
-            case 'publish':
-                $message .= "NEW EVENT: {$event['title']}\n\n";
-                break;
-            case 'edit':
-            case 'update':
-                $message .= "EVENT UPDATE: {$event['title']}\n\n";
-                break;
-            case 'cancel':
-                $message .= "EVENT CANCELLED\n\n";
-                // For cancelled events, show date range if multi-day
-                if ($startDate !== $endDate) {
-                    $message .= "We regret to inform you that the {$event['title']} scheduled from {$startDate} to {$endDate} has been cancelled.";
-                } else {
-                    $message .= "We regret to inform you that the {$event['title']} on {$startDate} has been cancelled.";
-                }
-                return $message;
-        }
-        
-        // Show date range if event spans multiple days
-        if ($startDate !== $endDate) {
-            $message .= "Start: {$startDate} at {$startTime}\n";
-            $message .= "End: {$endDate} at {$endTime}\n";
-        } else {
-            // Same day event
-            $message .= "Date: {$startDate}\n";
-            $message .= "Time: {$startTime} - {$endTime}\n";
-        }
-        
-        $message .= "Location: {$event['location']}\n\n";
-        $message .= "{$event['description']}";
         
         return $message;
     }

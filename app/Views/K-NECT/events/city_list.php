@@ -817,8 +817,8 @@
                                     <div class="flex justify-center relative h-full">
                                         <div class="absolute inset-0 bg-blue-50 opacity-0 group-hover:opacity-10 transition-opacity duration-200 rounded-lg"></div>
                                         <iframe 
-                                            src="<?= $i === 0 ? 'https://calendar.google.com/calendar/embed?src=' . urlencode($tab['calendar_id']) . '&ctz=Asia%2FManila&showTitle=0&showPrint=0&showCalendars=0&mode=MONTH&bgcolor=%23FFFFFF' : 'about:blank' ?>"
-                                            data-src="https://calendar.google.com/calendar/embed?src=<?= urlencode($tab['calendar_id']) ?>&ctz=Asia%2FManila&showTitle=0&showPrint=0&showCalendars=0&mode=MONTH&bgcolor=%23FFFFFF"
+                                            src="<?= $i === 0 ? 'https://calendar.google.com/calendar/embed?src=' . urlencode($tab['calendar_id']) . '&src=en.philippines%23holiday%40group.v.calendar.google.com&ctz=Asia%2FManila&showTitle=0&showPrint=0&showCalendars=0&mode=MONTH&bgcolor=%23FFFFFF' : 'about:blank' ?>"
+                                            data-src="https://calendar.google.com/calendar/embed?src=<?= urlencode($tab['calendar_id']) ?>&src=en.philippines%23holiday%40group.v.calendar.google.com&ctz=Asia%2FManila&showTitle=0&showPrint=0&showCalendars=0&mode=MONTH&bgcolor=%23FFFFFF"
                                             style="border: 0; opacity: 0; transition: opacity 0.3s ease; pointer-events: none; width: 100%; height: 100%;" 
                                             frameborder="0" 
                                             scrolling="no"
@@ -957,8 +957,8 @@
                         <div id="modalCal<?= $i ?>" class="modal-calendar-embed<?= $i === 0 ? ' active' : '' ?>" style="height: 100%;">
                             <iframe 
                                 id="calendarModalIframe<?= $i ?>"
-                                src="<?= $i === 0 ? 'https://calendar.google.com/calendar/embed?src=' . urlencode($tab['calendar_id']) . '&ctz=Asia%2FManila&showTitle=0&showPrint=0&showCalendars=0&mode=MONTH&bgcolor=%23FFFFFF' : 'about:blank' ?>"
-                                data-src="https://calendar.google.com/calendar/embed?src=<?= urlencode($tab['calendar_id']) ?>&ctz=Asia%2FManila&showTitle=0&showPrint=0&showCalendars=0&mode=MONTH&bgcolor=%23FFFFFF"
+                                src="<?= $i === 0 ? 'https://calendar.google.com/calendar/embed?src=' . urlencode($tab['calendar_id']) . '&src=en.philippines%23holiday%40group.v.calendar.google.com&ctz=Asia%2FManila&showTitle=0&showPrint=0&showCalendars=0&mode=MONTH&bgcolor=%23FFFFFF' : 'about:blank' ?>"
+                                data-src="https://calendar.google.com/calendar/embed?src=<?= urlencode($tab['calendar_id']) ?>&src=en.philippines%23holiday%40group.v.calendar.google.com&ctz=Asia%2FManila&showTitle=0&showPrint=0&showCalendars=0&mode=MONTH&bgcolor=%23FFFFFF"
                                 style="border: 0; width: 100%; height: 100%;" 
                                 frameborder="0" 
                                 scrolling="no"

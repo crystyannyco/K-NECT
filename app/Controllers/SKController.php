@@ -34,10 +34,10 @@ class SKController extends BaseController
         }
 
         $skBarangay = $session->get('sk_barangay');
-        $barangayName = BarangayHelper::getBarangayName($skBarangay);
+        $barangayName = \App\Libraries\PSGCHelper::getLocationName($skBarangay);
         $addressBarangayName = '';
         if (!empty($profileData['address']['barangay'])) {
-            $addressBarangayName = BarangayHelper::getBarangayName($profileData['address']['barangay']);
+            $addressBarangayName = \App\Libraries\PSGCHelper::getLocationName($profileData['address']['barangay']);
         }
 
         $data = array_merge($profileData, [
@@ -229,7 +229,7 @@ class SKController extends BaseController
     {
         $session = session();
         $skBarangay = $session->get('sk_barangay');
-        $barangayName = BarangayHelper::getBarangayName($skBarangay);
+        $barangayName = \App\Libraries\PSGCHelper::getLocationName($skBarangay);
         $username = $session->get('username');
         
         // Get document statistics for the current user
@@ -315,7 +315,7 @@ class SKController extends BaseController
         }
 
         $skBarangay = $session->get('sk_barangay');
-        $barangayName = BarangayHelper::getBarangayName($skBarangay);
+        $barangayName = \App\Libraries\PSGCHelper::getLocationName($skBarangay);
         
         // The address barangay_name is now provided by ProfileController via PSGCHelper
         // Merge with session and SK-specific data
@@ -337,7 +337,7 @@ class SKController extends BaseController
     {
         $session = session();
         $skBarangay = $session->get('sk_barangay');
-        $barangayName = BarangayHelper::getBarangayName($skBarangay);
+        $barangayName = \App\Libraries\PSGCHelper::getLocationName($skBarangay);
         
         $userModel = new UserModel();
         $addressModel = new AddressModel();
@@ -395,7 +395,7 @@ class SKController extends BaseController
             $u['sex_text'] = $u['sex'] == '1' ? 'Male' : ($u['sex'] == '2' ? 'Female' : '');
             
             // Format barangay name
-            $u['barangay_name'] = BarangayHelper::getBarangayName($u['barangay']);
+            $u['barangay_name'] = \App\Libraries\PSGCHelper::getLocationName($u['barangay']);
             
             // Format zone/purok
             $u['zone_display'] = isset($u['zone_purok']) && !empty($u['zone_purok']) ? esc($u['zone_purok']) : '-';
@@ -491,7 +491,7 @@ class SKController extends BaseController
     {
         $session = session();
         $skBarangay = $session->get('sk_barangay');
-        $barangayName = BarangayHelper::getBarangayName($skBarangay);
+        $barangayName = \App\Libraries\PSGCHelper::getLocationName($skBarangay);
         
         $userModel = new UserModel();
         $addressModel = new AddressModel();
@@ -530,7 +530,7 @@ class SKController extends BaseController
             $u['sex_text'] = $u['sex'] == '1' ? 'Male' : ($u['sex'] == '2' ? 'Female' : '');
             
             // Format barangay name
-            $u['barangay_name'] = BarangayHelper::getBarangayName($u['barangay']);
+            $u['barangay_name'] = \App\Libraries\PSGCHelper::getLocationName($u['barangay']);
             
             // Format zone/purok
             $u['zone_display'] = isset($u['zone_purok']) && !empty($u['zone_purok']) ? esc($u['zone_purok']) : '-';
@@ -755,7 +755,7 @@ class SKController extends BaseController
     {
         $session = session();
         $skBarangay = $session->get('sk_barangay');
-        $barangayName = BarangayHelper::getBarangayName($skBarangay);
+        $barangayName = \App\Libraries\PSGCHelper::getLocationName($skBarangay);
         
         $userModel = new UserModel();
         $addressModel = new AddressModel();
@@ -808,7 +808,7 @@ class SKController extends BaseController
             $u['sex_text'] = $u['sex'] == '1' ? 'Male' : ($u['sex'] == '2' ? 'Female' : '');
             
             // Process barangay name
-            $u['barangay_name'] = BarangayHelper::getBarangayName($u['barangay']);
+            $u['barangay_name'] = \App\Libraries\PSGCHelper::getLocationName($u['barangay'], 'barangay');
             
             // Format full name
             $u['full_name'] = $u['last_name'] . ', ' . $u['first_name'] . ' ' . $u['middle_name'];
@@ -923,7 +923,7 @@ class SKController extends BaseController
                 $u['full_name'] = $fullName;
                 
                 // Format barangay name
-                $u['barangay_name'] = BarangayHelper::getBarangayName($u['barangay'] ?? '');
+                $u['barangay_name'] = \App\Libraries\PSGCHelper::getLocationName($u['barangay'] ?? '');
                 
                 // Format birthdate to "Mon Day, Year" (e.g., "Jan 1, 2000")
                 if ($u['birthdate']) {
@@ -987,7 +987,7 @@ class SKController extends BaseController
     {
         $session = session();
         $skBarangay = $session->get('sk_barangay');
-        $barangayName = BarangayHelper::getBarangayName($skBarangay);
+        $barangayName = \App\Libraries\PSGCHelper::getLocationName($skBarangay);
         
         $data = [
             'user_id' => $session->get('user_id'),
@@ -1007,7 +1007,7 @@ class SKController extends BaseController
     {
         $session = session();
         $skBarangay = $session->get('sk_barangay');
-        $barangayName = BarangayHelper::getBarangayName($skBarangay);
+        $barangayName = \App\Libraries\PSGCHelper::getLocationName($skBarangay);
         
         $userModel = new UserModel();
         $addressModel = new AddressModel();
@@ -1055,7 +1055,7 @@ class SKController extends BaseController
             $u['sex_text'] = $u['sex'] == '1' ? 'Male' : ($u['sex'] == '2' ? 'Female' : '');
             
             // Format barangay name
-            $u['barangay_name'] = BarangayHelper::getBarangayName($u['barangay']);
+            $u['barangay_name'] = \App\Libraries\PSGCHelper::getLocationName($u['barangay']);
             
             // Format zone/purok
             $u['zone_display'] = isset($u['zone_purok']) && !empty($u['zone_purok']) ? esc($u['zone_purok']) : '-';
@@ -1138,7 +1138,7 @@ class SKController extends BaseController
             if (!empty($row['first_name'])) { $fullName .= ', ' . esc($row['first_name']); }
             if (!empty($row['middle_name'])) { $fullName .= ' ' . esc($row['middle_name']); }
             $row['full_name'] = $fullName;
-            $row['barangay_name'] = BarangayHelper::getBarangayName($row['barangay']);
+            $row['barangay_name'] = \App\Libraries\PSGCHelper::getLocationName($row['barangay']);
             $row['zone_display'] = isset($row['zone_purok']) && !empty($row['zone_purok']) ? esc($row['zone_purok']) : '-';
 
             $reason = null;
@@ -1194,7 +1194,7 @@ class SKController extends BaseController
             if (!empty($u['first_name'])) { $fullName .= ', ' . esc($u['first_name']); }
             if (!empty($u['middle_name'])) { $fullName .= ' ' . esc($u['middle_name']); }
             $u['full_name'] = $fullName;
-            $u['barangay_name'] = BarangayHelper::getBarangayName($u['barangay']);
+            $u['barangay_name'] = \App\Libraries\PSGCHelper::getLocationName($u['barangay']);
             $u['zone_display'] = isset($u['zone_purok']) && !empty($u['zone_purok']) ? esc($u['zone_purok']) : '-';
             // Map reason based on is_active or use custom reason from database
             if (!empty($u['deactivation_reason'])) {
@@ -1234,7 +1234,7 @@ class SKController extends BaseController
             'inactive_count' => count($inactiveUsers),
             'deactivated_count' => count($deactivatedUsers),
             // Add helper maps for JavaScript - same as youthProfile
-            'barangay_map' => BarangayHelper::getBarangayName($skBarangay),
+            'barangay_map' => \App\Libraries\PSGCHelper::getLocationName($skBarangay),
             'zone_map' => ZoneHelper::getZoneMap(),
             // Centralized demographic maps for consistent labels in JS
             'field_mappings' => DemographicsHelper::allMapsForJs()
@@ -1250,7 +1250,7 @@ class SKController extends BaseController
     {
         $session = session();
         $skBarangay = $session->get('sk_barangay');
-        $barangayName = BarangayHelper::getBarangayName($skBarangay);
+        $barangayName = \App\Libraries\PSGCHelper::getLocationName($skBarangay);
         
         // Get event details
         $eventModel = new EventModel();
@@ -1290,7 +1290,7 @@ class SKController extends BaseController
             
             $session = session();
             $skBarangay = $session->get('sk_barangay');
-            $barangayName = BarangayHelper::getBarangayName($skBarangay);
+            $barangayName = \App\Libraries\PSGCHelper::getLocationName($skBarangay);
             
             if (!$skBarangay) {
                 return $this->response->setJSON(['success' => false, 'message' => 'Barangay not found']);
@@ -1382,7 +1382,7 @@ class SKController extends BaseController
             
             $session = session();
             $skBarangay = $session->get('sk_barangay');
-            $barangayName = BarangayHelper::getBarangayName($skBarangay);
+            $barangayName = \App\Libraries\PSGCHelper::getLocationName($skBarangay);
             
             if (!$skBarangay) {
                 return $this->response->setJSON(['success' => false, 'message' => 'Barangay not found']);
@@ -1470,7 +1470,7 @@ class SKController extends BaseController
             
             $session = session();
             $skBarangay = $session->get('sk_barangay');
-            $barangayName = BarangayHelper::getBarangayName($skBarangay);
+            $barangayName = \App\Libraries\PSGCHelper::getLocationName($skBarangay);
             
             if (!$skBarangay) {
                 return $this->response->setJSON(['success' => false, 'message' => 'Barangay not found']);
@@ -3839,11 +3839,9 @@ class SKController extends BaseController
         try {
             $userModel = new UserModel();
             $addressModel = new AddressModel();
-            $barangayModel = new \App\Models\BarangayModel();
-
+            
             // Get barangay name
-            $barangay = $barangayModel->find($barangayId);
-            $barangayName = $barangay ? $barangay['name'] : '';
+            $barangayName = \App\Libraries\PSGCHelper::getLocationName($barangayId);
 
             // Get all SK officials in this barangay (exclude KK members - position 5)
             $skOfficials = $userModel->select('user.id, user.user_id, user.first_name, user.middle_name, user.last_name, user.suffix, user.position, user.sk_username, user.sk_password')
@@ -3922,7 +3920,7 @@ class SKController extends BaseController
     private function processCredentialsData($users, $barangayId)
     {
         $processed = [];
-        $barangayName = BarangayHelper::getBarangayName($barangayId);
+        $barangayName = \App\Libraries\PSGCHelper::getLocationName($barangayId);
         foreach ($users as $user) {
             // Build full name
             $nameParts = [$user['first_name']];
@@ -4057,7 +4055,7 @@ class SKController extends BaseController
             // Get barangay name for header
             $session = session();
             $skBarangay = $session->get('sk_barangay');
-            $barangayName = \App\Libraries\BarangayHelper::getBarangayName($skBarangay);
+            $barangayName = \App\Libraries\PSGCHelper::getLocationName($skBarangay);
             
             // Ensure consistent ordering by position then name
             usort($officials, function ($a, $b) {
@@ -4116,7 +4114,7 @@ class SKController extends BaseController
             // Add barangay name if available
             $session = session();
             $skBarangay = $session->get('sk_barangay');
-            $barangayName = \App\Libraries\BarangayHelper::getBarangayName($skBarangay);
+            $barangayName = \App\Libraries\PSGCHelper::getLocationName($skBarangay);
             if ($barangayName) {
                 $html .= '<div class="line4">NG BARANGAY ' . strtoupper(esc($barangayName)) . '</div>';
             }
@@ -4342,7 +4340,7 @@ class SKController extends BaseController
             $logos = $this->getLogosForDocument();
             $session = session();
             $skBarangay = $session->get('sk_barangay');
-            $barangayName = \App\Libraries\BarangayHelper::getBarangayName($skBarangay);
+            $barangayName = \App\Libraries\PSGCHelper::getLocationName($skBarangay);
 
             $phpWord = new \PhpOffice\PhpWord\PhpWord();
             log_message('info', 'PHPWord instance created successfully');
@@ -4697,7 +4695,7 @@ class SKController extends BaseController
             $logos = $this->getLogosForDocument();
             $session = session();
             $skBarangay = $session->get('sk_barangay');
-            $barangayName = \App\Libraries\BarangayHelper::getBarangayName($skBarangay);
+            $barangayName = \App\Libraries\PSGCHelper::getLocationName($skBarangay);
 
             $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
             $sheet = $spreadsheet->getActiveSheet();
@@ -4970,7 +4968,7 @@ class SKController extends BaseController
         });
 
         foreach ($data as $credential) {
-            $barangayName = BarangayHelper::getBarangayName($credential['barangay_id']);
+            $barangayName = \App\Libraries\PSGCHelper::getLocationName($credential['barangay_id']);
             $positionText = $this->getPositionText($credential['position']);
             
             // Mask password if not temporary

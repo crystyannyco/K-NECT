@@ -6,6 +6,7 @@ use App\Models\UserModel;
 use App\Models\UserExtInfoModel;
 use App\Models\AddressModel;
 use App\Libraries\BarangayHelper;
+use App\Libraries\PSGCHelper;
 
 class UserHelper
 {
@@ -194,7 +195,12 @@ class UserHelper
         $barangayCode = $address['barangay'] ?? '';
         $barangayName = '';
         if (!empty($barangayCode)) {
-            $barangayName = BarangayHelper::getBarangayName($barangayCode);
+            // Check if it looks like a PSGC code (9 digits)
+            if (ctype_digit((string)$barangayCode) && strlen((string)$barangayCode) === 9) {
+                $barangayName = PSGCHelper::getLocationName($barangayCode, 'barangay');
+            } else {
+                $barangayName = BarangayHelper::getBarangayName($barangayCode);
+            }
         }
         
         return [

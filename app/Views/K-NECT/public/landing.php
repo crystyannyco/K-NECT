@@ -969,7 +969,7 @@
         <?php endif; ?>
 
         <!-- NEWSLETTER -->
-        <section id="newsletter">
+        <!-- <section id="newsletter">
             <div class="container newsletter">
                 <div class="section-head" style="margin:0 0 .6rem;">
                     <h2 class="section-title" style="margin:0;">Get updates in your inbox</h2>
@@ -981,7 +981,7 @@
                     <button class="btn-primary btn" type="submit">Subscribe</button>
                 </form>
             </div>
-        </section>
+        </section> -->
     </main>
 
     <footer>

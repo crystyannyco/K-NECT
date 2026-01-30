@@ -1578,21 +1578,32 @@ class EventController extends BaseController
         // Handle cancellation separately
         if ($action === 'cancel') {
             if ($event['barangay_id'] == 0) {
-                $header = "Panlungsod na Pederasyon ng mga Sangguniang Kabataan\nIriga City\n\n";
+                // City-wide event cancellation
+                $now = new \DateTime();
+                $tenseParticle = ($startDateTime < $now) ? 'ko' : 'ka';
+                
+                if ($startDate !== $endDate) {
+                    $message = "Maray na aldow po kaninyo ngamin. Pinapaisi po namo na a event na {$event['title']} na naka scheduled {$tenseParticle} {$startDate} hanggang {$endDate} ay na CANCELLED. Mag abang-abang na sana po kita kung uno a update. Dios mabalos po kaninyo ngamin!";
+                } else {
+                    $message = "Maray na aldow po kaninyo ngamin. Pinapaisi po namo na a event na {$event['title']} na naka scheduled {$tenseParticle} {$startDate} ay na CANCELLED. Mag abang-abang na sana po kita kung uno a update. Dios mabalos po kaninyo ngamin!";
+                }
+                return $message;
             } else {
                 $barangayModel = new \App\Models\BarangayModel();
                 $barangay = $barangayModel->find($event['barangay_id']);
                 $barangayName = $barangay ? $barangay['name'] : 'Barangay';
-                $header = "Sangguniang Kabataan - {$barangayName}\nIriga City\n\n";
-            }
+                
+                // Barangay-specific event cancellation
+                $now = new \DateTime();
+                $tenseParticle = ($startDateTime < $now) ? 'ko' : 'ka';
 
-            $message = $header . "EVENT CANCELLED\n\n";
-            if ($startDate !== $endDate) {
-                $message .= "We regret to inform you that the {$event['title']} scheduled from {$startDate} to {$endDate} has been cancelled.";
-            } else {
-                $message .= "We regret to inform you that the {$event['title']} on {$startDate} has been cancelled.";
+                if ($startDate !== $endDate) {
+                    $message = "Maray na aldow po kaninyo ngamin mga ka-barangay {$barangayName}. Pinapaisi po namo na a event na {$event['title']} na naka scheduled {$tenseParticle} {$startDate} hanggang {$endDate} ay na CANCELLED. Mag abang-abang na sana po kita kung uno a update. Dios mabalos po kaninyo ngamin!";
+                } else {
+                    $message = "Maray na aldow po kaninyo ngamin mga ka-barangay {$barangayName}. Pinapaisi po namo na a event na {$event['title']} na naka scheduled {$tenseParticle} {$startDate} ay na CANCELLED. Mag abang-abang na sana po kita kung uno a update. Dios mabalos po kaninyo ngamin!";
+                }
+                return $message;
             }
-            return $message;
         }
         
         // New format for Event SMS

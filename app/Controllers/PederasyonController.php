@@ -451,7 +451,7 @@ class PederasyonController extends BaseController
                 $currentExt = $userExtModel->where('user_id', $dbUserId)->first();
                 $oldPath = $currentExt['profile_picture'] ?? null;
 
-                $targetDir = ROOTPATH . 'uploads/profile_pictures/';
+                $targetDir = FCPATH . 'uploads/profile_pictures/';
                 if (!is_dir($targetDir)) {
                     @mkdir($targetDir, 0775, true);
                 }
@@ -466,13 +466,20 @@ class PederasyonController extends BaseController
                 if (!empty($oldPath) && $oldPath !== $profilePicturePath) {
                     $candidates = [];
                     if (strpos($oldPath, '/') !== false) {
-                        $candidates[] = ROOTPATH . 'public/' . ltrim($oldPath, '/');
+                        $candidates[] = FCPATH . ltrim($oldPath, '/');
                     } else {
                         $candidates[] = FCPATH . 'uploads/profile_pictures/' . $oldPath;
                         $candidates[] = FCPATH . 'uploads/profile/' . $oldPath;
                     }
                     foreach ($candidates as $abs) {
-                        if (is_file($abs)) { @unlink($abs); break; }
+                        if (is_file($abs)) {
+                            if (@unlink($abs)) {
+                                log_message('info', 'Deleted old profile picture: ' . $abs);
+                            } else {
+                                log_message('warning', 'Failed to delete old profile picture: ' . $abs);
+                            }
+                            break;
+                        }
                     }
                 }
             }

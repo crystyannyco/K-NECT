@@ -335,7 +335,7 @@
                                             <input type="checkbox" id="selectAllRows" class="form-checkbox h-4 w-4 text-blue-600">
                                         </th>
                                         <th class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">User ID</th>
-                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Barangay</th>
+                                        <!-- <th class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Barangay</th> -->
                                         <th class="px-4 py-3 text-xs font-medium text-gray-600 uppercase tracking-wider name-header">Name</th>
                                         <th class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Age</th>
                                         <th class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Sex</th>
@@ -369,9 +369,9 @@
                                                     <input type="checkbox" class="rowCheckbox form-checkbox h-4 w-4 text-blue-600" value="<?= esc($user['id']) ?>">
                                                 </td>
                                                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-center"><?= esc($user['user_id']) ?></td>
-                                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                                                <!-- <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
                                                     <?= esc($user['barangay_name'] ?? $user['barangay'] ?? '') ?>
-                                                </td>
+                                                </td> -->
                                                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 name-cell"><?= esc($user['last_name']) ?>, <?= esc($user['first_name']) ?> <?= esc($user['middle_name']) ?></td>
                                                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-center"><?= esc($user['age']) ?></td>
                                                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-center"><?= $user['sex'] == '1' ? 'Male' : ($user['sex'] == '2' ? 'Female' : '') ?></td>

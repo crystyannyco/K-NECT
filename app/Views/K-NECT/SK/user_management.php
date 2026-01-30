@@ -103,7 +103,7 @@
                             Verified Users (<?= (int)($verified_count ?? count($user_list ?? [])) ?>)
                         </button>
                         <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all" data-status="overage-inactive">
-                            Overage & Inactive (<?= (int)($inactive_count ?? 0) ?>)
+                            Above Eligibility Age & Inactive (<?= (int)($inactive_count ?? 0) ?>)
                         </button>
                         <button class="status-tab px-4 py-2 rounded-lg text-sm font-medium transition-all" data-status="deactivated">
                             Deactivated Users (<?= (int)($deactivated_count ?? 0) ?>)
@@ -707,7 +707,7 @@ $(document).ready(function() {
         if (currentTab !== 'deactivated') return;
         const val = $(this).val();
         let searchText = '';
-        if (val === 'aged_out') searchText = 'Overage';
+        if (val === 'aged_out') searchText = 'Above Eligibility Age';
         else if (val === 'inactive_long') searchText = 'Inactive';
         else if (val === 'manual_deactivation') searchText = 'Manual';
     deactivatedDataTable.column(5).search(searchText).draw();

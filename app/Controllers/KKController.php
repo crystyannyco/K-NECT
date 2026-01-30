@@ -373,7 +373,7 @@ class KKController extends BaseController
                 if (!empty($oldPath) && $oldPath !== $profilePicturePath) {
                     $candidates = [];
                     if (strpos($oldPath, '/') !== false) {
-                        $candidates[] = ROOTPATH . 'public/' . ltrim($oldPath, '/');
+                        $candidates[] = FCPATH . ltrim($oldPath, '/');
                     } else {
                         // old value stored as bare filename
                         $candidates[] = FCPATH . 'uploads/profile_pictures/' . $oldPath;
@@ -381,7 +381,11 @@ class KKController extends BaseController
                     }
                     foreach ($candidates as $abs) {
                         if (is_file($abs)) {
-                            @unlink($abs);
+                            if (@unlink($abs)) {
+                                log_message('info', 'Deleted old profile picture: ' . $abs);
+                            } else {
+                                log_message('warning', 'Failed to delete old profile picture: ' . $abs);
+                            }
                             break;
                         }
                     }

@@ -368,7 +368,7 @@ $barangayNameText = $barangayName ? strtoupper($barangayName) : '[BARANGAY NAME]
                     </label>
                     <label class="flex items-center">
                         <input type="radio" name="deactivateReason" value="special_case" class="mr-3 text-blue-600 focus:ring-blue-500">
-                        <span class="text-sm">Overage and Inactive</span>
+                        <span class="text-sm">Above Eligibility Age and Inactive</span>
                     </label>
                     <label class="flex items-center">
                         <input type="radio" name="deactivateReason" value="manual_deactivation" class="mr-3 text-blue-600 focus:ring-blue-500">

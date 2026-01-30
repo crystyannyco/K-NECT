@@ -76,7 +76,7 @@ $barangayName = $event['barangay_name'] ?? null;
         .container{max-width:1250px;margin:0 auto;padding:0 1.25rem}
         header.site{position:sticky;top:0;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);z-index:60}
         .nav{display:flex;align-items:center;gap:1rem;height:78px}
-        .brand img{height:60px;width:auto}
+        .brand img{height:25px;width:auto}
         .nav-links{display:flex;gap:1rem;margin-left:auto;font-size:.9rem;font-weight:600}
         .nav-links a{position:relative;padding:.25rem 0;color:var(--ink)}
         .nav-links a:after{content:"";position:absolute;left:0;bottom:-3px;height:2px;width:0;background:var(--primary);transition:.3s;border-radius:2px}
@@ -134,7 +134,7 @@ $barangayName = $event['barangay_name'] ?? null;
     <header class="site" role="banner">
         <div class="container nav">
             <a class="brand" href="<?= base_url('/') ?>" aria-label="K-NECT home">
-                <img src="<?= esc($siteLogoUrl ?? base_url('favicon.ico')) ?>" alt="K-NECT logo" style="height:60px;width:auto;object-fit:contain" />
+                <img src="<?= base_url('assets/images/K-Nect-Logo.png') ?>" alt="K-NECT logo" style="height:25px;width:auto;object-fit:contain" />
             </a>
             <nav class="nav-links" aria-label="Primary">
                 <a href="<?= base_url('/') ?>#programs">Programs</a>

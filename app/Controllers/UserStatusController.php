@@ -79,7 +79,7 @@ class UserStatusController extends BaseController
 
                 // Determine inactive reason
                 if ($user['is_active'] == 2) {
-                    $user['inactive_reason'] = 'Overage (31+ Years)';
+                    $user['inactive_reason'] = 'Above Eligibility Age (31+ Years)';
                     $user['inactive_class'] = 'bg-orange-100 text-orange-800';
                 } elseif ($user['is_active'] == 3) {
                     $user['inactive_reason'] = 'Inactive (1+ Year)';

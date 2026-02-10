@@ -113,7 +113,8 @@ class MemberController extends BaseController
                     ->select('user.id')
                     ->join('address', 'address.user_id = user.id', 'left')
                     ->where('user.status', 2) // approved
-                    ->where('user.user_type', 2) // SK Chairperson
+                    ->where('user.user_type', 2) // SK Official
+                    ->where('user.position', 1) // Chairperson position
                     ->where('address.barangay', $barangay)
                     ->where('user.id !=', $user['id'])
                     ->first();
@@ -493,7 +494,8 @@ class MemberController extends BaseController
                         ->select('user.id')
                         ->join('address', 'address.user_id = user.id', 'left')
                         ->where('user.status', 2)
-                        ->where('user.user_type', 2)
+                        ->where('user.user_type', 2) // SK Official
+                        ->where('user.position', 1) // Chairperson position
                         ->where('address.barangay', $barangay)
                         ->where('user.id !=', $user['id'])
                         ->first();

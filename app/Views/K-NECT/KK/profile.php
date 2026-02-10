@@ -129,35 +129,33 @@
                 </div>
 
                 <!-- Address Information -->
-                <?php if ($address): ?>
                 <div class="bg-white rounded-xl shadow-sm p-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-100">Address Information</h3>
                     <div class="space-y-4">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Barangay</p>
-                                <p class="text-sm text-gray-900"><?= esc($address_barangay_name) ?: 'Not specified' ?></p>
-                            </div>
-                            <div>
-                                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Zone/Purok</p>
-                                <p class="text-sm text-gray-900"><?= esc($address['zone_purok']) ?: 'Not specified' ?></p>
-                            </div>
-                            <div>
-                                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">City/Municipality</p>
-                                <p class="text-sm text-gray-900"><?= esc($address['municipality_name'] ?? $address['municipality'] ?? 'Not specified') ?></p>
+                                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Region</p>
+                                <p class="text-sm text-gray-900"><?= !empty($address['region_name']) ? esc($address['region_name']) : (!empty($address['region']) ? esc($address['region']) : 'Not specified') ?></p>
                             </div>
                             <div>
                                 <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Province</p>
-                                <p class="text-sm text-gray-900"><?= esc($address['province_name'] ?? $address['province'] ?? 'Not specified') ?></p>
+                                <p class="text-sm text-gray-900"><?= !empty($address['province_name']) ? esc($address['province_name']) : (!empty($address['province']) ? esc($address['province']) : 'Not specified') ?></p>
                             </div>
                             <div>
-                                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Region</p>
-                                <p class="text-sm text-gray-900"><?= esc($address['region_name'] ?? $address['region'] ?? 'Not specified') ?></p>
+                                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">City/Municipality</p>
+                                <p class="text-sm text-gray-900"><?= !empty($address['municipality_name']) ? esc($address['municipality_name']) : (!empty($address['municipality']) ? esc($address['municipality']) : 'Not specified') ?></p>
+                            </div>
+                            <div>
+                                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Barangay</p>
+                                <p class="text-sm text-gray-900"><?= !empty($address['barangay_name']) ? esc($address['barangay_name']) : 'Not specified' ?></p>
+                            </div>
+                            <div>
+                                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Zone/Purok</p>
+                                <p class="text-sm text-gray-900"><?= !empty($address['zone_purok']) ? esc($address['zone_purok']) : 'Not specified' ?></p>
                             </div>
                         </div>
                     </div>
                 </div>
-                <?php endif; ?>
 
                 <!-- Demographic Information -->
                 <?php if ($userExtInfo): ?>

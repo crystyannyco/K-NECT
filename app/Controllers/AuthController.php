@@ -98,7 +98,10 @@ class AuthController extends BaseController
                 }
             } else if ($user['status'] == 2) {
                 $session = session();
-                $session->set('user_id', $user['user_id']); // Use the permanent user_id field
+                // Store permanent user_id, falling back to DB id if user_id is empty
+                $permanentUserId = !empty($user['user_id']) ? $user['user_id'] : $user['id'];
+                $session->set('user_id', $permanentUserId);
+                $session->set('db_user_id', $user['id']); // Always store the DB primary key
                 $session->set('username', $user['username']);
                 $session->set('user_type', 'kk'); // Set user type for identification
                 
@@ -235,6 +238,7 @@ class AuthController extends BaseController
                 } else if ($user['status'] == 2) {
                     $session = session();
                     $session->set('user_id', $user['user_id']); // Use the permanent user_id field
+                    $session->set('db_user_id', $user['id']); // Always store the DB primary key
                     $session->set('username', $user['sk_username']);
                     $session->set('user_type', 'sk'); // Set user type for identification
                     
@@ -392,6 +396,7 @@ class AuthController extends BaseController
                 } else if ($user['status'] == 2) {
                     $session = session();
                     $session->set('user_id', $user['user_id']); // Use the permanent user_id field
+                    $session->set('db_user_id', $user['id']); // Always store the DB primary key
                     $session->set('username', $user['ped_username']);
                     $session->set('user_type', 'pederasyon'); // Set user type for identification
                     

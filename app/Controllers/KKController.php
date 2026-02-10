@@ -31,17 +31,13 @@ class KKController extends BaseController
         // If still missing, try to resolve from user's address and persist in session
         if (empty($barangayId)) {
             try {
-                $permanentUserId = $session->get('user_id');
-                if ($permanentUserId) {
-                    $um = new UserModel();
-                    $me = $um->where('user_id', $permanentUserId)->first();
-                    if ($me && !empty($me['id'])) {
-                        $addrModel = new AddressModel();
-                        $addr = $addrModel->where('user_id', $me['id'])->first();
-                        if ($addr && !empty($addr['barangay'])) {
-                            $barangayId = $addr['barangay'];
-                            $session->set('barangay_id', $barangayId);
-                        }
+                $dbId = $this->resolveDbUserId();
+                if ($dbId) {
+                    $addrModel = new AddressModel();
+                    $addr = $addrModel->where('user_id', $dbId)->first();
+                    if ($addr && !empty($addr['barangay'])) {
+                        $barangayId = $addr['barangay'];
+                        $session->set('barangay_id', $barangayId);
                     }
                 }
             } catch (\Throwable $t) {
@@ -93,18 +89,64 @@ class KKController extends BaseController
             $this->loadView('K-NECT/KK/template/footer');
     }
 
+    /**
+     * Resolve the database primary key (user.id) from session in a robust way.
+     * Tries: db_user_id → user_id → username lookup. Auto-heals session.
+     */
+    private function resolveDbUserId(): ?int
+    {
+        $session = session();
+
+        // Best: db_user_id is the actual DB primary key
+        $dbId = $session->get('db_user_id');
+        if (!empty($dbId)) {
+            return (int) $dbId;
+        }
+
+        // Try user_id (may be permanent ID or DB id depending on login)
+        $userId = $session->get('user_id');
+        if (!empty($userId)) {
+            $userModel = new UserModel();
+            // Check if it's a DB primary key
+            $user = $userModel->find($userId);
+            if ($user) {
+                $session->set('db_user_id', $user['id']);
+                return (int) $user['id'];
+            }
+            // Check if it's a permanent user_id
+            $user = $userModel->where('user_id', $userId)->first();
+            if ($user) {
+                $session->set('db_user_id', $user['id']);
+                return (int) $user['id'];
+            }
+        }
+
+        // Last resort: find by username
+        $username = $session->get('username');
+        if (!empty($username)) {
+            $userModel = new UserModel();
+            $user = $userModel->where('username', $username)->first();
+            if ($user) {
+                $session->set('db_user_id', $user['id']);
+                return (int) $user['id'];
+            }
+        }
+
+        return null;
+    }
+
     public function profile()
     {
         $session = session();
-        $userId = $session->get('user_id'); // This is the permanent user_id
-        
-        if (!$userId) {
+        $dbUserId = $this->resolveDbUserId();
+
+        if (!$dbUserId) {
             return redirect()->to('login')->with('error', 'Please login to view your profile.');
         }
 
         // Use shared ProfileController for common functionality
         $profileController = new ProfileController();
-        $profileData = $profileController->getUserProfileData($userId);
+        $profileData = $profileController->getUserProfileData($dbUserId);
         
         if (!$profileData) {
             return redirect()->to('login')->with('error', 'User profile not found.');
@@ -120,7 +162,7 @@ class KKController extends BaseController
         ];
         
         // Get user attendance records
-        $attendanceRecords = $attendanceModel->getUserAttendanceHistory($userId);
+        $attendanceRecords = $attendanceModel->getUserAttendanceHistory($dbUserId);
         $totalEvents = count($attendanceRecords);
         $attendedEvents = 0;
         
@@ -236,31 +278,35 @@ class KKController extends BaseController
     public function settings()
     {
         $session = session();
-        $userId = $session->get('user_id');
-        
-        if (!$userId) {
+        $dbUserId = $this->resolveDbUserId();
+
+        if (!$dbUserId) {
             return redirect()->to('login')->with('error', 'Please login to access settings.');
         }
 
         // Use shared ProfileController for common functionality
         $profileController = new ProfileController();
-        $profileData = $profileController->getUserProfileData($userId);
+        $profileData = $profileController->getUserProfileData($dbUserId);
         
         if (!$profileData) {
             return redirect()->to('login')->with('error', 'User profile not found.');
         }
 
-        // Compute address barangay name for the view
-        $addressBarangayName = '';
-        if (!empty($profileData['address']['barangay'])) {
+        // Compute address barangay name for the view (prefer PSGCHelper-resolved name from ProfileController)
+        $addressBarangayName = $profileData['address']['barangay_name'] ?? '';
+        if (empty($addressBarangayName) && !empty($profileData['address']['barangay'])) {
+            // Fallback: try BarangayHelper for legacy IDs, then PSGCHelper
             $addressBarangayName = BarangayHelper::getBarangayName($profileData['address']['barangay']);
+            if ($addressBarangayName === $profileData['address']['barangay']) {
+                // BarangayHelper returned the code as-is, try PSGCHelper
+                $addressBarangayName = \App\Libraries\PSGCHelper::getLocationName($profileData['address']['barangay'], 'barangay');
+            }
         }
 
         // Prepare data for the view
         $data = array_merge($profileData, [
             'username' => $session->get('username'),
             'address_barangay_name' => $addressBarangayName,
-            // Notification and privacy settings are optional; omit when models are not present
         ]);
 
         return 
@@ -276,9 +322,9 @@ class KKController extends BaseController
     public function updateProfile()
     {
         $session = session();
-        $permanentUserId = $session->get('user_id');
+        $dbUserId = $this->resolveDbUserId();
         
-        if (!$permanentUserId) {
+        if (!$dbUserId) {
             return $this->response->setJSON(['success' => false, 'message' => 'Please login to update profile.']);
         }
 
@@ -287,12 +333,11 @@ class KKController extends BaseController
         $userExtModel = new UserExtInfoModel();
         $addressModel = new AddressModel();
 
-        // Resolve DB user id from permanent user_id
-        $userRow = $userModel->where('user_id', $permanentUserId)->first();
+        // Use the resolved DB primary key directly
+        $userRow = $userModel->find($dbUserId);
         if (!$userRow) {
             return redirect()->to('kk/settings')->with('error', 'User not found.');
         }
-        $dbUserId = $userRow['id'];
 
         // Begin transaction
         $db = \Config\Database::connect();
@@ -320,11 +365,12 @@ class KKController extends BaseController
 
             // Upsert address info (map to actual columns)
             $postedAddress = [
+                'region'       => $this->request->getPost('region_code') ?: '050000000',
                 'zone_purok'   => $this->request->getPost('street'), // UI uses 'street' input for zone/purok
-                'barangay'     => $this->request->getPost('barangay'),
-                'municipality' => $this->request->getPost('city'),
-                'province'     => $this->request->getPost('province'),
-                'zip_code'     => $this->request->getPost('postal_code'),
+                'barangay'     => $this->request->getPost('barangay') ?: '',
+                'municipality' => $this->request->getPost('city') ?: '051716000',
+                'province'     => $this->request->getPost('province') ?: '051700000',
+                'zip_code'     => $this->request->getPost('postal_code') ?: '',
             ];
             $addressRow = $addressModel->where('user_id', $dbUserId)->first();
             if ($addressRow) {

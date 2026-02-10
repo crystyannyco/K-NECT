@@ -1051,6 +1051,8 @@ document.addEventListener('DOMContentLoaded',function(){
                                 </select>
                                 <!-- Hidden field for PSGC code -->
                                 <input type="hidden" name="barangay_psgc_code" id="barangay_psgc_code" value="<?= old('barangay_psgc_code') !== null ? old('barangay_psgc_code') : (isset($profile_data['barangay_psgc_code']) ? esc($profile_data['barangay_psgc_code']) : '') ?>">
+                                <!-- Hidden field for barangay name (for display in step 5) -->
+                                <input type="hidden" name="barangay_name" id="barangay_name" value="<?= old('barangay_name') !== null ? old('barangay_name') : (isset($profile_data['barangay_name']) ? esc($profile_data['barangay_name']) : '') ?>">
                                 <?php if (session('validation_address') && session('validation_address')->hasError('barangay')): ?>
                                     <p class="error-message text-red-500 text-xs sm:text-sm"><?= session('validation_address')->getError('barangay') ?></p>
                                 <?php endif; ?>
@@ -2350,7 +2352,7 @@ document.addEventListener('DOMContentLoaded',function(){
                             </div>
                             <div class="flex justify-between py-2 border-b border-slate-100">
                                 <span class="text-slate-600 font-medium">Barangay:</span>
-                                <span class="text-slate-800"><?= esc($profile_data['barangay'] ?? '') ?></span>
+                                <span class="text-slate-800"><?= esc($profile_data['barangay_name'] ?? $profile_data['barangay'] ?? '') ?></span>
                             </div>
                             <div class="flex justify-between py-2">
                                 <span class="text-slate-600 font-medium">Zone/Purok:</span>
@@ -6899,13 +6901,24 @@ document.addEventListener('DOMContentLoaded',function(){
                                 if (oldBarangayPsgcCode) {
                                     barangayPsgcCodeInput.value = oldBarangayPsgcCode;
                                 }
+                                // Set barangay name from selected option
+                                const barangayNameInput = document.getElementById('barangay_name');
+                                const selectedOption = barangaySelect.options[barangaySelect.selectedIndex];
+                                if (barangayNameInput && selectedOption && selectedOption.value) {
+                                    barangayNameInput.value = selectedOption.textContent;
+                                }
                             }
                             
-                            // Update PSGC code when barangay changes and clear validation errors
+                            // Update PSGC code and barangay name when barangay changes and clear validation errors
                             barangaySelect.addEventListener('change', function() {
                                 const selectedOption = this.options[this.selectedIndex];
+                                const barangayNameInput = document.getElementById('barangay_name');
                                 if (selectedOption && selectedOption.dataset.code) {
                                     barangayPsgcCodeInput.value = selectedOption.dataset.code;
+                                }
+                                // Set the barangay name from the selected option text
+                                if (barangayNameInput && selectedOption) {
+                                    barangayNameInput.value = selectedOption.textContent;
                                 }
                                 // Clear error message if barangay is selected
                                 if (this.value) {
@@ -6935,13 +6948,24 @@ document.addEventListener('DOMContentLoaded',function(){
                                 if (oldBarangayPsgcCode) {
                                     barangayPsgcCodeInput.value = oldBarangayPsgcCode;
                                 }
+                                // Set barangay name from selected option
+                                const barangayNameInput = document.getElementById('barangay_name');
+                                const selectedOption = barangaySelect.options[barangaySelect.selectedIndex];
+                                if (barangayNameInput && selectedOption && selectedOption.value) {
+                                    barangayNameInput.value = selectedOption.textContent;
+                                }
                             }
                             
-                            // Update PSGC code when barangay changes
+                            // Update PSGC code and barangay name when barangay changes
                             barangaySelect.addEventListener('change', function() {
                                 const selectedOption = this.options[this.selectedIndex];
+                                const barangayNameInput = document.getElementById('barangay_name');
                                 if (selectedOption && selectedOption.dataset.code) {
                                     barangayPsgcCodeInput.value = selectedOption.dataset.code;
+                                }
+                                // Set the barangay name from the selected option text
+                                if (barangayNameInput && selectedOption) {
+                                    barangayNameInput.value = selectedOption.textContent;
                                 }
                             });
                         }
@@ -6966,12 +6990,23 @@ document.addEventListener('DOMContentLoaded',function(){
                             if (oldBarangayPsgcCode) {
                                 barangayPsgcCodeInput.value = oldBarangayPsgcCode;
                             }
+                            // Set barangay name from selected option
+                            const barangayNameInput = document.getElementById('barangay_name');
+                            const selectedOption = barangaySelect.options[barangaySelect.selectedIndex];
+                            if (barangayNameInput && selectedOption && selectedOption.value) {
+                                barangayNameInput.value = selectedOption.textContent;
+                            }
                         }
                         
                         barangaySelect.addEventListener('change', function() {
                             const selectedOption = this.options[this.selectedIndex];
+                            const barangayNameInput = document.getElementById('barangay_name');
                             if (selectedOption && selectedOption.dataset.code) {
                                 barangayPsgcCodeInput.value = selectedOption.dataset.code;
+                            }
+                            // Set the barangay name from the selected option text
+                            if (barangayNameInput && selectedOption) {
+                                barangayNameInput.value = selectedOption.textContent;
                             }
                         });
                     });

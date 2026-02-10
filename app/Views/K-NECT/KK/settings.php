@@ -88,16 +88,17 @@
 
                                 <!-- Personal Information Section -->
                                 <h3 class="text-lg font-semibold mb-4">Personal Information</h3>
+                                <p class="text-xs text-gray-400 -mt-3 mb-4 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg> Gray fields are read-only and cannot be edited here.</p>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                                     <div>
-                                        <label for="first-name" class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                                        <label for="first-name" class="block text-sm font-medium text-gray-700 mb-1">First Name <span class="readonly-badge"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></span></label>
                                         <input type="text" id="first-name" name="first_name" value="<?= esc($user['first_name'] ?? '') ?>" 
                                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                                                disabled>
                                         <input type="hidden" name="first_name" value="<?= esc($user['first_name'] ?? '') ?>">
                                     </div>
                                     <div>
-                                        <label for="last-name" class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                                        <label for="last-name" class="block text-sm font-medium text-gray-700 mb-1">Last Name <span class="readonly-badge"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></span></label>
                                         <input type="text" id="last-name" name="last_name" value="<?= esc($user['last_name'] ?? '') ?>" 
                                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                                                disabled>
@@ -116,14 +117,14 @@
                          <div id="phone-error" class="mt-1 text-xs text-red-500 hidden">Please enter a valid Philippine mobile number in the format +639XXXXXXXXX.</div>
                                     </div>
                                     <div>
-                                        <label for="birthdate" class="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+                                        <label for="birthdate" class="block text-sm font-medium text-gray-700 mb-1">Date of Birth <span class="readonly-badge"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></span></label>
                                         <input type="date" id="birthdate" name="birthdate" value="<?= esc($user['birthdate'] ?? '') ?>" 
                                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                                                disabled>
                                         <input type="hidden" name="birthdate" value="<?= esc($user['birthdate'] ?? '') ?>">
                                     </div>
                                     <div>
-                                        <label for="gender" class="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                                        <label for="gender" class="block text-sm font-medium text-gray-700 mb-1">Gender <span class="readonly-badge"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></span></label>
                                         <select id="gender" name="gender" 
                                                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                                                 disabled>
@@ -137,40 +138,44 @@
 
                                 <!-- Address Information Section -->
                                 <h3 class="text-lg font-semibold mb-4">Address Information</h3>
+                                <p class="text-xs text-gray-400 -mt-3 mb-4 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg> Gray fields are based on your registered barangay.</p>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                                    <div class="md:col-span-2">
-                                        <label for="street" class="block text-sm font-medium text-gray-700 mb-1">Street Address / Zone/Purok</label>
-                                        <input type="text" id="street" name="street" value="<?= esc($address['zone_purok'] ?? '') ?>" 
-                                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <div>
+                                        <label for="region" class="block text-sm font-medium text-gray-700 mb-1">Region <span class="readonly-badge"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></span></label>
+                                        <input type="text" id="region" 
+                                               value="<?= !empty($address['region_name']) ? esc($address['region_name']) : (!empty($address['region']) ? esc($address['region']) : '') ?>" 
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                               disabled>
+                                        <input type="hidden" name="region_code" value="<?= esc($address['region'] ?? '050000000') ?>">
                                     </div>
                                     <div>
-                                        <label for="barangay" class="block text-sm font-medium text-gray-700 mb-1">Barangay</label>
-                         <input type="text" id="barangay" name="barangay" 
-                             value="<?= !empty($address_barangay_name) ? esc($address_barangay_name) : '' ?>" 
+                                        <label for="province" class="block text-sm font-medium text-gray-700 mb-1">Province <span class="readonly-badge"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></span></label>
+                                        <input type="text" id="province" 
+                                               value="<?= !empty($address['province_name']) ? esc($address['province_name']) : (!empty($address['province']) ? esc($address['province']) : '') ?>" 
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                               disabled>
+                                        <input type="hidden" name="province" value="<?= esc($address['province'] ?? '') ?>">
+                                    </div>
+                                    <div>
+                                        <label for="city" class="block text-sm font-medium text-gray-700 mb-1">City/Municipality <span class="readonly-badge"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></span></label>
+                                        <input type="text" id="city" 
+                                               value="<?= !empty($address['municipality_name']) ? esc($address['municipality_name']) : (!empty($address['municipality']) ? esc($address['municipality']) : '') ?>" 
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                               disabled>
+                                        <input type="hidden" name="city" value="<?= esc($address['municipality'] ?? '') ?>">
+                                    </div>
+                                    <div>
+                                        <label for="barangay" class="block text-sm font-medium text-gray-700 mb-1">Barangay <span class="readonly-badge"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></span></label>
+                                        <input type="text" id="barangay" 
+                                               value="<?= !empty($address['barangay_name']) ? esc($address['barangay_name']) : (!empty($address_barangay_name) ? esc($address_barangay_name) : '') ?>" 
                                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                                                disabled>
                                         <input type="hidden" name="barangay" value="<?= esc($address['barangay'] ?? '') ?>">
                                     </div>
                                     <div>
-                                        <label for="city" class="block text-sm font-medium text-gray-700 mb-1">City</label>
-                                        <input type="text" id="city" name="city" value="Iriga City" 
-                                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                               disabled>
-                                        <input type="hidden" name="city" value="Iriga City">
-                                    </div>
-                                    <div>
-                                        <label for="province" class="block text-sm font-medium text-gray-700 mb-1">Province</label>
-                                        <input type="text" id="province" name="province" value="Camarines Sur" 
-                                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                               disabled>
-                                        <input type="hidden" name="province" value="Camarines Sur">
-                                    </div>
-                                    <div>
-                                        <label for="postal_code" class="block text-sm font-medium text-gray-700 mb-1">Postal Code</label>
-                                        <input type="text" id="postal_code" name="postal_code" value="4431" 
-                                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                               disabled>
-                                        <input type="hidden" name="postal_code" value="4431">
+                                        <label for="street" class="block text-sm font-medium text-gray-700 mb-1">Zone/Purok</label>
+                                        <input type="text" id="street" name="street" value="<?= esc($address['zone_purok'] ?? '') ?>" 
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                     </div>
                                 </div>
 
@@ -284,6 +289,29 @@
 </div>
 
 <style>
+
+/* Read-only / disabled field styling */
+input:disabled, select:disabled, textarea:disabled {
+	background-color: #f3f4f6 !important;
+	color: #6b7280 !important;
+	cursor: not-allowed !important;
+	border-color: #e5e7eb !important;
+	opacity: 0.75;
+}
+.readonly-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	font-size: 0.65rem;
+	color: #9ca3af;
+	vertical-align: middle;
+	margin-left: 4px;
+	font-weight: 400;
+}
+.readonly-badge svg {
+	width: 10px;
+	height: 10px;
+}
 
 /* Tabs scrolling */
 #tabs-container {

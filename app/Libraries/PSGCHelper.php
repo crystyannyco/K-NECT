@@ -106,8 +106,68 @@ class PSGCHelper
         return null;
     }
 
+    /**
+     * Local PSGC lookup table for Iriga City and its parent geography.
+     * Used as a reliable fallback when the external PSGC API is unreachable.
+     */
+    private static function getLocalPSGCMap(): array
+    {
+        return [
+            // Region
+            '050000000' => 'Region V (Bicol Region)',
+            // Province
+            '051700000' => 'Camarines Sur',
+            // City / Municipality
+            '051716000' => 'City of Iriga',
+            // Barangays of Iriga City
+            '051716001' => 'Antipolo',
+            '051716002' => 'Cristo Rey',
+            '051716003' => 'Del Rosario (Banao)',
+            '051716004' => 'Francia',
+            '051716005' => 'La Anunciacion',
+            '051716006' => 'La Medalla',
+            '051716007' => 'La Purisima',
+            '051716008' => 'La Trinidad',
+            '051716009' => 'Niño Jesus',
+            '051716010' => 'Perpetual Help',
+            '051716011' => 'Sagrada',
+            '051716012' => 'Salvacion',
+            '051716013' => 'San Agustin',
+            '051716014' => 'San Andres',
+            '051716015' => 'San Antonio',
+            '051716016' => 'San Francisco',
+            '051716017' => 'San Isidro',
+            '051716018' => 'San Jose',
+            '051716019' => 'San Juan',
+            '051716020' => 'San Miguel',
+            '051716021' => 'San Nicolas',
+            '051716022' => 'San Pedro',
+            '051716023' => 'San Rafael',
+            '051716024' => 'San Ramon',
+            '051716025' => 'San Roque',
+            '051716026' => 'Santiago',
+            '051716027' => 'San Vicente Norte',
+            '051716028' => 'San Vicente Sur',
+            '051716029' => 'Santa Cruz Norte',
+            '051716030' => 'Santa Cruz Sur',
+            '051716031' => 'Santa Elena',
+            '051716032' => 'Santa Isabel',
+            '051716033' => 'Santa Maria',
+            '051716034' => 'Santa Teresita',
+            '051716035' => 'Santo Domingo',
+            '051716036' => 'Santo Niño',
+        ];
+    }
+
     private static function fetchLocationName(string $code, string $type): string
     {
+        // Check local lookup first (fast, reliable, offline-safe)
+        $localMap = self::getLocalPSGCMap();
+        if (isset($localMap[$code])) {
+            log_message('debug', 'PSGCHelper: Resolved ' . $type . ' code ' . $code . ' to ' . $localMap[$code] . ' (local)');
+            return $localMap[$code];
+        }
+
         // Try the official PSGC API first with a simple direct call
         $baseUrl = 'https://psgc.gitlab.io/api';
         $endpointMap = [

@@ -3842,10 +3842,12 @@ class PederasyonController extends BaseController
                         
                         if ($userAddress) {
                             // Check if there's already an SK Chairperson in this barangay (excluding current user)
+                            // Must check both user_type = 2 (SK Official) AND position = 1 (Chairperson)
                             $existingChairperson = $userModel
                                 ->select('user.id')
                                 ->join('address', 'address.user_id = user.id', 'left')
-                                ->where('user.user_type', 2) // SK Chairperson
+                                ->where('user.user_type', 2) // SK Official
+                                ->where('user.position', 1) // Chairperson position
                                 ->where('user.status', 2) // Approved users only
                                 ->where('address.barangay', $userAddress['barangay'])
                                 ->where('user.id !=', $userId) // Exclude current user
@@ -4012,10 +4014,12 @@ class PederasyonController extends BaseController
             $addressModel = new AddressModel();
 
             // Query to find existing SK Chairperson in the barangay
+            // Must check both user_type = 2 (SK Official) AND position = 1 (Chairperson)
             $query = $userModel
                 ->select('user.id, user.user_id, user.first_name, user.last_name, user.status')
                 ->join('address', 'address.user_id = user.id', 'left')
-                ->where('user.user_type', 2) // SK Chairperson
+                ->where('user.user_type', 2) // SK Official
+                ->where('user.position', 1) // Chairperson position
                 ->where('user.status', 2) // Approved users only
                 ->where('address.barangay', $barangayId);
 

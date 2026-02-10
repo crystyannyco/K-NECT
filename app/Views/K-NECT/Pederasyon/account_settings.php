@@ -57,14 +57,15 @@
 						</div>
 
 						<h3 class="text-lg font-semibold mb-4">Personal Information</h3>
+						<p class="text-xs text-gray-400 -mt-3 mb-4 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg> Gray fields are read-only and cannot be edited here.</p>
 						<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
 							<div>
-								<label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+								<label class="block text-sm font-medium text-gray-700 mb-1">First Name <span class="readonly-badge"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></span></label>
 								<input type="text" name="first_name" value="<?= esc($user['first_name'] ?? '') ?>" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50" disabled>
 								<input type="hidden" name="first_name" value="<?= esc($user['first_name'] ?? '') ?>">
 							</div>
 							<div>
-								<label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+								<label class="block text-sm font-medium text-gray-700 mb-1">Last Name <span class="readonly-badge"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></span></label>
 								<input type="text" name="last_name" value="<?= esc($user['last_name'] ?? '') ?>" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50" disabled>
 								<input type="hidden" name="last_name" value="<?= esc($user['last_name'] ?? '') ?>">
 							</div>
@@ -77,12 +78,12 @@
 								<input type="tel" name="phone" value="<?= esc($user['phone_number'] ?? '') ?>" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" inputmode="tel" autocomplete="tel">
 							</div>
 							<div>
-								<label class="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+								<label class="block text-sm font-medium text-gray-700 mb-1">Date of Birth <span class="readonly-badge"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></span></label>
 								<input type="date" name="birthdate" value="<?= esc($user['birthdate'] ?? '') ?>" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50" disabled>
 								<input type="hidden" name="birthdate" value="<?= esc($user['birthdate'] ?? '') ?>">
 							</div>
 							<div>
-								<label class="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+								<label class="block text-sm font-medium text-gray-700 mb-1">Gender <span class="readonly-badge"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></span></label>
 								<select name="gender" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50" disabled>
 									<option value="">Select Gender</option>
 									<option value="1" <?= ($user['sex'] ?? '') == '1' ? 'selected' : '' ?>>Male</option>
@@ -93,30 +94,28 @@
 						</div>
 
 					<h3 class="text-lg font-semibold mb-4">Address Information</h3>
+					<p class="text-xs text-gray-400 -mt-3 mb-4 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg> Gray fields are based on your registered barangay.</p>
 					<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
 						<div class="md:col-span-2">
 							<label class="block text-sm font-medium text-gray-700 mb-1">Street Address/Zone/Purok</label>
 							<input type="text" name="street" value="<?= esc($address['zone_purok'] ?? '') ?>" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
 						</div>
 						<div>
-							<label class="block text-sm font-medium text-gray-700 mb-1">Barangay</label>
-							<select disabled class="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md">
-								<option><?= esc($address['barangay_name'] ?? 'Not available') ?></option>
-							</select>
-							
+							<label class="block text-sm font-medium text-gray-700 mb-1">Barangay <span class="readonly-badge"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></span></label>
+							<input type="text" value="<?= esc($address['barangay_name'] ?? 'Not available') ?>" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50" disabled>
 						</div>
 							<div>
-								<label class="block text-sm font-medium text-gray-700 mb-1">City/Municipality</label>
+								<label class="block text-sm font-medium text-gray-700 mb-1">City/Municipality <span class="readonly-badge"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></span></label>
 								<input type="text" value="<?= esc($address['municipality_name'] ?? $address['municipality'] ?? '') ?>" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50" disabled>
 								<input type="hidden" name="city" value="<?= esc($address['municipality'] ?? '') ?>">
 							</div>
 							<div>
-								<label class="block text-sm font-medium text-gray-700 mb-1">Province</label>
+								<label class="block text-sm font-medium text-gray-700 mb-1">Province <span class="readonly-badge"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></span></label>
 								<input type="text" value="<?= esc($address['province_name'] ?? $address['province'] ?? '') ?>" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50" disabled>
 								<input type="hidden" name="province" value="<?= esc($address['province'] ?? '') ?>">
 							</div>
 							<div>
-								<label class="block text-sm font-medium text-gray-700 mb-1">Region</label>
+								<label class="block text-sm font-medium text-gray-700 mb-1">Region <span class="readonly-badge"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></span></label>
 								<input type="text" value="<?= esc($address['region_name'] ?? $address['region'] ?? '') ?>" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50" disabled>
 								<input type="hidden" name="region" value="<?= esc($address['region'] ?? '') ?>">
 							</div>
@@ -688,3 +687,28 @@ if (pwdForm) {
 		loadBarangays();
 	})();
 </script>
+
+<style>
+/* Read-only / disabled field styling */
+input:disabled, select:disabled, textarea:disabled {
+	background-color: #f3f4f6 !important;
+	color: #6b7280 !important;
+	cursor: not-allowed !important;
+	border-color: #e5e7eb !important;
+	opacity: 0.75;
+}
+.readonly-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	font-size: 0.65rem;
+	color: #9ca3af;
+	vertical-align: middle;
+	margin-left: 4px;
+	font-weight: 400;
+}
+.readonly-badge svg {
+	width: 10px;
+	height: 10px;
+}
+</style>

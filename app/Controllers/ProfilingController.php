@@ -271,6 +271,7 @@ class ProfilingController extends BaseController
                     'municipality' => $this->request->getPost('municipality'),
                     'municipality_code' => $this->request->getPost('municipality_code'),
                     'barangay' => $addressData['barangay'],
+                    'barangay_name' => $this->request->getPost('barangay_name'),
                     'zone_purok' => $addressData['zone_purok'],
                     'age_group' => $ageGroup
                 ]);
@@ -290,6 +291,7 @@ class ProfilingController extends BaseController
                     'municipality' => $this->request->getPost('municipality'),
                     'municipality_code' => $this->request->getPost('municipality_code'),
                     'barangay' => $addressData['barangay'],
+                    'barangay_name' => $this->request->getPost('barangay_name'),
                     'zone_purok' => $addressData['zone_purok'],
                     'age_group' => $ageGroup
                 ]);
@@ -327,6 +329,7 @@ class ProfilingController extends BaseController
                 'municipality' => $this->request->getPost('municipality'),
                 'municipality_code' => $this->request->getPost('municipality_code'),
                 'barangay' => $addressData['barangay'],
+                'barangay_name' => $this->request->getPost('barangay_name'),
                 'barangay_psgc_code' => $this->request->getPost('barangay_psgc_code'),
                 'zone_purok' => $addressData['zone_purok'],
                 'age_group' => $ageGroup
@@ -355,6 +358,7 @@ class ProfilingController extends BaseController
             'municipality' => $this->request->getPost('municipality'),
             'municipality_code' => $this->request->getPost('municipality_code'),
             'barangay' => $addressData['barangay'],
+            'barangay_name' => $this->request->getPost('barangay_name'),
             'barangay_psgc_code' => $this->request->getPost('barangay_psgc_code'),
             'zone_purok' => $addressData['zone_purok'],
             'age_group' => $ageGroup

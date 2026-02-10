@@ -24,7 +24,7 @@ class ProfileController extends BaseController
 
     /**
      * Get user profile data for any user type
-     * @param string|null $userId - The permanent user_id from session
+     * @param string|int|null $userId - The user identifier (DB id, permanent user_id, or username)
      * @return array|null - Array containing user data or null if not found
      */
     public function getUserProfileData($userId = null)
@@ -38,8 +38,28 @@ class ProfileController extends BaseController
             return null;
         }
 
-        // Get user by permanent user_id field
-        $user = $this->userModel->where('user_id', $userId)->first();
+        // Try finding the user in order of reliability:
+        // 1. DB primary key (most reliable - used by KKController's resolveDbUserId)
+        $user = $this->userModel->find($userId);
+        
+        if (!$user) {
+            // 2. Permanent user_id field
+            $user = $this->userModel->where('user_id', $userId)->first();
+        }
+        
+        if (!$user) {
+            // 3. Username
+            $user = $this->userModel->where('username', $userId)->first();
+        }
+        
+        if (!$user) {
+            // 4. Last resort: check if db_user_id is stored in session
+            $session = session();
+            $dbUserId = $session->get('db_user_id');
+            if ($dbUserId) {
+                $user = $this->userModel->find($dbUserId);
+            }
+        }
         
         if (!$user) {
             return null;
@@ -49,8 +69,39 @@ class ProfileController extends BaseController
         $userExtInfo = $this->userExtInfoModel->where('user_id', $user['id'])->first();
         $address = $this->addressModel->where('user_id', $user['id'])->first();
 
-        // Convert PSGC codes to location names for display
-        if ($address) {
+        // If no address record exists, provide Iriga City defaults for display
+        if (!$address) {
+            log_message('debug', 'ProfileController: No address record for user_id=' . $user['id'] . ' — using Iriga City defaults');
+            $address = [
+                'user_id'           => $user['id'],
+                'region'            => '050000000',
+                'province'          => '051700000',
+                'municipality'      => '051716000',
+                'barangay'          => '',
+                'zone_purok'        => '',
+                'zip_code'          => '',
+                'region_name'       => 'Region V (Bicol Region)',
+                'province_name'     => 'Camarines Sur',
+                'municipality_name' => 'City of Iriga',
+                'barangay_name'     => '',
+                '_is_default'       => true, // flag so callers know this is not from DB
+            ];
+        } else {
+            // Auto-fill empty region/province/municipality if barangay is an Iriga City barangay
+            $barangayCode = $address['barangay'] ?? '';
+            if (!empty($barangayCode) && preg_match('/^05171[67]\d{3}$/', $barangayCode)) {
+                // Iriga City barangay detected — ensure parent geography codes are populated
+                if (empty($address['region'])) {
+                    $address['region'] = '050000000';
+                }
+                if (empty($address['province'])) {
+                    $address['province'] = '051700000';
+                }
+                if (empty($address['municipality'])) {
+                    $address['municipality'] = '051716000';
+                }
+            }
+
             log_message('debug', 'ProfileController: Converting PSGC codes - Region: ' . ($address['region'] ?? 'null') . ', Province: ' . ($address['province'] ?? 'null') . ', Municipality: ' . ($address['municipality'] ?? 'null') . ', Barangay: ' . ($address['barangay'] ?? 'null'));
             
             $locationNames = \App\Libraries\PSGCHelper::getLocationNames([
@@ -63,10 +114,10 @@ class ProfileController extends BaseController
             log_message('debug', 'ProfileController: Location names received - Region: ' . ($locationNames['region'] ?? 'null') . ', Province: ' . ($locationNames['province'] ?? 'null') . ', Municipality: ' . ($locationNames['municipality'] ?? 'null') . ', Barangay: ' . ($locationNames['barangay'] ?? 'null'));
             
             // Add display names to address array
-            $address['region_name'] = $locationNames['region'] ?? $address['region'];
-            $address['province_name'] = $locationNames['province'] ?? $address['province'];
-            $address['municipality_name'] = $locationNames['municipality'] ?? $address['municipality'];
-            $address['barangay_name'] = $locationNames['barangay'] ?? $address['barangay'];
+            $address['region_name'] = !empty($locationNames['region']) ? $locationNames['region'] : ($address['region'] ?: 'Region V (Bicol Region)');
+            $address['province_name'] = !empty($locationNames['province']) ? $locationNames['province'] : ($address['province'] ?: 'Camarines Sur');
+            $address['municipality_name'] = !empty($locationNames['municipality']) ? $locationNames['municipality'] : ($address['municipality'] ?: 'City of Iriga');
+            $address['barangay_name'] = !empty($locationNames['barangay']) ? $locationNames['barangay'] : ($address['barangay'] ?? '');
         }
 
         // Calculate age

@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>K-Nect - Youth Governance System</title>
+    <meta name="description" content="Unified youth engagement platform for announcements, events, resources, and community impact." />
+    <meta name="robots" content="index,follow" />
+    <meta property="og:title" content="K-Nect - Youth Governance System" />
+    <meta property="og:description" content="Unified youth engagement platform for announcements, events, resources, and community impact." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="HTMLImages/K-Nect Logo.png" />
+    <meta property="og:site_name" content="K-Nect" />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url("https://fonts.googleapis.com/css2?family=Domine:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap");
+        @import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css");
+
+        :root {
+            --ink:#0f172a;
+            --sub:#334155;
+            --muted:#64748b;
+            --border:#e2e8f0;
+            --bg:#f8fafc;
+            --primary-50:#eff6ff;
+            --primary-100:#dbeafe;
+            --primary-200:#bfdbfe;
+            --primary-300:#93c5fd;
+            --primary:#2563eb;
+            --primary-700:#1d4ed8;
+            --primary-800:#1e40af;
+            --radius:18px;
+        }
+
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--ink); }
+        img { max-width: 100%; display: block; }
+        .container { max-width: 1250px; margin: 0 auto; padding: 0 1.25rem; }
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+        header { position: sticky; top: 0; background: rgba(255,255,255,.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); z-index: 60; }
+        .nav { display: flex; align-items: center; gap: 1rem; height: 78px; }
+        .brand img { height: 25px; width: auto; }
+        .nav-links { display: flex; gap: .75rem; margin-left: auto; }
+
+        .btn { display: inline-flex; align-items: center; gap: .55rem; font-size: .85rem; font-weight: 700; padding: .6rem 1rem; border: 1px solid var(--primary); color: var(--primary); border-radius: 40px; background: #fff; transition: .25s; box-shadow: 0 6px 16px -10px rgba(37,99,235,.35); }
+        .btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .btn-primary:hover { background: var(--primary-700); }
+
+        .hero { padding: 2rem 0 1.5rem; }
+        .hero-grid { display: grid; grid-template-columns: 2fr 3fr; gap: 2rem; align-items: stretch; }
+        .hero-copy { background: linear-gradient(180deg,#ffffff, #f8fbff); border: 1px solid var(--border); border-radius: var(--radius); padding: 2.4rem; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 10px 30px -18px rgba(2,6,23,.25); }
+        .eyebrow { display: inline-flex; gap: .5rem; align-items: center; font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .6px; color: var(--primary); }
+        .eyebrow .dot { width: 7px; height: 7px; background: linear-gradient(135deg,var(--primary-300),var(--primary)); border-radius: 50%; box-shadow: 0 0 0 3px var(--primary-100); }
+        .hero-copy h1 { font-family: 'Domine', serif; font-size: clamp(2.1rem,3.5vw,3rem); line-height: 1.05; margin: .6rem 0 1rem; }
+        .hero-copy p { margin: 0 0 1.4rem; color: var(--sub); font-size: 1rem; line-height: 1.6; }
+        .hero-actions { display: flex; flex-wrap: wrap; gap: .75rem; }
+        .hero-media { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: .8rem; max-height: 480px; height: 480px; }
+        .hero-card { position: relative; overflow: hidden; border-radius: 16px; border: 1px solid var(--border); background: #fff; }
+        .hero-card.tall { grid-row: span 2; }
+        .hero-card img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
+        .hero-card:hover img { transform: scale(1.02); }
+        .hero-tag { position: absolute; left: 10px; top: 10px; background: #fff; border-radius: 999px; padding: .35rem .6rem; font-size: .62rem; font-weight: 800; letter-spacing: .5px; }
+
+        section { margin: 0 0 2rem 0; }
+        .section-head { display: flex; align-items: end; justify-content: space-between; margin-bottom: 1rem; }
+        .section-title { font-family: 'Domine', serif; font-size: 1.6rem; margin: 0; }
+        .muted { color: var(--muted); font-size: .9rem; }
+
+        #programs { background: linear-gradient(180deg,var(--primary-50),var(--primary-100)); padding: 2.4rem 0; overflow: hidden; }
+        #programs .programs-grid { display: grid; grid-template-columns: 1.1fr 1.9fr; gap: 1.5rem; align-items: stretch; }
+        #programs .programs-copy { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        #programs .logo-flame img { max-width: 240px; width: 100%; height: auto; object-fit: contain; filter: drop-shadow(0 8px 22px rgba(37,99,235,.28)); }
+        #programs .carousel { position: relative; padding: .1rem 0; }
+        #programs .car-viewport { position: relative; overflow: hidden; border-radius: 18px; }
+        #programs .car-track { --gap: .8rem; display: flex; gap: var(--gap); transition: transform .45s ease; will-change: transform; }
+        #programs .car-slide { flex: 0 0 100%; min-width: 100%; }
+        #programs .car-card { position: relative; background: linear-gradient(180deg,#ffffff 0%, #f9fbff 100%); border: 1px solid var(--border); border-radius: 18px; min-height: 220px; padding: 1.4rem 1.4rem 1.6rem; box-shadow: 0 12px 30px -20px rgba(2,6,23,.25); }
+        #programs .car-card::before { content: attr(data-num); position: absolute; top: 1rem; left: 1.1rem; font-family: 'Domine', serif; font-size: clamp(4rem,8.5vw,6rem); font-weight: 800; line-height: 1; color: var(--primary-100); z-index: 0; }
+        #programs .car-card h3, #programs .car-card p { position: relative; z-index: 1; }
+        #programs .car-btn { position: absolute; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; border-radius: 999px; border: 1px solid rgba(15,23,42,.12); background: rgba(255,255,255,.95); color: var(--primary-700); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 5; }
+        #programs .car-btn.prev { left: 12px; }
+        #programs .car-btn.next { right: 12px; }
+
+        #stories .news-carousel { position: relative; padding: .1rem 0; }
+        #stories .news-viewport { position: relative; overflow: hidden; border-radius: 14px; }
+        #stories .news-track { --gap: .8rem; display: flex; gap: var(--gap); transition: transform .45s ease; will-change: transform; }
+        #stories .news-slide { flex: 0 0 auto; }
+        #stories .news-card { display: block; position: relative; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: #f8fafc; }
+        #stories .news-media { position: relative; aspect-ratio: 16/10; max-height: 280px; background: #e5e7eb; }
+        #stories .news-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        #stories .news-info { position: absolute; left: 0; right: 0; bottom: 0; padding: .4rem .5rem; color: #fff; background: linear-gradient(to top, rgba(2,6,23,.6), rgba(2,6,23,0)); font-size: .8rem; font-weight: 700; }
+        #stories .news-chip { position: absolute; top: .4rem; left: .4rem; z-index: 2; background: rgba(255,255,255,.8); border: 1px solid rgba(15,23,42,.12); color: #0f172a; border-radius: 999px; padding: .15rem .45rem; font-size: .65rem; font-weight: 800; }
+        #stories .news-btn { position: absolute; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; border-radius: 999px; border: 1px solid rgba(15,23,42,.12); background: rgba(255,255,255,.95); color: var(--primary-700); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 5; }
+        #stories .news-btn.prev { left: 12px; }
+        #stories .news-btn.next { right: 12px; }
+        #stories .news-dots { display: flex; gap: .4rem; justify-content: center; margin: .5rem 0 0; }
+        #stories .news-dot { width: 7px; height: 7px; border-radius: 999px; border: 1px solid rgba(15,23,42,.2); background: #ffffff; opacity: .7; cursor: pointer; }
+        #stories .news-dot[aria-selected="true"] { background: var(--primary); border-color: var(--primary); opacity: 1; }
+
+        #highlights .tp-head-centered { flex-direction: column; align-items: center; justify-content: center; gap: .55rem; margin-bottom: 1.4rem; text-align: center; }
+        #highlights .tp-controls-row { display: flex; align-items: center; flex-wrap: wrap; gap: .6rem; justify-content: center; font-size: .75rem; color: var(--muted); }
+        .tp-podium { display: grid; grid-template-columns: repeat(3, minmax(160px, 1fr)); gap: 1rem; align-items: end; justify-content: center; padding: 1.6rem 1rem 1.55rem; border: 1px solid #1e3a8a; border-radius: 34px; background: linear-gradient(145deg,#1d4ed8,#1e40af); color: #e2ecff; }
+        .podium-spot { display: flex; flex-direction: column; align-items: center; gap: .55rem; }
+        .podium-avatar { --size: 96px; width: var(--size); height: var(--size); border-radius: 50%; display: grid; place-items: center; background: linear-gradient(135deg,#1e40af,#2563eb); overflow: hidden; }
+        .podium-spot.rank-1 .podium-avatar { --size: 110px; }
+        .podium-avatar img { width: 74%; height: 74%; object-fit: cover; border-radius: 50%; background: #fff; }
+        .podium-name { margin: 0; font: 700 1.05rem/1.15 'Inter',sans-serif; color: #ffffff; text-align: center; }
+        .podium-score { font: 700 1.2rem/1 'Inter',sans-serif; color: #ffffff; }
+        .tp-remaining { display: grid; grid-template-columns: repeat(auto-fill,minmax(240px,1fr)); gap: 1rem; margin-top: 1rem; }
+        .tp-card { background: #fff; border: 1px solid var(--border); border-radius: 22px; padding: .9rem .95rem 1rem; }
+
+        #events .section-head { text-align: center; flex-direction: column; align-items: center; }
+        .events-grid { --card-min: 250px; display: grid; grid-template-columns: repeat(auto-fill,minmax(var(--card-min),1fr)); gap: 1.4rem; margin-top: 1.2rem; }
+        .event-card { background: #ffffff; border: 1px solid var(--border); border-radius: 22px; overflow: hidden; }
+        .event-media { aspect-ratio: 4/3; background: #e2e8f0; }
+        .event-media img { width: 100%; height: 100%; object-fit: cover; }
+        .event-body { padding: 1rem 1rem 1.1rem; }
+        .event-title { margin: 0 0 .55rem; font: 600 1rem/1.25 'Inter',sans-serif; color: #0f172a; }
+        .event-meta { display: flex; flex-direction: column; gap: .35rem; font-size: .68rem; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: #475569; }
+
+        #org-chart { background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%); padding: 3rem 0; }
+        .org-chart-wrapper { max-width: 1100px; margin: 0 auto; }
+        .chairman-container { display: flex; justify-content: center; margin-bottom: 2.5rem; }
+        .officer-card { background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%); border: 1px solid var(--border); border-radius: 18px; padding: 1.5rem; text-align: center; }
+        .chairman-card { width: 280px; }
+        .officer-photo { width: 120px; height: 120px; margin: 0 auto 1rem; border-radius: 50%; overflow: hidden; border: 3px solid var(--primary-100); }
+        .chairman-card .officer-photo { width: 160px; height: 160px; }
+        .officer-photo img { width: 100%; height: 100%; object-fit: cover; }
+        .officer-name { font-family: 'Domine', serif; font-size: 1.1rem; font-weight: 700; margin: 0 0 0.4rem; color: var(--ink); }
+        .chairman-card .officer-name { font-size: 1.4rem; }
+        .officer-position { color: var(--primary); font-size: 0.85rem; font-weight: 600; margin: 0; }
+        .officers-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; max-width: 900px; margin: 0 auto; }
+
+        footer { background: linear-gradient(180deg,#0b1a3a,#0f172a); color: #d1d5db; padding: 3rem 0 2rem; margin-top: 3rem; }
+        .fwrap { display: grid; gap: 2rem; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); }
+        footer h4 { margin: 0 0 1rem; font-size: .8rem; letter-spacing: .8px; text-transform: uppercase; color: #fff; }
+        .copyright { text-align: center; margin-top: 1.8rem; font-size: .75rem; letter-spacing: .3px; }
+
+        @media (min-width:1280px) { #stories .news-slide { flex-basis: calc((100% - .8rem*3)/4); min-width: calc((100% - .8rem*3)/4); } }
+        @media (min-width:768px) and (max-width:1279.98px) { #stories .news-slide { flex-basis: calc((100% - .8rem*2)/3); min-width: calc((100% - .8rem*2)/3); } }
+        @media (max-width:767.98px) { #stories .news-slide { flex-basis: 88%; min-width: 88%; } }
+        @media (max-width:1100px) { .hero-grid { grid-template-columns: 1fr; } }
+        @media (max-width:1023px) {
+            #programs .programs-grid { grid-template-columns: 1fr; gap: 1rem; }
+            #programs .programs-copy { display: none; }
+            .tp-podium { grid-template-columns: 1fr; }
+        }
+        @media (max-width:768px) { .hero-media { max-height: 380px; height: 380px; } }
+        @media (max-width:640px) {
+            .nav-links { display: none; }
+            .hero-media { max-height: 320px; height: 320px; gap: .6rem; }
+            .officers-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width:520px) {
+            .hero-media { max-height: 280px; height: 280px; gap: .5rem; }
+            .chairman-card { width: 100%; max-width: 280px; }
+            .officer-card { padding: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container nav" role="navigation" aria-label="Primary">
+            <div class="brand" aria-label="K-NECT home">
+                <img src="HTMLImages/K-Nect Logo.png" alt="K-NECT logo" width="25" loading="eager" decoding="async" />
+            </div>
+            <nav class="nav-links" aria-label="In-page sections">
+                <button type="button" class="btn" data-scroll="programs">Programs</button>
+                <button type="button" class="btn" data-scroll="stories">Stories</button>
+                <button type="button" class="btn" data-scroll="highlights">Highlights</button>
+                <button type="button" class="btn" data-scroll="org-chart">Officers</button>
+            </nav>
+            <div style="margin-left:auto;display:flex;gap:.65rem;">
+                <button type="button" class="btn">Sign In</button>
+                <button type="button" class="btn-primary btn">Profile Now</button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero" id="top">
+            <div class="container hero-grid">
+                <div class="hero-copy">
+                    <span class="eyebrow"><span class="dot"></span> Youth Engagement Platform</span>
+                    <h1>Empowering Youth Leadership and Community Impact</h1>
+                    <p>The unified hub for announcements, events, documents, and data-driven insights across barangays and the city federation.</p>
+                    <div class="hero-actions">
+                        <button type="button" class="btn-primary btn"> <i class="fa-solid fa-gauge-high"></i> Profile Now</button>
+                        <button type="button" class="btn" data-scroll="programs"><i class="fa-solid fa-circle-info"></i> Explore</button>
+                    </div>
+                </div>
+                <div class="hero-media" aria-label="Highlights">
+                    <div class="hero-card tall">
+                        <span class="hero-tag">Featured</span>
+                        <img src="public\uploads\bulletin\1760465079_afc8013fedbadb3bf11a.jpg" alt="Featured highlight" loading="eager" decoding="async" />
+                    </div>
+                    <div class="hero-card">
+                        <img src="public\uploads\bulletin\1762415511_be58d0a8c63e84a7bfc4.jpg" alt="Secondary highlight" loading="lazy" />
+                    </div>
+                    <div class="hero-card">
+                        <img src="public\uploads\bulletin\1760462758_81cebfddf1304353e240.jpg" alt="Additional highlight" loading="lazy" />
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="programs" aria-labelledby="programs-title">
+            <div class="container">
+                <div class="programs-grid">
+                    <div class="programs-copy">
+                        <h2 id="programs-title" class="sr-only">Features</h2>
+                        <span class="logo-flame">
+                            <img src="HTMLImages/Ped_logo.png" alt="Pederasyon logo" width="240" height="240" />
+                        </span>
+                    </div>
+                    <div class="carousel" aria-roledescription="carousel" aria-label="Programs carousel">
+                        <button class="car-btn prev" aria-label="Previous" type="button"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
+                        <div class="car-viewport">
+                            <div class="car-track" role="list" id="program-track"></div>
+                        </div>
+                        <button class="car-btn next" aria-label="Next" type="button"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="stories">
+            <div class="container">
+                <div class="section-head">
+                    <h2 class="section-title">Latest Stories</h2>
+                    <span class="muted">Updates from the bulletin</span>
+                </div>
+                <div class="news-carousel" aria-roledescription="carousel" aria-label="Latest stories carousel" aria-live="polite">
+                    <button class="news-btn prev" aria-label="Previous" type="button"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
+                    <div class="news-viewport">
+                        <div class="news-track" role="list" id="stories-track"></div>
+                    </div>
+                    <button class="news-btn next" aria-label="Next" type="button"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
+                    <div class="news-dots" role="tablist" aria-label="Slide pagination"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="highlights" aria-labelledby="tp-title">
+            <div class="container" id="top-barangays">
+                <div class="section-head tp-head-centered">
+                    <h2 class="section-title" id="tp-title">Top Performing Barangays</h2>
+                    <div class="tp-controls-row">
+                        <span>Static UI Demo Data</span>
+                    </div>
+                </div>
+                <div class="tp-wrap" aria-live="polite">
+                    <div class="tp-content" id="top-barangays-content"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="events">
+            <div class="container">
+                <div class="section-head">
+                    <h2 class="section-title">Upcoming Events</h2>
+                    <span class="muted">Be part of the next activity</span>
+                </div>
+                <div class="events-grid" aria-label="List of upcoming events" id="events-grid"></div>
+            </div>
+        </section>
+
+        <section id="org-chart">
+            <div class="container">
+                <div class="section-head" style="flex-direction: column; align-items: center; text-align: center; margin-bottom: 2rem;">
+                    <h2 class="section-title" style="margin: 0; font-size: clamp(1.8rem, 3vw, 2.2rem); font-weight: 700; letter-spacing: 0.5px; color: var(--primary);">PEDERASYON OFFICERS</h2>
+                    <span class="muted" style="font-size: 0.95rem; margin-top: 0.3rem;">CY 2026 - Present</span>
+                </div>
+
+                <div class="org-chart-wrapper">
+                    <div class="chairman-container">
+                        <div class="officer-card chairman-card">
+                            <div class="officer-photo">
+                                <img src="HTMLImages/Ped_logo.png" alt="Chairperson" loading="lazy" />
+                            </div>
+                            <div class="officer-info">
+                                <h3 class="officer-name">Hon. Sample Chairperson</h3>
+                                <p class="officer-position">SK Pederasyon President</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="officers-grid" id="officers-grid"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container fwrap">
+            <div>
+                <h4>Platform</h4>
+                <p>Overview</p>
+                <p>Programs</p>
+                <p>Stories</p>
+            </div>
+            <div>
+                <h4>Engagement</h4>
+                <p>Events</p>
+                <p>Community Updates</p>
+            </div>
+            <div>
+                <h4>Access</h4>
+                <p>Local Static UI Version</p>
+            </div>
+        </div>
+        <div class="container copyright">Copyright 2026 K-NECT Platform. All rights reserved.</div>
+    </footer>
+
+    <script>
+        (function () {
+            const programs = [
+                { title: "Youth Partnership", desc: "Connect with civic partners and initiatives that matter." },
+                { title: "Scholarship Support", desc: "Find education assistance and grant opportunities." },
+                { title: "Community Outreach", desc: "Volunteer for barangay and city-wide engagements." },
+                { title: "Data Insights", desc: "Use dashboards and reports for planning." }
+            ];
+
+            const stories = [
+                { title: "Youth Cleanup Drive", date: "Jun 2, 2026", image: "HTMLImages/Clean Up Drive.jpg" },
+                { title: "Barangay Sports Fest", date: "May 29, 2026", image: "HTMLImages/Sport FEst.jpg" },
+                { title: "Leadership Summit", date: "May 24, 2026", image: "HTMLImages/Leadership SUmmet.jpg" },
+                { title: "Volunteer Recognition", date: "May 18, 2026", image: "HTMLImages/Volunteer.jpg" }
+            ];
+
+            const topBarangays = [
+                { name: "Barangay Uno", score: 98.4, events: 15, participants: 540, posts: 29 },
+                { name: "Barangay Dos", score: 94.6, events: 13, participants: 488, posts: 26 },
+                { name: "Barangay Tres", score: 90.8, events: 12, participants: 436, posts: 24 },
+                { name: "Barangay Apat", score: 86.2, events: 11, participants: 390, posts: 20 },
+                { name: "Barangay Lima", score: 82.7, events: 10, participants: 344, posts: 18 },
+                { name: "Barangay Anim", score: 79.3, events: 9, participants: 301, posts: 16 }
+            ];
+
+            const events = [
+                { title: "City Youth Assembly", date: "Sat, 08 Jun 2026", time: "9:00 AM", location: "City Hall Grounds", image: "HTMLImages/Assembly.jpg" },
+                { title: "Inter-Barangay Skills Workshop", date: "Tue, 11 Jun 2026", time: "1:00 PM", location: "Community Learning Center", image: "HTMLImages/Sport FEst.jpg" },
+                { title: "Volunteer Orientation", date: "Fri, 14 Jun 2026", time: "10:00 AM", location: "Youth Hub", image: "HTMLImages/Volunteer.jpg" }
+            ];
+
+            const officers = [
+                { name: "Hon. Sample Vice President", position: "Vice President" },
+                { name: "Hon. Sample Secretary", position: "Secretary" },
+                { name: "Hon. Sample Treasurer", position: "Treasurer" },
+                { name: "Hon. Sample Auditor", position: "Auditor" },
+                { name: "Hon. Sample PIO", position: "Public Information Officer" },
+                { name: "Hon. Sample Sergeant", position: "Sergeant at Arms" }
+            ];
+
+            const programTrack = document.getElementById("program-track");
+            programs.forEach(function (p, i) {
+                const slide = document.createElement("div");
+                slide.className = "car-slide";
+                slide.setAttribute("role", "listitem");
+                slide.innerHTML = '<article class="car-card" data-num="' + (i + 1) + '"><h3>' + p.title + '</h3><p>' + p.desc + '</p></article>';
+                programTrack.appendChild(slide);
+            });
+
+            const storiesTrack = document.getElementById("stories-track");
+            stories.forEach(function (s) {
+                const slide = document.createElement("div");
+                slide.className = "news-slide";
+                slide.setAttribute("role", "listitem");
+                slide.innerHTML = '<article class="news-card"><div class="news-media"><span class="news-chip">Story</span><img src="' + s.image + '" alt="' + s.title + '" loading="lazy"><div class="news-info">' + s.title + ' • ' + s.date + '</div></div></article>';
+                storiesTrack.appendChild(slide);
+            });
+
+            const topContent = document.getElementById("top-barangays-content");
+            const podium = topBarangays.slice(0, 3);
+            const remaining = topBarangays.slice(3);
+            topContent.innerHTML =
+                '<div class="tp-podium">' +
+                podium.map(function (r, i) {
+                    return '<div class="podium-spot rank-' + (i + 1) + '"><div class="podium-avatar"><img src="HTMLImages/Ped_logo.png" alt="' + r.name + '"></div><div class="podium-name">' + r.name + '</div><div class="podium-score">' + r.score.toFixed(1) + '</div></div>';
+                }).join("") +
+                '</div>' +
+                '<div class="tp-remaining">' +
+                remaining.map(function (r, i) {
+                    return '<div class="tp-card"><h4>#' + (i + 4) + ' ' + r.name + '</h4><p class="muted">Events: ' + r.events + ' | Participants: ' + r.participants + ' | Posts: ' + r.posts + ' | Score: ' + r.score.toFixed(1) + '</p></div>';
+                }).join("") +
+                '</div>';
+
+            const eventsGrid = document.getElementById("events-grid");
+            events.forEach(function (e) {
+                const card = document.createElement("article");
+                card.className = "event-card";
+                card.innerHTML = '<div class="event-media"><img src="' + e.image + '" alt="' + e.title + '"></div><div class="event-body"><h3 class="event-title">' + e.title + '</h3><div class="event-meta"><span><i class="fa-regular fa-calendar" aria-hidden="true"></i> ' + e.date + '</span><span><i class="fa-regular fa-clock" aria-hidden="true"></i> ' + e.time + '</span><span><i class="fa-solid fa-location-dot" aria-hidden="true"></i> ' + e.location + '</span></div></div>';
+                eventsGrid.appendChild(card);
+            });
+
+            const officersGrid = document.getElementById("officers-grid");
+            officers.forEach(function (o) {
+                const card = document.createElement("div");
+                card.className = "officer-card";
+                card.innerHTML = '<div class="officer-photo"><img src="HTMLImages/Ped_logo.png" alt="' + o.name + '" loading="lazy" /></div><div class="officer-info"><h3 class="officer-name">' + o.name + '</h3><p class="officer-position">' + o.position + '</p></div>';
+                officersGrid.appendChild(card);
+            });
+
+            function setupCarousel(sectionId, viewportClass, trackClass, slideClass, prevClass, nextClass, dotsClass) {
+                const sec = document.getElementById(sectionId);
+                if (!sec) return;
+                const viewport = sec.querySelector(viewportClass);
+                const track = sec.querySelector(trackClass);
+                const slides = Array.from(sec.querySelectorAll(slideClass));
+                const prev = sec.querySelector(prevClass);
+                const next = sec.querySelector(nextClass);
+                const dotsWrap = dotsClass ? sec.querySelector(dotsClass) : null;
+                if (!viewport || !track || slides.length === 0) return;
+
+                let index = 0;
+
+                function slidesPerView() {
+                    if (sectionId === "stories") {
+                        if (window.innerWidth >= 1280) return 4;
+                        if (window.innerWidth >= 768) return 3;
+                        return 1;
+                    }
+                    return window.innerWidth >= 1024 ? 2 : 1;
+                }
+
+                function maxIndex() {
+                    return Math.max(0, slides.length - slidesPerView());
+                }
+
+                function stepSize() {
+                    if (slides.length > 1) {
+                        const a = slides[0].getBoundingClientRect();
+                        const b = slides[1].getBoundingClientRect();
+                        const d = b.left - a.left;
+                        return d > 0 ? d : viewport.clientWidth;
+                    }
+                    return viewport.clientWidth;
+                }
+
+                function update() {
+                    track.style.transform = "translateX(" + (-index * stepSize()) + "px)";
+                    if (prev) prev.disabled = index <= 0;
+                    if (next) next.disabled = index >= maxIndex();
+                    if (dotsWrap) {
+                        Array.from(dotsWrap.children).forEach(function (d, i) {
+                            d.setAttribute("aria-selected", i === index ? "true" : "false");
+                            d.tabIndex = i === index ? 0 : -1;
+                        });
+                    }
+                }
+
+                if (dotsWrap) {
+                    const dotsCount = Math.max(1, slides.length - slidesPerView() + 1);
+                    dotsWrap.innerHTML = "";
+                    for (let i = 0; i < dotsCount; i++) {
+                        const b = document.createElement("button");
+                        b.className = "news-dot";
+                        b.type = "button";
+                        b.setAttribute("role", "tab");
+                        b.setAttribute("aria-label", "Go to slide " + (i + 1));
+                        b.addEventListener("click", function () { index = i; update(); });
+                        dotsWrap.appendChild(b);
+                    }
+                }
+
+                prev && prev.addEventListener("click", function () { index = Math.max(0, index - 1); update(); });
+                next && next.addEventListener("click", function () { index = Math.min(maxIndex(), index + 1); update(); });
+                window.addEventListener("resize", function () { index = Math.min(index, maxIndex()); requestAnimationFrame(update); });
+
+                let startX = 0;
+                let deltaX = 0;
+                let isTouching = false;
+                const threshold = 40;
+
+                viewport.addEventListener("touchstart", function (e) {
+                    if (!e.touches || e.touches.length !== 1) return;
+                    isTouching = true;
+                    startX = e.touches[0].clientX;
+                    deltaX = 0;
+                }, { passive: true });
+
+                viewport.addEventListener("touchmove", function (e) {
+                    if (!isTouching || !e.touches) return;
+                    deltaX = e.touches[0].clientX - startX;
+                }, { passive: true });
+
+                viewport.addEventListener("touchend", function () {
+                    if (!isTouching) return;
+                    if (Math.abs(deltaX) > threshold) {
+                        if (deltaX < 0) index = Math.min(maxIndex(), index + 1);
+                        else index = Math.max(0, index - 1);
+                        update();
+                    }
+                    isTouching = false;
+                    startX = 0;
+                    deltaX = 0;
+                });
+
+                update();
+            }
+
+            setupCarousel("programs", ".car-viewport", ".car-track", ".car-slide", ".car-btn.prev", ".car-btn.next");
+            setupCarousel("stories", ".news-viewport", ".news-track", ".news-slide", ".news-btn.prev", ".news-btn.next", ".news-dots");
+
+            document.querySelectorAll("[data-scroll]").forEach(function (btn) {
+                btn.addEventListener("click", function () {
+                    const id = btn.getAttribute("data-scroll");
+                    const target = document.getElementById(id);
+                    if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+                });
+            });
+        })();
+    </script>
+</body>
+</html>
